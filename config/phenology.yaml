@@ -1,0 +1,42 @@
+# Maize phenology calendar per ward and season.
+#
+# ILLUSTRATIVE: approximate calendars for medium-maturity maize in lowland and
+# highland Nakuru, pending agronomist sign-off and the real pilot wards.
+#
+# Phases run back to back from the planting date. `days` is the phase length.
+# A season that crosses New Year (short rains) is keyed to its planting year.
+illustrative: true
+
+wards:
+  ward-a:
+    LR:
+      planting_window: {start: "03-25", end: "04-20"}
+      planting_date: "04-01"        # reference date the index is measured from
+      phases:
+        - {name: germination, days: 20}
+        - {name: vegetative,  days: 35}
+        - {name: flowering,   days: 25}
+        - {name: grain_fill,  days: 35}
+        - {name: maturity,    days: 20}
+    # Short rains are shorter and less reliable: an early-maturing variety planted
+    # at onset, so flowering falls in the November peak rather than the dry January.
+    SR:
+      planting_window: {start: "09-25", end: "10-15"}
+      planting_date: "10-01"
+      phases:
+        - {name: germination, days: 15}
+        - {name: vegetative,  days: 30}
+        - {name: flowering,   days: 20}
+        - {name: grain_fill,  days: 25}
+        - {name: maturity,    days: 15}
+
+  ward-b:
+    LR:
+      planting_window: {start: "03-15", end: "04-10"}
+      planting_date: "03-25"
+      phases:
+        - {name: germination, days: 25}
+        - {name: vegetative,  days: 60}
+        - {name: flowering,   days: 30}
+        - {name: grain_fill,  days: 45}
+        - {name: maturity,    days: 30}

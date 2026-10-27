@@ -1,0 +1,28 @@
+# Insurance units. Triggers are always computed per ward, never per county.
+#
+# ILLUSTRATIVE PLACEHOLDERS: the pilot wards are not chosen yet [ASK]. These two
+# stand-ins sit at approximate locations picked for climate contrast (a drier
+# lowland and a wetter highland). They are NOT real ward boundaries. Replace the
+# centroid with the real ward centroid, or add a polygon, once the wards are agreed.
+wards:
+  - id: ward-a
+    name: "Illustrative Ward A (lowland, near Rongai)"
+    illustrative: true
+    centroid: {lat: -0.170, lon: 35.860}
+    # Rainfall is averaged over a square box this wide (degrees) around the
+    # centroid: 0.10 deg is about 11 km, roughly 2x2 CHIRPS pixels.
+    extraction_box_deg: 0.10
+    elevation_m: 1900
+    seasons: [LR, SR]
+    notes: "Stand-in for a drier, drought-exposed maize ward."
+
+  - id: ward-b
+    name: "Illustrative Ward B (highland, near Molo)"
+    illustrative: true
+    centroid: {lat: -0.250, lon: 35.730}
+    extraction_box_deg: 0.10
+    elevation_m: 2500
+    # Highland maize is a 6-7 month crop planted on the long rains; a short-rains
+    # crop would run into the Jan-Feb dry season, so only LR is offered here.
+    seasons: [LR]
+    notes: "Stand-in for a wetter, cooler highland maize ward."

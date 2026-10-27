@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+
+# Secrets: only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Pricing run outputs (reports, results, manifests). The audit log of every run is
+# kept, but the bulky per-run folders are regenerated from committed inputs.
+runs/*
+!runs/.gitkeep
+!runs/audit_log.jsonl
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

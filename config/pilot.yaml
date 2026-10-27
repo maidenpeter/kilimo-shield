@@ -1,0 +1,17 @@
+# Pilot scope. Switching ward, rainfall source or history window is a config edit only.
+pilot:
+  county: Nakuru
+  crop: maize
+  default_ward: ward-a          # used when the CLI is run without --ward
+  wards: [ward-a, ward-b]       # ids from wards.yaml
+  sacco: TBD                    # [ASK] pilot SACCO not yet chosen
+  underwriter: TBD              # [ASK] licensed underwriter not yet chosen
+
+rainfall:
+  # chirps  = real CHIRPS v2.0 daily via SERVIR ClimateSERV, cached in data/raw/chirps/
+  # synthetic = generated bimodal rainfall, labelled SYNTHETIC in every output
+  source: chirps
+  history:
+    start_year: 1981            # first full year of CHIRPS
+    end_year: 2025              # last complete year available
+  synthetic_seed: 20261027

@@ -1,0 +1,103 @@
+# Product terms: Layer B index, premium build-up, backtest settings.
+# Every number here is ILLUSTRATIVE until the underwriter and IRA filing fix it.
+illustrative: true
+
+# ---------------------------------------------------------------------------
+# Layer B: in-season rainfall-deficit index, measured per crop phase.
+# ---------------------------------------------------------------------------
+layer_b:
+  # Bump on any change to the index definition or its terms. Recorded in every
+  # run manifest so a historical payout can be traced to the exact rules.
+  version: "B-0.1.0"
+
+  # Daily rainfall is clipped to this range before summing a phase. Days under
+  # the minimum do not wet the soil usefully; rain above the cap mostly runs off.
+  daily_min_mm: 1.0
+  daily_cap_mm: 60.0
+
+  # Per-phase terms, shared by every ward and season unless overridden below.
+  # weight  = share of the sum insured that phase can pay; weights sum to 1.
+  # trigger = phase rainfall at or above which the phase pays nothing.
+  # exit    = phase rainfall at or below which the phase pays its full weight.
+  # A level is either {mm: <value>} (fixed, as filed) or {percentile: <p>}
+  # (resolved from the ward's own history over `calibration` below; the resolved
+  # mm values are written to every output so the run is reproducible).
+  # Germination and flowering carry the most weight: maize is most sensitive to
+  # water stress at establishment and at tasselling/silking.
+  phases:
+    germination: {weight: 0.30, trigger: {percentile: 10}, exit: {percentile: 2}}
+    vegetative:  {weight: 0.10, trigger: {percentile: 10}, exit: {percentile: 2}}
+    flowering:   {weight: 0.40, trigger: {percentile: 10}, exit: {percentile: 2}}
+    grain_fill:  {weight: 0.20, trigger: {percentile: 10}, exit: {percentile: 2}}
+
+  # Years used to resolve percentile levels. Using the whole history fits the
+  # triggers in-sample; set an earlier end year to hold out recent seasons.
+  calibration: {start_year: 1981, end_year: 2025}
+
+  # Optional per-ward, per-season, per-phase overrides, e.g.
+  # overrides:
+  #   ward-a:
+  #     LR:
+  #       flowering: {trigger: {mm: 110}, exit: {mm: 35}}
+  overrides: {}
+
+# ---------------------------------------------------------------------------
+# Sum insured and gross premium build-up.
+# ---------------------------------------------------------------------------
+sum_insured:
+  # KES per acre. Placeholder options pending input-cost data from the SACCO.
+  options_kes_per_acre: [5000, 10000, 15000]
+  default_kes_per_acre: 10000
+
+premium:
+  # Risk margin on top of the expected loss. Methods:
+  #   std_dev: factor x standard deviation of the annual loss
+  #   tail:    factor x (loss at `percentile`) - expected loss
+  risk_margin: {method: std_dev, factor: 0.25}
+
+  # Loadings as shares of the GROSS premium, so
+  #   gross = (expected loss + risk margin) / (1 - sum of loadings).
+  # [ASK] underwriter's required loadings and margin.
+  loadings:
+    expense: 0.12
+    intermediary: 0.05        # SACCO distribution fee
+    platform: 0.06            # AgroShield technology and pricing fee
+    underwriter_margin: 0.07
+
+# ---------------------------------------------------------------------------
+# Backtest settings.
+# ---------------------------------------------------------------------------
+backtest:
+  # A season counts as a "bad yield" season below this share of the ward's
+  # median yield.
+  bad_yield_threshold: 0.75
+  # Payouts below this share of sum insured count as "no payout" when scoring
+  # basis risk (a token payout does not cover a failed crop).
+  meaningful_payout: 0.05
+
+# SYNTHETIC yields, used only until real ward yield history is available [ASK].
+# They come from a daily FAO-56 soil-water balance and FAO-33 yield response on
+# the same rainfall, plus noise and non-weather shocks, so they correlate with
+# the index by construction: they test the backtest machinery, not the product.
+synthetic_yield:
+  potential_t_per_ha: 4.0
+  soil_water_capacity_mm: 120   # plant-available water in the root zone
+  depletion_fraction: 0.5       # FAO-56 p: stress starts below (1 - p) x capacity
+  # Water requirement per phase in mm/day (crop evapotranspiration, illustrative).
+  water_need_mm_per_day:
+    germination: 2.5
+    vegetative: 4.0
+    flowering: 5.5
+    grain_fill: 4.5
+    maturity: 2.0
+  # FAO-33 yield response factors (Ky) for maize by phase.
+  ky:
+    germination: 0.4
+    vegetative: 0.4
+    flowering: 1.5
+    grain_fill: 0.5
+    maturity: 0.2
+  noise_sd: 0.10              # lognormal multiplicative noise
+  shock_probability: 0.08     # chance per season of a pest/disease/hail loss
+  shock_loss_range: [0.2, 0.5]
+  seed: 7
