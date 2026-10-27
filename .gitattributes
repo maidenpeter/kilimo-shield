@@ -1,0 +1,4 @@
+# Pricing runs are pinned to SHA-256 hashes of the config files and raw inputs,
+# so line endings must be identical on every checkout (no CRLF conversion).
+* text=auto eol=lf
+data/raw/** -text

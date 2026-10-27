@@ -1,0 +1,42 @@
+{
+  "ward_id": "ward-a",
+  "dataset": "UCSB CHIRPS v2.0 daily, 0.05 deg, polygon mean",
+  "provider": "SERVIR ClimateSERV",
+  "request": {
+    "base_url": "https://climateserv.servirglobal.net/api",
+    "datatype": 0,
+    "operationtype": 5,
+    "intervaltype": 0,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            35.81,
+            -0.22
+          ],
+          [
+            35.91,
+            -0.22
+          ],
+          [
+            35.91,
+            -0.12
+          ],
+          [
+            35.81,
+            -0.12
+          ],
+          [
+            35.81,
+            -0.22
+          ]
+        ]
+      ]
+    }
+  },
+  "start_year": 1981,
+  "end_year": 2025,
+  "retrieved_at": "2026-10-27T18:07:17+00:00",
+  "sha256": "264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2"
+}

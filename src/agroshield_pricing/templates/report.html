@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layer B Pricing Report</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f6f4; --surface-1: #fcfcfb; --border: #e2e1dc;
+  --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69;
+  --grid: #ebeae6; --axis: #bdbcb5;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --band: rgba(82,81,78,0.05); --band-ins: rgba(42,120,214,0.09);
+  --chip-real: #e3f1e3; --chip-real-ink: #0b5d0b;
+  --chip-syn: #fde8dc; --chip-syn-ink: #8a3412;
+  --chip-ill: #fbf0d2; --chip-ill-ink: #6b4b00;
+  --warn-bg: #fff6e0; --warn-border: #e9c46a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #111110; --surface-1: #1a1a19; --border: #33332f;
+    --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #9b9a92;
+    --grid: #2a2a27; --axis: #4a4a45;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --band: rgba(240,239,236,0.04); --band-ins: rgba(57,135,229,0.14);
+    --chip-real: #173a17; --chip-real-ink: #a6e3a6;
+    --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8;
+    --chip-ill: #3d300c; --chip-ill-ink: #f1d995;
+    --warn-bg: #2e2610; --warn-border: #7a6420;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110; --surface-1: #1a1a19; --border: #33332f;
+  --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #9b9a92;
+  --grid: #2a2a27; --axis: #4a4a45;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --band: rgba(240,239,236,0.04); --band-ins: rgba(57,135,229,0.14);
+  --chip-real: #173a17; --chip-real-ink: #a6e3a6;
+  --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8;
+  --chip-ill: #3d300c; --chip-ill-ink: #f1d995;
+  --warn-bg: #2e2610; --warn-border: #7a6420;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink-1);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 4px; }
+h2 { font-size: 1.3rem; margin: 40px 0 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+p { margin: 0 0 12px; color: var(--ink-2); max-width: 76ch; }
+.sub { color: var(--ink-2); margin: 0 0 16px; }
+.meta { color: var(--ink-3); font-size: .85rem; }
+.banner { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px;
+  padding: 12px 16px; margin: 16px 0 24px; color: var(--ink-1); }
+.banner b { display: block; margin-bottom: 2px; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 12px 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.tile .k { font-size: .78rem; color: var(--ink-2); }
+.tile .v { font-size: 1.45rem; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.tile .n { font-size: .76rem; color: var(--ink-3); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; font-size: .8rem; }
+td.num, th.num { text-align: right; }
+tr.total td { font-weight: 650; }
+.table-wrap { overflow-x: auto; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .03em; border-radius: 999px; padding: 1px 8px; }
+.chip.REAL { background: var(--chip-real); color: var(--chip-real-ink); }
+.chip.SYNTHETIC { background: var(--chip-syn); color: var(--chip-syn-ink); }
+.chip.ILLUSTRATIVE { background: var(--chip-ill); color: var(--chip-ill-ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .82rem; color: var(--ink-2); margin: 4px 0 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.grid2 .card { margin: 0; }
+.grid2 h4 { margin: 0 0 4px; font-size: .9rem; }
+svg.chart { width: 100%; height: auto; display: block; }
+svg .grid { stroke: var(--grid); stroke-width: 1; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .tick { fill: var(--ink-3); font-size: 11px; }
+svg .axis-label { fill: var(--ink-2); font-size: 11px; }
+svg .seg { stroke: var(--surface-1); stroke-width: 2; }
+svg .hit { fill: transparent; }
+svg .hit:hover { fill: var(--band); }
+svg .dot { stroke: var(--surface-1); stroke-width: 2; }
+svg .line { stroke-width: 2; stroke-linejoin: round; }
+svg .hit-dot { fill: transparent; }
+svg .ref { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .ref-label { fill: var(--ink-2); font-size: 11px; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+svg .band { fill: var(--band); }
+svg .band-ins { fill: var(--band-ins); }
+svg .band-label { fill: var(--ink-3); font-size: 9.5px; }
+details summary { cursor: pointer; color: var(--ink-2); font-weight: 600; margin: 8px 0; }
+code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .84em; }
+.formula { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+  white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; font-size: .82rem; color: var(--ink-1); }
+.hash { word-break: break-all; color: var(--ink-3); }
+@media print { body { background: #fff; } .card, .tile { break-inside: avoid; } details { display: block; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="meta">AgroShield &middot; Layer B pricing and backtest &middot; index {{ r.index_version }}</div>
+  <h1>{{ r.ward.name }}</h1>
+  <p class="sub">{{ m.pilot.county }} County &middot; {{ m.pilot.crop | capitalize }} &middot;
+    {% for s in seasons %}{{ s.s.season_label }}{% if not loop.last %} and {% endif %}{% endfor %}
+    &middot; run <span class="mono">{{ m.run_id }}</span> &middot; {{ m.created_at }}</p>
+
+  <div class="banner">
+    <b>Illustrative pricing. Not a filed product and not for sale.</b>
+    The ward location, crop calendar, trigger levels, loadings and sum insured are placeholders, and
+    yields are synthetic. Treat every figure here as a demonstration of the method until the inputs
+    marked ILLUSTRATIVE or SYNTHETIC below are replaced.
+  </div>
+
+  <h2 style="border-top:0;margin-top:8px">Inputs and where they came from</h2>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Input</th><th>Status</th><th>Source</th><th>Note</th></tr>
+      {% for p in r.provenance %}
+      <tr><td>{{ p.input }}</td><td><span class="chip {{ p.label }}">{{ p.label }}</span></td>
+        <td>{{ p.source }}</td><td>{{ p.note if p.note is defined else p.caveat if p.caveat is defined else "" }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h2>Rainfall at this ward</h2>
+  <p>Average daily rainfall over {{ m.history.start_year }}&ndash;{{ m.history.end_year }}
+    (about {{ r.rainfall_annual_mean_mm | mm }} a year), with each season's crop phases shaded for the
+    {{ seasons[0].s.calendar.example_year }} calendar. Darker bands are the phases the index insures:
+    G germination, V vegetative, F flowering, GF grain fill; M maturity is not insured.</p>
+  <div class="card">{{ ward_charts.climatology | safe }}</div>
+
+  {% for item in seasons %}{% set s = item.s %}{% set c = item.charts %}{% set b = s.burn_cost %}{% set pr = s.premium %}
+  <h2>{{ s.season_label }} ({{ s.season }})</h2>
+  <p>Planted around {{ s.calendar.planting_date }} (window {{ s.calendar.planting_window.start }} to
+    {{ s.calendar.planting_window.end }}). Priced on {{ b.seasons }} seasons, {{ b.first_year }}&ndash;{{ b.last_year }}.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="k">Seasons with a payout</div><div class="v">{{ b.payout_frequency | pct(0) }}</div>
+      <div class="n">{{ b.payout_seasons }} of {{ b.seasons }}</div></div>
+    <div class="tile"><div class="k">Expected loss</div><div class="v">{{ b.expected_loss | pct }}</div>
+      <div class="n">of sum insured, per season</div></div>
+    <div class="tile"><div class="k">1-in-10 season loss</div><div class="v">{{ b.loss_1_in_10 | pct }}</div>
+      <div class="n">90th percentile</div></div>
+    <div class="tile"><div class="k">1-in-20 season loss</div><div class="v">{{ b.loss_1_in_20 | pct }}</div>
+      <div class="n">95th percentile, few seasons</div></div>
+    <div class="tile"><div class="k">Gross premium rate</div><div class="v">{{ pr.gross_rate | pct }}</div>
+      <div class="n">of sum insured</div></div>
+    {% for o in pr.per_acre %}{% if o.sum_insured_kes_per_acre == pr.default_sum_insured_kes_per_acre %}
+    <div class="tile"><div class="k">Gross premium per acre</div><div class="v">{{ o.gross_premium_kes | kes }}</div>
+      <div class="n">at {{ o.sum_insured_kes_per_acre | kes }} sum insured</div></div>
+    {% endif %}{% endfor %}
+  </div>
+
+  <h3>Index terms</h3>
+  <p>Each phase pays nothing while its rainfall stays at or above the trigger, pays linearly between trigger and
+    exit, and pays its full weight at or below the exit. Phase rainfall counts days of at least
+    {{ r.daily_min_mm }} mm and caps any day at {{ r.daily_cap_mm }} mm.</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Phase</th><th>Dates ({{ s.calendar.example_year }})</th><th class="num">Weight</th>
+        <th class="num">Trigger</th><th class="num">Exit</th><th class="num">Mean rain</th><th class="num">Driest</th><th>Level basis</th></tr>
+      {% for w in s.calendar.example_windows %}{% set t = s.terms.get(w.phase) %}
+      <tr><td>{{ w.phase | pretty }}</td><td>{{ w.start }} to {{ w.end }}</td>
+        {% if t %}<td class="num">{{ t.weight | pct(0) }}</td><td class="num">{{ t.trigger_mm }} mm</td><td class="num">{{ t.exit_mm }} mm</td>
+        <td class="num">{{ s.rainfall_by_phase[w.phase].mean_mm | mm }}</td><td class="num">{{ s.rainfall_by_phase[w.phase].min_mm | mm }}</td>
+        <td>{{ t.trigger_basis }} / {{ t.exit_basis }}</td>
+        {% else %}<td class="num" colspan="5" style="text-align:left;color:var(--ink-3)">Not insured</td><td></td>{% endif %}</tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h3>Historical payouts</h3>
+  <p>The index applied to every past season. Each bar is split by the phase that triggered it; hover a bar for the detail.</p>
+  <div class="card">
+    <div class="legend">{% for p in s.terms %}<span><i style="background:{{ phase_colors[p] }}"></i>{{ p | pretty }}</span>{% endfor %}</div>
+    {{ c.payouts | safe }}
+  </div>
+
+  <h3>Phase rainfall against the trigger and exit</h3>
+  <p>One dot per season. Orange dots fell below the trigger and paid something for that phase.</p>
+  <div class="grid2">
+    {% for p, svg in c.phases.items() %}
+    <div class="card"><h4>{{ p | pretty }} (weight {{ s.terms[p].weight | pct(0) }})</h4>{{ svg | safe }}</div>
+    {% endfor %}
+  </div>
+
+  <h3>Premium build-up</h3>
+  <p>Gross premium = (expected loss + risk margin) / (1 &minus; loadings), with loadings set as shares of gross.
+    Risk margin method: {{ pr.risk_margin_method.method }} &times; {{ pr.risk_margin_method.factor }}.
+    Government subsidy and the Resilience discount come later (milestone 4) and reduce only the farmer's share.</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Component</th><th class="num">Rate of sum insured</th>
+        {% for o in pr.per_acre %}<th class="num">At {{ o.sum_insured_kes_per_acre | kes }}/acre</th>{% endfor %}</tr>
+      <tr><td>Expected loss (burn cost)</td><td class="num">{{ pr.expected_loss_rate | pct(2) }}</td>
+        {% for o in pr.per_acre %}<td class="num">{{ o.expected_loss_kes | kes }}</td>{% endfor %}</tr>
+      <tr><td>Risk margin</td><td class="num">{{ pr.risk_margin_rate | pct(2) }}</td>
+        {% for o in pr.per_acre %}<td class="num">{{ o.risk_margin_kes | kes }}</td>{% endfor %}</tr>
+      {% for k, v in pr.loadings_rate.items() %}
+      <tr><td>{{ k | pretty }} ({{ pr.loadings_share_of_gross[k] | pct(0) }} of gross)</td><td class="num">{{ v | pct(2) }}</td>
+        {% for o in pr.per_acre %}<td class="num">{{ o.loadings_kes[k] | kes }}</td>{% endfor %}</tr>
+      {% endfor %}
+      <tr class="total"><td>Gross premium</td><td class="num">{{ pr.gross_rate | pct(2) }}</td>
+        {% for o in pr.per_acre %}<td class="num">{{ o.gross_premium_kes | kes }}</td>{% endfor %}</tr>
+    </table>
+    <p class="meta" style="margin:8px 0 0">Expected loss is {{ pr.loss_ratio_at_gross | pct(0) }} of the gross premium.</p>
+  </div>
+
+  <h3>How the price moves with the trigger</h3>
+  <p>Every phase trigger re-set to the percentile shown, exits unchanged. This is the main lever to agree with the
+    underwriter; real yields are needed to see what each choice does to basis risk.</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">Trigger percentile</th><th class="num">Seasons paying</th><th class="num">Expected loss</th>
+        <th class="num">1-in-10 loss</th><th class="num">Gross rate</th></tr>
+      {% for row in s.trigger_sensitivity %}
+      <tr><td class="num">P{{ row.trigger_percentile }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
+        <td class="num">{{ row.expected_loss | pct(1) }}</td><td class="num">{{ row.loss_1_in_10 | pct(1) }}</td>
+        <td class="num">{{ row.gross_rate | pct(1) }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h3>Backtest against yields <span class="chip SYNTHETIC">SYNTHETIC YIELDS</span></h3>
+  {% set bt = s.backtest %}
+  {% if bt.available %}
+  <p>No real ward yield history is available yet, so these yields come from a crop water-stress model run on the
+    same rainfall. They agree with the index more than real yields would, so read this section as a check that the
+    calculation works, not as evidence about basis risk.</p>
+  <div class="tiles">
+    <div class="tile"><div class="k">Rank correlation</div><div class="v">{{ "%.2f" | format(bt.spearman_payout_vs_yield_loss.r) if bt.spearman_payout_vs_yield_loss else "n/a" }}</div>
+      <div class="n">payout vs yield shortfall (Spearman)</div></div>
+    <div class="tile"><div class="k">Basis-risk rate</div><div class="v">{{ bt.basis_risk_rate | pct(0) }}</div>
+      <div class="n">{{ bt.bad_not_paid }} of {{ bt.bad_seasons }} bad seasons unpaid</div></div>
+    <div class="tile"><div class="k">False payout rate</div><div class="v">{{ bt.false_payout_rate | pct(0) }}</div>
+      <div class="n">{{ bt.paid_not_bad }} of {{ bt.paid_seasons }} paid seasons were fine</div></div>
+  </div>
+  <div class="card">
+    <div class="legend">{% for l in c.scatter_legend %}<span><i style="background:{{ l.color }}"></i>{{ l.label }}</span>{% endfor %}</div>
+    {{ c.scatter | safe }}
+    <p class="meta" style="margin:8px 0 0">Bad season: yield below {{ m.backtest_settings.bad_yield_threshold | pct(0) }} of the median
+      ({{ "%.2f" | format(bt.bad_season_cutoff_t_per_ha) }} t/ha). Paid: payout of at least {{ m.backtest_settings.meaningful_payout | pct(0) }} of sum insured
+      (vertical line).{% if bt.basis_risk_years %} Basis-risk seasons: {{ bt.basis_risk_years | join(", ") }}.{% endif %}</p>
+  </div>
+  {% else %}
+  <p>Backtest unavailable: {{ bt.reason }}</p>
+  {% endif %}
+
+  <details>
+    <summary>Season-by-season table ({{ b.seasons }} seasons)</summary>
+    <div class="card table-wrap">
+      <table>
+        <tr><th>Year</th>{% for p in s.terms %}<th class="num">{{ p | pretty }} mm</th>{% endfor %}
+          <th class="num">Payout</th><th class="num">Yield t/ha (SYNTHETIC)</th></tr>
+        {% for h in s.history %}
+        <tr><td>{{ h.year }}</td>{% for p in s.terms %}<td class="num">{{ h["rain_" ~ p] }}</td>{% endfor %}
+          <td class="num">{{ h.payout_frac | pct }}</td><td class="num">{{ "%.2f" | format(h.yield_t_per_ha) }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </details>
+  {% endfor %}
+
+  {% if seasons | length > 0 %}
+  <h2>Loss exceedance</h2>
+  <p>How often a season pays at least a given amount, read straight from the history. Steep tails mean a few
+    severe seasons drive the price.</p>
+  <div class="card">
+    {% if ward_charts.exceedance_legend | length > 1 %}<div class="legend">{% for l in ward_charts.exceedance_legend %}<span><i style="background:{{ l.color }}"></i>{{ l.label }}</span>{% endfor %}</div>{% endif %}
+    {{ ward_charts.exceedance | safe }}
+  </div>
+  {% endif %}
+
+  <h2>Method</h2>
+  <div class="formula">Phase rainfall   R_p = sum of daily rain in phase p (days &lt; {{ r.daily_min_mm }} mm count 0, days capped at {{ r.daily_cap_mm }} mm)
+Phase payout     f_p = clip((trigger_p - R_p) / (trigger_p - exit_p), 0, 1)
+Season payout    P   = sum_p weight_p * f_p                    (share of sum insured, at most 1)
+Burn cost        expected loss = mean P over all seasons; 1-in-10 = 90th pct; 1-in-20 = 95th pct
+Gross premium    (expected loss + risk margin) / (1 - sum of loadings)</div>
+  <p style="margin-top:12px">Percentile levels are resolved from this ward's own seasons over
+    {{ r.calibration.start_year }}&ndash;{{ r.calibration.end_year }}. Because that window overlaps the backtest, the triggers are
+    fitted in-sample; hold out recent years in <code>product.yaml</code> to test out of sample. CHIRPS daily values are disaggregated
+    from five-day totals, so the index only ever uses multi-week phase sums.</p>
+
+  <h2>Reproduce this run</h2>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Command</th><td class="mono">{{ m.command }}</td></tr>
+      <tr><th>Run id</th><td class="mono">{{ m.run_id }}</td></tr>
+      <tr><th>Code version</th><td class="mono">agroshield {{ m.package_version }}, git {{ m.git.commit }}{% if m.git.dirty %} (uncommitted changes){% endif %}</td></tr>
+      <tr><th>Index version</th><td class="mono">{{ r.index_version }}</td></tr>
+      {% for f, h in m.config_sha256.items() %}<tr><th>config/{{ f }}</th><td class="mono hash">{{ h }}</td></tr>{% endfor %}
+      <tr><th>Rainfall input</th><td class="mono hash">{{ m.rainfall.get("cache_file", m.rainfall.source) }} {{ m.rainfall.get("sha256") or "" }}</td></tr>
+      <tr><th>Results file</th><td class="mono hash">results.json {{ m.results_sha256 }}</td></tr>
+    </table>
+  </div>
+  <p class="meta">Generated by agroshield-price. Same inputs and config produce an identical results.json.</p>
+</main>
+</body>
+</html>
