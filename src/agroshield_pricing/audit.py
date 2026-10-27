@@ -56,5 +56,5 @@ def append_audit_log(runs_dir: Path, manifest: dict) -> None:
             "git", "config_sha256", "results_sha256")
     line = {k: manifest.get(k) for k in keep}
     line["rainfall_sha256"] = manifest.get("rainfall", {}).get("sha256")
-    with (runs_dir / "audit_log.jsonl").open("a", encoding="utf-8") as f:
+    with (runs_dir / "audit_log.jsonl").open("a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(line, sort_keys=True) + "\n")

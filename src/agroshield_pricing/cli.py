@@ -53,7 +53,7 @@ def cmd_run(args) -> int:
             "results_sha256": sha256_file(results_path),
         }
         write_json(out / "manifest.json", manifest)
-        (out / "report.html").write_text(render_html(result, manifest), encoding="utf-8")
+        (out / "report.html").write_text(render_html(result, manifest), encoding="utf-8", newline="\n")
         append_audit_log(runs_dir, manifest)
 
         print(f"\n{result.summary['ward']['name']}  [{run_id}]")

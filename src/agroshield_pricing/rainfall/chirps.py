@@ -128,7 +128,7 @@ class ChirpsClimateServSource(RainfallSource):
             "start_year": start_year, "end_year": end_year,
             "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "sha256": hashlib.sha256(csv.read_bytes()).hexdigest(),
-        }, indent=2) + "\n")
+        }, indent=2) + "\n", newline="\n")
         return csv
 
     def daily(self, ward: Ward, start_year: int, end_year: int) -> pd.Series:

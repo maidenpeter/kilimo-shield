@@ -40,3 +40,7 @@ def test_cli_run_writes_report_manifest_and_audit_log(cfg, tmp_path):
     assert manifest["config_sha256"] == cfg.file_hashes
     log = (tmp_path / "audit_log.jsonl").read_text().strip().splitlines()
     assert json.loads(log[-1])["run_id"] == manifest["run_id"]
+    # Hashed outputs must be byte-identical on every OS: LF only.
+    for name in ("results.json", "manifest.json", "report.html"):
+        assert b"\r\n" not in (run_dir / name).read_bytes(), name
+    assert b"\r\n" not in (tmp_path / "audit_log.jsonl").read_bytes()

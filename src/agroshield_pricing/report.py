@@ -124,4 +124,5 @@ def render_html(result: WardResult, manifest: dict) -> str:
 
 
 def write_json(path: Path, obj) -> None:
-    path.write_text(json.dumps(obj, indent=2, default=str) + "\n", encoding="utf-8")
+    # newline="\n": the file is hashed into the manifest, so it must not depend on the OS.
+    path.write_text(json.dumps(obj, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
