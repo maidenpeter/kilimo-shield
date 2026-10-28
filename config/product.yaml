@@ -122,11 +122,16 @@ layer_a:
   voucher_kes_per_acre: 2000
   sensitivity_thresholds: [0.35, 0.40, 0.45, 0.50, 0.55, 0.60]
 
-# SYNTHETIC seasonal forecast, used until KMD / ICPAC hindcasts are available [ASK].
-# It is generated from the observed rainfall with a set skill (correlation), so
-# it shows what a forecast of that skill would cost and catch; it is not a forecast.
+# SYNTHETIC seasonal forecast with MEASURED skill. It is generated from the
+# observed rainfall with the correlation the real C3S hindcast achieved, so it
+# prices what a forecast of that skill would cost and catch over 1981-2025; it is
+# not a forecast. Operationally, Layer A would trigger on the real outlook.
 synthetic_forecast:
-  skill_correlation: {LR: 0.45}   # placeholder; real skill comes from hindcasts
+  # Measured (research 3b, 2026-10-28): C3S ECMWF SEAS5.1 hindcast ensemble-mean
+  # correlation with Ward A's CHIRPS March-May rain, 1981-2016, r = 0.33 (95% CI
+  # 0.00 to 0.59). Replaces the 0.45 placeholder, which was unrealistic for MAM.
+  # GHACOF showed no MAM skill at the wards. See docs/research/3b-forecast-skill.html.
+  skill_correlation: {LR: 0.33}
   skill_sweep: [0.0, 0.2, 0.4, 0.6, 0.8]
   draws: 2000                     # Monte Carlo draws of the 45-season history
   seed: 20261028

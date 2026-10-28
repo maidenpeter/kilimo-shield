@@ -1,0 +1,612 @@
+{
+ "check_day": 35,
+ "trigger_wrsi": 80.0,
+ "wards": {
+  "ward-a": {
+   "available": true,
+   "seasons": 25,
+   "years": [
+    2000,
+    2025
+   ],
+   "actual_below_trigger_seasons": 7,
+   "corr_projected_vs_actual": 0.581548123416527,
+   "corr_no_forecast_vs_actual": 0.34794776839634317,
+   "with_gefs": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "no_forecast": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "early_payout_share": 0.2,
+   "expected_cost_kes_per_acre": 0.0,
+   "gross_kes_per_acre": 0.0,
+   "history": [
+    {
+     "year": 2000,
+     "sos": "Apr d2 2000",
+     "gefs_15day_mm": 0.8,
+     "projected_wrsi": 82.92,
+     "projected_wrsi_no_forecast": 90.78,
+     "actual_wrsi": 72.99,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2001,
+     "sos": "Mar d1 2001",
+     "gefs_15day_mm": 23.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 88.63,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2002,
+     "sos": "Apr d2 2002",
+     "gefs_15day_mm": 12.1,
+     "projected_wrsi": 93.34,
+     "projected_wrsi_no_forecast": 99.92,
+     "actual_wrsi": 69.75,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2003,
+     "sos": "Mar d3 2003",
+     "gefs_15day_mm": 172.9,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 95.98,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2004,
+     "sos": "Mar d3 2004",
+     "gefs_15day_mm": 157.7,
+     "projected_wrsi": 99.28,
+     "projected_wrsi_no_forecast": 99.28,
+     "actual_wrsi": 65.66,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2005,
+     "sos": "Mar d2 2005",
+     "gefs_15day_mm": 84.5,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.19,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2006,
+     "sos": "Mar d1 2006",
+     "gefs_15day_mm": 135.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 91.94,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2007,
+     "sos": "Apr d2 2007",
+     "gefs_15day_mm": 35.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2008,
+     "sos": "Mar d3 2008",
+     "gefs_15day_mm": 15.0,
+     "projected_wrsi": 92.27,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 67.58,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2009,
+     "sos": "Mar d3 2009",
+     "gefs_15day_mm": 5.0,
+     "projected_wrsi": 81.91,
+     "projected_wrsi_no_forecast": 98.38,
+     "actual_wrsi": 76.29,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2010,
+     "sos": "Mar d1 2010",
+     "gefs_15day_mm": 49.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2011,
+     "sos": "Mar d2 2011",
+     "gefs_15day_mm": 26.8,
+     "projected_wrsi": 97.71,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.71,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2012,
+     "sos": "Apr d1 2012",
+     "gefs_15day_mm": 114.6,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2013,
+     "sos": "Mar d2 2013",
+     "gefs_15day_mm": 68.3,
+     "projected_wrsi": 99.39,
+     "projected_wrsi_no_forecast": 99.39,
+     "actual_wrsi": 99.39,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2014,
+     "sos": "Mar d2 2014",
+     "gefs_15day_mm": 75.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 78.2,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2015,
+     "sos": "Apr d1 2015",
+     "gefs_15day_mm": 141.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 92.26,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2016,
+     "sos": "Apr d1 2016",
+     "gefs_15day_mm": 178.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 99.16,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2017,
+     "sos": "Mar d3 2017",
+     "gefs_15day_mm": 106.0,
+     "projected_wrsi": 99.26,
+     "projected_wrsi_no_forecast": 99.26,
+     "actual_wrsi": 87.55,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2018,
+     "sos": "Mar d1 2018",
+     "gefs_15day_mm": 147.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2019,
+     "sos": "Apr d3 2019",
+     "gefs_15day_mm": 59.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2021,
+     "sos": "Mar d3 2021",
+     "gefs_15day_mm": 70.8,
+     "projected_wrsi": 99.71,
+     "projected_wrsi_no_forecast": 99.71,
+     "actual_wrsi": 99.71,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2022,
+     "sos": "Apr d2 2022",
+     "gefs_15day_mm": 49.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 78.83,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2023,
+     "sos": "Mar d2 2023",
+     "gefs_15day_mm": 100.9,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 92.89,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2024,
+     "sos": "Mar d3 2024",
+     "gefs_15day_mm": 177.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 98.07,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2025,
+     "sos": "Mar d1 2025",
+     "gefs_15day_mm": 127.2,
+     "projected_wrsi": 99.01,
+     "projected_wrsi_no_forecast": 99.01,
+     "actual_wrsi": 99.01,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    }
+   ]
+  },
+  "ward-b": {
+   "available": true,
+   "seasons": 25,
+   "years": [
+    2000,
+    2025
+   ],
+   "actual_below_trigger_seasons": 1,
+   "corr_projected_vs_actual": 0.3957856000698962,
+   "corr_no_forecast_vs_actual": 0.3957856000698962,
+   "with_gefs": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "no_forecast": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "early_payout_share": 0.2,
+   "expected_cost_kes_per_acre": 0.0,
+   "gross_kes_per_acre": 0.0,
+   "history": [
+    {
+     "year": 2000,
+     "sos": "Mar d3 2000",
+     "gefs_15day_mm": 162.7,
+     "projected_wrsi": 97.17,
+     "projected_wrsi_no_forecast": 97.17,
+     "actual_wrsi": 92.21,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2001,
+     "sos": "Mar d1 2001",
+     "gefs_15day_mm": 43.3,
+     "projected_wrsi": 98.05,
+     "projected_wrsi_no_forecast": 98.05,
+     "actual_wrsi": 98.05,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2002,
+     "sos": "Apr d2 2002",
+     "gefs_15day_mm": 27.6,
+     "projected_wrsi": 99.6,
+     "projected_wrsi_no_forecast": 99.6,
+     "actual_wrsi": 87.6,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2003,
+     "sos": "Mar d3 2003",
+     "gefs_15day_mm": 217.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2004,
+     "sos": "Mar d2 2004",
+     "gefs_15day_mm": 92.4,
+     "projected_wrsi": 99.64,
+     "projected_wrsi_no_forecast": 99.64,
+     "actual_wrsi": 82.74,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2005,
+     "sos": "Mar d2 2005",
+     "gefs_15day_mm": 99.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2006,
+     "sos": "Mar d1 2006",
+     "gefs_15day_mm": 147.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 99.33,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2007,
+     "sos": "Apr d2 2007",
+     "gefs_15day_mm": 46.0,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2008,
+     "sos": "Mar d3 2008",
+     "gefs_15day_mm": 0.0,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2009,
+     "sos": "Mar d3 2009",
+     "gefs_15day_mm": 0.0,
+     "projected_wrsi": 98.67,
+     "projected_wrsi_no_forecast": 98.67,
+     "actual_wrsi": 74.79,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2010,
+     "sos": "Mar d1 2010",
+     "gefs_15day_mm": 70.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2011,
+     "sos": "Mar d2 2011",
+     "gefs_15day_mm": 28.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2012,
+     "sos": "Apr d1 2012",
+     "gefs_15day_mm": 128.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2013,
+     "sos": "Mar d2 2013",
+     "gefs_15day_mm": 73.6,
+     "projected_wrsi": 99.31,
+     "projected_wrsi_no_forecast": 99.31,
+     "actual_wrsi": 99.31,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2014,
+     "sos": "Mar d2 2014",
+     "gefs_15day_mm": 96.6,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 99.34,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2015,
+     "sos": "Mar d3 2015",
+     "gefs_15day_mm": 90.8,
+     "projected_wrsi": 98.69,
+     "projected_wrsi_no_forecast": 98.69,
+     "actual_wrsi": 97.92,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2016,
+     "sos": "Apr d1 2016",
+     "gefs_15day_mm": 221.1,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2017,
+     "sos": "Mar d3 2017",
+     "gefs_15day_mm": 140.9,
+     "projected_wrsi": 99.59,
+     "projected_wrsi_no_forecast": 99.59,
+     "actual_wrsi": 96.84,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2018,
+     "sos": "Mar d1 2018",
+     "gefs_15day_mm": 174.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2019,
+     "sos": "Apr d3 2019",
+     "gefs_15day_mm": 72.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2021,
+     "sos": "Mar d3 2021",
+     "gefs_15day_mm": 72.8,
+     "projected_wrsi": 99.97,
+     "projected_wrsi_no_forecast": 99.97,
+     "actual_wrsi": 99.97,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2022,
+     "sos": "Mar d3 2022",
+     "gefs_15day_mm": 132.3,
+     "projected_wrsi": 99.67,
+     "projected_wrsi_no_forecast": 99.67,
+     "actual_wrsi": 99.67,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2023,
+     "sos": "Mar d2 2023",
+     "gefs_15day_mm": 116.0,
+     "projected_wrsi": 99.97,
+     "projected_wrsi_no_forecast": 99.97,
+     "actual_wrsi": 98.73,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2024,
+     "sos": "Mar d3 2024",
+     "gefs_15day_mm": 194.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2025,
+     "sos": "Mar d1 2025",
+     "gefs_15day_mm": 129.3,
+     "projected_wrsi": 98.76,
+     "projected_wrsi_no_forecast": 98.76,
+     "actual_wrsi": 98.76,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    }
+   ]
+  }
+ }
+}

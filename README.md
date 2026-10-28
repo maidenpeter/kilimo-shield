@@ -6,9 +6,11 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1-4 of 10 (quote API added in milestone 4). Layer B is a seasonal WRSI index (v1.1) with
-failed-onset and germination dry-spell triggers; the superseded per-phase index (v0) is
-kept for comparison only. Layer A (anticipatory seed voucher) runs on a synthetic forecast.
+**Status:** milestones 1-4 of 10 (quote API added in milestone 4) and research task 3b.
+Layer B is a seasonal WRSI index (B-1.2.0) with failed-onset and germination dry-spell
+triggers; the superseded per-phase index (v0) is kept for comparison only. Layer A
+(anticipatory seed voucher, Ward A only) runs on a synthetic forecast at the skill
+measured from C3S hindcasts.
 Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
 levels, loadings and sum insured are placeholders. Rainfall is real (CHIRPS); PET is a
 flagged fallback (Hargreaves from NASA POWER temperature).
@@ -106,6 +108,24 @@ irrigation only the highest item counts. Subsidy terms, the cap and the points a
 ILLUSTRATIVE pending KAIP and the underwriter. Layer A can be quoted only where it is
 offered (Ward A). `POST /v1/quotes` takes everything in the request body and logs each
 quote to `var/audit/quotes.jsonl`; quotes carry no personal data.
+
+## Research (task 3b: forecast skill)
+
+`research/` holds analysis that informs the product but is not part of the pricing
+package. Run in order:
+
+```bash
+.venv/Scripts/python research/fetch_data.py          # C3S hindcasts, GHACOF outlooks, eastern Kenya CHIRPS
+.venv/Scripts/python research/fetch_data.py c3s-neighbours
+.venv/Scripts/python research/early_trigger.py       # CHIRPS-GEFS at each check day + prototype
+.venv/Scripts/python research/report_3b.py           # -> docs/research/3b-forecast-skill.html
+```
+
+Sources: C3S ECMWF SEAS5.1 hindcasts through the IRI Data Library (download URLs need no
+login), GHACOF consensus outlooks from the ICPAC geoportal (GeoServer WFS point queries),
+CHIRPS-GEFS 15-day forecasts from the Climate Hazards Center (byte-range reads of 9
+pixels per file), CHIRPS monthly from IRI. Inputs are cached in `data/raw/research/`
+with URLs and checksums.
 
 ## Validation status
 

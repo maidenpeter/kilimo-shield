@@ -1,0 +1,8 @@
+{
+  "url": "https://geoportal.icpac.net/geoserver/ows",
+  "retrieved_at": "2026-10-28T18:42:10+00:00",
+  "sha256": "f1275a33677449556309f69cbc9de752f135f90c8908a8939ddd9886d8390083",
+  "bytes": 48187,
+  "layers": 40,
+  "query": "WFS point INTERSECTS per ward"
+}

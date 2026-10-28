@@ -21,6 +21,7 @@ runs/*
 # Operational data (quote audit log etc.) and large re-fetchable research inputs
 var/
 data/raw/research/chirps_monthly_eastern_kenya.nc
+data/raw/research/chirps_monthly_eastern_kenya.npz
 
 # Editors / OS
 .vscode/

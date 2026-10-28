@@ -414,8 +414,9 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <p>Before planting, if the seasonal outlook gives at least a {{ la.terms.trigger_prob_below_normal | pct(0) }} chance of below-normal
     rain over {% for mth in la.forecast.months %}{{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mth - 1] }}{% if not loop.last %}&ndash;{% endif %}{% endfor %},
     insured farmers get a {{ la.terms.voucher_kes_per_acre | kes }}-per-acre voucher for drought-tolerant certified seed through their SACCO.
-    The forecast here is <b>synthetic</b>, with skill {{ la.forecast.skill_correlation | num(2) }} (its correlation with the observed rain),
-    generated from what actually fell. It shows what a forecast of that skill would cost and catch; it is not a forecast.
+    The forecast here is <b>synthetic</b>, generated from what actually fell at skill {{ la.forecast.skill_correlation | num(2) }}: the correlation
+    the real C3S SEAS5.1 hindcast achieved for this ward's March&ndash;May rain over 1981&ndash;2016 (research 3b). It prices what a forecast
+    of that skill would cost and catch; it is not a forecast.
     Each run is one possible {{ la.seasons }}-season hindcast, so figures are medians over {{ la.forecast.draws | num }} draws,
     with the 5&ndash;95% range in brackets.</p>
   <div class="tiles">

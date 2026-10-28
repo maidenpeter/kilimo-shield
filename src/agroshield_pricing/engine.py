@@ -419,7 +419,7 @@ def provenance_block(cfg: Config, ward_id: str, rain_source: RainfallSource, pet
                                            {"note": "EXPERIMENTAL; " + ("in the product." if cfg.product.layer_b.flowering.enabled
                                                                         else "off, shown for comparison only.")})),
         ("Seasonal forecast (Layer A)", Provenance(Label.SYNTHETIC, "agroshield synthetic tercile forecast",
-                                                   {"note": "Set skill, generated from observed rainfall; awaiting KMD / ICPAC hindcasts."})),
+                                                   {"note": "Generated from observed rainfall at the skill measured from C3S SEAS5.1 hindcasts (research 3b)."})),
         ("Layer A trigger and voucher value", Provenance(ill(cfg.product.illustrative), "config/product.yaml",
                                                          {"note": "Probability threshold and voucher KES per acre are placeholders."})),
         ("Target payout frequency", Provenance(Label.ILLUSTRATIVE, "config/product.yaml",

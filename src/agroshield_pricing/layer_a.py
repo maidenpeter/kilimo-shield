@@ -159,8 +159,8 @@ def run_layer_a(cfg: Config, ward_id: str, season: str, rain_daily: pd.Series,
         "forecast": {"months": la.forecast_months[season], "issue_month": la.issue_month[season],
                      "skill_correlation": rho, "draws": sf.draws,
                      "provenance": Provenance(Label.SYNTHETIC, "agroshield synthetic tercile forecast",
-                                              {"note": "Generated from observed rainfall with a set skill. Not a forecast; "
-                                                       "replace with KMD / ICPAC hindcasts."}).to_dict()},
+                                              {"note": "Generated from observed rainfall at the configured skill (measured "
+                                                       "from C3S hindcasts in research 3b). Not a forecast."}).to_dict()},
         "terms": {"trigger_prob_below_normal": thr, "voucher_kes_per_acre": la.voucher_kes_per_acre},
         "seasons": len(years),
         "events": {"below_normal_rain": int(below.sum()), "layer_b_payout": int(b_pays.sum())},

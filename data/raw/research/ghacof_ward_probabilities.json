@@ -1,0 +1,1826 @@
+[
+ {
+  "pk": "107",
+  "title": "Climate Outlook March to May 1998 (GHACOF-1)",
+  "alternate": "geonode:ghcof_1",
+  "season": "MAM",
+  "year": 1998,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "II",
+    "Above_Norm": 45,
+    "Near_Norm": 35,
+    "Below_Norm": 20,
+    "cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_1&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "107",
+  "title": "Climate Outlook March to May 1998 (GHACOF-1)",
+  "alternate": "geonode:ghcof_1",
+  "season": "MAM",
+  "year": 1998,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "II",
+    "Above_Norm": 45,
+    "Near_Norm": 35,
+    "Below_Norm": 20,
+    "cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_1&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "121",
+  "title": "Climate Outlook March to May 1999 (GHACOF-3)",
+  "alternate": "geonode:ghcof_3",
+  "season": "MAM",
+  "year": 1999,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 6,
+    "Zone": "II",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_3&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "121",
+  "title": "Climate Outlook March to May 1999 (GHACOF-3)",
+  "alternate": "geonode:ghcof_3",
+  "season": "MAM",
+  "year": 1999,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 6,
+    "Zone": "II",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_3&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "127",
+  "title": "Climate Outlook March to May 2000 (GHACOF-5)",
+  "alternate": "geonode:ghcof_5",
+  "season": "MAM",
+  "year": 2000,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "III",
+    "Above_Norm": 30,
+    "Near_Norm": 45,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_5&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "127",
+  "title": "Climate Outlook March to May 2000 (GHACOF-5)",
+  "alternate": "geonode:ghcof_5",
+  "season": "MAM",
+  "year": 2000,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "III",
+    "Above_Norm": 30,
+    "Near_Norm": 45,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_5&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "129",
+  "title": "Climate Outlook March to May 2001 (GHACOF-7)",
+  "alternate": "geonode:ghcof_7",
+  "season": "MAM",
+  "year": 2001,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "IV",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_7&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "129",
+  "title": "Climate Outlook March to May 2001 (GHACOF-7)",
+  "alternate": "geonode:ghcof_7",
+  "season": "MAM",
+  "year": 2001,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "IV",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_7&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "131",
+  "title": "Climate Outlook March to May 2002 (GHACOF-9)",
+  "alternate": "geonode:ghcof_9",
+  "season": "MAM",
+  "year": 2002,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_9&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "131",
+  "title": "Climate Outlook March to May 2002 (GHACOF-9)",
+  "alternate": "geonode:ghcof_9",
+  "season": "MAM",
+  "year": 2002,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_9&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "109",
+  "title": "Climate Outlook March to May 2003 (GHACOF-11)",
+  "alternate": "geonode:ghcof_11",
+  "season": "MAM",
+  "year": 2003,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_11&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "109",
+  "title": "Climate Outlook March to May 2003 (GHACOF-11)",
+  "alternate": "geonode:ghcof_11",
+  "season": "MAM",
+  "year": 2003,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_11&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "111",
+  "title": "Climate Outlook March to May 2004 (GHACOF-13)",
+  "alternate": "geonode:ghcof_13",
+  "season": "MAM",
+  "year": 2004,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_13&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "111",
+  "title": "Climate Outlook March to May 2004 (GHACOF-13)",
+  "alternate": "geonode:ghcof_13",
+  "season": "MAM",
+  "year": 2004,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_13&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "113",
+  "title": "Climate Outlook March to May 2005 (GHACOF-15)",
+  "alternate": "geonode:ghcof_15",
+  "season": "MAM",
+  "year": 2005,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Below Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_15&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "113",
+  "title": "Climate Outlook March to May 2005 (GHACOF-15)",
+  "alternate": "geonode:ghcof_15",
+  "season": "MAM",
+  "year": 2005,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Below Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_15&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "115",
+  "title": "Climate Outlook March to May 2006 (GHACOF-17)",
+  "alternate": "geonode:ghcof_17",
+  "season": "MAM",
+  "year": 2006,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_17&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "115",
+  "title": "Climate Outlook March to May 2006 (GHACOF-17)",
+  "alternate": "geonode:ghcof_17",
+  "season": "MAM",
+  "year": 2006,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_17&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "117",
+  "title": "Climate Outlook March to May 2007 (GHACOF-19)",
+  "alternate": "geonode:ghcof_19",
+  "season": "MAM",
+  "year": 2007,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Zone": "II",
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_19&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "117",
+  "title": "Climate Outlook March to May 2007 (GHACOF-19)",
+  "alternate": "geonode:ghcof_19",
+  "season": "MAM",
+  "year": 2007,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Zone": "II",
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_19&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "120",
+  "title": "Climate Outlook March to May 2008 (GHACOF-21)",
+  "alternate": "geonode:ghcof_21",
+  "season": "MAM",
+  "year": 2008,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_21&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "120",
+  "title": "Climate Outlook March to May 2008 (GHACOF-21)",
+  "alternate": "geonode:ghcof_21",
+  "season": "MAM",
+  "year": 2008,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_21&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "33",
+  "title": "Climate Outlook March to May 2009 (GHACOF-23)",
+  "alternate": "geonode:cof_23",
+  "season": "MAM",
+  "year": 2009,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "II",
+    "Above_Norm": 40,
+    "Near_Norm": 35,
+    "Below_Norm": 25,
+    "Cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_23&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "33",
+  "title": "Climate Outlook March to May 2009 (GHACOF-23)",
+  "alternate": "geonode:cof_23",
+  "season": "MAM",
+  "year": 2009,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "II",
+    "Above_Norm": 40,
+    "Near_Norm": 35,
+    "Below_Norm": 25,
+    "Cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_23&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "35",
+  "title": "Climate Outlook March to May 2010 (GHACOF-25)",
+  "alternate": "geonode:cof_25",
+  "season": "MAM",
+  "year": 2010,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_25&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "35",
+  "title": "Climate Outlook March to May 2010 (GHACOF-25)",
+  "alternate": "geonode:cof_25",
+  "season": "MAM",
+  "year": 2010,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_25&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "36",
+  "title": "Climate Outlook March to May 2011 (GHACOF-27)",
+  "alternate": "geonode:cof_27",
+  "season": "MAM",
+  "year": 2011,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "III",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_27&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "36",
+  "title": "Climate Outlook March to May 2011 (GHACOF-27)",
+  "alternate": "geonode:cof_27",
+  "season": "MAM",
+  "year": 2011,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_27&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "39",
+  "title": "Climate Outlook March to May 2012 (GHACOF-30)",
+  "alternate": "geonode:cof_30",
+  "season": "MAM",
+  "year": 2012,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "VI",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_30&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "39",
+  "title": "Climate Outlook March to May 2012 (GHACOF-30)",
+  "alternate": "geonode:cof_30",
+  "season": "MAM",
+  "year": 2012,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "VI",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_30&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "42",
+  "title": "Climate Outlook March to May 2013 (GHACOF-33)",
+  "alternate": "geonode:cof_33",
+  "season": "MAM",
+  "year": 2013,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Rain_Prob": "35 45 20",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Zone": "II"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_33&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "42",
+  "title": "Climate Outlook March to May 2013 (GHACOF-33)",
+  "alternate": "geonode:cof_33",
+  "season": "MAM",
+  "year": 2013,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Rain_Prob": "35 45 20",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Zone": "II"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_33&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "27",
+  "title": "Climate Outlook March to May 2014 (GHACOF-36)",
+  "alternate": "geonode:cof36",
+  "season": "MAM",
+  "year": 2014,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "OBJECTID": 5,
+    "SHAPE_Leng": 94.2336703721,
+    "SHAPE_Area": 167.224956425,
+    "Zones": "II",
+    "Above_Norm": 35,
+    "Normal": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof36&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "27",
+  "title": "Climate Outlook March to May 2014 (GHACOF-36)",
+  "alternate": "geonode:cof36",
+  "season": "MAM",
+  "year": 2014,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "OBJECTID": 5,
+    "SHAPE_Leng": 94.2336703721,
+    "SHAPE_Area": 167.224956425,
+    "Zones": "II",
+    "Above_Norm": 35,
+    "Normal": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof36&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "30",
+  "title": "Climate Outlook March to May 2015 (GHACOF-39)",
+  "alternate": "geonode:cof39",
+  "season": "MAM",
+  "year": 2015,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "OBJECTID": 4,
+    "SHAPE_Leng": 78.062511258,
+    "SHAPE_Area": 132.040788559,
+    "Zones": "I",
+    "Above_Norm": 35,
+    "Normal": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof39&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "30",
+  "title": "Climate Outlook March to May 2015 (GHACOF-39)",
+  "alternate": "geonode:cof39",
+  "season": "MAM",
+  "year": 2015,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "OBJECTID": 4,
+    "SHAPE_Leng": 78.062511258,
+    "SHAPE_Area": 132.040788559,
+    "Zones": "I",
+    "Above_Norm": 35,
+    "Normal": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof39&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "94",
+  "title": "Climate Outlook March to May 2016 (GHACOF-42)",
+  "alternate": "geonode:ghacof42",
+  "season": "MAM",
+  "year": 2016,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "Above": 25,
+    "Normal": 40,
+    "Below": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof42&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "94",
+  "title": "Climate Outlook March to May 2016 (GHACOF-42)",
+  "alternate": "geonode:ghacof42",
+  "season": "MAM",
+  "year": 2016,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "Above": 35,
+    "Normal": 40,
+    "Below": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof42&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "103",
+  "title": "Climate Outlook March to May 2017 (GHACOF-45)",
+  "alternate": "geonode:ghacof_45",
+  "season": "MAM",
+  "year": 2017,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Label": "Normal",
+    "Probabilit": "35,40,25",
+    "Zones": "II"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof_45&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "103",
+  "title": "Climate Outlook March to May 2017 (GHACOF-45)",
+  "alternate": "geonode:ghacof_45",
+  "season": "MAM",
+  "year": 2017,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Label": "Normal",
+    "Probabilit": "35,40,25",
+    "Zones": "II"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof_45&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "118",
+  "title": "Climate Outlook September to December 1998 (GHACOF-2)",
+  "alternate": "geonode:ghcof_2",
+  "season": "OND",
+  "year": 1998,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "V",
+    "Above_Norm": 25,
+    "Near_Norm": 45,
+    "Below_Norm": 30,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_2&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "118",
+  "title": "Climate Outlook September to December 1998 (GHACOF-2)",
+  "alternate": "geonode:ghcof_2",
+  "season": "OND",
+  "year": 1998,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "V",
+    "Above_Norm": 25,
+    "Near_Norm": 45,
+    "Below_Norm": 30,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_2&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "124",
+  "title": "Climate Outlook September to December 1999 (GHACOF-4)",
+  "alternate": "geonode:ghcof_4",
+  "season": "OND",
+  "year": 1999,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_4&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "124",
+  "title": "Climate Outlook September to December 1999 (GHACOF-4)",
+  "alternate": "geonode:ghcof_4",
+  "season": "OND",
+  "year": 1999,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_4&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "128",
+  "title": "Climate Outlook September to December 2000(GHACOF-6)",
+  "alternate": "geonode:ghcof_6",
+  "season": "OND",
+  "year": 2000,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "IV",
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_6&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "128",
+  "title": "Climate Outlook September to December 2000(GHACOF-6)",
+  "alternate": "geonode:ghcof_6",
+  "season": "OND",
+  "year": 2000,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "IV",
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_6&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "130",
+  "title": "Climate Outlook September to December 2001 (GHACOF-8)",
+  "alternate": "geonode:ghcof_8",
+  "season": "OND",
+  "year": 2001,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_8&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "130",
+  "title": "Climate Outlook September to December 2001 (GHACOF-8)",
+  "alternate": "geonode:ghcof_8",
+  "season": "OND",
+  "year": 2001,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_8&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "108",
+  "title": "Climate Outlook September to December 2002 (GHACOF-10)",
+  "alternate": "geonode:ghcof_10",
+  "season": "OND",
+  "year": 2002,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_10&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "108",
+  "title": "Climate Outlook September to December 2002 (GHACOF-10)",
+  "alternate": "geonode:ghcof_10",
+  "season": "OND",
+  "year": 2002,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_10&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "110",
+  "title": "Climate Outlook September to December 2003 (GHACOF-12)",
+  "alternate": "geonode:ghcof_12",
+  "season": "OND",
+  "year": 2003,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Zone": "II",
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_12&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "110",
+  "title": "Climate Outlook September to December 2003 (GHACOF-12)",
+  "alternate": "geonode:ghcof_12",
+  "season": "OND",
+  "year": 2003,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Zone": "II",
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_12&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "112",
+  "title": "Climate Outlook September to December 2004 (GHACOF-14)",
+  "alternate": "geonode:ghcof_14",
+  "season": "OND",
+  "year": 2004,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_14&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "112",
+  "title": "Climate Outlook September to December 2004 (GHACOF-14)",
+  "alternate": "geonode:ghcof_14",
+  "season": "OND",
+  "year": 2004,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "I",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_14&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "114",
+  "title": "Climate Outlook September to December 2005 (GHACOF-16)",
+  "alternate": "geonode:ghcof_16",
+  "season": "OND",
+  "year": 2005,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "IV",
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_16&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "114",
+  "title": "Climate Outlook September to December 2005 (GHACOF-16)",
+  "alternate": "geonode:ghcof_16",
+  "season": "OND",
+  "year": 2005,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "IV",
+    "Above_Norm": 20,
+    "Near_Norm": 45,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_16&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "116",
+  "title": "Climate Outlook September to December 2006 (GHACOF-18)",
+  "alternate": "geonode:ghcof_18",
+  "season": "OND",
+  "year": 2006,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_18&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "116",
+  "title": "Climate Outlook September to December 2006 (GHACOF-18)",
+  "alternate": "geonode:ghcof_18",
+  "season": "OND",
+  "year": 2006,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 0,
+    "Zone": "II",
+    "Above_Norm": 25,
+    "Near_Norm": 40,
+    "Below_Norm": 35,
+    "Cat": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_18&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "119",
+  "title": "Climate Outlook September to December 2007 (GHACOF-20)",
+  "alternate": "geonode:ghcof_20",
+  "season": "OND",
+  "year": 2007,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 6,
+    "Zone": "IV",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_20&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "119",
+  "title": "Climate Outlook September to December 2007 (GHACOF-20)",
+  "alternate": "geonode:ghcof_20",
+  "season": "OND",
+  "year": 2007,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 6,
+    "Zone": "IV",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_20&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "32",
+  "title": "Climate Outlook September to December 2008 (GHACOF-22)",
+  "alternate": "geonode:cof_22",
+  "season": "OND",
+  "year": 2008,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "IV",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_22&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "32",
+  "title": "Climate Outlook September to December 2008 (GHACOF-22)",
+  "alternate": "geonode:cof_22",
+  "season": "OND",
+  "year": 2008,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "IV",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20,
+    "Cat": "Normal to Above"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_22&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "34",
+  "title": "Climate Outlook September to December 2009 (GHACOF-24)",
+  "alternate": "geonode:cof_24",
+  "season": "OND",
+  "year": 2009,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_24&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "34",
+  "title": "Climate Outlook September to December 2009 (GHACOF-24)",
+  "alternate": "geonode:cof_24",
+  "season": "OND",
+  "year": 2009,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 4,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_24&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "102",
+  "title": "Climate Outlook September to December 2010(GHACOF-26)",
+  "alternate": "geonode:ghacof_26",
+  "season": "OND",
+  "year": 2010,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof_26&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "102",
+  "title": "Climate Outlook September to December 2010(GHACOF-26)",
+  "alternate": "geonode:ghacof_26",
+  "season": "OND",
+  "year": 2010,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 3,
+    "Zone": "II",
+    "Above_Norm": 35,
+    "Near_Norm": 40,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof_26&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "38",
+  "title": "Climate Outlook September to December 2011 (GHACOF-29)",
+  "alternate": "geonode:cof_29",
+  "season": "OND",
+  "year": 2011,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "V",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_29&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "38",
+  "title": "Climate Outlook September to December 2011 (GHACOF-29)",
+  "alternate": "geonode:cof_29",
+  "season": "OND",
+  "year": 2011,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "V",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_29&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "41",
+  "title": "Climate Outlook September to December 2012 (GHACOF-32)",
+  "alternate": "geonode:cof_32",
+  "season": "OND",
+  "year": 2012,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "I",
+    "Above_Norm": 45,
+    "Near_Norm": 35,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_32&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "41",
+  "title": "Climate Outlook September to December 2012 (GHACOF-32)",
+  "alternate": "geonode:cof_32",
+  "season": "OND",
+  "year": 2012,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 1,
+    "Zone": "I",
+    "Above_Norm": 45,
+    "Near_Norm": 35,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof_32&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "123",
+  "title": "Climate Outlook September to December 2013 (GHACOF-35)",
+  "alternate": "geonode:ghcof_35",
+  "season": "OND",
+  "year": 2013,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_35&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "123",
+  "title": "Climate Outlook September to December 2013 (GHACOF-35)",
+  "alternate": "geonode:ghcof_35",
+  "season": "OND",
+  "year": 2013,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "Id": 2,
+    "Zone": "III",
+    "Above_Norm": 35,
+    "Near_Norm": 45,
+    "Below_Norm": 20
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghcof_35&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "29",
+  "title": "Climate Outlook September to December 2014 (GHACOF-38)",
+  "alternate": "geonode:cof38",
+  "season": "OND",
+  "year": 2014,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "OBJECTID": 4,
+    "SHAPE_Leng": 57.5084727197,
+    "SHAPE_Area": 103.30279668,
+    "Zones": "III",
+    "Above_Norm": 40,
+    "Normal": 35,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof38&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "29",
+  "title": "Climate Outlook September to December 2014 (GHACOF-38)",
+  "alternate": "geonode:cof38",
+  "season": "OND",
+  "year": 2014,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "OBJECTID": 4,
+    "SHAPE_Leng": 57.5084727197,
+    "SHAPE_Area": 103.30279668,
+    "Zones": "III",
+    "Above_Norm": 40,
+    "Normal": 35,
+    "Below_Norm": 25
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Acof38&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "93",
+  "title": "Climate Outlook September to December 2015 (GHACOF-41)",
+  "alternate": "geonode:ghacof41_2",
+  "season": "OND",
+  "year": 2015,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "ZONE": "V",
+    "ABOVE_NORM": 35,
+    "NEAR_NORMA": 40,
+    "BELOW_NORM": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof41_2&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "93",
+  "title": "Climate Outlook September to December 2015 (GHACOF-41)",
+  "alternate": "geonode:ghacof41_2",
+  "season": "OND",
+  "year": 2015,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "ZONE": "V",
+    "ABOVE_NORM": 35,
+    "NEAR_NORMA": 40,
+    "BELOW_NORM": 25,
+    "Cat": "Near Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof41_2&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "96",
+  "title": "Climate Outlook September to December 2016 (GHACOF-44)",
+  "alternate": "geonode:ghacof44",
+  "season": "OND",
+  "year": 2016,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "ZONES": "I",
+    "ABOVE_NORM": 40,
+    "NEAR_NORM": 35,
+    "BELOW_NORM": 25,
+    "Cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof44&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "96",
+  "title": "Climate Outlook September to December 2016 (GHACOF-44)",
+  "alternate": "geonode:ghacof44",
+  "season": "OND",
+  "year": 2016,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "ZONES": "I",
+    "ABOVE_NORM": 40,
+    "NEAR_NORM": 35,
+    "BELOW_NORM": 25,
+    "Cat": "Above Normal"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aghacof44&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ },
+ {
+  "pk": "307",
+  "title": "Climate Outlook October to December  2017 (GHACOF-47)",
+  "alternate": "geonode:updated_cof47",
+  "season": "OND",
+  "year": 2017,
+  "ward_id": "ward-a",
+  "point": {
+   "lon": 35.86,
+   "lat": -0.17
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "Above": 25,
+    "Normal": 40,
+    "Below": 35,
+    "Categ": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aupdated_cof47&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.86+-0.17%29%29"
+ },
+ {
+  "pk": "307",
+  "title": "Climate Outlook October to December  2017 (GHACOF-47)",
+  "alternate": "geonode:updated_cof47",
+  "season": "OND",
+  "year": 2017,
+  "ward_id": "ward-b",
+  "point": {
+   "lon": 35.73,
+   "lat": -0.25
+  },
+  "properties": [
+   {
+    "CONTINENT": "Africa",
+    "Above": 25,
+    "Normal": 40,
+    "Below": 35,
+    "Categ": "Normal to Below"
+   }
+  ],
+  "url": "https://geoportal.icpac.net/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=geonode%3Aupdated_cof47&outputFormat=application%2Fjson&CQL_FILTER=INTERSECTS%28the_geom%2C+POINT%2835.73+-0.25%29%29"
+ }
+]

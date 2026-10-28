@@ -1,0 +1,6 @@
+{
+  "url": "https://geoportal.icpac.net/api/v2/resources/?filter%7Btitle.icontains%7D=GHACOF&page_size=200",
+  "retrieved_at": "2026-10-28T18:39:45+00:00",
+  "sha256": "28a38d0120407e106dc03a15ca427efb5b5ea197bc1f5d58ae1c4cf01fe3480c",
+  "bytes": 660142
+}
