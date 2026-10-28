@@ -36,6 +36,20 @@ class RainfallSettings(BaseModel):
     synthetic_seed: int = 0
 
 
+class PetSettings(BaseModel):
+    # hargreaves_nasapower = FAO-56 Hargreaves from NASA POWER temperature (fallback)
+    # synthetic            = labelled seasonal curve, tests only
+    source: Literal["hargreaves_nasapower", "synthetic"]
+    lapse_rate_c_per_km: float = Field(default=6.5, ge=0, le=12)
+
+
+class ValidationSettings(BaseModel):
+    fewsnet_wrsi_dir: str
+    large_gap_wrsi: float = Field(gt=0)
+    fewsnet_status: str = ""
+    yields_dir: str
+
+
 class Pilot(BaseModel):
     county: str
     crop: str
@@ -58,6 +72,8 @@ class Ward(BaseModel):
     centroid: LatLon
     extraction_box_deg: float = Field(gt=0, le=1)
     elevation_m: float | None = None
+    soil_whc_mm: float = Field(gt=0, le=400)   # plant-available water holding capacity
+    soil_illustrative: bool = True
     seasons: list[Season]
     notes: str = ""
 
@@ -80,15 +96,21 @@ def _parse_md(md: str) -> tuple[int, int]:
 
 
 class SeasonCalendar(BaseModel):
-    planting_window: MonthDay
-    planting_date: str
-    phases: list[Phase]
+    planting_window: MonthDay      # v1: dekads searched for the start of season
+    variety: str
+    lgp_days: int = Field(gt=0, le=300)   # length of growing period (v1 WRSI)
+    planting_date: str             # v0 only: fixed planting date
+    phases: list[Phase]            # v0 only: fixed phase lengths
 
     @field_validator("planting_date")
     @classmethod
     def _valid_md(cls, v: str) -> str:
         _parse_md(v)
         return v
+
+    @property
+    def lgp_dekads(self) -> int:
+        return max(1, round(self.lgp_days / 10))
 
     @property
     def planting_month_day(self) -> tuple[int, int]:
@@ -132,7 +154,8 @@ class PhaseOverride(BaseModel):
     exit: Level | None = None
 
 
-class LayerB(BaseModel):
+class LayerBV0(BaseModel):
+    """Superseded per-phase percentile index, kept for side-by-side comparison."""
     version: str
     daily_min_mm: float = Field(ge=0)
     daily_cap_mm: float = Field(gt=0)
@@ -157,6 +180,87 @@ def _check_weights(terms: dict[str, PhaseTerms], where: str) -> None:
     total = sum(t.weight for t in terms.values())
     if abs(total - 1.0) > 1e-9:
         raise ValueError(f"Layer B phase weights must sum to 1, got {total:.4f} ({where})")
+
+
+class KcCurve(BaseModel):
+    points_pct: list[float]
+    values: list[float]
+
+    @model_validator(mode="after")
+    def _shape(self):
+        pts = self.points_pct
+        if len(pts) != len(self.values) or len(pts) < 2:
+            raise ValueError("kc points_pct and values must have the same length (>= 2)")
+        if pts[0] != 0 or pts[-1] != 100 or any(b <= a for a, b in zip(pts, pts[1:])):
+            raise ValueError("kc points_pct must rise strictly from 0 to 100")
+        if any(not 0 < v <= 2 for v in self.values):
+            raise ValueError("kc values must be in (0, 2]")
+        return self
+
+
+class Onset(BaseModel):
+    first_dekad_mm: float = Field(gt=0)
+    next_two_dekads_mm: float = Field(ge=0)
+
+
+class LayerB(BaseModel):
+    """v1: seasonal WRSI index with dynamic start of season."""
+    version: str
+    kc: KcCurve
+    depletion_fraction: float = Field(gt=0, lt=1)
+    spinup_dekads: int = Field(ge=0, le=12)
+    onset: Onset
+    failed_onset_payout: float = Field(ge=0, le=1)
+    trigger_wrsi: float = Field(gt=0, le=100)
+    exit_wrsi: float = Field(ge=0, lt=100)
+    sensitivity_triggers: list[float]
+    sensitivity_whc_mm: list[float] = []
+    overrides: dict[str, dict[Season, "WrsiOverride"]] = {}
+
+    @model_validator(mode="after")
+    def _order(self):
+        if not self.trigger_wrsi > self.exit_wrsi:
+            raise ValueError("layer_b.trigger_wrsi must be above exit_wrsi")
+        if any(t <= self.exit_wrsi or t > 100 for t in self.sensitivity_triggers):
+            raise ValueError("sensitivity triggers must lie between exit_wrsi and 100")
+        return self
+
+    def terms_for(self, ward_id: str, season: Season) -> dict:
+        """Trigger, exit and failed-onset payout for one ward and season."""
+        t = {"trigger_wrsi": self.trigger_wrsi, "exit_wrsi": self.exit_wrsi,
+             "failed_onset_payout": self.failed_onset_payout}
+        ov = self.overrides.get(ward_id, {}).get(season)
+        if ov:
+            t.update({k: v for k, v in ov.model_dump().items() if v is not None})
+        if not t["trigger_wrsi"] > t["exit_wrsi"]:
+            raise ValueError(f"{ward_id} {season}: WRSI trigger must be above exit")
+        return t
+
+
+class WrsiOverride(BaseModel):
+    trigger_wrsi: float | None = Field(default=None, gt=0, le=100)
+    exit_wrsi: float | None = Field(default=None, ge=0, lt=100)
+    failed_onset_payout: float | None = Field(default=None, ge=0, le=1)
+
+
+LayerB.model_rebuild()
+
+
+class Target(BaseModel):
+    # Payout once every N years, as a band (placeholder pending the underwriter).
+    payout_return_period_years: tuple[float, float]
+
+    @property
+    def frequency_band(self) -> tuple[float, float]:
+        lo, hi = sorted(self.payout_return_period_years)
+        return 1 / hi, 1 / lo
+
+
+class EventTest(BaseModel):
+    year: int
+    season: Season
+    min_payout: float = Field(gt=0, le=1)
+    note: str = ""
 
 
 class SumInsured(BaseModel):
@@ -199,31 +303,23 @@ class Backtest(BaseModel):
     meaningful_payout: float = Field(ge=0, lt=1)
 
 
-class SyntheticYield(BaseModel):
-    potential_t_per_ha: float = Field(gt=0)
-    soil_water_capacity_mm: float = Field(gt=0)
-    depletion_fraction: float = Field(gt=0, lt=1)
-    water_need_mm_per_day: dict[str, float]
-    ky: dict[str, float]
-    noise_sd: float = Field(ge=0)
-    shock_probability: float = Field(ge=0, le=1)
-    shock_loss_range: tuple[float, float]
-    seed: int = 0
-
-
 class Product(BaseModel):
     illustrative: bool
     layer_b: LayerB
+    layer_b_v0: LayerBV0
+    target: Target
+    event_tests: list[EventTest] = []
     sum_insured: SumInsured
     premium: Premium
     backtest: Backtest
-    synthetic_yield: SyntheticYield
 
 
 # --------------------------------------------------------------- whole config
 class Config(BaseModel):
     pilot: Pilot
     rainfall: RainfallSettings
+    pet: PetSettings
+    validation: ValidationSettings
     wards: dict[str, Ward]
     phenology: Phenology
     product: Product
@@ -250,10 +346,10 @@ class Config(BaseModel):
             for season in ward.seasons:
                 cal = self.calendar(ward.id, season)
                 names = {p.name for p in cal.phases}
-                missing = set(self.product.layer_b.phases) - names
+                missing = set(self.product.layer_b_v0.phases) - names
                 if missing:
                     raise ValueError(f"{ward.id} {season}: phenology has no phase {sorted(missing)}")
-                self.product.layer_b.terms_for(ward.id, season)  # validates overrides + weights
+                self.product.layer_b_v0.terms_for(ward.id, season)  # validates overrides + weights
         return self
 
 
@@ -268,6 +364,8 @@ def load_config(config_dir: str | Path = "config") -> Config:
     return Config(
         pilot=raw["pilot.yaml"]["pilot"],
         rainfall=raw["pilot.yaml"]["rainfall"],
+        pet=raw["pilot.yaml"]["pet"],
+        validation=raw["pilot.yaml"]["validation"],
         wards=wards,
         phenology=raw["phenology.yaml"],
         product=raw["product.yaml"],

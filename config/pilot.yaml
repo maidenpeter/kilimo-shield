@@ -1,4 +1,4 @@
-# Pilot scope. Switching ward, rainfall source or history window is a config edit only.
+# Pilot scope. Switching ward, data source or history window is a config edit only.
 pilot:
   county: Nakuru
   crop: maize
@@ -15,3 +15,27 @@ rainfall:
     start_year: 1981            # first full year of CHIRPS
     end_year: 2025              # last complete year available
   synthetic_seed: 20261027
+
+pet:
+  # Preferred: FEWS NET daily PET (Penman-Monteith, GDAS, 1.0 deg). It is not
+  # wired in yet: the USGS download server returned 503 on 2026-10-28, and the
+  # GDAS record only starts in 2001, so it cannot drive 1981-2000 on its own.
+  # hargreaves_nasapower = FAO-56 Hargreaves from NASA POWER Tmax/Tmin (FALLBACK,
+  #                        flagged in every output), cached in data/raw/nasapower/
+  # synthetic            = labelled seasonal curve, tests only
+  source: hargreaves_nasapower
+  # Shift POWER temperatures from the grid-cell elevation to the ward's.
+  lapse_rate_c_per_km: 6.5
+
+validation:
+  # USGS / FEWS NET "CHIRPS Croplands WRSI, Apr-Nov long rains, grains" end-of-
+  # season values per ward, as data/raw/fewsnet_wrsi/<ward>_<season>.csv
+  # (columns: year, eos_wrsi). Compared with our WRSI whenever present.
+  fewsnet_wrsi_dir: data/raw/fewsnet_wrsi
+  large_gap_wrsi: 15            # |ours - FEWS NET| at or above this is listed
+  fewsnet_status: >-
+    Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov)
+    returned 503 Service Unavailable when checked on 2026-10-28.
+  # Real ward yields as data/raw/yields/<ward>_<season>.csv (columns: year,
+  # yield_t_per_ha). Basis risk is only reported when this exists.
+  yields_dir: data/raw/yields

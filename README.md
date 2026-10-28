@@ -6,10 +6,13 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1 and 2 of 10 (scaffold, config, Layer B pricing engine, burn
-cost and backtest report). Everything priced here is **illustrative**: the pilot
-wards, crop calendars, trigger levels, loadings and sum insured are placeholders,
-and yields are synthetic. Rainfall is real (CHIRPS).
+**Status:** milestones 1 and 2 of 10, with Layer B redesigned as a seasonal WRSI index
+(v1) on 2026-10-28. The superseded per-phase index (v0) is kept for comparison only.
+Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
+levels, loadings and sum insured are placeholders. Rainfall is real (CHIRPS); PET is a
+flagged fallback (Hargreaves from NASA POWER temperature).
+
+Pilot scope: maize, long rains only, at two placeholder Nakuru wards.
 
 ## Quick start
 
@@ -19,115 +22,118 @@ python -m venv .venv --system-site-packages
 .venv/Scripts/agroshield-price run --ward ward-a
 ```
 
-That prices one ward from the cached rainfall and prints where its report is:
+That prices one ward from the committed inputs and prints where its report is:
 `runs/<run_id>/report.html` (open in any browser, works offline), with
 `results.json` and `manifest.json` beside it.
 
 | Command | What it does |
 |---|---|
-| `agroshield-price run --ward ward-a` | Price and backtest one ward (default: `pilot.default_ward`) |
+| `agroshield-price run --ward ward-a` | Price one ward (default: `pilot.default_ward`) |
 | `agroshield-price run --all` | Every pilot ward |
-| `agroshield-price run --source synthetic` | Use generated rainfall instead of CHIRPS |
-| `agroshield-price run --offline` | Never download; fail if rainfall is not cached |
-| `agroshield-price fetch-rainfall --all [--refresh]` | Download and cache CHIRPS for the pilot wards |
+| `agroshield-price run --source synthetic` | Generated rainfall and PET instead of real data |
+| `agroshield-price run --offline` | Never download; fail if inputs are not cached |
+| `agroshield-price fetch-rainfall --all [--refresh]` | Download and cache CHIRPS |
+| `agroshield-price fetch-climate --all [--refresh]` | Download and cache NASA POWER temperature |
 | `agroshield-price validate` | Check the config without pricing |
 | `pytest` | Run the tests |
 
-## What Layer B does
+## Layer B v1: seasonal WRSI
 
-Layer B is the in-season index. For each insured crop phase (germination,
-vegetative, flowering, grain fill) it sums the phase's rainfall and pays:
+The FAO / FEWS NET Water Requirement Satisfaction Index, on a dekadal water balance:
 
-```
-f_p = 0                                    if R_p >= trigger_p
-    = (trigger_p - R_p) / (trigger_p - exit_p)  between trigger and exit
-    = 1                                    if R_p <= exit_p
-season payout = sum_p weight_p * f_p       (share of sum insured, at most 1)
-```
+1. Daily CHIRPS rain and daily PET are summed to dekads.
+2. **Start of season** is the first dekad in the ward's planting window with at least
+   25 mm, followed by at least 20 mm over the next two dekads. No start by the end of
+   the window is a **failed onset**, which pays a fixed share of sum insured.
+3. From the start, for each dekad of the growing period: crop coefficient Kc from the
+   FEWS NET maize curve (0.3, 0.3, 1.2, 1.2, 0.35 at 0/16/44/76/100% of the season),
+   water requirement `Kc x PET`, and a soil bucket of the ward's water holding capacity.
+   Actual ET falls below the requirement once the soil is drier than `(1 - p) x capacity`.
+4. **WRSI** = 100 x total actual ET / total requirement at the end of the season.
+5. **Payout**: 0 at or above the trigger (80), linear to full at or below the exit (50,
+   crop failure).
 
-The engine applies that to every historical season, long rains and short rains
-priced separately, then computes the burn cost (expected loss, standard deviation,
-1-in-10 and 1-in-20 loss), builds the gross premium
-`(expected loss + risk margin) / (1 - loadings)`, shows how the price moves with the
-trigger level, and backtests payouts against yields (basis-risk rate, false payout
-rate, rank correlation).
+The engine applies this to every season since 1981, computes the burn cost, builds the
+gross premium `(expected loss + risk margin) / (1 - loadings)`, and reports: the target
+payout frequency (1 season in 5-7, placeholder), trigger sensitivity in WRSI points,
+soil-capacity sensitivity, the 1984 event test, the 10 worst seasons, and v1 against v0.
 
 There is no claims flow for the parametric layers: they pay on the index.
 
+## Validation status
+
+- **FEWS NET WRSI comparison: pending.** The USGS "CHIRPS Croplands WRSI, Apr-Nov long
+  rains, grains" product and FEWS NET daily PET are hosted on a server that returned
+  503 on 2026-10-28. Drop end-of-season values in `data/raw/fewsnet_wrsi/<ward>_LR.csv`
+  (`year,eos_wrsi`) and the next run reports correlation and large gaps.
+- **Basis risk: not measurable** until real ward yields exist
+  (`data/raw/yields/<ward>_LR.csv`, `year,yield_t_per_ha`). Rainfall-derived synthetic
+  yields were dropped: they agree with a rainfall index by construction.
+
 ## Configuration
 
-Everything that drives a price is in `config/`. Changing a ward, phenology date,
-trigger, loading or sum insured is a config edit, never a code change.
+Everything that drives a price is in `config/`. Changing a ward, planting window,
+growing period, soil, trigger, loading or sum insured is a config edit, never a code change.
 
 | File | Holds |
 |---|---|
-| `pilot.yaml` | County, crop, pilot wards, default ward, rainfall source and history window |
-| `wards.yaml` | Insurance units: id, centroid, extraction box, seasons offered |
-| `phenology.yaml` | Planting date and phase lengths per ward and season |
-| `product.yaml` | Layer B terms (weights, trigger/exit as mm or percentile, daily min/cap, per-ward overrides), sum insured options, risk margin and loadings, backtest thresholds, synthetic yield model |
+| `pilot.yaml` | County, crop, pilot wards, rainfall and PET sources, history window, validation inputs |
+| `wards.yaml` | Insurance units: centroid, extraction box, elevation, soil water capacity, seasons offered |
+| `phenology.yaml` | Planting window, variety and growing period per ward and season (plus v0's fixed phases) |
+| `product.yaml` | WRSI terms (Kc, onset rule, trigger, exit, failed-onset payout, overrides), target frequency, event tests, v0 terms, sum insured, risk margin and loadings |
 
-The config is validated on load (weights sum to 1, exit below trigger, every
-pilot ward has a calendar, overrides name real phases), so a bad edit fails
-loudly instead of mispricing.
+The config is validated on load, so a bad edit fails loudly instead of mispricing.
 
 ## Data and provenance
 
-Every input carries one of three labels, shown at the top of every report and in
-`results.json`:
+Every input carries a label, shown at the top of every report and in `results.json`:
+**REAL** (observed, named source), **SYNTHETIC** (generated here), **ILLUSTRATIVE**
+(placeholder awaiting a decision) or **PENDING** (not available; dependent results not
+computed).
 
-- **REAL**: observed data from a named source.
-- **SYNTHETIC**: generated by a model in this repo.
-- **ILLUSTRATIVE**: a placeholder awaiting a real decision or data.
+- **Rainfall:** CHIRPS v2.0 daily, averaged over a 0.10 degree box around each ward
+  centroid, from SERVIR ClimateSERV. Committed in `data/raw/chirps/`.
+- **PET:** FAO-56 Hargreaves from NASA POWER daily Tmax/Tmin, shifted from the POWER
+  grid-cell elevation to the ward's (6.5 C/km). A fallback for FEWS NET Penman-Monteith
+  PET, which was unreachable and only starts in 2001. Committed in `data/raw/nasapower/`.
 
-**Rainfall** is CHIRPS v2.0 daily (0.05 degree), averaged over a 0.10 degree box
-around each ward centroid and fetched from SERVIR ClimateSERV, which returns only
-the polygon mean (a few hundred KB per ward instead of gigabytes of global files).
-The raw series for 1981-2025 are committed in `data/raw/chirps/`, each with a
-`.meta.json` recording the exact request, the retrieval time and a SHA-256. A
-changed file or a moved ward is refused until it is re-fetched. CHIRPS daily
-values are disaggregated from five-day totals, so the index only uses multi-week
-phase sums.
-
-**Yields** are synthetic until real ward yield history is available: a daily
-FAO-56 soil-water balance with FAO-33 yield response on the same rainfall, plus
-noise and pest/disease shocks. Because they come from the same rainfall, they
-agree with the index more than real yields would. The backtest section of the
-report checks the machinery, not the product.
+Each raw file has a `.meta.json` with the exact request, retrieval time and SHA-256; a
+changed file or a moved ward is refused until re-fetched. `.gitattributes` pins LF line
+endings so the hashes hold on every checkout.
 
 ## Reproducibility and audit
 
-Each run writes `manifest.json` (code version and git commit, index version,
-SHA-256 of every config file, the rainfall input and `results.json`) and appends
-one line to `runs/audit_log.jsonl`, which is committed. Identical inputs and config
-produce an identical `results.json`. The index definition carries a version
-(`layer_b.version`) that must be bumped on any change to its rules.
+Each run writes `manifest.json` (code version and git commit, index versions, SHA-256 of
+every config file, both raw inputs and `results.json`) and appends one line to the
+committed `runs/audit_log.jsonl`. Identical inputs give an identical `results.json`.
+`layer_b.version` must be bumped on any change to the index rules.
 
 ## Layout
 
 ```
-config/                  all product and pilot settings (YAML)
-data/raw/chirps/         committed CHIRPS inputs + metadata and checksums
+config/                  product and pilot settings (YAML)
+data/raw/                committed CHIRPS and NASA POWER inputs + metadata and checksums
 src/agroshield_pricing/
   config.py              load + validate config
-  provenance.py          REAL / SYNTHETIC / ILLUSTRATIVE labels
-  rainfall/              source interface, CHIRPS (ClimateSERV) loader, synthetic generator
-  phenology.py           dated phase windows per season
-  index.py               Layer B index and payout function
-  burn.py                burn cost and loss exceedance
-  premium.py             gross premium build-up
-  yields.py              synthetic yields (backtest stand-in)
-  backtest.py            basis risk, false payouts, correlation
-  engine.py              runs one ward, season by season
-  report.py, svgcharts.py, templates/report.html   HTML report (inline SVG charts)
+  provenance.py          REAL / SYNTHETIC / ILLUSTRATIVE / PENDING labels
+  rainfall/              CHIRPS (ClimateSERV) loader, synthetic generator
+  pet/                   Hargreaves, NASA POWER loader, synthetic PET
+  wrsi.py                v1: dekads, onset, Kc, water balance, WRSI payout
+  index.py, phenology.py v0 per-phase index (comparison only)
+  burn.py, premium.py    burn cost and gross premium
+  validation.py          FEWS NET comparison, real-yield basis risk
+  backtest.py            yield backtest metrics (used once real yields exist)
+  engine.py              prices one ward, v1 with v0 alongside
+  report.py, svgcharts.py, templates/report.html   HTML report (inline SVG)
   audit.py, cli.py       run manifest, audit log, command line
-tests/                   payout function, burn cost, premium, config, data integrity, end to end
-runs/                    run outputs (ignored) and the committed audit log
+tests/                   payout functions, WRSI, onset, PET, burn cost, premium, config,
+                         data integrity, validation, regression, end to end
+docs/                    BORROWED_FROM_MVP.md: ideas taken from the old demo, by milestone
 ```
 
 ## Open questions
 
-- Which Nakuru wards for the pilot (currently two labelled placeholders).
-- Underwriter partner, their required loadings, margin and the Resilience discount cap.
-- Access to real ward yield data, KMD/ICPAC hindcasts (for Layer A) and KIAMIS.
-- GSM or LoRa for the Sentinel camera pilot.
-- Whether the picture-based rider is in v1 or v2.
+- Which Nakuru wards for the pilot (currently two labelled placeholders), and their soils.
+- Underwriter partner: loadings, margin, target payout frequency, Resilience discount cap.
+- Real ward yields, KMD/ICPAC hindcasts (Layer A) and KIAMIS access.
+- GSM or LoRa for the Sentinel camera pilot; picture-based rider in v1 or v2.

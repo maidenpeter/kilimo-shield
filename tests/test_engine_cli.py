@@ -1,31 +1,49 @@
 import json
 
+import pytest
+
 from agroshield_pricing.cli import main
 from agroshield_pricing.engine import price_ward
-from agroshield_pricing.rainfall import SyntheticRainfallSource
+from agroshield_pricing.pet import SyntheticPetSource, make_pet_source
+from agroshield_pricing.rainfall import SyntheticRainfallSource, make_source
 
 
-def test_engine_prices_each_season_separately(cfg):
-    r = price_ward(cfg, "ward-a", SyntheticRainfallSource(seed=5))
-    assert set(r.seasons) == {"LR", "SR"}
-    lr, sr = r.summary["seasons"]["LR"], r.summary["seasons"]["SR"]
-    assert lr["terms"] != sr["terms"]  # resolved from each season's own history
-    for s in (lr, sr):
-        assert 0 <= s["burn_cost"]["expected_loss"] <= 1
-        assert s["premium"]["gross_rate"] > s["burn_cost"]["expected_loss"]
+def _synthetic(cfg, ward="ward-a", seed=5):
+    return price_ward(cfg, ward, SyntheticRainfallSource(seed=seed), SyntheticPetSource())
+
+
+def test_engine_prices_long_rains_with_v0_alongside(cfg):
+    r = _synthetic(cfg)
+    assert set(r.seasons) == {"LR"}
+    s = r.summary["seasons"]["LR"]
+    assert s["terms"]["version"] == cfg.product.layer_b.version
+    assert s["v0"]["version"] == cfg.product.layer_b_v0.version
+    assert 0 <= s["burn_cost"]["expected_loss"] <= 1
+    assert s["premium"]["gross_rate"] > s["burn_cost"]["expected_loss"]
+    assert len(s["worst_seasons"]) == 10
+    assert [w["rank"] for w in s["worst_seasons"]] == list(range(1, 11))
+
+
+def test_trigger_sensitivity_is_monotone(cfg):
+    rows = _synthetic(cfg).summary["seasons"]["LR"]["trigger_sensitivity"]
+    freqs = [r["payout_frequency"] for r in rows]
+    assert freqs == sorted(freqs)                         # higher trigger never pays less often
+    assert sum(r["is_current"] for r in rows) == 1
 
 
 def test_every_input_carries_a_provenance_label(cfg):
-    r = price_ward(cfg, "ward-a", SyntheticRainfallSource(seed=5))
+    r = _synthetic(cfg)
     labels = {p["input"]: p["label"] for p in r.summary["provenance"]}
-    assert labels["Rainfall"] == "SYNTHETIC"
-    assert labels["Yields"] == "SYNTHETIC"
+    assert labels["Rainfall"] == "SYNTHETIC" and labels["PET"] == "SYNTHETIC"
     assert labels["Ward location"] == "ILLUSTRATIVE"
+    assert labels["Soil water holding capacity"] == "ILLUSTRATIVE"
+    assert labels["Yields (basis risk)"] == "PENDING"
+    assert r.summary["seasons"]["LR"]["basis_risk"]["available"] is False
 
 
 def test_same_inputs_give_identical_results(cfg):
-    a = price_ward(cfg, "ward-b", SyntheticRainfallSource(seed=9)).summary
-    b = price_ward(cfg, "ward-b", SyntheticRainfallSource(seed=9)).summary
+    a = _synthetic(cfg, "ward-b", 9).summary
+    b = _synthetic(cfg, "ward-b", 9).summary
     assert json.dumps(a, default=str) == json.dumps(b, default=str)
 
 
@@ -35,12 +53,30 @@ def test_cli_run_writes_report_manifest_and_audit_log(cfg, tmp_path):
     run_dir = next(p for p in tmp_path.iterdir() if p.is_dir())
     html = (run_dir / "report.html").read_text(encoding="utf-8")
     assert "SYNTHETIC" in html and "ILLUSTRATIVE" in html and "Not a filed product" in html
+    assert "v0 per-phase" in html and "NOT MEASURABLE YET" in html
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert manifest["index_version"] == cfg.product.layer_b.version
+    assert manifest["pet_source"] == "synthetic"
     assert manifest["config_sha256"] == cfg.file_hashes
+    results = json.loads((run_dir / "results.json").read_text())   # strict JSON: no NaN
+    assert results["index_version"] == cfg.product.layer_b.version
     log = (tmp_path / "audit_log.jsonl").read_text().strip().splitlines()
     assert json.loads(log[-1])["run_id"] == manifest["run_id"]
     # Hashed outputs must be byte-identical on every OS: LF only.
     for name in ("results.json", "manifest.json", "report.html"):
         assert b"\r\n" not in (run_dir / name).read_bytes(), name
     assert b"\r\n" not in (tmp_path / "audit_log.jsonl").read_bytes()
+
+
+# ------------------------------------------------------------------ regression on committed real inputs
+def test_regression_ward_a_1984_from_committed_inputs(cfg):
+    """Pins the 1984 event on the committed CHIRPS and NASA POWER inputs.
+
+    If this moves, the index, its terms or its inputs changed: bump layer_b.version
+    and update the expected value deliberately, never to hit a target.
+    """
+    r = price_ward(cfg, "ward-a", make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False))
+    e = r.summary["seasons"]["LR"]["event_tests"][0]
+    assert e["year"] == 1984 and e["sos"] == "Apr d1 1984"
+    assert e["wrsi"] == pytest.approx(55.56, abs=0.01)
+    assert e["passed"]

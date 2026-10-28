@@ -1,0 +1,21 @@
+{
+  "ward_id": "ward-a",
+  "dataset": "NASA POWER daily T2M_MAX / T2M_MIN (MERRA-2), community AG",
+  "provider": "NASA Langley POWER",
+  "request": {
+    "base_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+    "parameters": [
+      "T2M_MAX",
+      "T2M_MIN"
+    ],
+    "point": {
+      "lat": -0.17,
+      "lon": 35.86
+    }
+  },
+  "grid_elevation_m": 2300.55,
+  "start_year": 1981,
+  "end_year": 2025,
+  "retrieved_at": "2026-10-28T11:51:19+00:00",
+  "sha256": "88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5"
+}

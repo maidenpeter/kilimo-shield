@@ -13,7 +13,13 @@ wards:
     # centroid: 0.10 deg is about 11 km, roughly 2x2 CHIRPS pixels.
     extraction_box_deg: 0.10
     elevation_m: 1900
-    seasons: [LR, SR]
+    # Plant-available water holding capacity of the root zone (mm). Placeholder
+    # until ward soil data (e.g. KALRO / iSDAsoil) is in.
+    soil_whc_mm: 100
+    soil_illustrative: true
+    # Short rains dropped from the pilot (2026-10-28): too unreliable to insure
+    # at a sensible price in this lowland.
+    seasons: [LR]
     notes: "Stand-in for a drier, drought-exposed maize ward."
 
   - id: ward-b
@@ -22,6 +28,8 @@ wards:
     centroid: {lat: -0.250, lon: 35.730}
     extraction_box_deg: 0.10
     elevation_m: 2500
+    soil_whc_mm: 140             # deeper volcanic highland soils; placeholder
+    soil_illustrative: true
     # Highland maize is a 6-7 month crop planted on the long rains; a short-rains
     # crop would run into the Jan-Feb dry season, so only LR is offered here.
     seasons: [LR]

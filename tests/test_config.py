@@ -22,23 +22,23 @@ def test_placeholders_are_flagged_illustrative(cfg):
     assert cfg.phenology.illustrative and cfg.product.illustrative
 
 
-def test_weights_must_sum_to_one(config_copy):
-    _edit(config_copy / "product.yaml", lambda d: d["layer_b"]["phases"]["flowering"].update(weight=0.9))
+def test_v0_weights_must_sum_to_one(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b_v0"]["phases"]["flowering"].update(weight=0.9))
     with pytest.raises(ValidationError, match="sum to 1"):
         load_config(config_copy)
 
 
-def test_override_changes_only_its_ward_and_season(config_copy):
-    _edit(config_copy / "product.yaml", lambda d: d["layer_b"].update(overrides={
+def test_v0_override_changes_only_its_ward_and_season(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b_v0"].update(overrides={
         "ward-a": {"LR": {"flowering": {"trigger": {"mm": 110}, "exit": {"mm": 35}}}}}))
     c = load_config(config_copy)
-    assert c.product.layer_b.terms_for("ward-a", "LR")["flowering"].trigger.mm == 110
-    assert c.product.layer_b.terms_for("ward-a", "SR")["flowering"].trigger.mm is None
-    assert c.product.layer_b.terms_for("ward-b", "LR")["flowering"].trigger.mm is None
+    assert c.product.layer_b_v0.terms_for("ward-a", "LR")["flowering"].trigger.mm == 110
+    assert c.product.layer_b_v0.terms_for("ward-a", "SR")["flowering"].trigger.mm is None
+    assert c.product.layer_b_v0.terms_for("ward-b", "LR")["flowering"].trigger.mm is None
 
 
-def test_override_of_unknown_phase_is_rejected(config_copy):
-    _edit(config_copy / "product.yaml", lambda d: d["layer_b"].update(overrides={
+def test_v0_override_of_unknown_phase_is_rejected(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b_v0"].update(overrides={
         "ward-a": {"LR": {"tasselling": {"weight": 0.1}}}}))
     with pytest.raises(ValidationError, match="unknown phase"):
         load_config(config_copy)
@@ -68,3 +68,37 @@ def test_phase_windows_are_contiguous_and_cross_new_year(cfg):
         assert (b.start - a.end).days == 1
     assert w[0].start.year == 2020 and w[-1].end.year == 2021
     assert sum(x.days for x in w) == sum(p.days for p in cfg.calendar("ward-a", "SR").phases)
+
+
+# ------------------------------------------------------------------ v1 WRSI terms
+def test_wrsi_trigger_must_be_above_exit(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b"].update(trigger_wrsi=50, exit_wrsi=60))
+    with pytest.raises(ValidationError, match="above exit"):
+        load_config(config_copy)
+
+
+def test_kc_curve_must_span_the_season(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b"]["kc"].update(points_pct=[0, 50, 90]))
+    with pytest.raises(ValidationError):
+        load_config(config_copy)
+
+
+def test_wrsi_override_applies_to_one_ward_and_season(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b"].update(overrides={"ward-b": {"LR": {"trigger_wrsi": 90}}}))
+    c = load_config(config_copy)
+    assert c.product.layer_b.terms_for("ward-b", "LR")["trigger_wrsi"] == 90
+    assert c.product.layer_b.terms_for("ward-a", "LR")["trigger_wrsi"] == 80
+
+
+def test_target_band_from_return_periods(cfg):
+    lo, hi = cfg.product.target.frequency_band
+    assert lo == pytest.approx(1 / 7) and hi == pytest.approx(1 / 5)
+
+
+def test_pilot_scope_is_long_rains_only(cfg):
+    assert all(cfg.ward(w).seasons == ["LR"] for w in cfg.pilot.wards)
+
+
+def test_growing_period_in_dekads(cfg):
+    assert cfg.calendar("ward-a", "LR").lgp_dekads == 13
+    assert cfg.calendar("ward-b", "LR").lgp_dekads == 18

@@ -15,6 +15,9 @@
   --chip-real: #e3f1e3; --chip-real-ink: #0b5d0b;
   --chip-syn: #fde8dc; --chip-syn-ink: #8a3412;
   --chip-ill: #fbf0d2; --chip-ill-ink: #6b4b00;
+  --chip-pend: #ebeae6; --chip-pend-ink: #3d3c39;
+  --good: #0b7a0b; --good-bg: #e3f1e3; --crit: #b42f2f; --crit-bg: #fbe4e4;
+  --row-hi: rgba(42,120,214,0.08);
   --warn-bg: #fff6e0; --warn-border: #e9c46a;
 }
 @media (prefers-color-scheme: dark) {
@@ -28,6 +31,9 @@
     --chip-real: #173a17; --chip-real-ink: #a6e3a6;
     --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8;
     --chip-ill: #3d300c; --chip-ill-ink: #f1d995;
+    --chip-pend: #2e2e2b; --chip-pend-ink: #d6d5cd;
+    --good: #7fd17f; --good-bg: #173a17; --crit: #f19a9a; --crit-bg: #4a1c1c;
+    --row-hi: rgba(57,135,229,0.14);
     --warn-bg: #2e2610; --warn-border: #7a6420;
   }
 }
@@ -41,6 +47,9 @@
   --chip-real: #173a17; --chip-real-ink: #a6e3a6;
   --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8;
   --chip-ill: #3d300c; --chip-ill-ink: #f1d995;
+  --chip-pend: #2e2e2b; --chip-pend-ink: #d6d5cd;
+  --good: #7fd17f; --good-bg: #173a17; --crit: #f19a9a; --crit-bg: #4a1c1c;
+  --row-hi: rgba(57,135,229,0.14);
   --warn-bg: #2e2610; --warn-border: #7a6420;
 }
 * { box-sizing: border-box; }
@@ -67,11 +76,16 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--bord
 th { color: var(--ink-2); font-weight: 600; font-size: .8rem; }
 td.num, th.num { text-align: right; }
 tr.total td { font-weight: 650; }
+tr.hi td { background: var(--row-hi); }
 .table-wrap { overflow-x: auto; }
-.chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .03em; border-radius: 999px; padding: 1px 8px; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .03em; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .chip.REAL { background: var(--chip-real); color: var(--chip-real-ink); }
 .chip.SYNTHETIC { background: var(--chip-syn); color: var(--chip-syn-ink); }
 .chip.ILLUSTRATIVE { background: var(--chip-ill); color: var(--chip-ill-ink); }
+.chip.PENDING { background: var(--chip-pend); color: var(--chip-pend-ink); }
+.status { display: inline-block; font-weight: 700; border-radius: 6px; padding: 1px 8px; }
+.status.pass { background: var(--good-bg); color: var(--good); }
+.status.fail { background: var(--crit-bg); color: var(--crit); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .82rem; color: var(--ink-2); margin: 4px 0 8px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
@@ -86,13 +100,13 @@ svg .seg { stroke: var(--surface-1); stroke-width: 2; }
 svg .hit { fill: transparent; }
 svg .hit:hover { fill: var(--band); }
 svg .dot { stroke: var(--surface-1); stroke-width: 2; }
+svg .onset-x { stroke: var(--series-4); stroke-width: 2.5; stroke-linecap: round; fill: none; }
 svg .line { stroke-width: 2; stroke-linejoin: round; }
 svg .hit-dot { fill: transparent; }
 svg .ref { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 4; }
 svg .ref-label { fill: var(--ink-2); font-size: 11px; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
-svg .band { fill: var(--band); }
 svg .band-ins { fill: var(--band-ins); }
-svg .band-label { fill: var(--ink-3); font-size: 9.5px; }
+svg .band-label { fill: var(--ink-3); font-size: 10px; }
 details summary { cursor: pointer; color: var(--ink-2); font-weight: 600; margin: 8px 0; }
 code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .84em; }
 .formula { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
@@ -103,7 +117,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 </head>
 <body>
 <main>
-  <div class="meta">AgroShield &middot; Layer B pricing and backtest &middot; index {{ r.index_version }}</div>
+  <div class="meta">AgroShield &middot; Layer B pricing &middot; index {{ r.index_version }} (WRSI) &middot; compared with v0 per-phase index</div>
   <h1>{{ r.ward.name }}</h1>
   <p class="sub">{{ m.pilot.county }} County &middot; {{ m.pilot.crop | capitalize }} &middot;
     {% for s in seasons %}{{ s.s.season_label }}{% if not loop.last %} and {% endif %}{% endfor %}
@@ -111,9 +125,9 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <div class="banner">
     <b>Illustrative pricing. Not a filed product and not for sale.</b>
-    The ward location, crop calendar, trigger levels, loadings and sum insured are placeholders, and
-    yields are synthetic. Treat every figure here as a demonstration of the method until the inputs
-    marked ILLUSTRATIVE or SYNTHETIC below are replaced.
+    Ward location, soil water capacity, crop calendar, WRSI trigger and exit, failed-onset payout, payout
+    frequency target, loadings and sum insured are placeholders. PET is a flagged fallback (Hargreaves).
+    The FEWS NET comparison and basis risk are pending the data listed below.
   </div>
 
   <h2 style="border-top:0;margin-top:8px">Inputs and where they came from</h2>
@@ -127,72 +141,153 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     </table>
   </div>
 
-  <h2>Rainfall at this ward</h2>
-  <p>Average daily rainfall over {{ m.history.start_year }}&ndash;{{ m.history.end_year }}
-    (about {{ r.rainfall_annual_mean_mm | mm }} a year), with each season's crop phases shaded for the
-    {{ seasons[0].s.calendar.example_year }} calendar. Darker bands are the phases the index insures:
-    G germination, V vegetative, F flowering, GF grain fill; M maturity is not insured.</p>
-  <div class="card">{{ ward_charts.climatology | safe }}</div>
+  <h2>Rain and evaporative demand at this ward</h2>
+  <p>Mean rainfall and PET per dekad over {{ m.history.start_year }}&ndash;{{ m.history.end_year }}
+    (about {{ r.rainfall_annual_mean_mm | mm }} of rain and {{ r.pet_annual_mean_mm | mm }} of PET a year).
+    The shaded band is where the start of season is searched.</p>
+  <div class="card">
+    <div class="legend"><span><i style="background:var(--series-1)"></i>Rain</span><span><i style="background:var(--series-2)"></i>PET (Hargreaves, fallback)</span></div>
+    {{ ward_charts.climatology | safe }}
+  </div>
 
-  {% for item in seasons %}{% set s = item.s %}{% set c = item.charts %}{% set b = s.burn_cost %}{% set pr = s.premium %}
+  {% for item in seasons %}{% set s = item.s %}{% set c = item.charts %}{% set b = s.burn_cost %}{% set pr = s.premium %}{% set t = s.terms %}
   <h2>{{ s.season_label }} ({{ s.season }})</h2>
-  <p>Planted around {{ s.calendar.planting_date }} (window {{ s.calendar.planting_window.start }} to
-    {{ s.calendar.planting_window.end }}). Priced on {{ b.seasons }} seasons, {{ b.first_year }}&ndash;{{ b.last_year }}.</p>
+  <p>{{ s.calendar.variety | capitalize }}, growing period {{ s.calendar.lgp_days }} days ({{ s.calendar.lgp_dekads }} dekads)
+    from a start of season found between {{ s.calendar.planting_window.start }} and {{ s.calendar.planting_window.end }}.
+    Priced on {{ b.seasons }} seasons, {{ b.first_year }}&ndash;{{ b.last_year }}.</p>
 
   <div class="tiles">
     <div class="tile"><div class="k">Seasons with a payout</div><div class="v">{{ b.payout_frequency | pct(0) }}</div>
-      <div class="n">{{ b.payout_seasons }} of {{ b.seasons }}</div></div>
-    <div class="tile"><div class="k">Expected loss</div><div class="v">{{ b.expected_loss | pct }}</div>
-      <div class="n">of sum insured, per season</div></div>
-    <div class="tile"><div class="k">1-in-10 season loss</div><div class="v">{{ b.loss_1_in_10 | pct }}</div>
-      <div class="n">90th percentile</div></div>
-    <div class="tile"><div class="k">1-in-20 season loss</div><div class="v">{{ b.loss_1_in_20 | pct }}</div>
-      <div class="n">95th percentile, few seasons</div></div>
-    <div class="tile"><div class="k">Gross premium rate</div><div class="v">{{ pr.gross_rate | pct }}</div>
-      <div class="n">of sum insured</div></div>
+      <div class="n">{{ b.payout_seasons }} of {{ b.seasons }} &middot; target {{ s.target.frequency_band[0] | pct(0) }}&ndash;{{ s.target.frequency_band[1] | pct(0) }}
+        {% if s.target.in_band %}<span class="status pass">&#10003; in band</span>{% else %}<span class="status fail">&#10007; outside</span>{% endif %}</div></div>
+    <div class="tile"><div class="k">Expected loss</div><div class="v">{{ b.expected_loss | pct }}</div><div class="n">of sum insured, per season</div></div>
+    <div class="tile"><div class="k">1-in-10 season loss</div><div class="v">{{ b.loss_1_in_10 | pct }}</div><div class="n">90th percentile</div></div>
+    <div class="tile"><div class="k">1-in-20 season loss</div><div class="v">{{ b.loss_1_in_20 | pct }}</div><div class="n">95th percentile, few seasons</div></div>
+    <div class="tile"><div class="k">Gross premium rate</div><div class="v">{{ pr.gross_rate | pct }}</div><div class="n">of sum insured</div></div>
     {% for o in pr.per_acre %}{% if o.sum_insured_kes_per_acre == pr.default_sum_insured_kes_per_acre %}
     <div class="tile"><div class="k">Gross premium per acre</div><div class="v">{{ o.gross_premium_kes | kes }}</div>
       <div class="n">at {{ o.sum_insured_kes_per_acre | kes }} sum insured</div></div>
     {% endif %}{% endfor %}
   </div>
 
-  <h3>Index terms</h3>
-  <p>Each phase pays nothing while its rainfall stays at or above the trigger, pays linearly between trigger and
-    exit, and pays its full weight at or below the exit. Phase rainfall counts days of at least
-    {{ r.daily_min_mm }} mm and caps any day at {{ r.daily_cap_mm }} mm.</p>
+  <h3>Event test</h3>
   <div class="card table-wrap">
     <table>
-      <tr><th>Phase</th><th>Dates ({{ s.calendar.example_year }})</th><th class="num">Weight</th>
-        <th class="num">Trigger</th><th class="num">Exit</th><th class="num">Mean rain</th><th class="num">Driest</th><th>Level basis</th></tr>
-      {% for w in s.calendar.example_windows %}{% set t = s.terms.get(w.phase) %}
-      <tr><td>{{ w.phase | pretty }}</td><td>{{ w.start }} to {{ w.end }}</td>
-        {% if t %}<td class="num">{{ t.weight | pct(0) }}</td><td class="num">{{ t.trigger_mm }} mm</td><td class="num">{{ t.exit_mm }} mm</td>
-        <td class="num">{{ s.rainfall_by_phase[w.phase].mean_mm | mm }}</td><td class="num">{{ s.rainfall_by_phase[w.phase].min_mm | mm }}</td>
-        <td>{{ t.trigger_basis }} / {{ t.exit_basis }}</td>
-        {% else %}<td class="num" colspan="5" style="text-align:left;color:var(--ink-3)">Not insured</td><td></td>{% endif %}</tr>
+      <tr><th>Event</th><th>Start of season</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">Required</th><th>Result</th><th class="num">v0 payout</th></tr>
+      {% for e in s.event_tests %}
+      <tr><td>{{ e.year }}: {{ e.note }}</td><td>{{ e.sos or "failed onset" }}</td>
+        <td class="num">{{ e.wrsi | num }}</td><td class="num">{{ e.payout | pct(0) }}</td><td class="num">&ge; {{ e.min_payout | pct(0) }}</td>
+        <td>{% if e.passed %}<span class="status pass">&#10003; PASS</span>{% else %}<span class="status fail">&#10007; FAIL</span>{% endif %}</td>
+        <td class="num">{{ e.v0_payout | pct(0) }}</td></tr>
+      {% else %}<tr><td colspan="7" class="meta">No event tests configured for this season.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <h3>Index terms</h3>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Start of season rule</th><td>first dekad with &ge; {{ t.onset.first_dekad_mm | num }} mm, then &ge; {{ t.onset.next_two_dekads_mm | num }} mm over the next two dekads, searched {{ s.calendar.planting_window.start }} to {{ s.calendar.planting_window.end }}</td></tr>
+      <tr><th>Failed onset</th><td>no start of season in the window pays {{ t.failed_onset_payout | pct(0) }} of sum insured
+        ({{ s.onset_stats.failed_onsets }} of {{ b.seasons }} seasons{% if s.onset_stats.failed_onset_years %}: {{ s.onset_stats.failed_onset_years | join(", ") }}{% endif %})</td></tr>
+      <tr><th>Starts found</th><td>earliest {{ s.onset_stats.earliest }}, latest {{ s.onset_stats.latest }}</td></tr>
+      <tr><th>Water balance</th><td>soil holds {{ t.soil_whc_mm | num }} mm; stress once below {{ (1 - t.depletion_fraction) | pct(0) }} of that; {{ t.spinup_dekads }} dekads of pre-season spin-up</td></tr>
+      <tr><th>Crop coefficients</th><td>{% for k in t.kc["values"] %}{{ k }} at {{ t.kc["points_pct"][loop.index0] | num }}%{% if not loop.last %}, {% endif %}{% endfor %} of the growing period</td></tr>
+      <tr><th>Payout</th><td>0 at WRSI &ge; {{ t.trigger_wrsi | num }}, linear to 100% at WRSI &le; {{ t.exit_wrsi | num }}</td></tr>
+      <tr><th>WRSI over history</th><td>median {{ s.wrsi_stats.median | num }}, lowest {{ s.wrsi_stats.min | num }};
+        {{ s.wrsi_stats.below_trigger }} seasons below the trigger, {{ s.wrsi_stats.at_or_below_exit }} at or below the exit</td></tr>
+    </table>
+  </div>
+
+  <h3>End-of-season WRSI by year</h3>
+  <p>Orange dots fell below the trigger. A cross on the baseline is a failed onset.</p>
+  <div class="card">
+    <div class="legend"><span><i style="background:var(--series-1)"></i>WRSI at or above trigger</span>
+      <span><i style="background:var(--series-2)"></i>Below trigger (pays)</span>
+      <span><i style="background:var(--series-4)"></i>Failed onset</span></div>
+    {{ c.wrsi | safe }}
+  </div>
+
+  <h3>The 10 worst seasons</h3>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">Rank</th><th>Season</th><th>Start of season</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
+      {% for w in s.worst_seasons %}
+      <tr><td class="num">{{ w.rank }}</td><td>{{ w.year }}</td><td>{{ w.sos or "failed onset" }}</td>
+        <td class="num">{{ w.wrsi | num }}</td><td class="num">{{ w.payout | pct(0) }}</td><td class="num">{{ w.v0_payout | pct(0) }}</td></tr>
       {% endfor %}
     </table>
   </div>
 
-  <h3>Historical payouts</h3>
-  <p>The index applied to every past season. Each bar is split by the phase that triggered it; hover a bar for the detail.</p>
+  {% for year, svg in c.traces.items() %}
+  <h3>Water balance, {{ year }}</h3>
+  <p>Cumulative water the crop needed against what it could use. The gap at the end sets the WRSI.</p>
   <div class="card">
-    <div class="legend">{% for p in s.terms %}<span><i style="background:{{ phase_colors[p] }}"></i>{{ p | pretty }}</span>{% endfor %}</div>
-    {{ c.payouts | safe }}
+    <div class="legend"><span><i style="background:var(--series-1)"></i>Water requirement (Kc &times; PET)</span><span><i style="background:var(--series-2)"></i>Water used (AET)</span></div>
+    {{ svg | safe }}
+  </div>
+  {% endfor %}
+
+  <h3>Payouts by year: v1 (WRSI) and v0 (per-phase)</h3>
+  <p>Same scale. v1 pays far less often; failed onsets are shown in yellow.</p>
+  <div class="card"><h4 style="margin:0 0 4px">v1 WRSI, {{ s.v1_metrics.payout_frequency | pct(0) }} of seasons</h4>{{ c.payouts_v1 | safe }}</div>
+  <div class="card"><h4 style="margin:0 0 4px">v0 per-phase, {{ s.v0.payout_frequency | pct(0) }} of seasons</h4>{{ c.payouts_v0 | safe }}</div>
+
+  <h3>v1 and v0 side by side</h3>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Measure</th><th class="num">v1 WRSI ({{ t.version }})</th><th class="num">v0 per-phase ({{ s.v0.version }})</th></tr>
+      <tr><td>Seasons with a payout</td><td class="num">{{ s.v1_metrics.payout_frequency | pct(0) }}</td><td class="num">{{ s.v0.payout_frequency | pct(0) }}</td></tr>
+      <tr><td>Expected loss</td><td class="num">{{ s.v1_metrics.expected_loss | pct }}</td><td class="num">{{ s.v0.expected_loss | pct }}</td></tr>
+      <tr><td>1-in-10 loss</td><td class="num">{{ s.v1_metrics.loss_1_in_10 | pct }}</td><td class="num">{{ s.v0.loss_1_in_10 | pct }}</td></tr>
+      <tr><td>1-in-20 loss</td><td class="num">{{ s.v1_metrics.loss_1_in_20 | pct }}</td><td class="num">{{ s.v0.loss_1_in_20 | pct }}</td></tr>
+      <tr><td>Gross premium rate</td><td class="num">{{ s.v1_metrics.gross_rate | pct }}</td><td class="num">{{ s.v0.gross_rate | pct }}</td></tr>
+      {% for y, v in s.v1_metrics.event_payouts.items() %}
+      <tr><td>{{ y }} payout</td><td class="num">{{ v | pct(0) }}</td><td class="num">{{ s.v0.event_payouts[y] | pct(0) }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="meta" style="margin:8px 0 0">Over {{ s.comparison.seasons }} seasons: both pay in {{ s.comparison.both_pay }}, only v1 in {{ s.comparison.only_v1_pays }},
+      only v0 in {{ s.comparison.only_v0_pays }}. Rank correlation of payouts {{ s.comparison.spearman_payouts | num(2) }}.</p>
+  </div>
+  <div class="card">
+    <div class="legend"><span><i style="background:var(--series-1)"></i>v1 WRSI</span><span><i style="background:var(--series-2)"></i>v0 per-phase</span></div>
+    {{ c.exceedance | safe }}
   </div>
 
-  <h3>Phase rainfall against the trigger and exit</h3>
-  <p>One dot per season. Orange dots fell below the trigger and paid something for that phase.</p>
-  <div class="grid2">
-    {% for p, svg in c.phases.items() %}
-    <div class="card"><h4>{{ p | pretty }} (weight {{ s.terms[p].weight | pct(0) }})</h4>{{ svg | safe }}</div>
-    {% endfor %}
+  <h3>How the price moves with the WRSI trigger</h3>
+  <p>Exit ({{ t.exit_wrsi | num }}) and failed-onset payout unchanged. Highlighted rows hit the target of one payout every
+    {{ s.target.return_period_years[0] | num }}&ndash;{{ s.target.return_period_years[1] | num }} seasons (placeholder, underwriter to confirm).</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">Trigger (WRSI)</th><th class="num">Seasons paying</th><th class="num">About 1 in</th><th class="num">Expected loss</th>
+        <th class="num">1-in-10 loss</th><th class="num">Gross rate</th><th></th></tr>
+      {% for row in s.trigger_sensitivity %}
+      <tr class="{{ 'hi' if row.in_target_band else '' }}"><td class="num">{{ row.trigger_wrsi | num }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
+        <td class="num">{{ row.return_period_years | num(1) }}</td><td class="num">{{ row.expected_loss | pct(1) }}</td>
+        <td class="num">{{ row.loss_1_in_10 | pct(1) }}</td><td class="num">{{ row.gross_rate | pct(1) }}</td>
+        <td>{% if row.is_current %}current{% endif %}{% if row.in_target_band %} &middot; in target{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    {% if not s.target.triggers_in_band %}<p class="meta" style="margin:8px 0 0">No trigger in this range reaches the target frequency.</p>{% endif %}
+  </div>
+
+  <h3>Placeholder soil: sensitivity to water holding capacity</h3>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">Soil capacity</th><th class="num">Median WRSI</th><th class="num">Seasons paying</th><th class="num">Expected loss</th><th class="num">Gross rate</th>
+        {% for e in s.event_tests %}<th class="num">{{ e.year }} payout</th>{% endfor %}<th></th></tr>
+      {% for row in s.whc_sensitivity %}
+      <tr><td class="num">{{ row.whc_mm | num }} mm</td><td class="num">{{ row.median_wrsi | num }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
+        <td class="num">{{ row.expected_loss | pct(1) }}</td><td class="num">{{ row.gross_rate | pct(1) }}</td>
+        {% for e in s.event_tests %}<td class="num">{{ row.event_payouts[e.year | string] | pct(0) }}</td>{% endfor %}
+        <td>{% if row.is_current %}current{% endif %}</td></tr>
+      {% endfor %}
+    </table>
   </div>
 
   <h3>Premium build-up</h3>
   <p>Gross premium = (expected loss + risk margin) / (1 &minus; loadings), with loadings set as shares of gross.
-    Risk margin method: {{ pr.risk_margin_method.method }} &times; {{ pr.risk_margin_method.factor }}.
-    Government subsidy and the Resilience discount come later (milestone 4) and reduce only the farmer's share.</p>
+    Risk margin: {{ pr.risk_margin_method.method }} &times; {{ pr.risk_margin_method.factor }}. Subsidy and the Resilience
+    discount come in milestone 4 and reduce only the farmer's share.</p>
   <div class="card table-wrap">
     <table>
       <tr><th>Component</th><th class="num">Rate of sum insured</th>
@@ -202,90 +297,72 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
       <tr><td>Risk margin</td><td class="num">{{ pr.risk_margin_rate | pct(2) }}</td>
         {% for o in pr.per_acre %}<td class="num">{{ o.risk_margin_kes | kes }}</td>{% endfor %}</tr>
       {% for k, v in pr.loadings_rate.items() %}
-      <tr><td>{{ k | pretty }} ({{ pr.loadings_share_of_gross[k] | pct(0) }} of gross)</td><td class="num">{{ v | pct(2) }}</td>
+      <tr><td>{{ k | replace("_", " ") | capitalize }} ({{ pr.loadings_share_of_gross[k] | pct(0) }} of gross)</td><td class="num">{{ v | pct(2) }}</td>
         {% for o in pr.per_acre %}<td class="num">{{ o.loadings_kes[k] | kes }}</td>{% endfor %}</tr>
       {% endfor %}
       <tr class="total"><td>Gross premium</td><td class="num">{{ pr.gross_rate | pct(2) }}</td>
         {% for o in pr.per_acre %}<td class="num">{{ o.gross_premium_kes | kes }}</td>{% endfor %}</tr>
     </table>
-    <p class="meta" style="margin:8px 0 0">Expected loss is {{ pr.loss_ratio_at_gross | pct(0) }} of the gross premium.</p>
   </div>
 
-  <h3>How the price moves with the trigger</h3>
-  <p>Every phase trigger re-set to the percentile shown, exits unchanged. This is the main lever to agree with the
-    underwriter; real yields are needed to see what each choice does to basis risk.</p>
-  <div class="card table-wrap">
-    <table>
-      <tr><th class="num">Trigger percentile</th><th class="num">Seasons paying</th><th class="num">Expected loss</th>
-        <th class="num">1-in-10 loss</th><th class="num">Gross rate</th></tr>
-      {% for row in s.trigger_sensitivity %}
-      <tr><td class="num">P{{ row.trigger_percentile }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
-        <td class="num">{{ row.expected_loss | pct(1) }}</td><td class="num">{{ row.loss_1_in_10 | pct(1) }}</td>
-        <td class="num">{{ row.gross_rate | pct(1) }}</td></tr>
-      {% endfor %}
-    </table>
-  </div>
-
-  <h3>Backtest against yields <span class="chip SYNTHETIC">SYNTHETIC YIELDS</span></h3>
-  {% set bt = s.backtest %}
-  {% if bt.available %}
-  <p>No real ward yield history is available yet, so these yields come from a crop water-stress model run on the
-    same rainfall. They agree with the index more than real yields would, so read this section as a check that the
-    calculation works, not as evidence about basis risk.</p>
+  <h3>Validation against FEWS NET WRSI {% if not s.fewsnet_validation.available %}<span class="chip PENDING">PENDING</span>{% endif %}</h3>
+  {% set fv = s.fewsnet_validation %}
+  {% if fv.available %}
   <div class="tiles">
-    <div class="tile"><div class="k">Rank correlation</div><div class="v">{{ "%.2f" | format(bt.spearman_payout_vs_yield_loss.r) if bt.spearman_payout_vs_yield_loss else "n/a" }}</div>
-      <div class="n">payout vs yield shortfall (Spearman)</div></div>
-    <div class="tile"><div class="k">Basis-risk rate</div><div class="v">{{ bt.basis_risk_rate | pct(0) }}</div>
-      <div class="n">{{ bt.bad_not_paid }} of {{ bt.bad_seasons }} bad seasons unpaid</div></div>
-    <div class="tile"><div class="k">False payout rate</div><div class="v">{{ bt.false_payout_rate | pct(0) }}</div>
-      <div class="n">{{ bt.paid_not_bad }} of {{ bt.paid_seasons }} paid seasons were fine</div></div>
+    <div class="tile"><div class="k">Correlation (Pearson)</div><div class="v">{{ fv.pearson_r | num(2) }}</div><div class="n">{{ fv.seasons }} seasons, {{ fv.first_year }}&ndash;{{ fv.last_year }}</div></div>
+    <div class="tile"><div class="k">Rank correlation</div><div class="v">{{ fv.spearman_r | num(2) }}</div><div class="n">Spearman</div></div>
+    <div class="tile"><div class="k">Mean difference</div><div class="v">{{ fv.mean_difference | num(1) }}</div><div class="n">ours minus FEWS NET, WRSI points</div></div>
   </div>
-  <div class="card">
-    <div class="legend">{% for l in c.scatter_legend %}<span><i style="background:{{ l.color }}"></i>{{ l.label }}</span>{% endfor %}</div>
-    {{ c.scatter | safe }}
-    <p class="meta" style="margin:8px 0 0">Bad season: yield below {{ m.backtest_settings.bad_yield_threshold | pct(0) }} of the median
-      ({{ "%.2f" | format(bt.bad_season_cutoff_t_per_ha) }} t/ha). Paid: payout of at least {{ m.backtest_settings.meaningful_payout | pct(0) }} of sum insured
-      (vertical line).{% if bt.basis_risk_years %} Basis-risk seasons: {{ bt.basis_risk_years | join(", ") }}.{% endif %}</p>
+  <div class="card">{{ c.fewsnet | safe }}
+    {% if fv.large_gaps %}<p class="meta" style="margin:8px 0 0">Gaps of {{ fv.large_gap_threshold | num }}+ points:
+      {% for g in fv.large_gaps %}{{ g.year }} (ours {{ g.ours | num }}, FEWS NET {{ g.fewsnet | num }}){% if not loop.last %}; {% endif %}{% endfor %}.</p>{% endif %}</div>
+  {% else %}
+  <div class="card"><p style="margin:0">Comparison with the USGS / FEWS NET "CHIRPS Croplands WRSI, Apr&ndash;Nov long rains, grains"
+    product is not computed yet. {{ fv.reason }} It runs automatically once the end-of-season values are placed in
+    <code>data/raw/fewsnet_wrsi/{{ r.ward.id }}_{{ s.season }}.csv</code>.</p></div>
+  {% endif %}
+
+  <h3>Basis risk {% if not s.basis_risk.available %}<span class="chip PENDING">NOT MEASURABLE YET</span>{% endif %}</h3>
+  {% set br = s.basis_risk %}
+  {% if br.available %}
+  <div class="tiles">
+    <div class="tile"><div class="k">Basis-risk rate</div><div class="v">{{ br.basis_risk_rate | pct(0) }}</div><div class="n">{{ br.bad_not_paid }} of {{ br.bad_seasons }} bad seasons unpaid</div></div>
+    <div class="tile"><div class="k">False payout rate</div><div class="v">{{ br.false_payout_rate | pct(0) }}</div><div class="n">{{ br.paid_not_bad }} of {{ br.paid_seasons }} paid seasons were fine</div></div>
   </div>
   {% else %}
-  <p>Backtest unavailable: {{ bt.reason }}</p>
+  <div class="card"><p style="margin:0">{{ br.reason }}</p></div>
   {% endif %}
 
   <details>
     <summary>Season-by-season table ({{ b.seasons }} seasons)</summary>
     <div class="card table-wrap">
       <table>
-        <tr><th>Year</th>{% for p in s.terms %}<th class="num">{{ p | pretty }} mm</th>{% endfor %}
-          <th class="num">Payout</th><th class="num">Yield t/ha (SYNTHETIC)</th></tr>
+        <tr><th>Year</th><th>Start of season</th><th class="num">Season rain</th><th class="num">Water need</th><th class="num">WRSI</th>
+          <th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
         {% for h in s.history %}
-        <tr><td>{{ h.year }}</td>{% for p in s.terms %}<td class="num">{{ h["rain_" ~ p] }}</td>{% endfor %}
-          <td class="num">{{ h.payout_frac | pct }}</td><td class="num">{{ "%.2f" | format(h.yield_t_per_ha) }}</td></tr>
+        <tr><td>{{ h.year }}</td><td>{{ h.sos or "failed onset" }}</td><td class="num">{{ h.season_rain_mm | num }}</td>
+          <td class="num">{{ h.water_requirement_mm | num }}</td><td class="num">{{ h.wrsi | num }}</td>
+          <td class="num">{{ h.payout | pct(0) }}</td><td class="num">{{ h.v0_payout | pct(0) }}</td></tr>
         {% endfor %}
       </table>
     </div>
   </details>
   {% endfor %}
 
-  {% if seasons | length > 0 %}
-  <h2>Loss exceedance</h2>
-  <p>How often a season pays at least a given amount, read straight from the history. Steep tails mean a few
-    severe seasons drive the price.</p>
-  <div class="card">
-    {% if ward_charts.exceedance_legend | length > 1 %}<div class="legend">{% for l in ward_charts.exceedance_legend %}<span><i style="background:{{ l.color }}"></i>{{ l.label }}</span>{% endfor %}</div>{% endif %}
-    {{ ward_charts.exceedance | safe }}
-  </div>
-  {% endif %}
-
   <h2>Method</h2>
-  <div class="formula">Phase rainfall   R_p = sum of daily rain in phase p (days &lt; {{ r.daily_min_mm }} mm count 0, days capped at {{ r.daily_cap_mm }} mm)
-Phase payout     f_p = clip((trigger_p - R_p) / (trigger_p - exit_p), 0, 1)
-Season payout    P   = sum_p weight_p * f_p                    (share of sum insured, at most 1)
-Burn cost        expected loss = mean P over all seasons; 1-in-10 = 90th pct; 1-in-20 = 95th pct
-Gross premium    (expected loss + risk margin) / (1 - sum of loadings)</div>
-  <p style="margin-top:12px">Percentile levels are resolved from this ward's own seasons over
-    {{ r.calibration.start_year }}&ndash;{{ r.calibration.end_year }}. Because that window overlaps the backtest, the triggers are
-    fitted in-sample; hold out recent years in <code>product.yaml</code> to test out of sample. CHIRPS daily values are disaggregated
-    from five-day totals, so the index only ever uses multi-week phase sums.</p>
+  <div class="formula">Dekads          rain and PET summed over days 1-10, 11-20, 21-end of each month
+Start of season first dekad in the window with rain >= first_mm, then >= next_two_mm over the next two dekads
+Each crop dekad Kc from the FEWS NET maize curve at the dekad's share of the growing period
+                WR  = Kc x PET
+                Ks  = min(1, (soil + rain) / ((1 - p) x capacity))
+                AET = min(Ks x WR, soil + rain);  soil = min(capacity, soil + rain - AET)
+WRSI            100 x sum(AET) / sum(WR) at the end of the growing period
+Payout          failed onset: fixed share;  else clip((trigger - WRSI) / (trigger - exit), 0, 1)
+Gross premium   (expected loss + risk margin) / (1 - sum of loadings)</div>
+  <p style="margin-top:12px">WRSI weights every dekad's shortfall by that dekad's water requirement, whatever the growth stage, so a
+    deficit concentrated at flowering in an otherwise wet season is diluted. CHIRPS daily values are disaggregated from
+    five-day totals; the index only uses dekadal sums. PET is Hargreaves from NASA POWER temperature, shifted to the
+    ward's elevation, because FEWS NET Penman-Monteith PET was unreachable.</p>
 
   <h2>Reproduce this run</h2>
   <div class="card table-wrap">
@@ -293,9 +370,10 @@ Gross premium    (expected loss + risk margin) / (1 - sum of loadings)</div>
       <tr><th>Command</th><td class="mono">{{ m.command }}</td></tr>
       <tr><th>Run id</th><td class="mono">{{ m.run_id }}</td></tr>
       <tr><th>Code version</th><td class="mono">agroshield {{ m.package_version }}, git {{ m.git.commit }}{% if m.git.dirty %} (uncommitted changes){% endif %}</td></tr>
-      <tr><th>Index version</th><td class="mono">{{ r.index_version }}</td></tr>
+      <tr><th>Index version</th><td class="mono">{{ r.index_version }} (v0 for comparison: {{ m.index_v0_version }})</td></tr>
       {% for f, h in m.config_sha256.items() %}<tr><th>config/{{ f }}</th><td class="mono hash">{{ h }}</td></tr>{% endfor %}
       <tr><th>Rainfall input</th><td class="mono hash">{{ m.rainfall.get("cache_file", m.rainfall.source) }} {{ m.rainfall.get("sha256") or "" }}</td></tr>
+      <tr><th>PET input</th><td class="mono hash">{{ m.pet.get("cache_file", m.pet.source) }} {{ m.pet.get("sha256") or "" }}</td></tr>
       <tr><th>Results file</th><td class="mono hash">results.json {{ m.results_sha256 }}</td></tr>
     </table>
   </div>

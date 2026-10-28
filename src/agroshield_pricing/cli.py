@@ -1,8 +1,9 @@
 """Command line: `agroshield-price run --ward ward-a` prices a ward and writes its report.
 
 Subcommands
-  run              price and backtest one ward (or all pilot wards) -> runs/<run_id>/
+  run              price one ward (or all pilot wards) -> runs/<run_id>/
   fetch-rainfall   download and cache CHIRPS for one or all pilot wards
+  fetch-climate    download and cache NASA POWER temperature (for Hargreaves PET)
   validate         load and validate config/ without pricing anything
 """
 from __future__ import annotations
@@ -15,6 +16,7 @@ from pathlib import Path
 from .audit import append_audit_log, base_manifest, new_run_id, sha256_file
 from .config import load_config
 from .engine import price_ward
+from .pet import make_pet_source
 from .rainfall import make_source
 from .report import render_html, write_json
 
@@ -28,13 +30,16 @@ def cmd_run(args) -> int:
     repo = _repo_root(Path(args.config))
     runs_dir = Path(args.out) if args.out else repo / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
-    source_name = args.source or cfg.rainfall.source
-    source = make_source(cfg, source_name, allow_download=not args.offline)
+    # --source synthetic switches both inputs, so a fully synthetic run is one flag.
+    rain_name = args.source or cfg.rainfall.source
+    pet_name = args.pet or ("synthetic" if args.source == "synthetic" else cfg.pet.source)
+    rain_source = make_source(cfg, rain_name, allow_download=not args.offline)
+    pet_source = make_pet_source(cfg, pet_name, allow_download=not args.offline)
     wards = cfg.pilot.wards if args.all else [args.ward or cfg.pilot.default_ward]
     command = "agroshield-price " + " ".join(shlex.quote(a) for a in sys.argv[1:])
 
     for ward_id in wards:
-        result = price_ward(cfg, ward_id, source)
+        result = price_ward(cfg, ward_id, rain_source, pet_source)
         run_id = new_run_id(ward_id)
         out = runs_dir / run_id
         out.mkdir()
@@ -43,12 +48,14 @@ def cmd_run(args) -> int:
         manifest = {
             **base_manifest(run_id, command, repo),
             "ward_id": ward_id,
-            "rainfall_source": source_name,
+            "rainfall_source": rain_name,
+            "pet_source": pet_name,
             "rainfall": result.summary["rainfall_provenance"],
+            "pet": result.summary["pet_provenance"],
             "index_version": cfg.product.layer_b.version,
+            "index_v0_version": cfg.product.layer_b_v0.version,
             "pilot": cfg.pilot.model_dump(),
             "history": cfg.rainfall.history.model_dump(),
-            "backtest_settings": cfg.product.backtest.model_dump(),
             "config_sha256": cfg.file_hashes,
             "results_sha256": sha256_file(results_path),
         }
@@ -58,19 +65,21 @@ def cmd_run(args) -> int:
 
         print(f"\n{result.summary['ward']['name']}  [{run_id}]")
         for s, sr in result.seasons.items():
-            b, p = sr.summary["burn_cost"], sr.summary["premium"]
-            print(f"  {s}: {b['seasons']} seasons, pays in {b['payout_frequency']:.0%}, "
-                  f"expected loss {b['expected_loss']:.2%}, 1-in-10 {b['loss_1_in_10']:.1%}, "
+            b, p, tg = sr.summary["burn_cost"], sr.summary["premium"], sr.summary["target"]
+            print(f"  {s}: {b['seasons']} seasons, pays in {b['payout_frequency']:.0%} "
+                  f"({'in' if tg['in_band'] else 'outside'} target band), expected loss {b['expected_loss']:.2%}, "
                   f"gross rate {p['gross_rate']:.2%} of sum insured")
+            for e in sr.summary["event_tests"]:
+                print(f"     event {e['year']}: WRSI {e['wrsi']}, payout {e['payout']:.0%} -> "
+                      f"{'PASS' if e['passed'] else 'FAIL'} (needs >= {e['min_payout']:.0%})")
         labels = sorted({p["label"] for p in result.summary["provenance"]})
         print(f"  inputs: {', '.join(labels)} (see report)")
         print(f"  report: {out / 'report.html'}")
     return 0
 
 
-def cmd_fetch(args) -> int:
+def _fetch(args, src, what: str) -> int:
     cfg = load_config(args.config)
-    src = make_source(cfg, "chirps")
     wards = cfg.pilot.wards if args.all or not args.ward else [args.ward]
     h = cfg.rainfall.history
     for ward_id in wards:
@@ -82,16 +91,26 @@ def cmd_fetch(args) -> int:
                 print(f"{ward_id}: {e}")
                 return 1
             if cached:
-                print(f"{ward_id}: cached, skipping (use --refresh to re-download)")
+                print(f"{ward_id}: {what} cached, skipping (use --refresh to re-download)")
                 continue
         print(f"{ward_id}: saved {src.fetch(ward, h.start_year, h.end_year)}")
     return 0
 
 
+def cmd_fetch_rain(args) -> int:
+    cfg = load_config(args.config)
+    return _fetch(args, make_source(cfg, "chirps"), "CHIRPS")
+
+
+def cmd_fetch_climate(args) -> int:
+    cfg = load_config(args.config)
+    return _fetch(args, make_pet_source(cfg, "hargreaves_nasapower"), "NASA POWER")
+
+
 def cmd_validate(args) -> int:
     cfg = load_config(args.config)
     print(f"config OK: {len(cfg.wards)} wards, index {cfg.product.layer_b.version}, "
-          f"rainfall source {cfg.rainfall.source}")
+          f"rainfall {cfg.rainfall.source}, PET {cfg.pet.source}")
     return 0
 
 
@@ -101,19 +120,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", default="config", help="config directory (default: ./config)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    r = sub.add_parser("run", help="price and backtest a ward, write the HTML report")
+    r = sub.add_parser("run", help="price a ward, write the HTML report")
     r.add_argument("--ward", help="ward id from wards.yaml (default: pilot.default_ward)")
     r.add_argument("--all", action="store_true", help="every pilot ward")
     r.add_argument("--source", choices=["chirps", "synthetic"], help="override rainfall.source")
+    r.add_argument("--pet", choices=["hargreaves_nasapower", "synthetic"], help="override pet.source")
     r.add_argument("--offline", action="store_true", help="never download; fail if not cached")
     r.add_argument("--out", help="output directory (default: ./runs)")
     r.set_defaults(fn=cmd_run)
 
-    f = sub.add_parser("fetch-rainfall", help="download CHIRPS for pilot wards")
-    f.add_argument("--ward")
-    f.add_argument("--all", action="store_true")
-    f.add_argument("--refresh", action="store_true", help="re-download even if cached")
-    f.set_defaults(fn=cmd_fetch)
+    for name, fn, helptext in (("fetch-rainfall", cmd_fetch_rain, "download CHIRPS for pilot wards"),
+                               ("fetch-climate", cmd_fetch_climate, "download NASA POWER temperature")):
+        f = sub.add_parser(name, help=helptext)
+        f.add_argument("--ward")
+        f.add_argument("--all", action="store_true")
+        f.add_argument("--refresh", action="store_true", help="re-download even if cached")
+        f.set_defaults(fn=fn)
 
     v = sub.add_parser("validate", help="validate config only")
     v.set_defaults(fn=cmd_validate)
