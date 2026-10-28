@@ -102,3 +102,25 @@ def test_pilot_scope_is_long_rains_only(cfg):
 def test_growing_period_in_dekads(cfg):
     assert cfg.calendar("ward-a", "LR").lgp_dekads == 13
     assert cfg.calendar("ward-b", "LR").lgp_dekads == 18
+
+
+# ------------------------------------------------------------------ 2c: targets and events per ward
+def test_each_ward_has_its_own_target_band(cfg):
+    t = cfg.product.target
+    assert t.band_for("ward-a") == pytest.approx((1 / 7, 1 / 5))
+    assert t.band_for("ward-b") == pytest.approx((1 / 12, 1 / 8))
+
+
+def test_1984_is_required_at_ward_a_only(cfg):
+    e = next(e for e in cfg.product.event_tests if e.year == 1984)
+    assert e.required_for == ["ward-a"]
+
+
+def test_flowering_component_is_off_by_default(cfg):
+    assert cfg.product.layer_b.flowering.enabled is False
+
+
+def test_flowering_exit_must_exceed_trigger(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_b"]["flowering"].update(trigger=30, exit=20))
+    with pytest.raises(ValidationError, match="exit must exceed trigger"):
+        load_config(config_copy)

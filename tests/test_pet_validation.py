@@ -84,3 +84,31 @@ def test_fewsnet_comparison_pending_without_data():
 def test_basis_risk_not_measurable_without_real_yields(cfg, tmp_path):
     r = real_yield_backtest(cfg, "ward-a", "LR", pd.Series([0.1, 0.0], index=[2000, 2001]))
     assert r["available"] is False and "Not measurable" in r["reason"]
+
+
+# ------------------------------------------------------------------ calibration against FEWS NET PET
+def test_calibration_uses_fews_from_2001_and_scales_earlier_years(cfg, tmp_path):
+    from agroshield_pricing.pet import SyntheticPetSource
+    from agroshield_pricing.pet.calibrated import CalibratedPetSource
+    ward = cfg.ward("ward-a")
+    base = SyntheticPetSource()
+    harg = base.daily(ward, 1999, 2003)
+    fews = (harg.loc["2001-01-01":] * 0.8).rename("pet_mm")       # FEWS NET 20% lower
+    fews_dir = tmp_path / "fews"
+    fews_dir.mkdir()
+    pd.DataFrame({"date": fews.index.strftime("%Y-%m-%d"), "pet_mm": fews.values}).to_csv(fews_dir / "ward-a.csv", index=False)
+    src = CalibratedPetSource(base, fews_dir)
+    out = src.daily(ward, 1999, 2003)
+    cal = src.calibration["ward-a"]
+    assert cal["available"] and cal["bias_pct"] == pytest.approx(25.0, abs=0.1)   # Hargreaves 25% above FEWS
+    assert out.loc["2002-06-01"] == pytest.approx(fews.loc["2002-06-01"])          # FEWS used where it exists
+    assert out.loc["1999-06-01"] == pytest.approx(harg.loc["1999-06-01"] * 0.8, rel=1e-6)  # scaled before 2001
+
+
+def test_calibration_pending_without_fews_file(cfg, tmp_path):
+    from agroshield_pricing.pet import SyntheticPetSource
+    from agroshield_pricing.pet.calibrated import CalibratedPetSource
+    ward = cfg.ward("ward-a")
+    src = CalibratedPetSource(SyntheticPetSource(), tmp_path / "none", "server down")
+    assert src.daily(ward, 2000, 2001).equals(SyntheticPetSource().daily(ward, 2000, 2001))
+    assert src.calibration["ward-a"] == {"available": False, "reason": "server down"}

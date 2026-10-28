@@ -125,8 +125,9 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <div class="banner">
     <b>Illustrative pricing. Not a filed product and not for sale.</b>
-    Ward location, soil water capacity, crop calendar, WRSI trigger and exit, failed-onset payout, payout
-    frequency target, loadings and sum insured are placeholders. PET is a flagged fallback (Hargreaves).
+    Ward location, soil water capacity, crop calendar, WRSI trigger and exit, failed-onset and germination thresholds,
+    replanting cost, payout frequency target, loadings and sum insured are placeholders. The flowering component is
+    EXPERIMENTAL. PET is a flagged fallback (Hargreaves).
     The FEWS NET comparison and basis risk are pending the data listed below.
   </div>
 
@@ -176,19 +177,37 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
       <tr><th>Event</th><th>Start of season</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">Required</th><th>Result</th><th class="num">v0 payout</th></tr>
       {% for e in s.event_tests %}
       <tr><td>{{ e.year }}: {{ e.note }}</td><td>{{ e.sos or "failed onset" }}</td>
-        <td class="num">{{ e.wrsi | num }}</td><td class="num">{{ e.payout | pct(0) }}</td><td class="num">&ge; {{ e.min_payout | pct(0) }}</td>
-        <td>{% if e.passed %}<span class="status pass">&#10003; PASS</span>{% else %}<span class="status fail">&#10007; FAIL</span>{% endif %}</td>
+        <td class="num">{{ e.wrsi | num }}</td><td class="num">{{ e.payout | pct(0) }}</td>
+        <td class="num">{% if e.required %}&ge; {{ e.min_payout | pct(0) }}{% else %}not required here{% endif %}</td>
+        <td>{% if not e.required %}reported{% elif e.passed %}<span class="status pass">&#10003; PASS</span>{% else %}<span class="status fail">&#10007; FAIL</span>{% endif %}</td>
         <td class="num">{{ e.v0_payout | pct(0) }}</td></tr>
       {% else %}<tr><td colspan="7" class="meta">No event tests configured for this season.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <h3>Early-season triggers</h3>
+  <p>Every season where the failed-onset or germination dry-spell trigger fired, with the rainfall that caused it.</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Season</th><th>Trigger</th><th class="num">Payout per acre</th><th>Rainfall that caused it</th></tr>
+      {% for e in s.early_season_triggers %}
+      <tr><td>{{ e.year }}</td><td>{{ e.trigger }}</td><td class="num">{{ e.payout_kes | kes }}</td><td>{{ e.cause }}</td></tr>
+      {% else %}<tr><td colspan="4" class="meta">Neither trigger fired in {{ b.seasons }} seasons.</td></tr>{% endfor %}
+    </table>
+    <p class="meta" style="margin:8px 0 0">Failed onset fired in {{ s.onset_stats.failed_onsets }} seasons
+      (threshold {{ t.failed_onset.window_rain_below_mm | num }} mm over the window). Driest planting windows:
+      {% for w in s.onset_stats.lowest_window_rain %}{{ w.year }} ({{ w.mm | num }} mm){% if not loop.last %}, {% endif %}{% endfor %}.
+      Germination dry spell fired in {{ s.onset_stats.germination_failures }} seasons.</p>
     </table>
   </div>
 
   <h3>Index terms</h3>
   <div class="card table-wrap">
     <table>
-      <tr><th>Start of season rule</th><td>first dekad with &ge; {{ t.onset.first_dekad_mm | num }} mm, then &ge; {{ t.onset.next_two_dekads_mm | num }} mm over the next two dekads, searched {{ s.calendar.planting_window.start }} to {{ s.calendar.planting_window.end }}</td></tr>
-      <tr><th>Failed onset</th><td>no start of season in the window pays {{ t.failed_onset_payout | pct(0) }} of sum insured
-        ({{ s.onset_stats.failed_onsets }} of {{ b.seasons }} seasons{% if s.onset_stats.failed_onset_years %}: {{ s.onset_stats.failed_onset_years | join(", ") }}{% endif %})</td></tr>
+      <tr><th>Start of season</th><td>first dekad with &ge; {{ t.planting_rain_mm | num }} mm (planting rain), searched {{ s.calendar.planting_window.start }} to {{ s.calendar.planting_window.end }}; the end of the window if none</td></tr>
+      <tr><th>Failed onset</th><td>window rain below {{ t.failed_onset.window_rain_below_mm | num }} mm pays {{ t.failed_onset_payout | pct(0) }} of sum insured, no WRSI season</td></tr>
+      <tr><th>Germination dry spell</th><td>less than {{ t.germination_dry_spell.rain_below_mm | num }} mm in the {{ t.germination_dry_spell.days_after_planting }} days after the planting rain pays
+        {{ t.germination_dry_spell.replant_cost_kes_per_acre | kes }} per acre (replanting seed, once a season); the season restarts at the next planting rain, searched up to {{ t.germination_dry_spell.restart_search_extra_dekads }} dekads past the window</td></tr>
       <tr><th>Starts found</th><td>earliest {{ s.onset_stats.earliest }}, latest {{ s.onset_stats.latest }}</td></tr>
       <tr><th>Water balance</th><td>soil holds {{ t.soil_whc_mm | num }} mm; stress once below {{ (1 - t.depletion_fraction) | pct(0) }} of that; {{ t.spinup_dekads }} dekads of pre-season spin-up</td></tr>
       <tr><th>Crop coefficients</th><td>{% for k in t.kc["values"] %}{{ k }} at {{ t.kc["points_pct"][loop.index0] | num }}%{% if not loop.last %}, {% endif %}{% endfor %} of the growing period</td></tr>
@@ -228,7 +247,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   {% endfor %}
 
   <h3>Payouts by year: v1 (WRSI) and v0 (per-phase)</h3>
-  <p>Same scale. v1 pays far less often; failed onsets are shown in yellow.</p>
+  <p>Same scale, as shares of the {{ pr.default_sum_insured_kes_per_acre | kes }} sum insured. Seasons with a failed-onset or replanting payout are yellow.</p>
   <div class="card"><h4 style="margin:0 0 4px">v1 WRSI, {{ s.v1_metrics.payout_frequency | pct(0) }} of seasons</h4>{{ c.payouts_v1 | safe }}</div>
   <div class="card"><h4 style="margin:0 0 4px">v0 per-phase, {{ s.v0.payout_frequency | pct(0) }} of seasons</h4>{{ c.payouts_v0 | safe }}</div>
 
@@ -251,6 +270,28 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <div class="card">
     <div class="legend"><span><i style="background:var(--series-1)"></i>v1 WRSI</span><span><i style="background:var(--series-2)"></i>v0 per-phase</span></div>
     {{ c.exceedance | safe }}
+  </div>
+
+  {% set fl = s.flowering %}
+  <h3>Flowering dry spell <span class="chip ILLUSTRATIVE">EXPERIMENTAL</span></h3>
+  <p>A separate component for drought during flowering ({{ fl.terms.window_pct_of_lgp[0] | num }}&ndash;{{ fl.terms.window_pct_of_lgp[1] | num }}% of the growing period),
+    {% if fl.enabled_in_product %}<b>included in this product</b>{% else %}<b>off</b>: shown beside the WRSI-only product for comparison and not in the price above{% endif %}.
+    Metric: {{ fl.terms.metric | replace("_", " ") }} (trigger {{ fl.terms.trigger | num }}, exit {{ fl.terms.exit | num }}{% if fl.terms.metric == "longest_dry_spell" %} days, a day below {{ fl.terms.dry_day_mm | num(1) }} mm is dry{% else %}% short of crop water need{% endif %}),
+    up to {{ fl.terms.max_payout | pct(0) }} of sum insured. CHIRPS daily values are disaggregated from five-day totals, so dry-spell lengths are approximate.</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Measure</th><th class="num">WRSI only</th><th class="num">WRSI + flowering ({{ fl.terms.metric | replace("_", " ") }})</th>
+        <th class="num">WRSI + flowering ({{ fl.alternative.metric | replace("_", " ") }}, trigger {{ fl.alternative.trigger | num }}, exit {{ fl.alternative.exit | num }})</th></tr>
+      <tr><td>Seasons with a payout</td><td class="num">{{ fl.wrsi_only.payout_frequency | pct(0) }}</td><td class="num">{{ fl.with_flowering.payout_frequency | pct(0) }}</td><td class="num">{{ fl.alternative.with_flowering.payout_frequency | pct(0) }}</td></tr>
+      <tr><td>Expected loss</td><td class="num">{{ fl.wrsi_only.expected_loss | pct }}</td><td class="num">{{ fl.with_flowering.expected_loss | pct }}</td><td class="num">{{ fl.alternative.with_flowering.expected_loss | pct }}</td></tr>
+      <tr><td>1-in-10 loss</td><td class="num">{{ fl.wrsi_only.loss_1_in_10 | pct }}</td><td class="num">{{ fl.with_flowering.loss_1_in_10 | pct }}</td><td class="num">{{ fl.alternative.with_flowering.loss_1_in_10 | pct }}</td></tr>
+      <tr><td>Gross premium rate</td><td class="num">{{ fl.wrsi_only.gross_rate | pct }}</td><td class="num">{{ fl.with_flowering.gross_rate | pct }}</td><td class="num">{{ fl.alternative.with_flowering.gross_rate | pct }}</td></tr>
+      {% for y, v in fl.wrsi_only.event_payouts.items() %}
+      <tr><td>{{ y }} payout</td><td class="num">{{ v | pct(0) }}</td><td class="num">{{ fl.with_flowering.event_payouts[y] | pct(0) }}</td><td class="num">{{ fl.alternative.with_flowering.event_payouts[y] | pct(0) }}</td></tr>
+      {% endfor %}
+    </table>
+    <p class="meta" style="margin:8px 0 0">The configured metric pays in {{ fl.seasons_flowering_pays | length }} seasons:
+      {% for x in fl.seasons_flowering_pays %}{{ x.year }} ({{ x.dry_spell_days }} dry days, {{ x.flowering_share | pct(0) }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
   </div>
 
   <h3>How the price moves with the WRSI trigger</h3>
@@ -280,6 +321,19 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
         <td class="num">{{ row.expected_loss | pct(1) }}</td><td class="num">{{ row.gross_rate | pct(1) }}</td>
         {% for e in s.event_tests %}<td class="num">{{ row.event_payouts[e.year | string] | pct(0) }}</td>{% endfor %}
         <td>{% if row.is_current %}current{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h3>Components, each priced on its own</h3>
+  <p>At the {{ pr.default_sum_insured_kes_per_acre | kes }} sum insured, before the season cap. The product price below combines the components marked "in product".</p>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Expected payout per acre</th><th class="num">Gross premium alone</th><th></th></tr>
+      {% for c_ in s.components %}
+      <tr><td>{{ c_.component }}</td><td class="num">{{ c_.seasons_paying }} ({{ c_.payout_frequency | pct(0) }})</td>
+        <td class="num">{{ c_.expected_loss_kes | kes }}</td><td class="num">{{ c_.gross_kes_alone | kes }}</td>
+        <td>{{ "in product" if c_.in_product else "not in product" }}</td></tr>
       {% endfor %}
     </table>
   </div>
@@ -322,6 +376,17 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <code>data/raw/fewsnet_wrsi/{{ r.ward.id }}_{{ s.season }}.csv</code>.</p></div>
   {% endif %}
 
+  {% set pc = r.pet_calibration %}
+  <h3>PET calibration against FEWS NET {% if not pc.available %}<span class="chip PENDING">PENDING</span>{% endif %}</h3>
+  {% if pc.available %}
+  <div class="card"><p style="margin:0">FEWS NET Penman-Monteith PET is used from {{ pc.fewsnet_from }}; Hargreaves is scaled by a monthly ratio
+    before that. Over the {{ pc.overlap[0] }} to {{ pc.overlap[1] }} overlap, raw Hargreaves averaged {{ pc.hargreaves_mean_mm_per_day | num(2) }} mm/day
+    against FEWS NET's {{ pc.fewsnet_mean_mm_per_day | num(2) }} mm/day: a bias of {{ pc.bias_pct | num(1) }}%.</p></div>
+  {% else %}
+  <div class="card"><p style="margin:0">Hargreaves is used for the whole record and is not yet calibrated. {{ pc.reason }}
+    Once FEWS NET daily PET is in <code>data/raw/fewsnet_pet/{{ r.ward.id }}.csv</code>, it is used from 2001 and the bias is reported here.</p></div>
+  {% endif %}
+
   <h3>Basis risk {% if not s.basis_risk.available %}<span class="chip PENDING">NOT MEASURABLE YET</span>{% endif %}</h3>
   {% set br = s.basis_risk %}
   {% if br.available %}
@@ -337,11 +402,13 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <summary>Season-by-season table ({{ b.seasons }} seasons)</summary>
     <div class="card table-wrap">
       <table>
-        <tr><th>Year</th><th>Start of season</th><th class="num">Season rain</th><th class="num">Water need</th><th class="num">WRSI</th>
-          <th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
+        <tr><th>Year</th><th>Start of season</th><th class="num">Window rain</th><th class="num">Season rain</th><th class="num">Water need</th><th class="num">WRSI</th>
+          <th class="num">Replanting</th><th class="num">Flowering dry days (exp.)</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
         {% for h in s.history %}
-        <tr><td>{{ h.year }}</td><td>{{ h.sos or "failed onset" }}</td><td class="num">{{ h.season_rain_mm | num }}</td>
+        <tr><td>{{ h.year }}</td><td title="{{ h.sos_rule }}">{{ h.sos or "failed onset" }}{% if h.germination_failed %} (replanted){% endif %}</td>
+          <td class="num">{{ h.window_rain_mm | num }}</td><td class="num">{{ h.season_rain_mm | num }}</td>
           <td class="num">{{ h.water_requirement_mm | num }}</td><td class="num">{{ h.wrsi | num }}</td>
+          <td class="num">{{ h.replant_kes | kes if h.replant_kes else "" }}</td><td class="num">{{ h.flowering_dry_spell_days | num }}</td>
           <td class="num">{{ h.payout | pct(0) }}</td><td class="num">{{ h.v0_payout | pct(0) }}</td></tr>
         {% endfor %}
       </table>
@@ -351,14 +418,16 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <h2>Method</h2>
   <div class="formula">Dekads          rain and PET summed over days 1-10, 11-20, 21-end of each month
-Start of season first dekad in the window with rain >= first_mm, then >= next_two_mm over the next two dekads
+Failed onset    window rain < threshold: fixed share of sum insured, no WRSI season
+Start of season first dekad in the window with rain >= planting_rain_mm (window end if none)
+Germination     rain in the N days after planting < threshold: replanting cost paid, start moves to next planting rain
 Each crop dekad Kc from the FEWS NET maize curve at the dekad's share of the growing period
                 WR  = Kc x PET
                 Ks  = min(1, (soil + rain) / ((1 - p) x capacity))
                 AET = min(Ks x WR, soil + rain);  soil = min(capacity, soil + rain - AET)
 WRSI            100 x sum(AET) / sum(WR) at the end of the growing period
-Payout          failed onset: fixed share;  else clip((trigger - WRSI) / (trigger - exit), 0, 1)
-Gross premium   (expected loss + risk margin) / (1 - sum of loadings)</div>
+Season payout   min(SI, failed-onset share x SI  or  clip((trigger - WRSI) / (trigger - exit), 0, 1) x SI + replanting KES)
+Gross premium   (expected loss + risk margin) / (1 - sum of loadings), per sum-insured option in KES</div>
   <p style="margin-top:12px">WRSI weights every dekad's shortfall by that dekad's water requirement, whatever the growth stage, so a
     deficit concentrated at flowering in an otherwise wet season is diluted. CHIRPS daily values are disaggregated from
     five-day totals; the index only uses dekadal sums. PET is Hargreaves from NASA POWER temperature, shifted to the

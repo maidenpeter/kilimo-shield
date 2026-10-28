@@ -80,3 +80,21 @@ def test_regression_ward_a_1984_from_committed_inputs(cfg):
     assert e["year"] == 1984 and e["sos"] == "Apr d1 1984"
     assert e["wrsi"] == pytest.approx(55.56, abs=0.01)
     assert e["passed"]
+
+
+def test_product_payout_adds_replanting_and_caps_at_sum_insured():
+    import pandas as pd
+    from agroshield_pricing.engine import product_kes
+    t = pd.DataFrame({"failed_onset_share": [0.0, 0.25, 0.0], "wrsi_share": [0.5, 0.0, 1.0],
+                      "replant_kes": [2500.0, 0.0, 2500.0], "flowering_share": [0.3, 0.0, 0.0]},
+                     index=[2000, 2001, 2002])
+    off = product_kes(t, 10000, with_flowering=False)
+    assert off.tolist() == [7500.0, 2500.0, 10000.0]          # 5000 + 2500; failed onset; capped
+    on = product_kes(t, 10000, with_flowering=True)
+    assert on.loc[2000] == 10000.0                            # 5000 + 3000 + 2500, capped at SI
+
+
+def test_reported_event_has_no_pass_fail_at_other_wards(cfg):
+    r = price_ward(cfg, "ward-b", SyntheticRainfallSource(seed=5), SyntheticPetSource())
+    e = r.summary["seasons"]["LR"]["event_tests"][0]
+    assert e["required"] is False and e["passed"] is None

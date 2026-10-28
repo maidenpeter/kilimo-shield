@@ -70,8 +70,11 @@ def cmd_run(args) -> int:
                   f"({'in' if tg['in_band'] else 'outside'} target band), expected loss {b['expected_loss']:.2%}, "
                   f"gross rate {p['gross_rate']:.2%} of sum insured")
             for e in sr.summary["event_tests"]:
-                print(f"     event {e['year']}: WRSI {e['wrsi']}, payout {e['payout']:.0%} -> "
-                      f"{'PASS' if e['passed'] else 'FAIL'} (needs >= {e['min_payout']:.0%})")
+                verdict = ("PASS" if e["passed"] else "FAIL") + f" (needs >= {e['min_payout']:.0%})" \
+                    if e["required"] else "reported only"
+                print(f"     event {e['year']}: WRSI {e['wrsi']}, payout {e['payout']:.0%} -> {verdict}")
+            for e in sr.summary["early_season_triggers"]:
+                print(f"     {e['year']} {e['trigger']}: KES {e['payout_kes']:,.0f}/acre - {e['cause']}")
         labels = sorted({p["label"] for p in result.summary["provenance"]})
         print(f"  inputs: {', '.join(labels)} (see report)")
         print(f"  report: {out / 'report.html'}")
@@ -104,7 +107,7 @@ def cmd_fetch_rain(args) -> int:
 
 def cmd_fetch_climate(args) -> int:
     cfg = load_config(args.config)
-    return _fetch(args, make_pet_source(cfg, "hargreaves_nasapower"), "NASA POWER")
+    return _fetch(args, make_pet_source(cfg, "hargreaves_nasapower").base, "NASA POWER")
 
 
 def cmd_validate(args) -> int:

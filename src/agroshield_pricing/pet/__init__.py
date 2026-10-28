@@ -44,10 +44,12 @@ def make_pet_source(cfg: Config, source: str | None = None, allow_download: bool
                     log=print) -> PetSource:
     name = source or cfg.pet.source
     if name == "hargreaves_nasapower":
+        from .calibrated import CalibratedPetSource
         from .nasapower import HargreavesNasaPowerSource
         repo = Path(cfg.root).parent
-        return HargreavesNasaPowerSource(repo / "data" / "raw" / "nasapower", cfg.pet.lapse_rate_c_per_km,
+        harg = HargreavesNasaPowerSource(repo / "data" / "raw" / "nasapower", cfg.pet.lapse_rate_c_per_km,
                                          allow_download, log)
+        return CalibratedPetSource(harg, repo / cfg.pet.fewsnet_pet_dir, cfg.pet.fewsnet_status)
     if name == "synthetic":
         return SyntheticPetSource()
     raise ValueError(f"unknown PET source {name!r}")

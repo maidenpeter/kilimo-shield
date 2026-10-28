@@ -41,6 +41,10 @@ class PetSettings(BaseModel):
     # synthetic            = labelled seasonal curve, tests only
     source: Literal["hargreaves_nasapower", "synthetic"]
     lapse_rate_c_per_km: float = Field(default=6.5, ge=0, le=12)
+    # FEWS NET daily PET per ward as <dir>/<ward>.csv (date, pet_mm). When present,
+    # it is used from 2001 and Hargreaves is calibrated to it for earlier years.
+    fewsnet_pet_dir: str = "data/raw/fewsnet_pet"
+    fewsnet_status: str = ""
 
 
 class ValidationSettings(BaseModel):
@@ -198,23 +202,57 @@ class KcCurve(BaseModel):
         return self
 
 
-class Onset(BaseModel):
-    first_dekad_mm: float = Field(gt=0)
-    next_two_dekads_mm: float = Field(ge=0)
+class FailedOnset(BaseModel):
+    """Total rain over the whole planting window below a threshold: the season never started."""
+    window_rain_below_mm: float = Field(gt=0)
+    payout: float = Field(ge=0, le=1)          # share of sum insured
+
+
+class GerminationDrySpell(BaseModel):
+    """After a planting rain, too little rain for germination: pays a fixed replanting amount."""
+    days_after_planting: int = Field(gt=0, le=60)
+    rain_below_mm: float = Field(gt=0)
+    replant_cost_kes_per_acre: float = Field(gt=0)
+    # How far past the planting window to look for the replanting rain (dekads).
+    restart_search_extra_dekads: int = Field(ge=0, le=9)
+
+
+class FloweringComponent(BaseModel):
+    """EXPERIMENTAL: extra cover for drought at flowering, priced separately, off by default."""
+    enabled: bool = False
+    window_pct_of_lgp: tuple[float, float]
+    metric: Literal["longest_dry_spell", "rainfall_deficit"]
+    dry_day_mm: float = Field(gt=0)            # longest_dry_spell: a day below this is dry
+    trigger: float = Field(gt=0)               # dry-spell days, or % deficit vs crop water need
+    exit: float = Field(gt=0)
+    max_payout: float = Field(gt=0, le=1)
+
+    @model_validator(mode="after")
+    def _shape(self):
+        a, b = self.window_pct_of_lgp
+        if not 0 <= a < b <= 100:
+            raise ValueError("flowering window_pct_of_lgp must rise within 0-100")
+        if not self.exit > self.trigger:
+            raise ValueError("flowering exit must exceed trigger (longer spell / bigger deficit pays more)")
+        if self.metric == "rainfall_deficit" and self.exit > 100:
+            raise ValueError("flowering rainfall_deficit exit is a % and cannot exceed 100")
+        return self
 
 
 class LayerB(BaseModel):
-    """v1: seasonal WRSI index with dynamic start of season."""
+    """v1: seasonal WRSI index with dynamic start of season and early-season triggers."""
     version: str
     kc: KcCurve
     depletion_fraction: float = Field(gt=0, lt=1)
     spinup_dekads: int = Field(ge=0, le=12)
-    onset: Onset
-    failed_onset_payout: float = Field(ge=0, le=1)
+    planting_rain_mm: float = Field(gt=0)      # a dekad with at least this is a planting rain
+    failed_onset: FailedOnset
+    germination_dry_spell: GerminationDrySpell
     trigger_wrsi: float = Field(gt=0, le=100)
     exit_wrsi: float = Field(ge=0, lt=100)
     sensitivity_triggers: list[float]
     sensitivity_whc_mm: list[float] = []
+    flowering: FloweringComponent
     overrides: dict[str, dict[Season, "WrsiOverride"]] = {}
 
     @model_validator(mode="after")
@@ -228,7 +266,7 @@ class LayerB(BaseModel):
     def terms_for(self, ward_id: str, season: Season) -> dict:
         """Trigger, exit and failed-onset payout for one ward and season."""
         t = {"trigger_wrsi": self.trigger_wrsi, "exit_wrsi": self.exit_wrsi,
-             "failed_onset_payout": self.failed_onset_payout}
+             "failed_onset_payout": self.failed_onset.payout}
         ov = self.overrides.get(ward_id, {}).get(season)
         if ov:
             t.update({k: v for k, v in ov.model_dump().items() if v is not None})
@@ -246,20 +284,33 @@ class WrsiOverride(BaseModel):
 LayerB.model_rebuild()
 
 
+def _band(periods: tuple[float, float]) -> tuple[float, float]:
+    lo, hi = sorted(periods)
+    return 1 / hi, 1 / lo
+
+
 class Target(BaseModel):
     # Payout once every N years, as a band (placeholder pending the underwriter).
     payout_return_period_years: tuple[float, float]
+    ward_overrides: dict[str, tuple[float, float]] = {}
 
     @property
     def frequency_band(self) -> tuple[float, float]:
-        lo, hi = sorted(self.payout_return_period_years)
-        return 1 / hi, 1 / lo
+        return _band(self.payout_return_period_years)
+
+    def periods_for(self, ward_id: str) -> tuple[float, float]:
+        return tuple(self.ward_overrides.get(ward_id, self.payout_return_period_years))
+
+    def band_for(self, ward_id: str) -> tuple[float, float]:
+        return _band(self.periods_for(ward_id))
 
 
 class EventTest(BaseModel):
     year: int
     season: Season
     min_payout: float = Field(gt=0, le=1)
+    # Wards where the payout is REQUIRED (pass/fail); at every other ward the event is reported only.
+    required_for: list[str] = []
     note: str = ""
 
 

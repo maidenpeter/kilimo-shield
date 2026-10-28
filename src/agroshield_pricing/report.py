@@ -21,21 +21,26 @@ def season_charts(result: WardResult, sr) -> dict:
     s = sr.summary
     years = s["years"]
     t = s["terms"]
-    v1, v0 = sr.v1, sr.v0
-    top = max(0.1, float(v1["payout"].max()), float(v0["payout_frac"].max())) * 1.1
+    v1, v0 = sr.table, sr.v0
+    top = max(0.1, float(v1["payout_share"].max()), float(v0["payout_frac"].max())) * 1.1
 
     def tip1(i):
         y = years[i]
         r = v1.loc[y]
         what = "failed onset" if r["failed_onset"] else f"WRSI {r['wrsi']:.0f}"
-        return f"{y}: {what}, payout {r['payout']:.0%} of sum insured"
+        if r["germination_failed"]:
+            what += ", germination dry spell (replanting paid)"
+        return f"{y}: {what}, payout {r['payout_share']:.0%} of sum insured"
+
+    def accent(i):
+        r = v1.loc[years[i]]
+        return "var(--series-4)" if (r["failed_onset"] or r["germination_failed"]) else None
 
     charts = {
         "wrsi": sc.wrsi_dots(years, [None if r["failed_onset"] else float(r["wrsi"]) for _, r in v1.iterrows()],
                              t["trigger_wrsi"], t["exit_wrsi"], "End-of-season WRSI by year"),
-        "payouts_v1": sc.bars(years, [float(v1.loc[y, "payout"]) for y in years], V1_COLOR,
-                              "v1 WRSI payouts by year", tip1, y_max=top,
-                              accent=lambda i: "var(--series-4)" if v1.loc[years[i], "failed_onset"] else None),
+        "payouts_v1": sc.bars(years, [float(v1.loc[y, "payout_share"]) for y in years], V1_COLOR,
+                              "v1 payouts by year", tip1, y_max=top, accent=accent),
         "payouts_v0": sc.bars(years, [float(v0["payout_frac"].get(y, 0.0)) for y in years], V0_COLOR,
                               "v0 per-phase payouts by year",
                               lambda i: f"{years[i]}: v0 payout {float(v0['payout_frac'].get(years[i], 0.0)):.0%}",

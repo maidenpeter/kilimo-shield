@@ -42,9 +42,12 @@ That prices one ward from the committed inputs and prints where its report is:
 The FAO / FEWS NET Water Requirement Satisfaction Index, on a dekadal water balance:
 
 1. Daily CHIRPS rain and daily PET are summed to dekads.
-2. **Start of season** is the first dekad in the ward's planting window with at least
-   25 mm, followed by at least 20 mm over the next two dekads. No start by the end of
-   the window is a **failed onset**, which pays a fixed share of sum insured.
+2. **Failed onset:** if the whole planting window gets less than a threshold of rain, the
+   season never started; it pays a fixed share of sum insured and there is no WRSI season.
+   Otherwise the **start of season** is the first dekad with at least 25 mm (planting rain).
+   **Germination dry spell:** if the 20 days after that planting rain bring too little rain,
+   the replanting seed cost is paid (fixed KES per acre) and the season restarts at the next
+   planting rain.
 3. From the start, for each dekad of the growing period: crop coefficient Kc from the
    FEWS NET maize curve (0.3, 0.3, 1.2, 1.2, 0.35 at 0/16/44/76/100% of the season),
    water requirement `Kc x PET`, and a soil bucket of the ward's water holding capacity.
@@ -53,10 +56,15 @@ The FAO / FEWS NET Water Requirement Satisfaction Index, on a dekadal water bala
 5. **Payout**: 0 at or above the trigger (80), linear to full at or below the exit (50,
    crop failure).
 
-The engine applies this to every season since 1981, computes the burn cost, builds the
-gross premium `(expected loss + risk margin) / (1 - loadings)`, and reports: the target
-payout frequency (1 season in 5-7, placeholder), trigger sensitivity in WRSI points,
-soil-capacity sensitivity, the 1984 event test, the 10 worst seasons, and v1 against v0.
+An **EXPERIMENTAL flowering dry-spell component** (longest dry spell or rainfall deficit in
+the flowering window) is priced separately, off by default, and shown beside WRSI-only.
+
+The engine applies this to every season since 1981 and prices the product per sum-insured
+option in KES (the replanting payout is a fixed amount). It reports each ward's own target
+payout frequency (placeholders: Ward A 1 in 5-7, Ward B 1 in 8-12), every season an
+early-season trigger fired and why, each component priced alone, trigger and soil-capacity
+sensitivity, the 1984 event (required at Ward A, reported at Ward B), the 10 worst seasons,
+and v1 against v0.
 
 There is no claims flow for the parametric layers: they pay on the index.
 

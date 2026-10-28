@@ -26,6 +26,13 @@ pet:
   source: hargreaves_nasapower
   # Shift POWER temperatures from the grid-cell elevation to the ward's.
   lapse_rate_c_per_km: 6.5
+  # Once FEWS NET daily PET is downloaded to <dir>/<ward>.csv (date, pet_mm), it
+  # is used from 2001 on, and Hargreaves is calibrated to it (monthly ratio over
+  # the overlap) for 1981-2000; the bias is reported.
+  fewsnet_pet_dir: data/raw/fewsnet_pet
+  fewsnet_status: >-
+    Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and
+    then refused connections; retried through 2026-10-28.
 
 validation:
   # USGS / FEWS NET "CHIRPS Croplands WRSI, Apr-Nov long rains, grains" end-of-
