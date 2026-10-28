@@ -151,3 +151,16 @@ def test_season_wrsi_end_to_end_on_a_constructed_season(cfg):
     assert s.trace["deficit"].iloc[1:].sum() == pytest.approx(0)
     assert len(s.trace) == cfg.calendar("ward-a", "LR").lgp_dekads
     assert s.flowering["longest_dry_spell_days"] == 0
+
+
+def test_planting_rain_search_starts_at_the_ward_date(cfg):
+    rain = _days()
+    rain["2000-03-05"] = 30.0                      # early rain, before farmers plant
+    rain["2000-03-21":"2000-03-30"] = 3.0          # 30 mm, Mar d3
+    rain["2000-04-01":"2000-09-30"] = 5.0
+    lb = cfg.product.layer_b
+    cal = cfg.calendar("ward-a", "LR").model_copy(update={"planting_rain_from": "03-15"})
+    pet = pd.Series(4.0, index=rain.index)
+    s = season_wrsi(rain, to_dekads(rain), to_dekads(pet), cal, 2000, lb, 100)
+    assert dekad_label(s.planting_rain_dekad) == "Mar d3 2000"    # the 5 March rain is ignored
+    assert not s.germination_failed

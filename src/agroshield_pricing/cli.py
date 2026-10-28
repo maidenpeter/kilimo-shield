@@ -66,9 +66,10 @@ def cmd_run(args) -> int:
         print(f"\n{result.summary['ward']['name']}  [{run_id}]")
         for s, sr in result.seasons.items():
             b, p, tg = sr.summary["burn_cost"], sr.summary["premium"], sr.summary["target"]
-            print(f"  {s}: {b['seasons']} seasons, pays in {b['payout_frequency']:.0%} "
-                  f"({'in' if tg['in_band'] else 'outside'} target band), expected loss {b['expected_loss']:.2%}, "
-                  f"gross rate {p['gross_rate']:.2%} of sum insured")
+            bands = ", ".join(f"{k} {v['frequency']:.0%} ({'in' if v['in_band'] else 'outside'} target)"
+                              for k, v in tg.items() if "in_band" in v)
+            print(f"  {s}: {b['seasons']} seasons; payouts {bands}; any payout {tg['combined']['frequency']:.0%}; "
+                  f"expected loss {b['expected_loss']:.2%}, gross rate {p['gross_rate']:.2%} of sum insured")
             for e in sr.summary["event_tests"]:
                 verdict = ("PASS" if e["passed"] else "FAIL") + f" (needs >= {e['min_payout']:.0%})" \
                     if e["required"] else "reported only"

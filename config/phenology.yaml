@@ -4,7 +4,10 @@
 # pending agronomist sign-off and the real pilot wards.
 #
 # v1 (WRSI) uses:
-#   planting_window  dekads searched for the start of season (rain onset)
+#   planting_window    the failed-onset window (all rain in it is totalled) and
+#                      the last date a planting rain is searched for
+#   planting_rain_from first date a planting rain is searched for. ILLUSTRATIVE:
+#                      to be set from what farmers in the ward actually do
 #   variety, lgp_days  length of growing period from the start of season
 # v0 (superseded per-phase index) uses the fixed planting_date and phases.
 # A season that crosses New Year (short rains) is keyed to its planting year.
@@ -14,6 +17,7 @@ wards:
   ward-a:
     LR:
       planting_window: {start: "03-01", end: "04-30"}
+      planting_rain_from: "03-01"
       variety: "medium-maturity hybrid"
       lgp_days: 130
       planting_date: "04-01"
@@ -28,6 +32,7 @@ wards:
     # peak rather than the dry January.
     SR:
       planting_window: {start: "09-21", end: "10-31"}
+      planting_rain_from: "09-21"
       variety: "early-maturity hybrid"
       lgp_days: 100
       planting_date: "10-01"
@@ -41,6 +46,7 @@ wards:
   ward-b:
     LR:
       planting_window: {start: "03-01", end: "04-30"}
+      planting_rain_from: "03-01"
       variety: "late-maturity highland hybrid"
       lgp_days: 180
       planting_date: "03-25"

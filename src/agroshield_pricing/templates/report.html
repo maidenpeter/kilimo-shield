@@ -126,8 +126,8 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <div class="banner">
     <b>Illustrative pricing. Not a filed product and not for sale.</b>
     Ward location, soil water capacity, crop calendar, WRSI trigger and exit, failed-onset and germination thresholds,
-    replanting cost, payout frequency target, loadings and sum insured are placeholders. The flowering component is
-    EXPERIMENTAL. PET is a flagged fallback (Hargreaves).
+    replanting seed-voucher value, payout frequency targets, loadings and sum insured are placeholders.
+    PET is a flagged fallback (Hargreaves).
     The FEWS NET comparison and basis risk are pending the data listed below.
   </div>
 
@@ -158,9 +158,13 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     Priced on {{ b.seasons }} seasons, {{ b.first_year }}&ndash;{{ b.last_year }}.</p>
 
   <div class="tiles">
-    <div class="tile"><div class="k">Seasons with a payout</div><div class="v">{{ b.payout_frequency | pct(0) }}</div>
-      <div class="n">{{ b.payout_seasons }} of {{ b.seasons }} &middot; target {{ s.target.frequency_band[0] | pct(0) }}&ndash;{{ s.target.frequency_band[1] | pct(0) }}
-        {% if s.target.in_band %}<span class="status pass">&#10003; in band</span>{% else %}<span class="status fail">&#10007; outside</span>{% endif %}</div></div>
+    {% for key in ["main", "replanting"] %}{% set tg = s.target.get(key) %}{% if tg %}
+    <div class="tile"><div class="k">{{ tg.label }} payouts</div><div class="v">{{ tg.frequency | pct(0) }}</div>
+      <div class="n">target 1 in {{ tg.return_period_years | map("int") | join("&ndash;") | safe }} ({{ tg.frequency_band[0] | pct(0) }}&ndash;{{ tg.frequency_band[1] | pct(0) }})
+        {% if tg.in_band %}<span class="status pass">&#10003; in band</span>{% else %}<span class="status fail">&#10007; outside</span>{% endif %}</div></div>
+    {% endif %}{% endfor %}
+    <div class="tile"><div class="k">Any payout (farmer communication)</div><div class="v">{{ s.target.combined.frequency | pct(0) }}</div>
+      <div class="n">{{ b.payout_seasons }} of {{ b.seasons }} seasons, about 1 in {{ s.target.combined.about_one_in | num(1) }}</div></div>
     <div class="tile"><div class="k">Expected loss</div><div class="v">{{ b.expected_loss | pct }}</div><div class="n">of sum insured, per season</div></div>
     <div class="tile"><div class="k">1-in-10 season loss</div><div class="v">{{ b.loss_1_in_10 | pct }}</div><div class="n">90th percentile</div></div>
     <div class="tile"><div class="k">1-in-20 season loss</div><div class="v">{{ b.loss_1_in_20 | pct }}</div><div class="n">95th percentile, few seasons</div></div>
@@ -204,10 +208,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <h3>Index terms</h3>
   <div class="card table-wrap">
     <table>
-      <tr><th>Start of season</th><td>first dekad with &ge; {{ t.planting_rain_mm | num }} mm (planting rain), searched {{ s.calendar.planting_window.start }} to {{ s.calendar.planting_window.end }}; the end of the window if none</td></tr>
-      <tr><th>Failed onset</th><td>window rain below {{ t.failed_onset.window_rain_below_mm | num }} mm pays {{ t.failed_onset_payout | pct(0) }} of sum insured, no WRSI season</td></tr>
-      <tr><th>Germination dry spell</th><td>less than {{ t.germination_dry_spell.rain_below_mm | num }} mm in the {{ t.germination_dry_spell.days_after_planting }} days after the planting rain pays
-        {{ t.germination_dry_spell.replant_cost_kes_per_acre | kes }} per acre (replanting seed, once a season); the season restarts at the next planting rain, searched up to {{ t.germination_dry_spell.restart_search_extra_dekads }} dekads past the window</td></tr>
+      <tr><th>Start of season</th><td>first dekad with &ge; {{ t.planting_rain_mm | num }} mm (planting rain), searched {{ s.calendar.planting_rain_from }} to {{ s.calendar.planting_window.end }}; the end of the window if none</td></tr>
+      <tr><th>Failed onset</th><td>window rain below {{ t.failed_onset.window_rain_below_mm | num }} mm pays {{ t.failed_onset_payout | pct(0) }} of sum insured, no WRSI season (catastrophe-only cover)</td></tr>
+      <tr><th>Germination dry spell</th><td>less than {{ t.germination_dry_spell.rain_below_mm | num }} mm in the {{ t.germination_dry_spell.days_after_planting }} days after the planting rain pays a
+        {{ t.germination_dry_spell.replant_cost_kes_per_acre | kes }}-per-acre replanting seed voucher (at most once a season); the season restarts at the next planting rain, searched up to {{ t.germination_dry_spell.restart_search_extra_dekads }} dekads past the window</td></tr>
       <tr><th>Starts found</th><td>earliest {{ s.onset_stats.earliest }}, latest {{ s.onset_stats.latest }}</td></tr>
       <tr><th>Water balance</th><td>soil holds {{ t.soil_whc_mm | num }} mm; stress once below {{ (1 - t.depletion_fraction) | pct(0) }} of that; {{ t.spinup_dekads }} dekads of pre-season spin-up</td></tr>
       <tr><th>Crop coefficients</th><td>{% for k in t.kc["values"] %}{{ k }} at {{ t.kc["points_pct"][loop.index0] | num }}%{% if not loop.last %}, {% endif %}{% endfor %} of the growing period</td></tr>
@@ -273,6 +277,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   {% set fl = s.flowering %}
+  {% if not fl %}
+  <p class="meta">Flowering dry-spell component: dropped from v1. CHIRPS daily values are disaggregated from pentads, so
+    dry-spell lengths are unreliable; the code is kept switched off until station rainfall (e.g. TAHMO) is available.</p>
+  {% else %}
   <h3>Flowering dry spell <span class="chip ILLUSTRATIVE">EXPERIMENTAL</span></h3>
   <p>A separate component for drought during flowering ({{ fl.terms.window_pct_of_lgp[0] | num }}&ndash;{{ fl.terms.window_pct_of_lgp[1] | num }}% of the growing period),
     {% if fl.enabled_in_product %}<b>included in this product</b>{% else %}<b>off</b>: shown beside the WRSI-only product for comparison and not in the price above{% endif %}.
@@ -293,22 +301,24 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <p class="meta" style="margin:8px 0 0">The configured metric pays in {{ fl.seasons_flowering_pays | length }} seasons:
       {% for x in fl.seasons_flowering_pays %}{{ x.year }} ({{ x.dry_spell_days }} dry days, {{ x.flowering_share | pct(0) }}){% if not loop.last %}, {% endif %}{% endfor %}.</p>
   </div>
+  {% endif %}
 
   <h3>How the price moves with the WRSI trigger</h3>
-  <p>Exit ({{ t.exit_wrsi | num }}) and failed-onset payout unchanged. Highlighted rows hit the target of one payout every
-    {{ s.target.return_period_years[0] | num }}&ndash;{{ s.target.return_period_years[1] | num }} seasons (placeholder, underwriter to confirm).</p>
+  <p>Exit ({{ t.exit_wrsi | num }}) and failed-onset payout unchanged. Highlighted rows hit the main target of one WRSI or
+    failed-onset payout every {{ s.target.main.return_period_years[0] | num }}&ndash;{{ s.target.main.return_period_years[1] | num }} seasons
+    (placeholder, underwriter to confirm). Replanting vouchers do not depend on the WRSI trigger.</p>
   <div class="card table-wrap">
     <table>
-      <tr><th class="num">Trigger (WRSI)</th><th class="num">Seasons paying</th><th class="num">About 1 in</th><th class="num">Expected loss</th>
+      <tr><th class="num">Trigger (WRSI)</th><th class="num">Main payouts</th><th class="num">About 1 in</th><th class="num">Any payout</th><th class="num">Expected loss</th>
         <th class="num">1-in-10 loss</th><th class="num">Gross rate</th><th></th></tr>
       {% for row in s.trigger_sensitivity %}
-      <tr class="{{ 'hi' if row.in_target_band else '' }}"><td class="num">{{ row.trigger_wrsi | num }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
-        <td class="num">{{ row.return_period_years | num(1) }}</td><td class="num">{{ row.expected_loss | pct(1) }}</td>
+      <tr class="{{ 'hi' if row.in_target_band else '' }}"><td class="num">{{ row.trigger_wrsi | num }}</td><td class="num">{{ row.main_frequency | pct(0) }}</td>
+        <td class="num">{{ row.return_period_years | num(1) }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td><td class="num">{{ row.expected_loss | pct(1) }}</td>
         <td class="num">{{ row.loss_1_in_10 | pct(1) }}</td><td class="num">{{ row.gross_rate | pct(1) }}</td>
         <td>{% if row.is_current %}current{% endif %}{% if row.in_target_band %} &middot; in target{% endif %}</td></tr>
       {% endfor %}
     </table>
-    {% if not s.target.triggers_in_band %}<p class="meta" style="margin:8px 0 0">No trigger in this range reaches the target frequency.</p>{% endif %}
+    {% if not s.target.main.triggers_in_band %}<p class="meta" style="margin:8px 0 0">No trigger in this range reaches the main target frequency.</p>{% endif %}
   </div>
 
   <h3>Placeholder soil: sensitivity to water holding capacity</h3>
@@ -478,12 +488,12 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <div class="card table-wrap">
       <table>
         <tr><th>Year</th><th>Start of season</th><th class="num">Window rain</th><th class="num">Season rain</th><th class="num">Water need</th><th class="num">WRSI</th>
-          <th class="num">Replanting</th><th class="num">Flowering dry days (exp.)</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
+          <th class="num">Replanting voucher</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
         {% for h in s.history %}
         <tr><td>{{ h.year }}</td><td title="{{ h.sos_rule }}">{{ h.sos or "failed onset" }}{% if h.germination_failed %} (replanted){% endif %}</td>
           <td class="num">{{ h.window_rain_mm | num }}</td><td class="num">{{ h.season_rain_mm | num }}</td>
           <td class="num">{{ h.water_requirement_mm | num }}</td><td class="num">{{ h.wrsi | num }}</td>
-          <td class="num">{{ h.replant_kes | kes if h.replant_kes else "" }}</td><td class="num">{{ h.flowering_dry_spell_days | num }}</td>
+          <td class="num">{{ h.replant_kes | kes if h.replant_kes else "" }}</td>
           <td class="num">{{ h.payout | pct(0) }}</td><td class="num">{{ h.v0_payout | pct(0) }}</td></tr>
         {% endfor %}
       </table>

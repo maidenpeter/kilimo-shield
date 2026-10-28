@@ -98,3 +98,21 @@ def test_reported_event_has_no_pass_fail_at_other_wards(cfg):
     r = price_ward(cfg, "ward-b", SyntheticRainfallSource(seed=5), SyntheticPetSource())
     e = r.summary["seasons"]["LR"]["event_tests"][0]
     assert e["required"] is False and e["passed"] is None
+
+
+def test_frequencies_split_main_replanting_and_combined():
+    import pandas as pd
+    from agroshield_pricing.engine import frequencies
+    t = pd.DataFrame({"wrsi_share": [0.4, 0.0, 0.0, 0.0], "failed_onset": [False, True, False, False],
+                      "germination_failed": [False, False, True, False]}, index=[1, 2, 3, 4])
+    share = pd.Series([0.4, 0.25, 0.25, 0.0], index=[1, 2, 3, 4])
+    assert frequencies(t, share) == {"main": 0.5, "replanting": 0.25, "combined": 0.75}
+
+
+def test_layer_a_not_offered_at_ward_b_and_flowering_hidden(cfg):
+    r = price_ward(cfg, "ward-b", SyntheticRainfallSource(seed=5), SyntheticPetSource())
+    s = r.summary["seasons"]["LR"]
+    assert s["layer_a"]["available"] is False and s["layer_a"]["offered"] is False
+    assert s["flowering"] is None
+    assert all("Flowering" not in c["component"] for c in s["components"])
+    assert set(s["target"]) == {"main", "replanting", "combined"}

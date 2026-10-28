@@ -111,10 +111,11 @@ def component_breakdown(table: pd.DataFrame, cfg: Config) -> list[dict]:
     si = cfg.product.sum_insured.default_kes_per_acre
     parts = {
         "WRSI": table["wrsi_share"] * si,
-        "Failed onset": table["failed_onset_share"] * si,
-        "Germination replanting": table["replant_kes"],
-        "Flowering dry spell (EXPERIMENTAL)": table["flowering_share"] * si,
+        "Failed onset (catastrophe only)": table["failed_onset_share"] * si,
+        "Germination replanting (seed voucher)": table["replant_kes"],
     }
+    if cfg.product.layer_b.flowering.enabled:   # dropped from v1; only shown if re-enabled
+        parts["Flowering dry spell (EXPERIMENTAL)"] = table["flowering_share"] * si
     rows = []
     for name, kes in parts.items():
         share = kes / si
@@ -122,8 +123,7 @@ def component_breakdown(table: pd.DataFrame, cfg: Config) -> list[dict]:
         p = gross_premium(b, share.to_numpy(), cfg.product.premium, cfg.product.sum_insured)
         rows.append({"component": name, "seasons_paying": int((kes > 0).sum()),
                      "payout_frequency": b["payout_frequency"], "expected_loss_kes": float(kes.mean()),
-                     "gross_kes_alone": round(p["gross_rate"] * si, 2),
-                     "in_product": name != "Flowering dry spell (EXPERIMENTAL)" or cfg.product.layer_b.flowering.enabled})
+                     "gross_kes_alone": round(p["gross_rate"] * si, 2), "in_product": True})
     return rows
 
 
@@ -134,6 +134,13 @@ def _day_extreme(dates: pd.Series, pick) -> str | None:
         return None
     ts = pd.Timestamp(pick(d, key=lambda s: s[5:]))
     return f"{ts.day} {ts:%b} ({ts.year})"
+
+
+def frequencies(table: pd.DataFrame, share: pd.Series) -> dict:
+    """Payout frequencies: main (WRSI + failed onset), replanting, and any payout (combined)."""
+    main = (table["wrsi_share"] > 0) | table["failed_onset"]
+    return {"main": float(main.mean()), "replanting": float(table["germination_failed"].mean()),
+            "combined": float((share > 0).mean())}
 
 
 def _in_band(freq: float, band: tuple[float, float]) -> bool:
@@ -152,6 +159,21 @@ def _v0(cfg: Config, ward_id: str, season: str, rain: pd.Series) -> tuple[pd.Dat
     return pay, {"version": lb0.version, "terms": {p: r.to_dict() for p, r in resolved.items()}}
 
 
+def _targets(cfg: Config, ward_id: str, fq: dict, sens: list[dict]) -> dict:
+    t = cfg.product.target
+    band = t.band_for(ward_id)
+    out = {"main": {"label": "WRSI and failed onset", "return_period_years": list(t.periods_for(ward_id)),
+                    "frequency_band": list(band), "frequency": fq["main"], "in_band": _in_band(fq["main"], band),
+                    "triggers_in_band": [r["trigger_wrsi"] for r in sens if r["in_target_band"]]},
+           "combined": {"label": "Any payout (for farmer communication)", "frequency": fq["combined"],
+                        "about_one_in": (1 / fq["combined"]) if fq["combined"] else None}}
+    if t.replant_band:
+        out["replanting"] = {"label": "Replanting seed voucher", "return_period_years": list(t.replant_return_period_years),
+                             "frequency_band": list(t.replant_band), "frequency": fq["replanting"],
+                             "in_band": _in_band(fq["replanting"], t.replant_band)}
+    return out
+
+
 # Levels used only to show the non-configured flowering metric beside the configured one.
 ALT_FLOWERING_LEVELS = {"rainfall_deficit": {"trigger": 40.0, "exit": 80.0},
                         "longest_dry_spell": {"trigger": 12.0, "exit": 25.0}}
@@ -161,6 +183,32 @@ def _metrics(b: dict, p: dict, pays: pd.Series, events) -> dict:
     return {"payout_frequency": b["payout_frequency"], "expected_loss": b["expected_loss"],
             "loss_1_in_10": b["loss_1_in_10"], "loss_1_in_20": b["loss_1_in_20"], "gross_rate": p["gross_rate"],
             "event_payouts": {str(e.year): float(pays.get(e.year, np.nan)) for e in events}}
+
+
+def _flowering_comparison(cfg: Config, table: pd.DataFrame, results: list[SeasonWRSI], years: list[int],
+                          events) -> dict:
+    """WRSI-only vs WRSI + flowering, with the other flowering metric beside it."""
+    lb = cfg.product.layer_b
+    fl_on = lb.flowering.enabled
+    off, on = price_product(table, cfg, False), price_product(table, cfg, True)
+    # The other flowering metric on the same seasons, so the choice of metric is visible.
+    other = "rainfall_deficit" if lb.flowering.metric == "longest_dry_spell" else "longest_dry_spell"
+    alt_fl = lb.flowering.model_copy(update={"metric": other, **ALT_FLOWERING_LEVELS[other]})
+    alt_share = pd.Series([flowering_payout(s.flowering, alt_fl) for s in results], index=years)
+    alt_on = price_product(table.assign(flowering_share=alt_share), cfg, True)
+    return {
+        "enabled_in_product": fl_on, "terms": lb.flowering.model_dump(),
+        "alternative": {"metric": other, "trigger": alt_fl.trigger, "exit": alt_fl.exit,
+                        "seasons_paying": int((alt_share > 0).sum()),
+                        "with_flowering": _metrics(alt_on["burn"], alt_on["premium"], alt_on["payout_share"], events)},
+        "wrsi_only": _metrics(off["burn"], off["premium"], off["payout_share"], events),
+        "with_flowering": _metrics(on["burn"], on["premium"], on["payout_share"], events),
+        "seasons_flowering_pays": [
+            {"year": int(y), "dry_spell_days": r["flowering_dry_spell_days"], "deficit_pct": r["flowering_deficit_pct"],
+             "window": r["flowering_window"], "flowering_share": float(r["flowering_share"]),
+             "wrsi": r["wrsi"], "wrsi_share": float(r["wrsi_share"])}
+            for y, r in table.iterrows() if r["flowering_share"] > 0],
+    }
 
 
 # ------------------------------------------------------------------ one ward
@@ -199,10 +247,11 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
             alt = component_table(results, {**terms, "trigger_wrsi": trig}, cfg)
             pr = price_product(alt, cfg, fl_on)
             b = pr["burn"]
-            sens.append({"trigger_wrsi": trig, "payout_frequency": b["payout_frequency"],
-                         "return_period_years": (1 / b["payout_frequency"]) if b["payout_frequency"] else None,
+            fq = frequencies(alt, pr["payout_share"])
+            sens.append({"trigger_wrsi": trig, "main_frequency": fq["main"], "payout_frequency": fq["combined"],
+                         "return_period_years": (1 / fq["main"]) if fq["main"] else None,
                          "expected_loss": b["expected_loss"], "loss_1_in_10": b["loss_1_in_10"],
-                         "gross_rate": pr["premium"]["gross_rate"], "in_target_band": _in_band(b["payout_frequency"], band),
+                         "gross_rate": pr["premium"]["gross_rate"], "in_target_band": _in_band(fq["main"], band),
                          "is_current": trig == terms["trigger_wrsi"]})
 
         # Placeholder soil: how much does the water holding capacity move things?
@@ -216,26 +265,9 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
                              "expected_loss": pr["burn"]["expected_loss"], "gross_rate": pr["premium"]["gross_rate"],
                              "event_payouts": {str(e.year): float(pr["payout_share"].get(e.year, np.nan)) for e in events}})
 
-        # WRSI-only product vs WRSI + EXPERIMENTAL flowering, side by side.
-        off, on = price_product(table, cfg, False), price_product(table, cfg, True)
-        # The other flowering metric on the same seasons, so the choice of metric is visible.
-        other = "rainfall_deficit" if lb.flowering.metric == "longest_dry_spell" else "longest_dry_spell"
-        alt_fl = lb.flowering.model_copy(update={"metric": other, **ALT_FLOWERING_LEVELS[other]})
-        alt_share = pd.Series([flowering_payout(s.flowering, alt_fl) for s in results], index=years)
-        alt_on = price_product(table.assign(flowering_share=alt_share), cfg, True)
-        flowering_cmp = {
-            "enabled_in_product": fl_on, "terms": lb.flowering.model_dump(),
-            "alternative": {"metric": other, "trigger": alt_fl.trigger, "exit": alt_fl.exit,
-                            "seasons_paying": int((alt_share > 0).sum()),
-                            "with_flowering": _metrics(alt_on["burn"], alt_on["premium"], alt_on["payout_share"], events)},
-            "wrsi_only": _metrics(off["burn"], off["premium"], off["payout_share"], events),
-            "with_flowering": _metrics(on["burn"], on["premium"], on["payout_share"], events),
-            "seasons_flowering_pays": [
-                {"year": int(y), "dry_spell_days": r["flowering_dry_spell_days"], "deficit_pct": r["flowering_deficit_pct"],
-                 "window": r["flowering_window"], "flowering_share": float(r["flowering_share"]),
-                 "wrsi": r["wrsi"], "wrsi_share": float(r["wrsi_share"])}
-                for y, r in table.iterrows() if r["flowering_share"] > 0],
-        }
+        # Flowering was dropped from v1 (CHIRPS dry spells are unreliable): compared
+        # only if someone re-enables it.
+        flowering_cmp = _flowering_comparison(cfg, table, results, years, events) if fl_on else None
 
         # Every season where an early-season trigger fired, with the rain that caused it.
         early = []
@@ -281,7 +313,12 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
         fews = compare_fewsnet(table["wrsi"], load_fewsnet_wrsi(cfg, ward_id, season),
                                cfg.validation.large_gap_wrsi, cfg.validation.fewsnet_status)
         basis = real_yield_backtest(cfg, ward_id, season, share)
-        layer_a = run_layer_a(cfg, ward_id, season, rain, share)
+        if ward_id in cfg.product.layer_a.offered_wards:
+            layer_a = run_layer_a(cfg, ward_id, season, rain, share)
+        else:
+            layer_a = {"available": False, "offered": False,
+                       "reason": "Layer A is not offered at this ward (decision 2026-10-28): a dry March-May here "
+                                 "rarely becomes a crop failure. Its forecast skill is still measured in research 3b."}
         default_b = next(o for o in prem["per_acre"] if o["sum_insured_kes_per_acre"] == si)
         combined = {"sum_insured_kes_per_acre": si, "layer_b_gross_kes": default_b["gross_premium_kes"],
                     "layer_a_gross_kes": layer_a.get("gross_kes"),
@@ -293,7 +330,8 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
             "season": season,
             "season_label": "Long rains" if season == "LR" else "Short rains",
             "years": [int(y) for y in years],
-            "calendar": {"planting_window": cal.planting_window.model_dump(), "variety": cal.variety,
+            "calendar": {"planting_window": cal.planting_window.model_dump(), "planting_rain_from": cal.planting_rain_start,
+                         "variety": cal.variety,
                          "lgp_days": cal.lgp_days, "lgp_dekads": cal.lgp_dekads},
             "terms": {**terms, "version": lb.version, "soil_whc_mm": ward.soil_whc_mm,
                       "depletion_fraction": lb.depletion_fraction, "spinup_dekads": lb.spinup_dekads,
@@ -313,10 +351,7 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
             "exceedance": exceedance_curve(share),
             "premium": prem,
             "components": component_breakdown(table, cfg),
-            "target": {"return_period_years": list(cfg.product.target.periods_for(ward_id)),
-                       "frequency_band": list(band), "payout_frequency": burn["payout_frequency"],
-                       "in_band": _in_band(burn["payout_frequency"], band),
-                       "triggers_in_band": [r["trigger_wrsi"] for r in sens if r["in_target_band"]]},
+            "target": _targets(cfg, ward_id, frequencies(table, share), sens),
             "trigger_sensitivity": sens,
             "whc_sensitivity": whc_sens,
             "flowering": flowering_cmp,

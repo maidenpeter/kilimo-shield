@@ -100,17 +100,23 @@ def _parse_md(md: str) -> tuple[int, int]:
 
 
 class SeasonCalendar(BaseModel):
-    planting_window: MonthDay      # v1: dekads searched for the start of season
+    planting_window: MonthDay      # v1: failed-onset window; planting rain searched up to its end
+    planting_rain_from: str | None = None   # v1: first date a planting rain counts (default: window start)
     variety: str
     lgp_days: int = Field(gt=0, le=300)   # length of growing period (v1 WRSI)
     planting_date: str             # v0 only: fixed planting date
     phases: list[Phase]            # v0 only: fixed phase lengths
 
-    @field_validator("planting_date")
+    @field_validator("planting_date", "planting_rain_from")
     @classmethod
-    def _valid_md(cls, v: str) -> str:
-        _parse_md(v)
+    def _valid_md(cls, v: str | None) -> str | None:
+        if v is not None:
+            _parse_md(v)
         return v
+
+    @property
+    def planting_rain_start(self) -> str:
+        return self.planting_rain_from or self.planting_window.start
 
     @property
     def lgp_dekads(self) -> int:
@@ -293,6 +299,11 @@ class Target(BaseModel):
     # Payout once every N years, as a band (placeholder pending the underwriter).
     payout_return_period_years: tuple[float, float]
     ward_overrides: dict[str, tuple[float, float]] = {}
+    replant_return_period_years: tuple[float, float] | None = None
+
+    @property
+    def replant_band(self) -> tuple[float, float] | None:
+        return _band(self.replant_return_period_years) if self.replant_return_period_years else None
 
     @property
     def frequency_band(self) -> tuple[float, float]:
@@ -317,6 +328,7 @@ class EventTest(BaseModel):
 class LayerA(BaseModel):
     """Anticipatory seed voucher triggered by the pre-season forecast."""
     version: str
+    offered_wards: list[str]
     forecast_months: dict[Season, list[int]]
     issue_month: dict[Season, int]
     trigger_prob_below_normal: float = Field(gt=1 / 3, lt=1)

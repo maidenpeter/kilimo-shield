@@ -10,7 +10,7 @@ illustrative: true
 layer_b:
   # Bump on any change to the index definition or its terms. Recorded in every
   # run manifest so a historical payout can be traced to the exact rules.
-  version: "B-1.1.0"
+  version: "B-1.2.0"
 
   # FEWS NET maize crop coefficients at % of the length of growing period,
   # linearly interpolated to each dekad's midpoint.
@@ -26,23 +26,26 @@ layer_b:
   # rain is already in the soil when the crop starts (soil starts empty).
   spinup_dekads: 3
 
-  # Planting rain: the first dekad in the ward's planting window with at least
-  # this much rain starts the season.
+  # Planting rain: the first dekad with at least this much rain, searched from
+  # the ward's planting_rain_from date (phenology.yaml) to the end of its
+  # planting window, starts the season.
   planting_rain_mm: 25
 
-  # Trigger (a): failed onset. Total rain over the WHOLE planting window below
-  # the threshold means the season never started: fixed payout (share of sum
-  # insured), no WRSI season. Placeholders; links to Layer A later.
+  # Trigger (a): failed onset. CATASTROPHE-ONLY cover (decision 2026-10-28:
+  # keep at 80 mm, do not raise it to make it fire). Total rain over the WHOLE
+  # planting window below the threshold means the season never started: fixed
+  # payout (share of sum insured), no WRSI season. Links to Layer A later.
   failed_onset:
     window_rain_below_mm: 80
     payout: 0.25
 
   # Trigger (b): germination dry spell. After a planting rain, less than
   # rain_below_mm over the next days_after_planting days: pays the replanting
-  # seed cost (KES per acre), once per season, and the WRSI season restarts from
-  # the next planting rain (searched up to restart_search_extra_dekads past the
-  # window). If no planting rain is found, the season starts at the end of the
-  # window. Placeholders pending agronomist and SACCO input-cost data.
+  # cost as a SEED VOUCHER (KES per acre), at most once per season, and the WRSI
+  # season restarts from the next planting rain (searched up to
+  # restart_search_extra_dekads past the window). If no planting rain is found,
+  # the season starts at the end of the window.
+  # ILLUSTRATIVE: KES 2,500 until agro-dealer quotes for certified seed per acre.
   germination_dry_spell:
     days_after_planting: 20
     rain_below_mm: 20
@@ -60,14 +63,12 @@ layer_b:
   # a placeholder (mm).
   sensitivity_whc_mm: [60, 100, 140, 180]
 
-  # EXPERIMENTAL flowering dry-spell component. Priced separately and shown
-  # beside WRSI-only in the report; it is NOT in the product while enabled is
-  # false. The window is a share of the growing period from the season start.
-  #   longest_dry_spell: longest run of days below dry_day_mm (CHIRPS daily is
-  #                      disaggregated from 5-day totals, so spell lengths are
-  #                      approximate)
+  # Flowering dry-spell component: DROPPED FROM v1 (decision 2026-10-28).
+  # CHIRPS daily values are disaggregated from pentads, so dry-spell lengths are
+  # unreliable. The code is kept, switched off; it needs station rainfall
+  # (e.g. TAHMO) before it is reconsidered. Do not enable it on CHIRPS.
+  #   longest_dry_spell: longest run of days below dry_day_mm
   #   rainfall_deficit:  % shortfall of window rain against Kc x PET
-  # Payout rises linearly from trigger to exit, up to max_payout of sum insured.
   flowering:
     enabled: false
     window_pct_of_lgp: [45, 65]
@@ -83,12 +84,16 @@ layer_b:
   #     LR: {trigger_wrsi: 90}
   overrides: {}
 
-# Target payout frequency per ward, as "one season in N years".
-# [ASK] placeholders, underwriter to confirm.
+# Target payout frequencies, as "one season in N years". [ASK] placeholders,
+# underwriter to confirm.
+#   main:       WRSI and failed-onset payouts (per ward)
+#   replanting: germination dry-spell seed vouchers, a separate target
+# The combined frequency (any payout) is reported for farmer communication.
 target:
   payout_return_period_years: [5, 7]
   ward_overrides:
     ward-b: [8, 12]       # wetter highland: drought payouts should be rarer
+  replant_return_period_years: [8, 12]
 
 # Known events. At wards in required_for the payout must reach min_payout
 # (PASS/FAIL); everywhere else the event is reported only.
@@ -103,6 +108,9 @@ event_tests:
 # ---------------------------------------------------------------------------
 layer_a:
   version: "A-0.1.0"
+  # Wards where Layer A is offered. Ward B: not offered (decision 2026-10-28),
+  # because a dry March-May there rarely becomes a crop failure.
+  offered_wards: [ward-a]
   # What the forecast predicts: total ward rainfall (CHIRPS) over these months,
   # and when it is issued (before the planting window opens).
   forecast_months: {LR: [3, 4, 5]}

@@ -174,7 +174,12 @@ def season_wrsi(rain_daily: pd.Series, rain_dk: pd.Series, pet_dk: pd.Series, ca
                           sos_rule="failed onset: planting-window rain below threshold")
 
     gd = lb.germination_dry_spell
-    p = first_planting_rain(rain_dk, t0, t1, lb.planting_rain_mm)
+    # Planting rain is searched from the ward's planting_rain_from date (set from
+    # farmer practice) to the end of the window; the failed-onset total above
+    # always covers the whole window.
+    m, d = _parse_md(cal.planting_rain_start)
+    p = first_planting_rain(rain_dk, max(t0, dekad_number(pd.Timestamp(year=year, month=m, day=d))), t1,
+                            lb.planting_rain_mm)
     germ_failed, germ_rain, germ_window = False, None, None
     if p is None:
         sos, rule = t1, "no planting rain in window: season starts at window end"
