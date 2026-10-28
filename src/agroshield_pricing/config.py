@@ -314,6 +314,42 @@ class EventTest(BaseModel):
     note: str = ""
 
 
+class LayerA(BaseModel):
+    """Anticipatory seed voucher triggered by the pre-season forecast."""
+    version: str
+    forecast_months: dict[Season, list[int]]
+    issue_month: dict[Season, int]
+    trigger_prob_below_normal: float = Field(gt=1 / 3, lt=1)
+    voucher_kes_per_acre: float = Field(gt=0)
+    sensitivity_thresholds: list[float]
+
+    @model_validator(mode="after")
+    def _months(self):
+        for season, months in self.forecast_months.items():
+            if not months or any(not 1 <= m <= 12 for m in months):
+                raise ValueError(f"layer_a.forecast_months[{season}] must be months 1-12")
+            issue = self.issue_month.get(season)
+            if issue is None:
+                raise ValueError(f"layer_a.issue_month missing for {season}")
+            if season == "LR" and issue >= min(months):
+                raise ValueError("the long-rains forecast must be issued before its first month")
+        return self
+
+
+class SyntheticForecast(BaseModel):
+    skill_correlation: dict[Season, float]
+    skill_sweep: list[float]
+    draws: int = Field(ge=100, le=100000)
+    seed: int = 0
+
+    @field_validator("skill_correlation")
+    @classmethod
+    def _rho(cls, v: dict) -> dict:
+        if any(not 0 <= r <= 1 for r in v.values()):
+            raise ValueError("synthetic forecast skill must be a correlation between 0 and 1")
+        return v
+
+
 class SumInsured(BaseModel):
     options_kes_per_acre: list[float]
     default_kes_per_acre: float
@@ -356,6 +392,8 @@ class Backtest(BaseModel):
 
 class Product(BaseModel):
     illustrative: bool
+    layer_a: LayerA
+    synthetic_forecast: SyntheticForecast
     layer_b: LayerB
     layer_b_v0: LayerBV0
     target: Target

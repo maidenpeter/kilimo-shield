@@ -6,8 +6,9 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1 and 2 of 10, with Layer B redesigned as a seasonal WRSI index
-(v1) on 2026-10-28. The superseded per-phase index (v0) is kept for comparison only.
+**Status:** milestones 1-3 of 10. Layer B is a seasonal WRSI index (v1.1) with
+failed-onset and germination dry-spell triggers; the superseded per-phase index (v0) is
+kept for comparison only. Layer A (anticipatory seed voucher) runs on a synthetic forecast.
 Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
 levels, loadings and sum insured are placeholders. Rainfall is real (CHIRPS); PET is a
 flagged fallback (Hargreaves from NASA POWER temperature).
@@ -68,6 +69,22 @@ and v1 against v0.
 
 There is no claims flow for the parametric layers: they pay on the index.
 
+## Layer A: pre-season seed voucher
+
+Before planting, if the seasonal outlook gives at least a set probability (45%,
+placeholder) of below-normal rain over March-May at the ward, insured farmers get a fixed
+voucher per acre for drought-tolerant certified seed through their SACCO.
+
+Until KMD / ICPAC hindcasts are available the forecast is **SYNTHETIC**: generated from the
+observed CHIRPS rainfall with a set skill (correlation), calibrated so that zero skill is
+climatology and never triggers. Each draw is one possible 45-season hindcast; the report
+summarises 2,000 draws (median and 5-95% range) because with so few seasons the realised
+scores vary a lot by chance. It reports voucher frequency, expected cost and gross premium
+per acre, and hit rate / false alarm rate / false alarm ratio scored against both
+below-normal rain and Layer B payout seasons, plus sweeps over forecast skill and the
+probability threshold. Skill is configured per season (long and short rains separately);
+the real values must come from hindcasts.
+
 ## Validation status
 
 - **FEWS NET WRSI comparison: pending.** The USGS "CHIRPS Croplands WRSI, Apr-Nov long
@@ -126,7 +143,8 @@ src/agroshield_pricing/
   provenance.py          REAL / SYNTHETIC / ILLUSTRATIVE / PENDING labels
   rainfall/              CHIRPS (ClimateSERV) loader, synthetic generator
   pet/                   Hargreaves, NASA POWER loader, synthetic PET
-  wrsi.py                v1: dekads, onset, Kc, water balance, WRSI payout
+  wrsi.py                v1: dekads, onset and germination triggers, Kc, water balance, WRSI payout
+  layer_a.py             Layer A: synthetic tercile forecast, verification scores, voucher pricing
   index.py, phenology.py v0 per-phase index (comparison only)
   burn.py, premium.py    burn cost and gross premium
   validation.py          FEWS NET comparison, real-yield basis risk

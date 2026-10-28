@@ -64,6 +64,26 @@ def season_charts(result: WardResult, sr) -> dict:
             lambda v: f"{v:g}", "", "Cumulative mm", x_range=(1, len(labels)),
             xticks=list(range(1, len(labels) + 1, 3)),
             tooltip=lambda n, x, y: f"{labels[int(x) - 1]}: {n.lower()} {y:.0f} mm to date")
+    la = s["layer_a"]
+    if la.get("available"):
+        h = la["history"]
+        charts["layer_a_probs"] = sc.prob_dots(
+            [x["year"] for x in h], [x["prob_below"] for x in h], la["terms"]["trigger_prob_below_normal"],
+            [x["layer_b_pays"] for x in h], "Synthetic forecast probability of below-normal rain",
+            [f"{x['year']}: P(below) {x['prob_below']:.0%}{', voucher' if x['voucher'] else ''}; "
+             f"Mar-May rain {x['forecast_season_rain_mm']:.0f} mm{' (below normal)' if x['below_normal'] else ''}; "
+             f"Layer B {'paid ' + format(x['layer_b_payout'], '.0%') if x['layer_b_pays'] else 'did not pay'}" for x in h])
+        sw = la["skill_sweep"]
+        charts["layer_a_skill"] = sc.lines(
+            {"Hit rate: Layer B payout seasons": [(r["skill"], r["hit_rate_layer_b"]["median"] or 0) for r in sw],
+             "Hit rate: below-normal rain": [(r["skill"], r["hit_rate_below_normal"]["median"] or 0) for r in sw],
+             "Seasons with a voucher": [(r["skill"], r["trigger_frequency"]) for r in sw]},
+            {"Hit rate: Layer B payout seasons": "var(--series-1)", "Hit rate: below-normal rain": "var(--series-2)",
+             "Seasons with a voucher": "var(--series-3)"},
+            "Layer A scores by forecast skill", lambda v: f"{v:.1f}", lambda v: f"{v:.0%}",
+            "Forecast skill (correlation with observed Mar-May rain)", "Share", x_range=(0, max(r["skill"] for r in sw)),
+            y_range=(0, 1), xticks=[r["skill"] for r in sw],
+            tooltip=lambda n, x, y: f"skill {x:.1f}: {n.lower()} {y:.0%} (median of draws)")
     fv = s["fewsnet_validation"]
     if fv.get("available"):
         charts["fewsnet"] = sc.scatter_xy(

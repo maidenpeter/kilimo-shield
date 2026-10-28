@@ -398,6 +398,81 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <div class="card"><p style="margin:0">{{ br.reason }}</p></div>
   {% endif %}
 
+  {% set la = s.layer_a %}
+  <h2>Layer A: pre-season seed voucher, {{ s.season_label | lower }} <span class="chip SYNTHETIC">SYNTHETIC FORECAST</span></h2>
+  {% if la.available %}
+  <p>Before planting, if the seasonal outlook gives at least a {{ la.terms.trigger_prob_below_normal | pct(0) }} chance of below-normal
+    rain over {% for mth in la.forecast.months %}{{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mth - 1] }}{% if not loop.last %}&ndash;{% endif %}{% endfor %},
+    insured farmers get a {{ la.terms.voucher_kes_per_acre | kes }}-per-acre voucher for drought-tolerant certified seed through their SACCO.
+    The forecast here is <b>synthetic</b>, with skill {{ la.forecast.skill_correlation | num(2) }} (its correlation with the observed rain),
+    generated from what actually fell. It shows what a forecast of that skill would cost and catch; it is not a forecast.
+    Each run is one possible {{ la.seasons }}-season hindcast, so figures are medians over {{ la.forecast.draws | num }} draws,
+    with the 5&ndash;95% range in brackets.</p>
+  <div class="tiles">
+    <div class="tile"><div class="k">Seasons with a voucher</div><div class="v">{{ la.trigger_frequency_mean | pct(0) }}</div><div class="n">mean over draws</div></div>
+    <div class="tile"><div class="k">Expected voucher cost</div><div class="v">{{ la.expected_cost_kes | kes }}</div>
+      <div class="n">per acre per season ({{ la.cost_per_acre_range_kes.p05 | kes }}&ndash;{{ la.cost_per_acre_range_kes.p95 | kes }})</div></div>
+    <div class="tile"><div class="k">Layer A gross premium</div><div class="v">{{ la.gross_kes | kes }}</div><div class="n">per acre, same loadings as Layer B</div></div>
+    <div class="tile"><div class="k">Layer A + Layer B gross</div><div class="v">{{ s.combined_gross_per_acre.total_gross_kes | kes }}</div>
+      <div class="n">per acre at {{ s.combined_gross_per_acre.sum_insured_kes_per_acre | kes }} sum insured</div></div>
+  </div>
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Scored against</th><th class="num">Seasons with the event</th><th class="num">Hit rate</th><th class="num">False alarm rate</th><th class="num">False alarm ratio</th></tr>
+      {% for key, label in [("below_normal_rain", "Below-normal Mar-May rain (the forecast's target)"), ("layer_b_payout", "Layer B paid (the loss the voucher should get ahead of)")] %}
+      {% set sc_ = la.scores[key] %}
+      <tr><td>{{ label }}</td><td class="num">{{ la.events[key] }}</td>
+        <td class="num">{{ sc_.hit_rate.median | pct(0) }} ({{ sc_.hit_rate.p05 | pct(0) }}&ndash;{{ sc_.hit_rate.p95 | pct(0) }})</td>
+        <td class="num">{{ sc_.false_alarm_rate.median | pct(0) }} ({{ sc_.false_alarm_rate.p05 | pct(0) }}&ndash;{{ sc_.false_alarm_rate.p95 | pct(0) }})</td>
+        <td class="num">{{ sc_.false_alarm_ratio.median | pct(0) }} ({{ sc_.false_alarm_ratio.p05 | pct(0) }}&ndash;{{ sc_.false_alarm_ratio.p95 | pct(0) }})</td></tr>
+      {% endfor %}
+    </table>
+    <p class="meta" style="margin:8px 0 0">Hit rate: share of event seasons that got a voucher. False alarm rate: share of non-event seasons that got one.
+      False alarm ratio: share of vouchers that went to non-event seasons.</p>
+  </div>
+
+  <h3>Forecast probability by season (one reference draw)</h3>
+  <div class="card">
+    <div class="legend"><span><i style="background:var(--series-2)"></i>Layer B paid that season</span><span><i style="background:var(--series-1)"></i>Layer B did not pay</span></div>
+    {{ c.layer_a_probs | safe }}
+  </div>
+
+  <h3>What forecast skill buys</h3>
+  <p>The same noise draws at each skill level, so the sweep compares skill rather than luck. Real skill must be measured from
+    KMD or ICPAC hindcasts, separately for long and short rains.</p>
+  <div class="card">
+    <div class="legend"><span><i style="background:var(--series-1)"></i>Hit rate: Layer B payout seasons</span><span><i style="background:var(--series-2)"></i>Hit rate: below-normal rain</span><span><i style="background:var(--series-3)"></i>Seasons with a voucher</span></div>
+    {{ c.layer_a_skill | safe }}
+  </div>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">Skill</th><th class="num">Seasons with a voucher</th><th class="num">Hit rate (Layer B)</th><th class="num">False alarm ratio (Layer B)</th>
+        <th class="num">Hit rate (below normal)</th><th class="num">Expected cost</th><th class="num">Gross per acre</th><th></th></tr>
+      {% for r_ in la.skill_sweep %}
+      <tr class="{{ 'hi' if r_.is_current else '' }}"><td class="num">{{ r_.skill | num(1) }}</td><td class="num">{{ r_.trigger_frequency | pct(0) }}</td>
+        <td class="num">{{ r_.hit_rate_layer_b.median | pct(0) }}</td><td class="num">{{ r_.false_alarm_ratio_layer_b.median | pct(0) }}</td>
+        <td class="num">{{ r_.hit_rate_below_normal.median | pct(0) }}</td><td class="num">{{ r_.expected_cost_kes | kes }}</td><td class="num">{{ r_.gross_kes | kes }}</td>
+        <td>{% if r_.is_current %}current{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h3>How the voucher moves with the probability threshold</h3>
+  <div class="card table-wrap">
+    <table>
+      <tr><th class="num">P(below normal) threshold</th><th class="num">Seasons with a voucher</th><th class="num">Hit rate (Layer B)</th><th class="num">False alarm ratio (Layer B)</th>
+        <th class="num">Expected cost</th><th class="num">Gross per acre</th><th></th></tr>
+      {% for r_ in la.threshold_sweep %}
+      <tr class="{{ 'hi' if r_.is_current else '' }}"><td class="num">{{ r_.threshold | pct(0) }}</td><td class="num">{{ r_.trigger_frequency | pct(0) }}</td>
+        <td class="num">{{ r_.hit_rate_layer_b.median | pct(0) }}</td><td class="num">{{ r_.false_alarm_ratio_layer_b.median | pct(0) }}</td>
+        <td class="num">{{ r_.expected_cost_kes | kes }}</td><td class="num">{{ r_.gross_kes | kes }}</td><td>{% if r_.is_current %}current{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <div class="card"><p style="margin:0">{{ la.reason }}</p></div>
+  {% endif %}
+
   <details>
     <summary>Season-by-season table ({{ b.seasons }} seasons)</summary>
     <div class="card table-wrap">

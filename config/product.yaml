@@ -97,6 +97,33 @@ event_tests:
      note: "1984 drought, the worst season on record in Kenya"}
 
 # ---------------------------------------------------------------------------
+# Layer A: anticipatory seed voucher, triggered by the pre-season forecast.
+# Before planting, if the seasonal outlook for the ward is bad enough, insured
+# farmers get a voucher for drought-tolerant certified seed through their SACCO.
+# ---------------------------------------------------------------------------
+layer_a:
+  version: "A-0.1.0"
+  # What the forecast predicts: total ward rainfall (CHIRPS) over these months,
+  # and when it is issued (before the planting window opens).
+  forecast_months: {LR: [3, 4, 5]}
+  issue_month: {LR: 2}
+  # Voucher issued when P(below-normal rainfall) is at or above this.
+  trigger_prob_below_normal: 0.45
+  # Fixed voucher per acre (drought-tolerant certified seed). Placeholder pending
+  # agro-dealer prices.
+  voucher_kes_per_acre: 2000
+  sensitivity_thresholds: [0.35, 0.40, 0.45, 0.50, 0.55, 0.60]
+
+# SYNTHETIC seasonal forecast, used until KMD / ICPAC hindcasts are available [ASK].
+# It is generated from the observed rainfall with a set skill (correlation), so
+# it shows what a forecast of that skill would cost and catch; it is not a forecast.
+synthetic_forecast:
+  skill_correlation: {LR: 0.45}   # placeholder; real skill comes from hindcasts
+  skill_sweep: [0.0, 0.2, 0.4, 0.6, 0.8]
+  draws: 2000                     # Monte Carlo draws of the 45-season history
+  seed: 20261028
+
+# ---------------------------------------------------------------------------
 # Layer B v0 (SUPERSEDED): per-phase rainfall percentile index. Kept only to
 # show alongside v1 in the report; it does not price anything.
 # ---------------------------------------------------------------------------

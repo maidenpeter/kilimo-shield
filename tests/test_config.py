@@ -124,3 +124,15 @@ def test_flowering_exit_must_exceed_trigger(config_copy):
     _edit(config_copy / "product.yaml", lambda d: d["layer_b"]["flowering"].update(trigger=30, exit=20))
     with pytest.raises(ValidationError, match="exit must exceed trigger"):
         load_config(config_copy)
+
+
+def test_layer_a_threshold_must_beat_climatology(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_a"].update(trigger_prob_below_normal=0.3))
+    with pytest.raises(ValidationError):
+        load_config(config_copy)
+
+
+def test_long_rains_forecast_issued_before_the_season(config_copy):
+    _edit(config_copy / "product.yaml", lambda d: d["layer_a"].update(issue_month={"LR": 4}))
+    with pytest.raises(ValidationError, match="issued before"):
+        load_config(config_copy)

@@ -23,6 +23,7 @@ from scipy import stats
 from .burn import burn_cost, exceedance_curve
 from .config import Config, SumInsured
 from .index import effective_daily, phase_rainfall, resolve_terms, season_payouts
+from .layer_a import run_layer_a
 from .pet import PetSource
 from .phenology import season_years as v0_season_years
 from .premium import gross_premium
@@ -280,6 +281,11 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
         fews = compare_fewsnet(table["wrsi"], load_fewsnet_wrsi(cfg, ward_id, season),
                                cfg.validation.large_gap_wrsi, cfg.validation.fewsnet_status)
         basis = real_yield_backtest(cfg, ward_id, season, share)
+        layer_a = run_layer_a(cfg, ward_id, season, rain, share)
+        default_b = next(o for o in prem["per_acre"] if o["sum_insured_kes_per_acre"] == si)
+        combined = {"sum_insured_kes_per_acre": si, "layer_b_gross_kes": default_b["gross_premium_kes"],
+                    "layer_a_gross_kes": layer_a.get("gross_kes"),
+                    "total_gross_kes": round(default_b["gross_premium_kes"] + (layer_a.get("gross_kes") or 0), 2)}
 
         keep = {e["year"] for e in event_rows} | {w["year"] for w in worst[:1] if w["wrsi"] is not None}
         traces = {s.year: s.trace for s in results if s.year in keep and s.trace is not None}
@@ -318,6 +324,8 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
             "worst_seasons": worst,
             "fewsnet_validation": fews,
             "basis_risk": basis,
+            "layer_a": layer_a,
+            "combined_gross_per_acre": combined,
             "v0": {**v0_info, **_metrics(b0, p0, v0_pay["payout_frac"], events)},
             "v1_metrics": _metrics(burn, prem, share, events),
             "comparison": {"seasons": len(common), "spearman_payouts": None if rho is None else float(rho),
@@ -375,6 +383,10 @@ def provenance_block(cfg: Config, ward_id: str, rain_source: RainfallSource, pet
         ("Flowering component", Provenance(Label.ILLUSTRATIVE, "config/product.yaml",
                                            {"note": "EXPERIMENTAL; " + ("in the product." if cfg.product.layer_b.flowering.enabled
                                                                         else "off, shown for comparison only.")})),
+        ("Seasonal forecast (Layer A)", Provenance(Label.SYNTHETIC, "agroshield synthetic tercile forecast",
+                                                   {"note": "Set skill, generated from observed rainfall; awaiting KMD / ICPAC hindcasts."})),
+        ("Layer A trigger and voucher value", Provenance(ill(cfg.product.illustrative), "config/product.yaml",
+                                                         {"note": "Probability threshold and voucher KES per acre are placeholders."})),
         ("Target payout frequency", Provenance(Label.ILLUSTRATIVE, "config/product.yaml",
                                                {"note": "1 season in {:g}-{:g}; underwriter to confirm.".format(
                                                    *sorted(cfg.product.target.periods_for(ward_id)))})),

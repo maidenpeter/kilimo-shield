@@ -75,6 +75,13 @@ def cmd_run(args) -> int:
                 print(f"     event {e['year']}: WRSI {e['wrsi']}, payout {e['payout']:.0%} -> {verdict}")
             for e in sr.summary["early_season_triggers"]:
                 print(f"     {e['year']} {e['trigger']}: KES {e['payout_kes']:,.0f}/acre - {e['cause']}")
+            la = sr.summary["layer_a"]
+            if la.get("available"):
+                hb = la["scores"]["layer_b_payout"]
+                print(f"  Layer A (SYNTHETIC forecast, skill {la['forecast']['skill_correlation']}): voucher in "
+                      f"{la['trigger_frequency_mean']:.0%} of seasons, KES {la['expected_cost_kes']:,.0f} expected, "
+                      f"KES {la['gross_kes']:,.0f} gross per acre; catches {hb['hit_rate']['median']:.0%} of Layer B "
+                      f"payout seasons, {hb['false_alarm_ratio']['median']:.0%} of vouchers to seasons Layer B did not pay")
         labels = sorted({p["label"] for p in result.summary["provenance"]})
         print(f"  inputs: {', '.join(labels)} (see report)")
         print(f"  report: {out / 'report.html'}")

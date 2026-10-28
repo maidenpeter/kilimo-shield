@@ -61,7 +61,7 @@ class Plot:
             p.append(f'<text class="axis-label" x="{(PAD["l"] + self.w - PAD["r"]) / 2:.1f}" y="{self.h - 4}" '
                      f'text-anchor="middle">{escape(xlabel)}</text>')
 
-    def ref_lines(self, levels: list[tuple[str, float]], unit: str = ""):
+    def ref_lines(self, levels: list[tuple[str, float]], unit: str = "", fmt=lambda v: f"{v:g}"):
         """Dashed horizontal reference lines with right-aligned labels that never overlap."""
         prev = None
         for name, v in sorted(levels, key=lambda lv: -lv[1]):
@@ -69,7 +69,7 @@ class Plot:
             ty = yy - 5 if prev is None or yy - 5 - prev >= 12 else prev + 12
             self.parts.append(f'<line class="ref" x1="{PAD["l"]}" x2="{self.w - PAD["r"]}" y1="{yy:.1f}" y2="{yy:.1f}"/>')
             self.parts.append(f'<text class="ref-label" x="{self.w - PAD["r"] - 4}" y="{ty:.1f}" text-anchor="end">'
-                              f'{escape(name)} {v:g}{unit}</text>')
+                              f'{escape(name)} {fmt(v)}{unit}</text>')
             prev = ty
 
     def svg(self) -> str:
@@ -149,6 +149,19 @@ def wrsi_dots(years, wrsi: list[float | None], trigger: float, exit_: float, lab
         fill = "var(--series-2)" if v < trigger else "var(--series-1)"
         p.parts.append(f'<circle class="dot" cx="{p.x(yr):.1f}" cy="{p.y(v):.1f}" r="4" fill="{fill}">'
                        f'<title>{yr}: WRSI {v:.0f}{" (below trigger)" if v < trigger else ""}</title></circle>')
+    return p.svg()
+
+
+def prob_dots(years, probs: list[float], threshold: float, hot: list[bool], label: str, tips: list[str]) -> str:
+    """Forecast probability per season with the trigger threshold; `hot` seasons drawn in series-2."""
+    p = Plot(min(years) - 1, max(years) + 1, 0, 1, label=label)
+    p.axes([0, 0.25, 0.5, 0.75, 1.0], lambda v: f"{v:.0%}", _nice_ticks(min(years), max(years), 8),
+           lambda v: f"{int(v)}", ylabel="P(below-normal rain)")
+    p.ref_lines([("voucher threshold", threshold), ("climatology", 1 / 3)], fmt=lambda v: f"{v:.0%}")
+    for yr, v, h, tip in zip(years, probs, hot, tips):
+        fill = "var(--series-2)" if h else "var(--series-1)"
+        p.parts.append(f'<circle class="dot" cx="{p.x(yr):.1f}" cy="{p.y(v):.1f}" r="4" fill="{fill}">'
+                       f'<title>{escape(tip)}</title></circle>')
     return p.svg()
 
 
