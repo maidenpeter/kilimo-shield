@@ -397,6 +397,43 @@ class Premium(BaseModel):
         return v
 
 
+class AcreBand(BaseModel):
+    min: float = Field(ge=0)
+    max: float = Field(gt=0)
+
+
+class Subsidy(BaseModel):
+    illustrative: bool
+    programme: str
+    government_share: float = Field(ge=0, lt=1)
+    eligible_acres: AcreBand
+    applies_to_layers: list[Literal["A", "B"]]
+    received: bool
+
+
+class ResiliencePoint(BaseModel):
+    id: str
+    points: float = Field(gt=0)
+    label: str
+    verified_by: str
+    group: str | None = None      # at most one item per group counts (the highest)
+
+
+class Resilience(BaseModel):
+    illustrative: bool
+    discount_per_point: float = Field(gt=0, lt=1)
+    discount_cap: float = Field(ge=0, lt=1)
+    points: list[ResiliencePoint]
+
+    @field_validator("points")
+    @classmethod
+    def _unique(cls, v: list[ResiliencePoint]) -> list[ResiliencePoint]:
+        ids = [p.id for p in v]
+        if len(ids) != len(set(ids)):
+            raise ValueError("resilience point ids must be unique")
+        return v
+
+
 class Backtest(BaseModel):
     bad_yield_threshold: float = Field(gt=0, lt=1)
     meaningful_payout: float = Field(ge=0, lt=1)
@@ -412,6 +449,8 @@ class Product(BaseModel):
     event_tests: list[EventTest] = []
     sum_insured: SumInsured
     premium: Premium
+    subsidy: Subsidy
+    resilience: Resilience
     backtest: Backtest
 
 

@@ -136,3 +136,11 @@ def test_long_rains_forecast_issued_before_the_season(config_copy):
     _edit(config_copy / "product.yaml", lambda d: d["layer_a"].update(issue_month={"LR": 4}))
     with pytest.raises(ValidationError, match="issued before"):
         load_config(config_copy)
+
+
+def test_resilience_cap_and_subsidy_terms(cfg):
+    assert cfg.product.resilience.discount_cap == 0.15
+    assert cfg.product.subsidy.government_share == 0.5
+    assert (cfg.product.subsidy.eligible_acres.min, cfg.product.subsidy.eligible_acres.max) == (0.5, 20)
+    ids = {p.id for p in cfg.product.resilience.points}
+    assert {"certified_seed_verified", "irrigation_full", "irrigation_partial", "sacco_good_standing"} <= ids

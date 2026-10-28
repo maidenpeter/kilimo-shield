@@ -6,7 +6,7 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1-3 of 10. Layer B is a seasonal WRSI index (v1.1) with
+**Status:** milestones 1-4 of 10 (quote API added in milestone 4). Layer B is a seasonal WRSI index (v1.1) with
 failed-onset and germination dry-spell triggers; the superseded per-phase index (v0) is
 kept for comparison only. Layer A (anticipatory seed voucher) runs on a synthetic forecast.
 Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
@@ -35,6 +35,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-price run --offline` | Never download; fail if inputs are not cached |
 | `agroshield-price fetch-rainfall --all [--refresh]` | Download and cache CHIRPS |
 | `agroshield-price fetch-climate --all [--refresh]` | Download and cache NASA POWER temperature |
+| `agroshield-price quote --ward ward-a --acres 2 --layers A,B --resilience certified_seed_verified` | Quote a farmer from the command line |
+| `agroshield-api` | Quote API on http://127.0.0.1:8770 (interactive docs at `/docs`) |
 | `agroshield-price validate` | Check the config without pricing |
 | `pytest` | Run the tests |
 
@@ -84,6 +86,26 @@ per acre, and hit rate / false alarm rate / false alarm ratio scored against bot
 below-normal rain and Layer B payout seasons, plus sweeps over forecast skill and the
 probability threshold. Skill is configured per season (long and short rains separately);
 the real values must come from hindcasts.
+
+## Quotes: subsidy split and Resilience discount
+
+A quote takes the per-acre gross premium straight from the engine (a rate book built
+from `price_ward` for each ward; the API never re-prices), then splits who pays:
+
+```
+gross            = sum of chosen layers' gross per acre x acres
+government share = 50% of gross (KAIP), only for 0.5-20 acres; "not yet received" until paid
+farmer share     = gross - government share
+Resilience       = min(15%, points x 1%) x farmer share      (farmer share only)
+farmer pays      = farmer share - Resilience discount
+```
+
+Resilience points come from a table in `product.yaml` (certified seed, photos on
+schedule, verified practices, irrigation, SACCO standing); within a group such as
+irrigation only the highest item counts. Subsidy terms, the cap and the points are
+ILLUSTRATIVE pending KAIP and the underwriter. Layer A can be quoted only where it is
+offered (Ward A). `POST /v1/quotes` takes everything in the request body and logs each
+quote to `var/audit/quotes.jsonl`; quotes carry no personal data.
 
 ## Validation status
 

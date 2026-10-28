@@ -171,6 +171,37 @@ premium:
     underwriter_margin: 0.07
 
 # ---------------------------------------------------------------------------
+# Premium split: government subsidy, then the Resilience discount.
+# Both act on who pays, never on the risk price (the gross premium).
+# ---------------------------------------------------------------------------
+subsidy:
+  # Kenya Agricultural Insurance Programme (KAIP) premium subsidy.
+  # [ASK] confirm the terms with KAIP and the underwriter.
+  illustrative: true
+  programme: KAIP
+  government_share: 0.50        # share of the gross premium paid by government
+  eligible_acres: {min: 0.5, max: 20}   # outside this band: no subsidy
+  applies_to_layers: [A, B]
+  # Subsidy has historically arrived late. While false, every quote and policy
+  # carries the government share as "not yet received" (a receivable).
+  received: false
+
+resilience:
+  # Resilience Score: points from last season's verified practices, turned into
+  # a discount on the FARMER'S share of next season's premium, capped.
+  # [ASK] cap and points pending underwriter agreement; who funds the discount.
+  illustrative: true
+  discount_per_point: 0.01      # 1% of the farmer share per point
+  discount_cap: 0.15
+  points:
+    - {id: certified_seed_verified, points: 5, label: "Certified seed bought last season", verified_by: "agro-dealer receipt or KIAMIS"}
+    - {id: photos_on_schedule, points: 4, label: "Crop photos submitted at every growth stage", verified_by: "photo app (milestone 8)"}
+    - {id: practices_verified, points: 3, label: "Good practices verified (timely planting, mulching, conservation tillage)", verified_by: "champion farmer or extension officer"}
+    - {id: irrigation_full, points: 3, label: "Full irrigation", verified_by: "officer visit", group: irrigation}
+    - {id: irrigation_partial, points: 2, label: "Partial or supplementary irrigation", verified_by: "officer visit", group: irrigation}
+    - {id: sacco_good_standing, points: 2, label: "SACCO member in good standing (savings or loan current)", verified_by: "SACCO records"}
+
+# ---------------------------------------------------------------------------
 # Yield backtest, used once real ward yield history is available [ASK].
 # Until then basis risk is reported as not measurable.
 # ---------------------------------------------------------------------------

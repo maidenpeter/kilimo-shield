@@ -118,6 +118,29 @@ def cmd_fetch_climate(args) -> int:
     return _fetch(args, make_pet_source(cfg, "hargreaves_nasapower").base, "NASA POWER")
 
 
+def cmd_quote(args) -> int:
+    from .quote import QuoteError, RateBook, quote
+    cfg = load_config(args.config)
+    book = RateBook.build(cfg, make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False))
+    items = {i: True for i in (args.resilience.split(",") if args.resilience else [])}
+    try:
+        q = quote(cfg, book, ward_id=args.ward or cfg.pilot.default_ward, season=args.season, acres=args.acres,
+                  layers=args.layers.split(","), sum_insured_kes_per_acre=args.sum_insured, resilience=items)
+    except QuoteError as e:
+        print(f"cannot quote: {e}")
+        return 2
+    print(f"{q['quote_id']}  {q['ward']['name']}, {q['season']}, {q['acres']:g} acres (ILLUSTRATIVE)")
+    for ln in q["layers"]:
+        print(f"  Layer {ln['layer']}: {ln['name']}: gross KES {ln['gross_kes']:,.2f} ({ln['cover']})")
+    s, r = q["subsidy"], q["resilience"]
+    print(f"  Gross premium                  KES {q['gross_premium_kes']:>10,.2f}")
+    print(f"  Government share ({s['programme']}, {s['status']})  KES {s['government_share_kes']:>10,.2f}")
+    print(f"  Farmer share                   KES {q['farmer_share_before_discount_kes']:>10,.2f}")
+    print(f"  Resilience discount ({r['points']:g} pts, {r['discount_rate']:.0%})  KES {r['discount_kes']:>10,.2f}")
+    print(f"  Farmer pays                    KES {q['farmer_pays_kes']:>10,.2f}")
+    return 0
+
+
 def cmd_validate(args) -> int:
     cfg = load_config(args.config)
     print(f"config OK: {len(cfg.wards)} wards, index {cfg.product.layer_b.version}, "
@@ -147,6 +170,15 @@ def main(argv: list[str] | None = None) -> int:
         f.add_argument("--all", action="store_true")
         f.add_argument("--refresh", action="store_true", help="re-download even if cached")
         f.set_defaults(fn=fn)
+
+    q = sub.add_parser("quote", help="quote a farmer (gross, subsidy split, Resilience discount)")
+    q.add_argument("--ward")
+    q.add_argument("--season", default="LR")
+    q.add_argument("--acres", type=float, required=True)
+    q.add_argument("--layers", default="B", help="comma list, e.g. A,B")
+    q.add_argument("--sum-insured", type=float, help="KES per acre (default from config)")
+    q.add_argument("--resilience", help="comma list of verified Resilience items")
+    q.set_defaults(fn=cmd_quote)
 
     v = sub.add_parser("validate", help="validate config only")
     v.set_defaults(fn=cmd_validate)
