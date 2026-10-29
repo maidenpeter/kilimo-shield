@@ -1,0 +1,13 @@
+{
+  "site": "laisamis",
+  "label": "Around Laisamis, Marsabit County",
+  "lat": 1.6,
+  "lon": 37.81,
+  "product": "MOD13Q1 (MODIS Terra vegetation indices, 16-day, 250 m)",
+  "provider": "NASA ORNL DAAC MODIS/VIIRS subset web service",
+  "service": "https://modis.ornl.gov/rst/api/v1",
+  "box_km": 10,
+  "quality": "pixels with reliability 0 (good) or 1 (marginal); fill values dropped",
+  "retrieved_at": "2026-10-29T22:33:46+00:00",
+  "sha256": "b772cf3f16379d48f37a5def7fa22cfa0344dd8db3ffb78b008c3fdf9f0f68e1"
+}

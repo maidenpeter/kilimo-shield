@@ -1,0 +1,13 @@
+{
+  "site": "merti",
+  "label": "Around Merti, Isiolo County",
+  "lat": 1.06,
+  "lon": 38.67,
+  "product": "MOD13Q1 (MODIS Terra vegetation indices, 16-day, 250 m)",
+  "provider": "NASA ORNL DAAC MODIS/VIIRS subset web service",
+  "service": "https://modis.ornl.gov/rst/api/v1",
+  "box_km": 10,
+  "quality": "pixels with reliability 0 (good) or 1 (marginal); fill values dropped",
+  "retrieved_at": "2026-10-29T22:54:44+00:00",
+  "sha256": "435b301d73d08554ebc2e914fbbca881baf205355c1a77c900dfb49b2ff37735"
+}
