@@ -59,12 +59,14 @@ def create_app(config_dir: str | Path = "config", book: RateBook | None = None,
     @app.get("/v1/products")
     def products():
         b = rate_book()
+        a_on = cfg.product.layer_a.enabled
         return {
             "illustrative": True,
+            "layer_a": {"enabled": a_on, "note": None if a_on else cfg.product.layer_a.disabled_reason.strip()},
             "wards": [{"ward_id": w.ward_id, "name": w.ward_name, "season": w.season,
-                       "layers": ["A", "B"] if w.layer_a_gross_per_acre is not None else ["B"],
+                       "layers": ["A", "B"] if a_on and w.layer_a_gross_per_acre is not None else ["B"],
                        "layer_b_gross_per_acre_kes": {str(int(k)): v for k, v in w.layer_b_gross_per_acre.items()},
-                       "layer_a_gross_per_acre_kes": w.layer_a_gross_per_acre,
+                       "layer_a_gross_per_acre_kes": w.layer_a_gross_per_acre if a_on else None,
                        "index_versions": w.index_versions} for w in b.rates.values()],
             "sum_insured_options_kes_per_acre": cfg.product.sum_insured.options_kes_per_acre,
             "subsidy": cfg.product.subsidy.model_dump(),

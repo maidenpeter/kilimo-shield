@@ -6,18 +6,25 @@
 <div class="tiles">
   <div class="tile"><div class="k">Members</div><div class="v">{{ pf.members|num }}</div></div>
   <div class="tile"><div class="k">Policies</div><div class="v">{{ pf.policies|num }}</div>
-    <div class="n">{{ pf.by_status.pending_payment }} awaiting payment &middot; {{ pf.by_status.active }} active</div></div>
+    <div class="n">{{ pf.by_status.active }} active &middot; {{ pf.by_status.pending_payment }} awaiting payment
+      {% if pf.by_status.lapsed_unpaid %}&middot; {{ pf.by_status.lapsed_unpaid }} not started{% endif %}</div></div>
   <div class="tile"><div class="k">Acres insured</div><div class="v">{{ pf.acres|num(1) }}</div></div>
   <div class="tile"><div class="k">Sum insured</div><div class="v">{{ pf.sum_insured_kes|kes }}</div></div>
   <div class="tile"><div class="k">Gross premium</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
-  <div class="tile"><div class="k">Farmer premium due</div><div class="v">{{ pf.farmer_premium_due_kes|kes }}</div>
-    <div class="n">collected by SACCO deduction or M-Pesa (milestone 6)</div></div>
+  <div class="tile"><div class="k">Farmer premium collected</div><div class="v">{{ pf.premium_collected_kes|kes }}</div>
+    <div class="n">{{ pf.farmer_premium_due_kes|kes }} still due{% if pf.refunds_due_kes %} &middot; {{ pf.refunds_due_kes|kes }} to refund{% endif %}</div></div>
   <div class="tile"><div class="k">KAIP subsidy receivable</div><div class="v">{{ pf.subsidy_receivable_kes|kes }}</div>
     <div class="n"><span class="chip warn">not yet received</span></div></div>
   <div class="tile"><div class="k">Loan-linked policies</div><div class="v">{{ pf.loan_linked|num }}</div>
     <div class="n">{{ pf.with_layer_a }} with Layer A</div></div>
 </div>
 
+<div class="card"><b>Sales windows (long rains)</b>
+  {% for wid, st in pf.sales.items() %}<div>{{ cfg.ward(wid).name }}:
+    {% if st.open %}<span class="chip">open</span> for {{ st.year }}, closes {{ st.closes|day }}
+    {% else %}<span class="chip warn">closed</span>{% if st.next_opens %} opens {{ st.next_opens|day }}{% endif %}{% endif %}</div>{% endfor %}
+  {% if pf.discount_by_funder %}<p class="muted" style="margin:6px 0 0">Resilience discounts to fund:
+    {% for f, v in pf.discount_by_funder.items() %}{{ f|label }} {{ v|kes }}{{ ', ' if not loop.last }}{% endfor %}.</p>{% endif %}</div>
 <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
   <div class="card">
     <h2 style="margin-top:0">Pilot wards</h2>
@@ -70,7 +77,7 @@
   <tbody>{% for p in recent %}
     <tr><td>{{ p.policy_no }}</td><td><a href="/members/{{ p.farmer_id }}">{{ p.farmer.member_no }}</a> {{ p.farmer.full_name }}</td>
       <td>{{ p.ward_id }}</td><td>{{ p.layers }}</td><td class="num">{{ p.farmer_pays_kes|kes }}</td>
-      <td><span class="chip {{ 'warn' if p.status == 'pending_payment' }}">{{ p.status.replace('_', ' ') }}</span></td></tr>
+      <td><span class="chip {{ 'warn' if p.status != 'active' }}">{{ p.status|label }}</span></td></tr>
   {% endfor %}</tbody>
 </table></div>
 <p><a class="btn ghost small" href="/export/policies.csv">Export policies (CSV, IDs and phones masked)</a></p>

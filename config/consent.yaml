@@ -3,10 +3,18 @@
 # SHA-256 of the wording, so what the farmer agreed to can always be shown.
 # Changing any text requires a new version.
 #
-# ILLUSTRATIVE pending legal review. The Kiswahili text needs native-speaker
-# review before use with farmers (see docs/BORROWED_FROM_MVP.md, item 1).
+# PENDING LEGAL AND KISWAHILI REVIEW: every statement below is shown with that
+# label. Live (non-demo) enrolment is blocked until both reviews are recorded
+# here, e.g.
+#   legal:     {reviewer: "Name, firm", date: "2026-11-15"}
+#   kiswahili: {reviewer: "Name", date: "2026-11-15"}
+# Record a review only together with a new version string (the wording a farmer
+# agreed to is identified by version + SHA-256).
 version: "C-2026-10-29"
-sw_reviewed: false
+review:
+  status: pending legal and Kiswahili review
+  legal: null
+  kiswahili: null
 
 purposes:
   data_processing:

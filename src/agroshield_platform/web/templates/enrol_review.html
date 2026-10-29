@@ -22,7 +22,10 @@
       {% elif k.status == 'verified' %}<span class="chip">verified</span>{% if k.certified_seed_purchased %} certified seed point added{% endif %}
       {% elif k.status == 'acreage_mismatch' %}<span class="chip warn">acreage differs</span> KIAMIS has {{ k.registered_acreage|num(1) }} acres
       {% else %}<span class="chip warn">not found</span>{% endif %}</span>
-    <span>Consent</span><span>data processing: yes &middot; SMS: {{ 'yes' if inp.consent_sms else 'no' }}</span>
+    <span>Consent</span><span>data processing: yes &middot; SMS: {{ 'yes' if inp.consent_sms else 'no' }}
+      {% if not wording.reviewed %}<span class="chip warn">{{ wording.review.status }}</span>{% endif %}</span>
+    <span>Language</span><span>{{ 'Kiswahili' if inp.language == 'sw' else 'English' }}</span>
+    <span>Season</span><span>long rains {{ pv.sales.year }}; full payment needed by {{ pv.sales.sales_closes_on|day }}</span>
   </div>
 </div>
 
@@ -38,7 +41,8 @@
       <option value="sacco_deduction" {% if inp.payment_route == 'sacco_deduction' %}selected{% endif %}>SACCO deduction</option>
       <option value="mpesa" {% if inp.payment_route == 'mpesa' %}selected{% endif %}>M-Pesa</option>
     </select>
-    <p class="muted">Payment collection goes live in milestone 6; until then the policy is saved as awaiting payment.</p>
+    <p class="muted">The farmer can pay in instalments (M-Pesa or SACCO deduction). Cover starts only when the share is
+      fully paid by {{ pv.sales.sales_closes_on|day }}; anything paid after that is refunded.</p>
     <label class="check"><input type="checkbox" name="loan_linked" value="1" {% if inp.loan_linked %}checked{% endif %}>
       <span><b>Link payouts to a SACCO loan</b></span></label>
     <label for="loan_ref">Loan reference</label>

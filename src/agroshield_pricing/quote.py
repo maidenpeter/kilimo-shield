@@ -110,6 +110,9 @@ def quote(cfg: Config, book: RateBook, *, ward_id: str, season: str = "LR", acre
     layers = sorted(set(layers))
     if not layers or not set(layers) <= {"A", "B"}:
         raise QuoteError("layers must be a non-empty subset of ['A', 'B']")
+    if "A" in layers and not cfg.product.layer_a.enabled:
+        raise QuoteError("Layer A is not part of the product: " + (cfg.product.layer_a.disabled_reason.strip()
+                                                                  or "switched off"))
     if "A" in layers and r.layer_a_gross_per_acre is None:
         raise QuoteError(f"Layer A is not offered at {ward_id}")
     si = sum_insured_kes_per_acre or cfg.product.sum_insured.default_kes_per_acre
@@ -142,6 +145,7 @@ def quote(cfg: Config, book: RateBook, *, ward_id: str, season: str = "LR", acre
     rate = min(res.discount_cap, points * res.discount_per_point)
     discount = _kes(farmer_share * rate)
     farmer_pays = _kes(farmer_share - discount)
+    platform_fee = _kes(gross * cfg.product.premium.loadings.get("platform", 0.0))
 
     return {
         "quote_id": f"Q-{datetime.now(timezone.utc):%Y%m%d}-{secrets.token_hex(4)}",
@@ -162,7 +166,14 @@ def quote(cfg: Config, book: RateBook, *, ward_id: str, season: str = "LR", acre
         "resilience": {"points": points, "items_counted": counted, "discount_rate": rate,
                        "discount_cap": res.discount_cap, "capped": points * res.discount_per_point > res.discount_cap,
                        "discount_kes": discount,
-                       "applies_to": "farmer share only"},
+                       "applies_to": "farmer share only", "funder": res.funder,
+                       "note": "Paid by the funder; the insurer still receives the full gross premium. "
+                               "The discount does not reduce the parametric risk."},
+        # Who pays the insurer. The three sources always add up to the full gross premium.
+        "premium_flows": {"insurer_receives_kes": gross, "government_kes": gov, "farmer_kes": farmer_pays,
+                          "discount_funder": res.funder, "discount_funder_kes": discount,
+                          "platform_fee_kes": platform_fee,
+                          "discount_exceeds_platform_fee": res.funder == "platform" and discount > platform_fee},
         "farmer_pays_kes": farmer_pays,
         "farmer_pays_rounded_kes": int(round(farmer_pays)),
         "payment": "M-Pesa or SACCO deduction (milestone 6)",

@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="/static/portal.css">
 </head>
 <body>
-{% if dev_keys %}<div class="devbar">Development mode: keys generated locally in var/dev-keys.json. Illustrative pricing; not a filed product.</div>{% endif %}
+{% if dev_keys %}<div class="devbar">Development mode: keys generated locally in var/dev-keys.json. Illustrative pricing; not a filed product.
+  M-Pesa: {{ mpesa_env }}. SMS: {{ 'recorded, not sent' if sms_mode == 'log' else sms_mode }}.</div>{% endif %}
 <header class="top"><div class="wrap">
   <a class="brand" href="/">AgroShield<span>KE</span></a>
   {% if officer %}
@@ -18,7 +19,9 @@
     <a href="/bulk" {% if here.startswith('/bulk') %}aria-current="page"{% endif %}>Bulk enrol</a>
     <a href="/quote" {% if here == '/quote' %}aria-current="page"{% endif %}>Quote</a>
     <a href="/members" {% if here.startswith('/members') %}aria-current="page"{% endif %}>Members</a>
-    {% if officer.role == 'manager' %}<a href="/kiamis" {% if here == '/kiamis' %}aria-current="page"{% endif %}>KIAMIS import</a>{% endif %}
+    {% if officer.role == 'manager' %}<a href="/kiamis" {% if here == '/kiamis' %}aria-current="page"{% endif %}>KIAMIS import</a>
+    <a href="/sms" {% if here == '/sms' %}aria-current="page"{% endif %}>SMS</a>{% endif %}
+    {% if mpesa_env == 'simulated' %}<a href="/dev/mpesa" {% if here == '/dev/mpesa' %}aria-current="page"{% endif %}>M-Pesa simulator</a>{% endif %}
   </nav>
   <div class="who">{{ officer.display_name }} &middot; {{ officer.sacco.name }}
     <form method="post" action="/logout" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
@@ -29,6 +32,7 @@
   {% endif %}
 </div></header>
 <main><div class="wrap">
+{% if flash %}<div class="alert {{ flash[0] }}" role="status">{{ flash[1] }}</div>{% endif %}
 {% block body %}{% endblock %}
 </div></main>
 <footer><div class="wrap">AgroShield is the technology and pricing layer; cover is underwritten by a licensed Kenyan insurer

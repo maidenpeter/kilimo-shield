@@ -6,33 +6,105 @@
 <div class="card"><div class="split">
   <span>National ID</span><span>{{ f.national_id_masked }}</span>
   <span>Phone</span><span>{{ f.phone_masked }}</span>
+  <span>Language</span><span>{{ 'Kiswahili' if f.language == 'sw' else 'English' }}</span>
   <span>Gender</span><span>{{ f.gender }}</span>
-  <span>KIAMIS</span><span>{{ f.kiamis_status.replace('_', ' ') }}</span>
+  <span>KIAMIS</span><span>{{ f.kiamis_status|label }}</span>
   <span>Enrolled</span><span>{{ f.created_at.strftime('%d %b %Y') }}</span>
 </div></div>
 
 <h2>Policies</h2>
-{% if policies %}
+{% for p in policies %}
+<div class="card">
+  <h3 style="margin-top:0">{{ p.policy_no }} &middot; {{ p.season }} {{ p.year }} &middot; layers {{ p.layers }}
+    <span class="chip {{ 'warn' if p.status != 'active' }}">{{ p.status|label }}</span></h3>
+  <div class="split">
+    <span>Insurer policy number</span><span>{{ p.insurer_policy_number or 'not issued yet' }}</span>
+    <span>Acres</span><span>{{ p.acres|num(1) }}</span>
+    <span>Gross premium (insurer receives)</span><span>{{ p.gross_kes|kes }}</span>
+    <span>Government share</span><span>{{ p.government_share_kes|kes }}
+      {% if p.subsidy_status == 'not yet received' %}<span class="chip warn">not yet received</span>{% endif %}</span>
+    <span>Resilience discount</span><span>{{ p.discount_kes|kes }} (funded by {{ p.discount_funder|label }})</span>
+    <span>Farmer share due</span><span>KES {{ '{:,}'.format(p.amount_due_kes) }} by {{ p.sales_closes_on|day }}</span>
+    <span>Paid</span><span>{{ p.paid_kes|kes }}</span>
+    <span class="tot">Balance</span><span class="tot">{{ p.balance_kes|kes }}</span>
+    {% if p.refund_due_kes %}<span>Refund due to farmer</span><span><span class="chip warn">{{ p.refund_due_kes|kes }}</span></span>{% endif %}
+    {% if p.cover_active_from %}<span>Cover active from</span><span>{{ p.cover_active_from.strftime('%d %b %Y %H:%M') }}</span>{% endif %}
+    <span>M-Pesa account reference</span><span>{{ p.pay_ref }}</span>
+    {% if p.loan_linked %}<span>Payout</span><span>to loan {{ p.loan_ref }} first</span>{% endif %}
+  </div>
+
+  {% if p.payments %}
+  <h4 style="margin:14px 0 4px">Payments</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Received</th><th>Method</th><th>Reference</th><th class="num">Amount</th><th>In window</th><th>Recorded by</th></tr></thead>
+    <tbody>{% for pay in p.payments %}<tr><td>{{ pay.received_at.strftime('%d %b %Y %H:%M') }}</td><td>{{ pay.method|label }}</td>
+      <td>{{ pay.reference }}</td><td class="num">{{ pay.amount_kes|kes }}</td><td>{{ 'yes' if pay.within_window else 'no, after close' }}</td>
+      <td>{{ pay.recorded_by }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+
+  {% if p.status == 'pending_payment' and today <= p.sales_closes_on %}
+  <div class="grid3" style="margin-top:12px">
+    <form class="stack" method="post" action="/policies/{{ p.id }}/stk">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="amt-{{ p.id }}">M-Pesa request to the farmer's phone (KES)</label>
+      <input id="amt-{{ p.id }}" name="amount" type="number" min="{{ [min_instalment, p.balance_kes|round|int]|min }}"
+             max="{{ p.balance_kes|round|int }}" step="1" value="{{ p.balance_kes|round|int }}">
+      <p class="muted">Full balance or an instalment of at least KES {{ min_instalment }}.</p>
+      <button class="btn small" type="submit">Send M-Pesa request</button>
+    </form>
+    <form class="stack" method="post" action="/policies/{{ p.id }}/deduction">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="ded-{{ p.id }}">SACCO deduction (KES)</label>
+      <input id="ded-{{ p.id }}" name="amount" type="number" min="1" step="1">
+      <label for="ref-{{ p.id }}">Deduction reference</label>
+      <input id="ref-{{ p.id }}" name="reference" type="text">
+      <p><button class="btn small" type="submit">Record deduction</button></p>
+    </form>
+  </div>
+  {% elif p.status == 'pending_payment' %}
+  <p class="muted">Sales closed on {{ p.sales_closes_on|day }}. The daily job marks this cover as not started.</p>
+  {% endif %}
+
+  {% if officer.role == 'manager' %}
+  <form method="post" action="/policies/{{ p.id }}/insurer-number" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:12px">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="ins-{{ p.id }}" class="muted">Insurer policy number</label>
+    <input id="ins-{{ p.id }}" name="insurer_policy_number" type="text" value="{{ p.insurer_policy_number or '' }}" style="max-width:260px">
+    <button class="btn ghost small" type="submit">Save</button>
+  </form>
+  {% endif %}
+</div>
+{% else %}<p class="muted">No policies.</p>{% endfor %}
+
+{% if mpesa_requests %}
+<h2>M-Pesa requests</h2>
 <div class="table-wrap"><table>
-  <thead><tr><th>Policy</th><th>Season</th><th>Layers</th><th class="num">Acres</th><th class="num">Gross</th>
-    <th class="num">Government share</th><th class="num">Farmer pays</th><th>Payment</th><th>Status</th></tr></thead>
-  <tbody>{% for p in policies %}
-    <tr><td>{{ p.policy_no }}</td><td>{{ p.season }} {{ p.year }}</td><td>{{ p.layers }}</td><td class="num">{{ p.acres|num(1) }}</td>
-      <td class="num">{{ p.gross_kes|kes }}</td><td class="num">{{ p.government_share_kes|kes }}
-        {% if p.subsidy_status == 'not yet received' %}<span class="chip warn">not yet received</span>{% endif %}</td>
-      <td class="num">{{ p.farmer_pays_kes|kes }}</td><td>{{ p.payment_route.replace('_', ' ') }}{% if p.loan_linked %}; payout to loan {{ p.loan_ref }}{% endif %}</td>
-      <td><span class="chip {{ 'warn' if p.status == 'pending_payment' }}">{{ p.status.replace('_', ' ') }}</span></td></tr>
-  {% endfor %}</tbody>
+  <thead><tr><th>Sent</th><th>Policy</th><th class="num">Amount</th><th>Phone</th><th>Status</th><th>Receipt</th><th>By</th></tr></thead>
+  <tbody>{% for r in mpesa_requests %}<tr><td>{{ r.created_at.strftime('%d %b %Y %H:%M') }}</td><td>{{ r.policy.policy_no }}</td>
+    <td class="num">KES {{ '{:,}'.format(r.amount_kes) }}</td><td>{{ r.phone_masked }}</td>
+    <td><span class="chip {{ 'warn' if r.status != 'paid' }}">{{ r.status }}</span> {{ r.result_desc or '' }}</td>
+    <td>{{ r.receipt or '' }}</td><td>{{ r.requested_by }} ({{ r.environment }})</td></tr>{% endfor %}</tbody>
 </table></div>
-{% else %}<p class="muted">No policies.</p>{% endif %}
+{% endif %}
+
+<h2>SMS</h2>
+{% if messages %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Queued</th><th>Message</th><th>Language</th><th>Status</th></tr></thead>
+  <tbody>{% for m in messages %}<tr><td>{{ m.created_at.strftime('%d %b %Y %H:%M') }}</td><td>{{ m.body }}</td>
+    <td>{{ m.language }}</td><td>{{ m.status }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">None. SMS are sent only if the farmer agreed to them.</p>{% endif %}
 
 <h2>Consent record</h2>
 <p class="muted">One record per purpose. Records are never edited; a change of mind is a new record.</p>
 <div class="table-wrap"><table>
   <thead><tr><th>Purpose</th><th>Given</th><th>Wording</th><th>Channel</th><th>Captured</th></tr></thead>
   <tbody>{% for c in consents %}
-    <tr><td>{{ c.purpose.replace('_', ' ') }}</td><td>{{ 'yes' if c.granted else 'no' }}</td>
-      <td>{{ c.wording_version }} <span class="muted">sha256 {{ c.wording_sha256[:12] }}</span></td><td>{{ c.channel }}</td>
+    <tr><td>{{ c.purpose|label }}</td><td>{{ 'yes' if c.granted else 'no' }}</td>
+      <td>{{ c.wording_version }} <span class="muted">sha256 {{ c.wording_sha256[:12] }}</span>
+        {% if consent_pending %}<span class="chip warn">pending legal and Kiswahili review</span>{% endif %}</td><td>{{ c.channel }}</td>
       <td>{{ c.captured_at.strftime('%d %b %Y %H:%M') }}</td></tr>
   {% endfor %}</tbody>
 </table></div>

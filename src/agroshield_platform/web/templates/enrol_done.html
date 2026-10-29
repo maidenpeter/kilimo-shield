@@ -13,10 +13,15 @@
     <span>Gross premium</span><span>{{ pol.gross_kes|kes }}</span>
     <span>Government share</span><span>{{ pol.government_share_kes|kes }} ({{ pol.subsidy_status }})</span>
     <span>Resilience discount</span><span>{{ pol.discount_kes|kes }}</span>
-    <span class="tot">Farmer pays</span><span class="tot">{{ pol.farmer_pays_kes|kes }} by {{ pol.payment_route.replace('_', ' ') }}</span>
+    <span>Discount funded by</span><span>{{ pol.discount_funder|label }}</span>
+    <span class="tot">Farmer pays</span><span class="tot">KES {{ '{:,}'.format(pol.amount_due_kes) }} by {{ pol.sales_closes_on|day }}
+      ({{ pol.payment_route|label }}; instalments allowed)</span>
+    <span>M-Pesa account reference</span><span>{{ pol.pay_ref }}</span>
     {% if pol.loan_linked %}<span>Payout</span><span>to loan {{ pol.loan_ref }} first</span>{% endif %}
   </div>
 </div>
-<p class="muted">Cover starts once the farmer's share is paid. Payment requests and the farmer's confirmation SMS arrive in milestone 6.</p>
+<p class="muted">Cover starts once the farmer's share is fully paid by {{ pol.sales_closes_on|day }}. Send an M-Pesa
+  request or record a SACCO deduction from the member page.
+  {% if sms_queued %}An enrolment SMS has been queued.{% else %}No SMS: the farmer did not agree to SMS.{% endif %}</p>
 <p><a class="btn" href="/enrol">Enrol another member</a> <a class="btn ghost" href="/members/{{ farmer.id }}">View member</a></p>
 {% endblock %}

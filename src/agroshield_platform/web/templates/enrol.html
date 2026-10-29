@@ -4,6 +4,14 @@
 {% block body %}
 <h1>Enrol a member</h1>
 {{ m.steps(1) }}
+{% if gate %}<div class="alert crit" role="alert"><b>Live enrolment is blocked.</b> {{ gate }}. Demo SACCOs can still enrol
+  fictional members.</div>{% endif %}
+<div class="card"><b>Sales windows</b>
+  {% for wid, st in sales.items() %}<div>{{ cfg.ward(wid).name }}:
+    {% if st.open %}<span class="chip">open</span> long rains {{ st.year }} cover, closes {{ st.closes|day }}
+    {% else %}<span class="chip warn">closed</span> {% if st.next_opens %}opens {{ st.next_opens|day }}{% endif %}{% endif %}</div>{% endfor %}
+  <p class="muted" style="margin:6px 0 0">Cover starts only once the farmer's share is fully paid, in one payment or
+    instalments, by the close date.</p></div>
 {% if errors %}<div class="alert crit" role="alert">Please fix the {{ errors|length }} problem{{ 's' if errors|length > 1 }} below.
   For the farmer's protection, the national ID and phone number are not kept after an error, so type them again.</div>{% endif %}
 <form class="stack" method="post" action="/enrol/review" autocomplete="off">
@@ -22,6 +30,11 @@
       {% for g in ["undisclosed", "female", "male", "other"] %}
       <option value="{{ g }}" {% if form.get('gender') == g %}selected{% endif %}>{{ g|capitalize }}</option>{% endfor %}
     </select>
+    <label for="language">Language for SMS and USSD</label>
+    <select id="language" name="language">
+      <option value="en" {% if form.get('language', 'en') == 'en' %}selected{% endif %}>English</option>
+      <option value="sw" {% if form.get('language') == 'sw' %}selected{% endif %}>Kiswahili</option>
+    </select>{{ m.err(errors, 'language') }}
     <p class="muted">The national ID and phone are encrypted as soon as they are saved and are only ever shown masked.</p>
   </fieldset>
   <fieldset><legend>2. Plot</legend>
@@ -38,7 +51,8 @@
   </fieldset>
   <fieldset><legend>4. Consent</legend>
     <p>Read each statement to the farmer in the language they choose. Each is recorded separately with wording version
-      {{ wording.version }}.{% if not wording.sw_reviewed %} <span class="chip warn">Kiswahili pending review</span>{% endif %}</p>
+      {{ wording.version }}.{% if not wording.reviewed %} <span class="chip warn">{{ wording.review.status }}</span>{% endif %}</p>
+    {{ m.err(errors, 'consent') }}
     {% set p = wording.purposes %}
     <label class="check"><input type="checkbox" name="consent_data_processing" value="1" {% if form.get('consent_data_processing') %}checked{% endif %}
       aria-describedby="c-dp"><span><b>Data processing (required)</b></span></label>

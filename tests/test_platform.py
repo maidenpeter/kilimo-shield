@@ -9,6 +9,7 @@ import logging
 import re
 import secrets
 import sqlite3
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,6 +30,7 @@ from conftest import REPO
 NID, PHONE = "31415926", "0722 718 281"          # fictional
 NID2, PHONE2 = "27182818", "0733 141 592"
 PASSWORD = "correct horse battery"
+TODAY = date(2026, 12, 15)                       # both long-rains sales windows open (2027 season)
 
 
 @pytest.fixture
@@ -58,10 +60,10 @@ def vault(settings):
 
 @pytest.fixture
 def app(settings, book):
-    app = create_app(settings, book)
+    app = create_app(settings, book, today=TODAY)
     with transaction(app.state.factory) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
-        other = Sacco(code="OTH01", name="Other SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
+        other = Sacco(code="OTH01", name="Other SACCO", is_demo=True)
         s.add_all([sacco, other])
         s.flush()
         s.add_all([Officer(sacco_id=sacco.id, username="officer", display_name="Officer One",
@@ -153,7 +155,7 @@ def test_scrub_masks_ids_and_phones_in_logs(caplog):
 # ------------------------------------------------------------------ services
 @pytest.fixture
 def ctx(cfg, book, vault):
-    return sv.Context(cfg, book, vault, CsvKiamis(vault))
+    return sv.Context(cfg, book, vault, CsvKiamis(vault), today=TODAY)
 
 
 @pytest.fixture
@@ -170,7 +172,7 @@ def inp(**over) -> sv.EnrolmentInput:
 
 def test_enrol_stores_only_encrypted_pii(ctx, db, settings):
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         pol = sv.enrol(ctx, s, sacco, None, inp())
@@ -189,7 +191,7 @@ def test_enrol_stores_only_encrypted_pii(ctx, db, settings):
 
 def test_consent_is_required_and_recorded_per_purpose(ctx, db, cfg):
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         with pytest.raises(sv.EnrolmentError) as e:
@@ -207,7 +209,7 @@ def test_consent_is_required_and_recorded_per_purpose(ctx, db, cfg):
 
 def test_loan_linked_payout_needs_its_own_consent_and_a_loan(ctx, db):
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         with pytest.raises(sv.EnrolmentError) as e:
@@ -219,7 +221,7 @@ def test_loan_linked_payout_needs_its_own_consent_and_a_loan(ctx, db):
 
 def test_duplicates_are_rejected(ctx, db):
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         sv.enrol(ctx, s, sacco, None, inp())
@@ -234,7 +236,7 @@ def test_duplicates_are_rejected(ctx, db):
 def test_layer_a_refused_where_not_offered(ctx, db):
     with transaction(db) as s:
         pv = sv.preview(ctx, s, inp(ward_id="ward-b", layers=["A", "B"]))
-        assert not pv["ok"] and "not offered" in pv["errors"]["layers"]
+        assert not pv["ok"] and "not part of the product" in pv["errors"]["layers"]
 
 
 def test_kiamis_import_and_checks(ctx, db):
@@ -267,7 +269,7 @@ def test_bulk_check_reports_every_problem_and_commit_is_all_or_nothing(ctx, db):
     bad = _bulk_csv(["B-1", NID, PHONE, "ward-a", "2"], ["B-1", NID2, PHONE2, "ward-a", "1"],
                     ["B-3", "12", "0700", "ward-z", "0"])
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         rep = sv.bulk_check(ctx, s, bad, sacco)
@@ -308,7 +310,7 @@ def test_audit_details_are_scrubbed(db):
 
 def test_portfolio_and_export(ctx, db):
     with transaction(db) as s:
-        sacco = Sacco(code="TST01", name="Test SACCO")
+        sacco = Sacco(code="TST01", name="Test SACCO", is_demo=True)
         s.add(sacco)
         s.flush()
         sv.enrol(ctx, s, sacco, None, inp())

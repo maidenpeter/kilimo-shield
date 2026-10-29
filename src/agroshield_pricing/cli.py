@@ -136,8 +136,10 @@ def cmd_quote(args) -> int:
     print(f"  Gross premium                  KES {q['gross_premium_kes']:>10,.2f}")
     print(f"  Government share ({s['programme']}, {s['status']})  KES {s['government_share_kes']:>10,.2f}")
     print(f"  Farmer share                   KES {q['farmer_share_before_discount_kes']:>10,.2f}")
-    print(f"  Resilience discount ({r['points']:g} pts, {r['discount_rate']:.0%})  KES {r['discount_kes']:>10,.2f}")
+    print(f"  Resilience discount ({r['points']:g} pts, {r['discount_rate']:.0%}, funded by {r['funder']})"
+          f"  KES {r['discount_kes']:>10,.2f}")
     print(f"  Farmer pays                    KES {q['farmer_pays_kes']:>10,.2f}")
+    print(f"  Insurer receives (full gross)  KES {q['premium_flows']['insurer_receives_kes']:>10,.2f}")
     return 0
 
 

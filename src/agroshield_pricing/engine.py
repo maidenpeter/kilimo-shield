@@ -313,7 +313,10 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
         fews = compare_fewsnet(table["wrsi"], load_fewsnet_wrsi(cfg, ward_id, season),
                                cfg.validation.large_gap_wrsi, cfg.validation.fewsnet_status)
         basis = real_yield_backtest(cfg, ward_id, season, share)
-        if ward_id in cfg.product.layer_a.offered_wards:
+        if not cfg.product.layer_a.enabled:
+            layer_a = {"available": False, "offered": False, "dropped": True,
+                       "reason": cfg.product.layer_a.disabled_reason.strip() or "Layer A is switched off."}
+        elif ward_id in cfg.product.layer_a.offered_wards:
             layer_a = run_layer_a(cfg, ward_id, season, rain, share)
         else:
             layer_a = {"available": False, "offered": False,

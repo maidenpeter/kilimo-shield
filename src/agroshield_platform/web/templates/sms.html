@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}SMS outbox{% endblock %}
+{% block body %}
+<h1>SMS outbox</h1>
+<p>Messages to your members about their cover and payments, in their chosen language. They are sent only to farmers who
+  agreed to SMS. {% if sms_mode == 'log' %}<span class="chip warn">SMS_MODE=log</span> Messages are recorded here and not sent
+  to any phone.{% else %}Sending through Africa's Talking ({{ sms_mode }}).{% endif %}
+  Weather advisories are not sent from here.</p>
+<form method="post" action="/sms/send"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <button class="btn small" type="submit">Send queued messages now</button></form>
+{% if messages %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Queued</th><th>Member</th><th>Phone</th><th>Message</th><th>Lang</th><th>Status</th></tr></thead>
+  <tbody>{% for m in messages %}<tr><td>{{ m.created_at.strftime('%d %b %H:%M') }}</td>
+    <td><a href="/members/{{ m.farmer_id }}">{{ m.farmer.member_no }}</a></td><td>{{ m.farmer.phone_masked }}</td>
+    <td>{{ m.body }} <span class="muted">({{ m.body|length }} chars)</span></td><td>{{ m.language }}</td>
+    <td><span class="chip {{ 'warn' if m.status in ('queued', 'failed') }}">{{ m.status }}</span>{% if m.error %} {{ m.error }}{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">No messages yet.</p>{% endif %}
+{% endblock %}

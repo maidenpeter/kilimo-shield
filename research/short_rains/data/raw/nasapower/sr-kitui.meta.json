@@ -1,0 +1,21 @@
+{
+  "ward_id": "sr-kitui",
+  "dataset": "NASA POWER daily T2M_MAX / T2M_MIN (MERRA-2), community AG",
+  "provider": "NASA Langley POWER",
+  "request": {
+    "base_url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+    "parameters": [
+      "T2M_MAX",
+      "T2M_MIN"
+    ],
+    "point": {
+      "lat": -1.375,
+      "lon": 37.925
+    }
+  },
+  "grid_elevation_m": 838.6,
+  "start_year": 1981,
+  "end_year": 2025,
+  "retrieved_at": "2026-10-29T17:01:26+00:00",
+  "sha256": "3d355e8ec25cbdf2ef24f36cf834e31736deb8ffef316e7ac5ab1b0a48063eb7"
+}

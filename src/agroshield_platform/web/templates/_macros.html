@@ -22,9 +22,11 @@
 <label>Layers</label>
 <label class="check"><input type="checkbox" name="layer_B" value="1" {% if form.get('layer_B') or not form %}checked{% endif %}>
   <span><b>Layer B</b>: in-season rainfall index (WRSI), with a replanting seed voucher if the rains fail after planting.</span></label>
+{% if cfg.product.layer_a.enabled %}
 <label class="check"><input type="checkbox" name="layer_A" value="1" {% if form.get('layer_A') %}checked{% endif %}>
   <span><b>Layer A</b>: pre-season seed voucher, paid on the seasonal forecast. Offered at
     {% for wid in cfg.product.layer_a.offered_wards %}{{ cfg.ward(wid).name }}{{ ', ' if not loop.last }}{% endfor %} only.</span></label>
+{% endif %}
 {{ err(errors, 'layers') }}
 <label for="sum_insured_kes_per_acre">Layer B sum insured per acre</label>
 <select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre">
@@ -38,7 +40,8 @@
     <span>{{ p.label }} <span class="chip">{{ p.points|num }} pts</span> <span class="muted">verified by {{ p.verified_by }}</span></span></label>
   {% endfor %}
   <p class="muted">{{ cfg.product.resilience.discount_per_point|pct }} off the farmer's share per point, capped at
-    {{ cfg.product.resilience.discount_cap|pct }}. Illustrative values.</p>
+    {{ cfg.product.resilience.discount_cap|pct }}, paid by the {{ cfg.product.resilience.funder|label }}: the insurer still
+    receives the full gross premium. Illustrative values.</p>
 </fieldset>
 {% endmacro %}
 
@@ -59,10 +62,22 @@
       {% if q.subsidy.status == 'not yet received' %}<span class="chip warn">not yet received</span>{% endif %}</span>
     <span class="num">&minus; {{ q.subsidy.government_share_kes|kes }}</span>
     <span>Farmer share</span><span class="num">{{ q.farmer_share_before_discount_kes|kes }}</span>
-    <span>Resilience discount ({{ q.resilience.points|num }} pts, {{ q.resilience.discount_rate|pct }}{% if q.resilience.capped %}, capped{% endif %})</span>
+    <span>Resilience discount ({{ q.resilience.points|num }} pts, {{ q.resilience.discount_rate|pct }}{% if q.resilience.capped %}, capped{% endif %}),
+      funded by the <b>{{ q.resilience.funder|label }}</b></span>
     <span class="num">&minus; {{ q.resilience.discount_kes|kes }}</span>
     <span class="tot">Farmer pays</span><span class="tot num">{{ q.farmer_pays_kes|kes }}</span>
   </div>
+  {% set fl = q.premium_flows %}
+  <h4 style="margin:14px 0 4px">Who pays the insurer</h4>
+  <div class="split">
+    <span>Government ({{ q.subsidy.programme }})</span><span class="num">{{ fl.government_kes|kes }}</span>
+    <span>Farmer</span><span class="num">{{ fl.farmer_kes|kes }}</span>
+    <span>Discount funder ({{ fl.discount_funder|label }})</span><span class="num">{{ fl.discount_funder_kes|kes }}</span>
+    <span class="tot">Insurer receives (full gross)</span><span class="tot num">{{ fl.insurer_receives_kes|kes }}</span>
+  </div>
+  {% if fl.discount_exceeds_platform_fee %}<p class="muted"><span class="chip warn">check</span> This discount
+    ({{ fl.discount_funder_kes|kes }}) is larger than the platform fee in the premium ({{ fl.platform_fee_kes|kes }}).</p>{% endif %}
+  <p class="muted">{{ q.resilience.note }}</p>
   {% if not q.subsidy.eligible %}<p class="muted">Not eligible for the {{ q.subsidy.programme }} subsidy ({{ q.subsidy.eligibility }}).</p>{% endif %}
   {% if q.subsidy.note %}<p class="muted">{{ q.subsidy.note }}</p>{% endif %}
   {% if q.total_sum_insured_kes %}<p class="muted">Total Layer B sum insured: {{ q.total_sum_insured_kes|kes }}.</p>{% endif %}

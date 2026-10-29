@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advance and Short Rains</title><style>
+:root {
+  color-scheme: light;
+  --bg: #f6f6f4; --surface-1: #fcfcfb; --border: #e2e1dc;
+  --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #6f6e69; --grid: #ebeae6; --axis: #bdbcb5;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --band-ins: rgba(42,120,214,0.09);
+  --good: #0b7a0b; --good-bg: #e3f1e3; --crit: #b42f2f; --crit-bg: #fbe4e4; --warn-bg: #fff6e0; --warn-border: #e9c46a;
+  --chip-syn: #fde8dc; --chip-syn-ink: #8a3412; --chip-ill: #fbf0d2; --chip-ill-ink: #6b4b00; --chip-real: #e3f1e3; --chip-real-ink: #0b5d0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #111110; --surface-1: #1a1a19; --border: #33332f;
+    --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #9b9a92; --grid: #2a2a27; --axis: #4a4a45;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --band-ins: rgba(57,135,229,0.14);
+    --good: #7fd17f; --good-bg: #173a17; --crit: #f19a9a; --crit-bg: #4a1c1c; --warn-bg: #2e2610; --warn-border: #7a6420;
+    --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8; --chip-ill: #3d300c; --chip-ill-ink: #f1d995; --chip-real: #173a17; --chip-real-ink: #a6e3a6;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110; --surface-1: #1a1a19; --border: #33332f;
+  --ink-1: #f0efec; --ink-2: #c3c2b7; --ink-3: #9b9a92; --grid: #2a2a27; --axis: #4a4a45;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --band-ins: rgba(57,135,229,0.14);
+  --good: #7fd17f; --good-bg: #173a17; --crit: #f19a9a; --crit-bg: #4a1c1c; --warn-bg: #2e2610; --warn-border: #7a6420;
+  --chip-syn: #4a2412; --chip-syn-ink: #f6c3a8; --chip-ill: #3d300c; --chip-ill-ink: #f1d995; --chip-real: #173a17; --chip-real-ink: #a6e3a6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink-1); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 4px; }
+h2 { font-size: 1.3rem; margin: 40px 0 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin: 24px 0 8px; }
+p, li { color: var(--ink-2); max-width: 78ch; }
+p { margin: 0 0 12px; }
+.meta { color: var(--ink-3); font-size: .85rem; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 12px 0; }
+.answer { background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--series-1); border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
+.answer b { color: var(--ink-1); }
+.banner { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px; padding: 12px 16px; margin: 16px 0 24px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--ink-2); font-weight: 600; font-size: .8rem; }
+td.num, th.num { text-align: right; }
+.table-wrap { overflow-x: auto; }
+.status { display: inline-block; font-weight: 700; border-radius: 6px; padding: 1px 8px; }
+.status.pass { background: var(--good-bg); color: var(--good); }
+.status.fail { background: var(--crit-bg); color: var(--crit); }
+.chip { display: inline-block; font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
+.chip.SYNTHETIC { background: var(--chip-syn); color: var(--chip-syn-ink); }
+.chip.ILLUSTRATIVE { background: var(--chip-ill); color: var(--chip-ill-ink); }
+.chip.REAL { background: var(--chip-real); color: var(--chip-real-ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .82rem; color: var(--ink-2); margin: 4px 0 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+.grid2 .card { margin: 0; }
+svg.chart { width: 100%; height: auto; display: block; }
+svg .grid { stroke: var(--grid); stroke-width: 1; } svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .tick { fill: var(--ink-3); font-size: 11px; } svg .axis-label { fill: var(--ink-2); font-size: 11px; }
+svg .dot { stroke: var(--surface-1); stroke-width: 2; } svg .line { stroke-width: 2; stroke-linejoin: round; }
+svg .hit-dot, svg .hit { fill: transparent; } svg .seg { stroke: var(--surface-1); stroke-width: 2; }
+svg .ref { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .ref-label { fill: var(--ink-2); font-size: 11px; paint-order: stroke; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
+svg .band-ins { fill: var(--band-ins); } svg .band-label { fill: var(--ink-3); font-size: 10px; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .84em; }
+.hash { word-break: break-all; color: var(--ink-3); font-family: ui-monospace, Consolas, monospace; font-size: .78rem; }
+</style></head>
+<body><main>
+<h1>Early advance on Layer B, and short-rains candidates</h1>
+<p class="meta">Built 2026-10-29 17:13 UTC from data/raw/research/advance_results.json and short_rains_results.json.
+  Research only: nothing here changes a quote. <span class="chip ILLUSTRATIVE">ILLUSTRATIVE TERMS</span></p>
+
+<div class="banner"><b>Short answers.</b>
+<ul>
+<li><b>Advance at Ward A (EXPERIMENTAL):</b> at day 35, a projected WRSI below
+  95 fired in 4 of 25 long-rains seasons
+  (2000&ndash;2025). All 4 were real Layer B payout seasons, with no false
+  alarms; 3 payout seasons got no advance. Out of sample (leave-one-out):
+  4 hits and 0 false alarms
+  (3 hits when ties go to the lowest threshold). The extra cost is about
+  KES 31 per acre a year (gross KES 98) at KES 10,000 sum insured.</li>
+<li><b>Short rains:</b> the shortlisted candidates near Mbooni and Kitui have real OND
+  forecast skill (C3S r 0.48 and 0.59), but
+  Layer B maize cover is not insurable at a sensible price with a 100-day variety. Only Mbooni with an
+  80-day variety comes near the payout-frequency target, and even then gross premium is
+  30% of sum insured.</li>
+</ul></div>
+
+<h2>1. Early advance on Layer B (Ward A, long rains)</h2>
+<p>About 35 days after the start of season, the end-of-season WRSI is projected from
+  observed CHIRPS so far, the CHIRPS-GEFS v12 15-day mean forecast and climatology for the rest of the season. Below
+  95, the farmer gets 20% of the sum insured at once. At the
+  end of the season the advance is deducted from the Layer B payout and never clawed back, so the farmer receives the
+  larger of the two. Only the extra (advance above the final payout, or the whole advance on a false alarm) is priced.</p>
+
+<div class="card"><table>
+<tr><th>Out of 25 seasons</th><th class="num">Fired</th><th class="num">Hits</th><th class="num">Misses</th>
+  <th class="num">False alarms</th><th class="num">Hit rate</th><th class="num">Peirce score</th></tr>
+
+<tr><td>Threshold 95, all seasons</td><td class="num">4</td><td class="num">4</td><td class="num">3</td>
+  <td class="num">0</td><td class="num">57%</td><td class="num">0.57</td></tr>
+
+<tr><td>Leave-one-out, ties to the nearest threshold to 95</td><td class="num">4</td><td class="num">4</td><td class="num">3</td>
+  <td class="num">0</td><td class="num">57%</td><td class="num">0.57</td></tr>
+
+<tr><td>Leave-one-out, ties to the lowest threshold</td><td class="num">3</td><td class="num">3</td><td class="num">4</td>
+  <td class="num">0</td><td class="num">43%</td><td class="num">0.43</td></tr>
+
+</table>
+<p class="meta">A hit is an advance in a season that ended with a Layer B payout. In each leave-one-out fold the threshold
+  was re-chosen from 80.0, 82.5, 85.0, 87.5, 90.0, 92.5, 95.0, 97.5, 99.0 on the other 24 seasons (best Peirce score:
+  hit rate minus false-alarm rate) and applied to the held-out season. Folds chose:
+  95 (25) (nearest-to-95 tie-break);
+  92.5 (1), 95 (24) (lowest).</p></div>
+
+<div class="answer"><b>How solid is 95?</b> Any threshold from 93.34 to 97.71
+  makes exactly the same decisions on these 25 seasons, so 95 is not tuned to a knife edge. But the record is
+  short: 7 payout seasons and 4 advances. Zero false alarms in
+  4 is encouraging, not proof. With ties broken against 95, held-out
+  2002 (projected 93.3)
+  loses its advance, which shows how few seasons sit near the threshold.
+  Missing: 2020 (No CHIRPS-GEFS file for the check day (HTTP 404 on the CHC archive).)</div>
+
+<h3>Price of the advance (net extra cost only)</h3>
+<div class="card"><table>
+<tr><th>Sum insured per acre</th><th class="num">Expected extra</th><th class="num">Gross (same loadings as Layer B)</th></tr>
+<tr><td>KES 5,000</td><td class="num">KES 15</td>
+  <td class="num">KES 49</td></tr><tr><td>KES 10,000</td><td class="num">KES 31</td>
+  <td class="num">KES 98</td></tr><tr><td>KES 15,000</td><td class="num">KES 46</td>
+  <td class="num">KES 147</td></tr>
+</table><p class="meta">Expected extra cost 0.31% of sum insured a year. It comes from
+  seasons where the advance was larger than the final payout (or a false alarm). Not in any quote while the status is
+  EXPERIMENTAL.</p></div>
+
+<h3>Threshold sensitivity</h3>
+<div class="card table-wrap"><table>
+<tr><th class="num">Threshold</th><th class="num">Fired</th><th class="num">Hits</th><th class="num">False alarms</th><th class="num">Misses</th>
+  <th class="num">Expected extra (share of SI)</th></tr>
+<tr>
+  <td class="num">80</td><td class="num">0</td><td class="num">0</td>
+  <td class="num">0</td><td class="num">7</td><td class="num">0.00%</td></tr><tr>
+  <td class="num">82.5</td><td class="num">1</td><td class="num">1</td>
+  <td class="num">0</td><td class="num">6</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">85</td><td class="num">2</td><td class="num">2</td>
+  <td class="num">0</td><td class="num">5</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">87.5</td><td class="num">2</td><td class="num">2</td>
+  <td class="num">0</td><td class="num">5</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">90</td><td class="num">2</td><td class="num">2</td>
+  <td class="num">0</td><td class="num">5</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">92.5</td><td class="num">3</td><td class="num">3</td>
+  <td class="num">0</td><td class="num">4</td><td class="num">0.31%</td></tr><tr style="font-weight:700">
+  <td class="num">95</td><td class="num">4</td><td class="num">4</td>
+  <td class="num">0</td><td class="num">3</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">97.5</td><td class="num">4</td><td class="num">4</td>
+  <td class="num">0</td><td class="num">3</td><td class="num">0.31%</td></tr><tr>
+  <td class="num">99</td><td class="num">5</td><td class="num">4</td>
+  <td class="num">1</td><td class="num">3</td><td class="num">1.11%</td></tr>
+</table></div>
+
+<details><summary>Season by season</summary><div class="table-wrap"><table>
+<tr><th>Year</th><th>Start of season</th><th class="num">Projected WRSI (day 35)</th>
+  <th class="num">Final WRSI</th><th class="num">Final Layer B payout</th><th>Advance</th><th class="num">Farmer receives</th>
+  <th class="num">Extra cost</th></tr>
+<tr><td>2000</td><td>Apr d2 2000</td><td class="num">82.9</td>
+  <td class="num">73.0</td><td class="num">23%</td>
+  <td>yes</td><td class="num">23%</td>
+  <td class="num"></td></tr><tr><td>2001</td><td>Mar d1 2001</td><td class="num">100.0</td>
+  <td class="num">88.6</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2002</td><td>Apr d2 2002</td><td class="num">93.3</td>
+  <td class="num">69.8</td><td class="num">34%</td>
+  <td>yes</td><td class="num">34%</td>
+  <td class="num"></td></tr><tr><td>2003</td><td>Mar d3 2003</td><td class="num">100.0</td>
+  <td class="num">96.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2004</td><td>Mar d3 2004</td><td class="num">99.3</td>
+  <td class="num">65.7</td><td class="num">48%</td>
+  <td></td><td class="num">48%</td>
+  <td class="num"></td></tr><tr><td>2005</td><td>Mar d2 2005</td><td class="num">100.0</td>
+  <td class="num">97.2</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2006</td><td>Mar d1 2006</td><td class="num">100.0</td>
+  <td class="num">91.9</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2007</td><td>Apr d2 2007</td><td class="num">100.0</td>
+  <td class="num">100.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2008</td><td>Mar d3 2008</td><td class="num">92.3</td>
+  <td class="num">67.6</td><td class="num">41%</td>
+  <td>yes</td><td class="num">41%</td>
+  <td class="num"></td></tr><tr><td>2009</td><td>Mar d3 2009</td><td class="num">81.9</td>
+  <td class="num">76.3</td><td class="num">12%</td>
+  <td>yes</td><td class="num">20%</td>
+  <td class="num">7.6%</td></tr><tr><td>2010</td><td>Mar d1 2010</td><td class="num">100.0</td>
+  <td class="num">100.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2011</td><td>Mar d2 2011</td><td class="num">97.7</td>
+  <td class="num">97.7</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2012</td><td>Apr d1 2012</td><td class="num">100.0</td>
+  <td class="num">100.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2013</td><td>Mar d2 2013</td><td class="num">99.4</td>
+  <td class="num">99.4</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2014</td><td>Mar d2 2014</td><td class="num">100.0</td>
+  <td class="num">78.2</td><td class="num">6%</td>
+  <td></td><td class="num">6%</td>
+  <td class="num"></td></tr><tr><td>2015</td><td>Apr d1 2015</td><td class="num">100.0</td>
+  <td class="num">92.3</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2016</td><td>Apr d1 2016</td><td class="num">100.0</td>
+  <td class="num">99.2</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2017</td><td>Mar d3 2017</td><td class="num">99.3</td>
+  <td class="num">87.5</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2018</td><td>Mar d1 2018</td><td class="num">100.0</td>
+  <td class="num">100.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2019</td><td>Apr d3 2019</td><td class="num">100.0</td>
+  <td class="num">100.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2021</td><td>Mar d3 2021</td><td class="num">99.7</td>
+  <td class="num">99.7</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2022</td><td>Apr d2 2022</td><td class="num">100.0</td>
+  <td class="num">78.8</td><td class="num">4%</td>
+  <td></td><td class="num">4%</td>
+  <td class="num"></td></tr><tr><td>2023</td><td>Mar d2 2023</td><td class="num">100.0</td>
+  <td class="num">92.9</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2024</td><td>Mar d3 2024</td><td class="num">100.0</td>
+  <td class="num">98.1</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr><tr><td>2025</td><td>Mar d1 2025</td><td class="num">99.0</td>
+  <td class="num">99.0</td><td class="num">0%</td>
+  <td></td><td class="num">0%</td>
+  <td class="num"></td></tr>
+</table></div></details>
+
+<h2>2. Short-rains candidates (report only; not in the pilot config)</h2>
+<p>Rule: best cell near each of Mbooni, Kitui, Mwingi, Kyuso from the 3b scan; top 2 by OND share of annual rain. Ranking by OND share:
+  Mbooni 59%, Kitui 57%, Kyuso 55%, Mwingi 50%.
+  Each candidate is a single CHIRPS cell, not a ward boundary. Ward names come once IEBC boundaries are overlaid.
+  Calendar (ILLUSTRATIVE): planting window 10-11 to 11-30,
+  early-maturity composite (Katumani type). Soil water capacity and elevation are placeholders. PET is the flagged Hargreaves fallback.</p>
+
+<h3>Near Mbooni (-1.675, 37.525)</h3>
+<div class="card table-wrap"><table>
+<tr><th>Variety length</th><th class="num">Median WRSI</th><th class="num">Payout seasons</th><th class="num">About 1 in</th>
+  <th class="num">Replanting</th><th class="num">Gross rate</th><th class="num">Gross per acre (KES 10,000)</th></tr>
+<tr><td>100 days</td><td class="num">85.0</td>
+  <td class="num">39%</td><td class="num">2.6</td>
+  <td class="num">7%</td><td class="num">49%</td>
+  <td class="num">KES 4,891</td></tr><tr><td>80 days</td><td class="num">98.5</td>
+  <td class="num">20%</td><td class="num">4.9</td>
+  <td class="num">7%</td><td class="num">30%</td>
+  <td class="num">KES 2,959</td></tr>
+</table>
+<p class="meta">Target band: one payout season in 5 to 7 years (14% to
+  20%). Trigger sensitivity at 100 days:
+  WRSI 65: 25% / gross 37%; WRSI 70: 32% / gross 41%; WRSI 75: 34% / gross 45%; WRSI 80: 39% / gross 49%; WRSI 85: 50% / gross 53%; WRSI 90: 59% / gross 58%.
+  Soil sensitivity at 100 days:
+  60 mm: 59% / gross 65%; 100 mm: 39% / gross 49%; 140 mm: 32% / gross 35%; 180 mm: 20% / gross 27%.</p>
+<p><b>C3S OND skill</b> (cell 38E -2, 1981&ndash;2016):
+  r 0.48 (95% CI 0.18 to
+  0.70), ROC AUC for a below-normal OND
+  0.71.</p></div>
+
+<h3>Near Kitui (-1.375, 37.925)</h3>
+<div class="card table-wrap"><table>
+<tr><th>Variety length</th><th class="num">Median WRSI</th><th class="num">Payout seasons</th><th class="num">About 1 in</th>
+  <th class="num">Replanting</th><th class="num">Gross rate</th><th class="num">Gross per acre (KES 10,000)</th></tr>
+<tr><td>100 days</td><td class="num">58.5</td>
+  <td class="num">80%</td><td class="num">1.3</td>
+  <td class="num">9%</td><td class="num">97%</td>
+  <td class="num">KES 9,716</td></tr><tr><td>80 days</td><td class="num">77.8</td>
+  <td class="num">52%</td><td class="num">1.9</td>
+  <td class="num">9%</td><td class="num">61%</td>
+  <td class="num">KES 6,072</td></tr>
+</table>
+<p class="meta">Target band: one payout season in 5 to 7 years (14% to
+  20%). Trigger sensitivity at 100 days:
+  WRSI 65: 59% / gross 83%; WRSI 70: 66% / gross 88%; WRSI 75: 68% / gross 93%; WRSI 80: 80% / gross 97%; WRSI 85: 84% / gross 101%; WRSI 90: 91% / gross 105%.
+  Soil sensitivity at 100 days:
+  60 mm: 84% / gross 106%; 100 mm: 70% / gross 88%; 140 mm: 61% / gross 68%; 180 mm: 55% / gross 50%.</p>
+<p><b>C3S OND skill</b> (cell 38E -1, 1981&ndash;2016):
+  r 0.59 (95% CI 0.32 to
+  0.77), ROC AUC for a below-normal OND
+  0.69.</p></div>
+
+
+<div class="answer"><b>Reading.</b> Short-rains rain here is well forecast: OND skill is clearly above zero, unlike
+  Nakuru's long rains. But maize on these soils fails often. With a 100-day variety the index pays in
+  39% and 80%
+  of seasons, far above 1 in 5 to 7, and the payouts are large, so gross premium is a large share of sum insured. An
+  80-day variety brings Mbooni to the edge of the band, but losses stay severe when they happen. Before an OND
+  ward goes further: (1) real crop calendars and varieties from the county, (2) soil data, (3) FEWS NET PET instead of
+  Hargreaves at low elevation, and (4) whether the crop should be sorghum or green grams rather than maize. A
+  forecast-based layer (Layer A-style) may suit these areas better than it suits Nakuru, because the skill is real.</div>
+
+<h2>Caveats</h2>
+<ul><li>All product terms are ILLUSTRATIVE. PET is the Hargreaves fallback, flagged; FEWS NET PET and WRSI are still unavailable.</li>
+<li>The advance projections use leave-one-out climatology for the unobserved part of each season, so the held-out
+  season never informs its own projection. CHIRPS-GEFS hindcasts start in 2000.</li>
+<li>Short-rains candidates are research cells, not wards, and are not in config/.</li></ul>
+</main></body></html>

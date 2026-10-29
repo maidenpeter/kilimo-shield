@@ -1,0 +1,48 @@
+# English strings for USSD menus and SMS. Placeholders in {braces}.
+# Wording pattern borrowed from the old demo's chatbot string table
+# (agroshield-kenya/public/js/chatbot.js: greeting, the "M-Pesa or SACCO" payment
+# line, the "we'll SMS you" confirmation; docs/BORROWED_FROM_MVP.md item 1).
+# Rules: GSM-7 characters only (no curly quotes or dashes), SMS at most 160
+# characters, USSD screens at most 182 (checked by tests/test_m6.py).
+# ILLUSTRATIVE: pending legal review with the consent wording.
+language: en
+review_status: pending legal review
+
+season:
+  LR: "long rains {year}"
+  SR: "short rains {year}"
+
+status:
+  pending_payment: "awaiting payment"
+  active: "active"
+  lapsed_unpaid: "not started (not fully paid)"
+  cancelled: "cancelled"
+
+ussd:
+  not_registered: "This number is not registered with AgroShield. Please visit your SACCO to enrol."
+  main: "Habari {first_name}! AgroShield\n1. My cover\n2. Pay premium\n3. Payouts\n4. Language / Lugha\n0. Help"
+  no_policy: "You have no AgroShield cover yet. Please visit your SACCO."
+  cover: "{cert}\n{season}, {acres} acres\nStatus: {status}\nPaid KES {paid} of KES {due}"
+  cover_due: "\nPay by {closes}"
+  cover_refund: "\nRefund due: KES {refund}"
+  nothing_due: "Nothing to pay on {cert}. Status: {status}."
+  sales_closed: "Sales for {season} closed on {closes}. Your SACCO can tell you about the next season."
+  pay_menu: "Pay for {cert}\nBalance KES {balance}\n1. Pay full balance\n2. Pay part (instalment)"
+  pay_amount: "Enter amount in KES ({min} to {balance}):"
+  bad_amount: "Amount must be a whole number from {min} to {balance}. Please try again."
+  stk_sent: "An M-Pesa request for KES {amount} has been sent to your phone. Enter your M-Pesa PIN to pay. We will SMS you."
+  stk_failed: "M-Pesa is not available right now. Please try again later or pay through your SACCO."
+  payouts: "Payout tracking for your ward is not available yet. Your SACCO will tell you when it starts."
+  language_menu: "Choose language / Chagua lugha\n1. English\n2. Kiswahili"
+  language_set: "Language set to English."
+  help: "For help, contact your SACCO: {sacco}. Cover pays on your ward rainfall index, not a farm visit."
+  invalid: "Invalid choice. Please dial again."
+
+sms:
+  enrolled: "AgroShield: {first_name}, enrolled for {season} maize cover {cert}. Pay KES {due} by {closes} (M-Pesa or SACCO). Dial {ussd}."
+  payment_received: "AgroShield: received KES {amount} for {cert}. Paid KES {paid} of {due}. Balance KES {balance}, pay by {closes}."
+  cover_active: "AgroShield: premium paid in full. Your {season} maize cover {cert} is now active. Payouts follow your ward rainfall index."
+  reminder: "AgroShield: KES {balance} is still due for {cert}. Pay by {closes} or the cover will not start. Dial {ussd} to pay."
+  lapsed: "AgroShield: {cert} was not fully paid by {closes}, so the cover did not start. KES {paid} paid will be refunded through your SACCO."
+  late_payment: "AgroShield: KES {amount} received for {cert} after sales closed on {closes}. The cover did not start. It will be refunded through your SACCO."
+  overpaid: "AgroShield: you paid KES {refund} more than due on {cert}. It will be refunded through your SACCO."

@@ -78,6 +78,27 @@ layer_b:
     exit: 25
     max_payout: 0.30
 
+  # EXPERIMENTAL early ADVANCE on Layer B (decision 2026-10-29). At day
+  # check_day_after_sos after the start of season, project the end-of-season WRSI
+  # from observed CHIRPS so far, the CHIRPS-GEFS 15-day forecast and climatology
+  # after that. Below projected_wrsi_below, pay advance_share of the sum insured.
+  # The advance is deducted from the end-of-season Layer B payout and NEVER clawed
+  # back, so the farmer receives max(advance, final payout). Only the net extra
+  # cost (advance above the final payout, including false alarms) is priced.
+  # Not in quotes until approved; not offered at Ward B.
+  # See docs/research/advance-and-short-rains.html.
+  advance:
+    status: experimental
+    included_in_quotes: false
+    offered_wards: [ward-a]
+    check_day_after_sos: 35
+    projected_wrsi_below: 95
+    advance_share: 0.20
+    forecast: "CHIRPS-GEFS v12 15-day mean"
+    validation_years: [2000, 2025]
+    # Thresholds a leave-one-out fold may choose from when validating 95.
+    threshold_grid: [80, 82.5, 85, 87.5, 90, 92.5, 95, 97.5, 99]
+
   # Optional per-ward, per-season terms, e.g.
   # overrides:
   #   ward-b:
@@ -108,6 +129,13 @@ event_tests:
 # ---------------------------------------------------------------------------
 layer_a:
   version: "A-0.1.0"
+  # DROPPED FROM THE PRODUCT (decision 2026-10-29). The code is kept, switched
+  # off: nothing is priced, quoted or sold. Measured C3S MAM skill caught 2 of 11
+  # Layer B payout seasons with a 67% false alarm ratio.
+  enabled: false
+  disabled_reason: >-
+    Dropped from the product (2026-10-29): measured C3S March-May forecast skill
+    caught 2 of 11 Layer B payout seasons with a 67% false alarm ratio.
   # Wards where Layer A is offered. Ward B: not offered (decision 2026-10-28),
   # because a dry March-May there rarely becomes a crop failure.
   offered_wards: [ward-a]
@@ -187,6 +215,8 @@ subsidy:
   government_share: 0.50        # share of the gross premium paid by government
   eligible_acres: {min: 0.5, max: 20}   # outside this band: no subsidy
   applies_to_layers: [A, B]
+  # Decision 2026-10-29: no subsidy at all outside 0.5-20 acres. Whether KAIP would
+  # instead subsidise the first 20 acres of a larger farm is UNCONFIRMED.
   # Subsidy has historically arrived late. While false, every quote and policy
   # carries the government share as "not yet received" (a receivable).
   received: false
@@ -194,8 +224,13 @@ subsidy:
 resilience:
   # Resilience Score: points from last season's verified practices, turned into
   # a discount on the FARMER'S share of next season's premium, capped.
-  # [ASK] cap and points pending underwriter agreement; who funds the discount.
+  # The insurer always receives the FULL gross premium (decision 2026-10-29): the
+  # discount is paid by the funder below (platform = out of AgroShield's platform
+  # fee; seed_company or sacco = a partner). The discount does not reduce the
+  # parametric risk: payouts follow the ward index whatever the farmer does.
+  # [ASK] cap and points pending underwriter agreement.
   illustrative: true
+  funder: platform              # platform | seed_company | sacco
   discount_per_point: 0.01      # 1% of the farmer share per point
   discount_cap: 0.15
   points:

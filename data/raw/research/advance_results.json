@@ -1,0 +1,851 @@
+{
+ "terms": {
+  "status": "experimental",
+  "included_in_quotes": false,
+  "offered_wards": [
+   "ward-a"
+  ],
+  "check_day_after_sos": 35,
+  "projected_wrsi_below": 95.0,
+  "advance_share": 0.2,
+  "forecast": "CHIRPS-GEFS v12 15-day mean",
+  "validation_years": [
+   2000,
+   2025
+  ],
+  "threshold_grid": [
+   80.0,
+   82.5,
+   85.0,
+   87.5,
+   90.0,
+   92.5,
+   95.0,
+   97.5,
+   99.0
+  ]
+ },
+ "wards": {
+  "ward-a": {
+   "seasons": 25,
+   "years": [
+    2000,
+    2025
+   ],
+   "missing_years": [
+    2020
+   ],
+   "missing_note": "No CHIRPS-GEFS file for the check day (HTTP 404 on the CHC archive).",
+   "in_sample": {
+    "seasons": 25,
+    "fired": 4,
+    "events": 7,
+    "hits": 4,
+    "misses": 3,
+    "false_alarms": 0,
+    "correct_quiet": 18,
+    "hit_rate": 0.5714285714285714,
+    "false_alarm_ratio": 0.0,
+    "peirce": 0.5714285714285714
+   },
+   "loocv": {
+    "out_of_sample": {
+     "seasons": 25,
+     "fired": 4,
+     "events": 7,
+     "hits": 4,
+     "misses": 3,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.5714285714285714,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.5714285714285714
+    },
+    "thresholds_chosen": {
+     "95": 25
+    },
+    "folds_choosing_configured": 25,
+    "expected_extra_share": 0.0030533200000000004,
+    "history": [
+     {
+      "year": 2000,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2001,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2002,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2003,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2004,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2005,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2006,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2007,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2008,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2009,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.07633300000000001
+     },
+     {
+      "year": 2010,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2011,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2012,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2013,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2014,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2015,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2016,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2017,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2018,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2019,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2021,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2022,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2023,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2024,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2025,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     }
+    ]
+   },
+   "loocv_conservative": {
+    "out_of_sample": {
+     "seasons": 25,
+     "fired": 3,
+     "events": 7,
+     "hits": 3,
+     "misses": 4,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.42857142857142855,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.42857142857142855
+    },
+    "thresholds_chosen": {
+     "92.5": 1,
+     "95": 24
+    },
+    "folds_choosing_configured": 0,
+    "expected_extra_share": 0.0030533200000000004,
+    "history": [
+     {
+      "year": 2000,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2001,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2002,
+      "threshold": 92.5,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2003,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2004,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2005,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2006,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2007,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2008,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2009,
+      "threshold": 95.0,
+      "fired": true,
+      "event": true,
+      "extra_share": 0.07633300000000001
+     },
+     {
+      "year": 2010,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2011,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2012,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2013,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2014,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2015,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2016,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2017,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2018,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2019,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2021,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2022,
+      "threshold": 95.0,
+      "fired": false,
+      "event": true,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2023,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2024,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     },
+     {
+      "year": 2025,
+      "threshold": 95.0,
+      "fired": false,
+      "event": false,
+      "extra_share": 0.0
+     }
+    ]
+   },
+   "equivalent_range": [
+    93.34,
+    97.71
+   ],
+   "sensitivity": [
+    {
+     "threshold": 80.0,
+     "seasons": 25,
+     "fired": 0,
+     "events": 7,
+     "hits": 0,
+     "misses": 7,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.0,
+     "false_alarm_ratio": null,
+     "peirce": 0.0,
+     "expected_extra_share": 0.0
+    },
+    {
+     "threshold": 82.5,
+     "seasons": 25,
+     "fired": 1,
+     "events": 7,
+     "hits": 1,
+     "misses": 6,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.14285714285714285,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.14285714285714285,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 85.0,
+     "seasons": 25,
+     "fired": 2,
+     "events": 7,
+     "hits": 2,
+     "misses": 5,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.2857142857142857,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.2857142857142857,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 87.5,
+     "seasons": 25,
+     "fired": 2,
+     "events": 7,
+     "hits": 2,
+     "misses": 5,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.2857142857142857,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.2857142857142857,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 90.0,
+     "seasons": 25,
+     "fired": 2,
+     "events": 7,
+     "hits": 2,
+     "misses": 5,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.2857142857142857,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.2857142857142857,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 92.5,
+     "seasons": 25,
+     "fired": 3,
+     "events": 7,
+     "hits": 3,
+     "misses": 4,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.42857142857142855,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.42857142857142855,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 95.0,
+     "seasons": 25,
+     "fired": 4,
+     "events": 7,
+     "hits": 4,
+     "misses": 3,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.5714285714285714,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.5714285714285714,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 97.5,
+     "seasons": 25,
+     "fired": 4,
+     "events": 7,
+     "hits": 4,
+     "misses": 3,
+     "false_alarms": 0,
+     "correct_quiet": 18,
+     "hit_rate": 0.5714285714285714,
+     "false_alarm_ratio": 0.0,
+     "peirce": 0.5714285714285714,
+     "expected_extra_share": 0.0030533200000000004
+    },
+    {
+     "threshold": 99.0,
+     "seasons": 25,
+     "fired": 5,
+     "events": 7,
+     "hits": 4,
+     "misses": 3,
+     "false_alarms": 1,
+     "correct_quiet": 17,
+     "hit_rate": 0.5714285714285714,
+     "false_alarm_ratio": 0.2,
+     "peirce": 0.5158730158730158,
+     "expected_extra_share": 0.011053320000000002
+    }
+   ],
+   "pricing": {
+    "expected_extra_share": 0.0030533200000000004,
+    "gross_rate": 0.00981424285714286,
+    "per_acre": [
+     {
+      "sum_insured_kes_per_acre": 5000.0,
+      "expected_extra_kes": 15.27,
+      "gross_kes": 49.07
+     },
+     {
+      "sum_insured_kes_per_acre": 10000.0,
+      "expected_extra_kes": 30.53,
+      "gross_kes": 98.14
+     },
+     {
+      "sum_insured_kes_per_acre": 15000.0,
+      "expected_extra_kes": 45.8,
+      "gross_kes": 147.21
+     }
+    ]
+   },
+   "history": [
+    {
+     "year": 2000,
+     "sos": "Apr d2 2000",
+     "projected_wrsi": 82.92,
+     "actual_wrsi": 72.99,
+     "final_share": 0.233667,
+     "fired": true,
+     "farmer_receives_share": 0.233667,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2001,
+     "sos": "Mar d1 2001",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 88.63,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2002,
+     "sos": "Apr d2 2002",
+     "projected_wrsi": 93.34,
+     "actual_wrsi": 69.75,
+     "final_share": 0.341667,
+     "fired": true,
+     "farmer_receives_share": 0.341667,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2003,
+     "sos": "Mar d3 2003",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 95.98,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2004,
+     "sos": "Mar d3 2004",
+     "projected_wrsi": 99.28,
+     "actual_wrsi": 65.66,
+     "final_share": 0.478,
+     "fired": false,
+     "farmer_receives_share": 0.478,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2005,
+     "sos": "Mar d2 2005",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 97.19,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2006,
+     "sos": "Mar d1 2006",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 91.94,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2007,
+     "sos": "Apr d2 2007",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 100.0,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2008,
+     "sos": "Mar d3 2008",
+     "projected_wrsi": 92.27,
+     "actual_wrsi": 67.58,
+     "final_share": 0.414,
+     "fired": true,
+     "farmer_receives_share": 0.414,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2009,
+     "sos": "Mar d3 2009",
+     "projected_wrsi": 81.91,
+     "actual_wrsi": 76.29,
+     "final_share": 0.123667,
+     "fired": true,
+     "farmer_receives_share": 0.2,
+     "extra_share": 0.07633300000000001
+    },
+    {
+     "year": 2010,
+     "sos": "Mar d1 2010",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 100.0,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2011,
+     "sos": "Mar d2 2011",
+     "projected_wrsi": 97.71,
+     "actual_wrsi": 97.71,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2012,
+     "sos": "Apr d1 2012",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 100.0,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2013,
+     "sos": "Mar d2 2013",
+     "projected_wrsi": 99.39,
+     "actual_wrsi": 99.39,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2014,
+     "sos": "Mar d2 2014",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 78.2,
+     "final_share": 0.06,
+     "fired": false,
+     "farmer_receives_share": 0.06,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2015,
+     "sos": "Apr d1 2015",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 92.26,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2016,
+     "sos": "Apr d1 2016",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 99.16,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2017,
+     "sos": "Mar d3 2017",
+     "projected_wrsi": 99.26,
+     "actual_wrsi": 87.55,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2018,
+     "sos": "Mar d1 2018",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 100.0,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2019,
+     "sos": "Apr d3 2019",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 100.0,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2021,
+     "sos": "Mar d3 2021",
+     "projected_wrsi": 99.71,
+     "actual_wrsi": 99.71,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2022,
+     "sos": "Apr d2 2022",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 78.83,
+     "final_share": 0.039,
+     "fired": false,
+     "farmer_receives_share": 0.039,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2023,
+     "sos": "Mar d2 2023",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 92.89,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2024,
+     "sos": "Mar d3 2024",
+     "projected_wrsi": 100.0,
+     "actual_wrsi": 98.07,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    },
+    {
+     "year": 2025,
+     "sos": "Mar d1 2025",
+     "projected_wrsi": 99.01,
+     "actual_wrsi": 99.01,
+     "final_share": 0.0,
+     "fired": false,
+     "farmer_receives_share": 0.0,
+     "extra_share": 0.0
+    }
+   ]
+  }
+ }
+}

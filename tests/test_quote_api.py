@@ -22,6 +22,14 @@ def book(cfg):
         config_sha256=cfg.file_hashes, built_at="test")
 
 
+@pytest.fixture
+def cfg_a_on(cfg):
+    """Layer A switched back on, to keep its (dormant) quote path tested."""
+    c = cfg.model_copy(deep=True)
+    c.product.layer_a.enabled = True
+    return c
+
+
 # ------------------------------------------------------------------ subsidy split
 def test_subsidy_split_inside_the_acre_band(cfg, book):
     q = quote(cfg, book, ward_id="ward-a", acres=2, layers=["B"])
@@ -40,8 +48,8 @@ def test_subsidy_eligibility_band(cfg, book, acres, eligible):
     assert q["subsidy"]["status"] == ("not yet received" if eligible else "not applicable")
 
 
-def test_shares_always_add_up(cfg, book):
-    q = quote(cfg, book, ward_id="ward-a", acres=3.7, layers=["A", "B"], sum_insured_kes_per_acre=15000,
+def test_shares_always_add_up(cfg_a_on, book):
+    q = quote(cfg_a_on, book, ward_id="ward-a", acres=3.7, layers=["A", "B"], sum_insured_kes_per_acre=15000,
               resilience={"certified_seed_verified": True, "photos_on_schedule": True})
     assert q["subsidy"]["government_share_kes"] + q["farmer_share_before_discount_kes"] == pytest.approx(q["gross_premium_kes"])
     assert q["farmer_pays_kes"] + q["resilience"]["discount_kes"] == pytest.approx(q["farmer_share_before_discount_kes"])
@@ -76,9 +84,26 @@ def test_unknown_resilience_item_is_rejected(cfg, book):
 
 
 # ------------------------------------------------------------------ product rules
-def test_layer_a_not_offered_at_ward_b(cfg, book):
+def test_layer_a_not_offered_at_ward_b(cfg_a_on, book):
     with pytest.raises(QuoteError, match="not offered"):
-        quote(cfg, book, ward_id="ward-b", acres=1, layers=["A"])
+        quote(cfg_a_on, book, ward_id="ward-b", acres=1, layers=["A"])
+
+
+def test_layer_a_dropped_from_the_product(cfg, book):
+    assert cfg.product.layer_a.enabled is False
+    with pytest.raises(QuoteError, match="not part of the product"):
+        quote(cfg, book, ward_id="ward-a", acres=1, layers=["A", "B"])
+
+
+def test_insurer_receives_full_gross_and_funder_is_shown(cfg, book):
+    q = quote(cfg, book, ward_id="ward-a", acres=2, layers=["B"],
+              resilience={"certified_seed_verified": True, "sacco_good_standing": True})
+    fl = q["premium_flows"]
+    assert fl["insurer_receives_kes"] == q["gross_premium_kes"]
+    assert fl["government_kes"] + fl["farmer_kes"] + fl["discount_funder_kes"] == pytest.approx(q["gross_premium_kes"])
+    assert q["resilience"]["funder"] == fl["discount_funder"] == cfg.product.resilience.funder == "platform"
+    assert fl["platform_fee_kes"] == pytest.approx(q["gross_premium_kes"] * 0.06)
+    assert "does not reduce the parametric risk" in q["resilience"]["note"]
 
 
 def test_sum_insured_must_be_an_option(cfg, book):
@@ -92,16 +117,17 @@ def test_api_quote_products_and_audit(cfg, book, tmp_path):
     client = TestClient(create_app(cfg.root, book=book, audit_path=audit))
     assert client.get("/health").json()["ok"] is True
     prods = client.get("/v1/products").json()
-    assert {w["ward_id"]: w["layers"] for w in prods["wards"]} == {"ward-a": ["A", "B"], "ward-b": ["B"]}
-    r = client.post("/v1/quotes", json={"ward_id": "ward-a", "acres": 2, "layers": ["A", "B"],
+    assert {w["ward_id"]: w["layers"] for w in prods["wards"]} == {"ward-a": ["B"], "ward-b": ["B"]}
+    assert prods["layer_a"]["enabled"] is False
+    r = client.post("/v1/quotes", json={"ward_id": "ward-a", "acres": 2, "layers": ["B"],
                                         "resilience": {"certified_seed_verified": True}})
     assert r.status_code == 200
     body = r.json()
-    assert body["gross_premium_kes"] == 6000.0 and body["farmer_pays_kes"] == pytest.approx(3000.0 * 0.95)
+    assert body["gross_premium_kes"] == 4000.0 and body["farmer_pays_kes"] == pytest.approx(2000.0 * 0.95)
     line = json.loads(audit.read_text().strip().splitlines()[-1])
     assert line["quote_id"] == body["quote_id"] and line["request"]["ward_id"] == "ward-a"
     bad = client.post("/v1/quotes", json={"ward_id": "ward-b", "acres": 1, "layers": ["A"]})
-    assert bad.status_code == 422 and "not offered" in bad.json()["detail"]
+    assert bad.status_code == 422 and "not part of the product" in bad.json()["detail"]
 
 
 def test_api_takes_quote_inputs_in_the_body_not_the_url(cfg, book, tmp_path):

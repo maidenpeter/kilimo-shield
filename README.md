@@ -6,11 +6,13 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1-5 of 10 (quote API in 4; SACCO portal and data model in 5) and research task 3b.
+**Status:** milestones 1-6 of 10 (quote API in 4; SACCO portal and data model in 5; USSD, M-Pesa
+and SMS in 6) and research task 3b.
 Layer B is a seasonal WRSI index (B-1.2.0) with failed-onset and germination dry-spell
 triggers; the superseded per-phase index (v0) is kept for comparison only. Layer A
-(anticipatory seed voucher, Ward A only) runs on a synthetic forecast at the skill
-measured from C3S hindcasts.
+(anticipatory seed voucher) is **dropped from the product** (2026-10-29): its code is kept,
+switched off. An EXPERIMENTAL early advance on Layer B at Ward A is validated and priced,
+but not in quotes.
 Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
 levels, loadings and sum insured are placeholders. Rainfall is real (CHIRPS); PET is a
 flagged fallback (Hargreaves from NASA POWER temperature).
@@ -43,6 +45,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-portal demo` | Fictional demo SACCO, manager and four members (development keys only) |
 | `agroshield-portal serve` | SACCO officer portal on http://127.0.0.1:8780 |
 | `agroshield-portal add-sacco` / `add-officer` | Set up a SACCO and its officers (password prompted) |
+| `agroshield-portal daily` | Lapse cover not fully paid at sales close, SMS reminders, send queued SMS |
+| `agroshield-portal send-sms` | Send queued SMS now |
 | `pytest` | Run the tests |
 
 ## Layer B v1: seasonal WRSI
@@ -76,7 +80,12 @@ and v1 against v0.
 
 There is no claims flow for the parametric layers: they pay on the index.
 
-## Layer A: pre-season seed voucher
+## Layer A: pre-season seed voucher (dropped, code kept)
+
+**Dropped from the product on 2026-10-29** (`layer_a.enabled: false`): measured C3S
+March-May skill caught 2 of 11 Layer B payout seasons with a 67% false alarm ratio. Nothing
+is priced, quoted or sold; the code and tests stay so it can return where forecast skill is
+real (see the short-rains research below). What follows describes the switched-off code.
 
 Before planting, if the seasonal outlook gives at least a set probability (45%,
 placeholder) of below-normal rain over March-May at the ward, insured farmers get a fixed
@@ -91,6 +100,17 @@ per acre, and hit rate / false alarm rate / false alarm ratio scored against bot
 below-normal rain and Layer B payout seasons, plus sweeps over forecast skill and the
 probability threshold. Skill is configured per season (long and short rains separately);
 the real values must come from hindcasts.
+
+## EXPERIMENTAL: early advance on Layer B (Ward A)
+
+At day 35 after the start of season, the end-of-season WRSI is projected from observed
+CHIRPS, the CHIRPS-GEFS 15-day forecast and climatology. Below 95, the farmer is paid 20% of
+the sum insured at once. The advance is deducted from the end-of-season Layer B payout and
+never clawed back, so the farmer receives the larger of the two; only the net extra cost is
+priced. Terms are in `product.yaml` (`layer_b.advance`), and config refuses to put an
+EXPERIMENTAL advance into quotes. Validation (2000-2025, leave-one-out) and pricing:
+`research/advance.py`, report in `docs/research/advance-and-short-rains.html`. Not offered
+at Ward B.
 
 ## Quotes: subsidy split and Resilience discount
 
@@ -108,9 +128,17 @@ farmer pays      = farmer share - Resilience discount
 Resilience points come from a table in `product.yaml` (certified seed, photos on
 schedule, verified practices, irrigation, SACCO standing); within a group such as
 irrigation only the highest item counts. Subsidy terms, the cap and the points are
-ILLUSTRATIVE pending KAIP and the underwriter. Layer A can be quoted only where it is
-offered (Ward A). `POST /v1/quotes` takes everything in the request body and logs each
-quote to `var/audit/quotes.jsonl`; quotes carry no personal data.
+ILLUSTRATIVE pending KAIP and the underwriter. `POST /v1/quotes` takes everything in the
+request body and logs each quote to `var/audit/quotes.jsonl`; quotes carry no personal data.
+
+- **Subsidy:** none at all outside 0.5-20 acres. Whether KAIP would subsidise the first 20
+  acres of a larger farm is unconfirmed.
+- **Who funds the Resilience discount:** the insurer always receives the full gross
+  premium. The discount is paid by the funder in config (`resilience.funder`: `platform`,
+  meaning out of AgroShield's platform fee, or a partner, `seed_company` or `sacco`). Every
+  quote shows the funder and who pays the insurer what, and flags a discount larger than
+  the platform fee. The discount rewards good practice; it does **not** reduce the
+  parametric risk, because payouts follow the ward index whatever the farmer does.
 
 ## SACCO portal and data model (milestone 5)
 
@@ -139,10 +167,63 @@ Data protection (Kenya Data Protection Act):
 - Tests read the raw database file, rendered pages, links and audit rows for any clear
   ID or phone.
 
+Since 2026-10-29:
+
+- **Consent:** all consent text is marked "pending legal and Kiswahili review", and live
+  enrolment is blocked until both reviews are recorded in `config/consent.yaml` with a new
+  version. Demo SACCOs (fictional members only) can still enrol.
+- **Sales windows:** each ward and season has a sales window in `phenology.yaml`. It opens
+  after the local harvest (placeholder dates) and closes at least 14 days before the
+  planting window opens; config validation enforces this.
+- **Enrolment and payment:** enrolments outside the window are refused. The farmer share can
+  be paid in instalments, and cover becomes active only once it is fully paid by the close
+  date. Anything paid after the close date, or above the amount due, is recorded as a
+  refund due.
+- **References:** `AGS-...` is the AgroShield certificate reference. A separate insurer
+  policy number is added by a manager once the underwriter issues it.
+
 Storage is SQLite for development, with portable SQLAlchemy models. PostgreSQL and
 PostGIS come for deployment, via `DATABASE_URL`. Keys come from the environment
 (`.env.example`). Without them, development keys are generated into
 `var/dev-keys.json` and the portal shows a development banner.
+
+## USSD, M-Pesa and SMS (milestone 6)
+
+- **USSD** (Africa's Talking callback, `POST /ussd/<CALLBACK_TOKEN>`) for enrolled members, in
+  English or Kiswahili. The menu offers: my cover; pay premium (full balance or an
+  instalment); payouts (from milestone 7); language; help. Enrolment stays with the SACCO
+  officer, who reads the consent statements aloud. Each screen is at most 182 characters.
+- **M-Pesa** premium collection through Daraja STK push. A push can be started by an officer
+  from the member page or by the farmer over USSD, and Safaricom posts the result to
+  `POST /mpesa/callback/<CALLBACK_TOKEN>`. The callback is credited only if all of these hold:
+  - it matches a push we sent, and its amount equals the amount requested;
+  - each receipt is credited once;
+  - outside simulated mode, an STK query confirms it first.
+- **M-Pesa modes:** `MPESA_ENV=simulated` (the default) needs no keys and no network. Requests
+  are completed from the portal's *M-Pesa simulator* page. `sandbox` uses the Daraja sandbox
+  and needs your Daraja app keys and a public https callback URL.
+- **SACCO deductions** are recorded by officers as instalments.
+- **SMS** in the farmer's language, from `locales/en.yaml` and `locales/sw.yaml`, at most
+  160 GSM-7 characters each (tested). Messages cover: enrolled, payment received, cover
+  active, reminders 7 days and 1 day before close, cover not started, late payment, and
+  overpayment.
+  - They are sent only to farmers whose SMS consent is yes, through an outbox. The phone is
+    decrypted at send time only.
+  - `SMS_MODE=log` (the default) records messages without sending them; `sandbox` or `live`
+    sends through Africa's Talking.
+  - The Kiswahili text is pending native-speaker review.
+  - Weather advisories are not sent: there is no KMD permission.
+
+Development database: the schema changed in this milestone. Delete `var/agroshield.db`
+and run `agroshield-portal demo` again. Migrations (Alembic) come before any real data.
+
+### API keys
+
+Put keys in a local `.env` in the repo root (git-ignored; copy `.env.example`). Real
+environment variables always win. **Never paste a key into a chat, an issue or a commit.**
+`ANTHROPIC_API_KEY` is reserved for the photo rider (milestone 8). It will assist human
+reviewers with crop-photo triage, and reviewers keep the decision. Layer B payouts, triggers
+and prices never depend on a language model, so they stay reproducible and auditable.
 
 ## Research (task 3b: forecast skill)
 
@@ -154,7 +235,14 @@ package. Run in order:
 .venv/Scripts/python research/fetch_data.py c3s-neighbours
 .venv/Scripts/python research/early_trigger.py       # CHIRPS-GEFS at each check day + prototype
 .venv/Scripts/python research/report_3b.py           # -> docs/research/3b-forecast-skill.html
+.venv/Scripts/python research/advance.py             # EXPERIMENTAL advance: LOOCV and pricing
+.venv/Scripts/python research/short_rains.py fetch   # short-rains candidates: CHIRPS, NASA POWER, C3S
+.venv/Scripts/python research/short_rains.py run
+.venv/Scripts/python research/report_advance_sr.py   # -> docs/research/advance-and-short-rains.html
 ```
+
+Short-rains candidates near Mbooni and Kitui are research cells with their own generated
+config in `research/short_rains/`; they are **not** pilot wards and `config/` is unchanged.
 
 Sources: C3S ECMWF SEAS5.1 hindcasts through the IRI Data Library (download URLs need no
 login), GHACOF consensus outlooks from the ICPAC geoportal (GeoServer WFS point queries),
@@ -235,6 +323,8 @@ src/agroshield_platform/
   services.py            enrolment, bulk CSV, portfolio, export
   kiamis.py              KIAMIS adapter (not connected / CSV import)
   web/                   portal routes, templates, CSS
+  locale.py, sms.py      English and Kiswahili strings (locales/); SMS outbox and senders
+  mpesa.py, ussd.py      Daraja STK push and callbacks; USSD menu
   cli.py                 agroshield-portal
 tests/                   payout functions, WRSI, onset, PET, burn cost, premium, config,
                          data integrity, validation, regression, end to end
@@ -245,5 +335,8 @@ docs/                    BORROWED_FROM_MVP.md: ideas taken from the old demo, by
 
 - Which Nakuru wards for the pilot (currently two labelled placeholders), and their soils.
 - Underwriter partner: loadings, margin, target payout frequency, Resilience discount cap.
-- Real ward yields, KMD/ICPAC hindcasts (Layer A) and KIAMIS access.
+- Real ward yields and KIAMIS access (manual CSV import for now).
+- Legal and Kiswahili review of the consent text, USSD menus and SMS.
+- Daraja app keys and a public callback URL for the M-Pesa sandbox; an Africa's Talking
+  account and USSD code; the SACCO paybill or till.
 - GSM or LoRa for the Sentinel camera pilot; picture-based rider in v1 or v2.

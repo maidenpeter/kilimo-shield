@@ -3,13 +3,19 @@
 Pages
   /                    public landing page for farmers and SACCOs
   /login, /logout      officer sign-in (scrypt passwords, signed session cookie)
-  /dashboard           portfolio, ward map, subsidy receivable, loan exposure
-  /enrol               6-step enrolment wizard (steps 1-3 here, 4-6 on review)
+  /dashboard           portfolio, sales windows, ward map, subsidy receivable, loan exposure
+  /enrol               6-step enrolment wizard (steps 1-4 here, 5-6 on review)
   /quote               quick quote, no enrolment
-  /members             members (national ID and phone masked)
+  /members             members (national ID and phone masked); policies, payments, consents
   /bulk                bulk enrolment from CSV: check, then commit all-or-nothing
   /kiamis              KIAMIS CSV import (manual fallback), managers only
+  /sms                 SMS outbox, managers only
+  /dev/mpesa           complete simulated M-Pesa requests (MPESA_ENV=simulated only)
   /export/policies.csv policy export, masked
+
+Callbacks (no session; a secret token in the path, never personal data)
+  POST /ussd/{token}             Africa's Talking USSD
+  POST /mpesa/callback/{token}   Safaricom STK push results
 
 Personal data never goes into URLs or cookies. A half-finished enrolment is held
 server-side under a random token (in memory: one process, cleared on restart).
@@ -17,12 +23,14 @@ server-side under a random token (in memory: one process, cleared on restart).
 from __future__ import annotations
 
 import dataclasses
+import hmac
+import logging
 import secrets
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -32,15 +40,19 @@ from starlette.middleware.sessions import SessionMiddleware
 from agroshield_pricing.config import load_config
 from agroshield_pricing.quote import QuoteError, RateBook, quote
 
+from .. import mpesa as mp
 from .. import services as sv
+from .. import sms as smsmod
+from .. import ussd as ussdmod
 from ..crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_national_id, normalise_phone, verify_password
 from ..db import audit, init_db, make_engine, transaction
 from ..kiamis import CsvKiamis
-from ..models import Consent, Farmer, Officer, Policy
+from ..models import Consent, Farmer, MpesaRequest, Officer, Policy, SmsMessage
 from ..settings import Settings, load_settings
 
 HERE = Path(__file__).parent
 PENDING_TTL = 30 * 60
+log = logging.getLogger("agroshield.portal")
 
 
 class PendingStore:
@@ -100,12 +112,16 @@ def ward_map(wards, counts: dict[str, int], width: int = 520, height: int = 300)
     return {"width": width, "height": height, "wards": shapes}
 
 
-def create_app(settings: Settings | None = None, book: RateBook | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, book: RateBook | None = None, *, today=None,
+               mpesa_client=None, sms_sender=None) -> FastAPI:
     settings = settings or load_settings()
     cfg = load_config(settings.config_dir)
     factory: sessionmaker = init_db(make_engine(settings.database_url))
     vault = Vault(settings.encryption_key, settings.lookup_key)
-    state = {"book": book}
+    callback_url = f"{settings.mpesa.callback_base_url.rstrip('/')}/mpesa/callback/{settings.callback_token}"
+    state = {"book": book, "today": today,
+             "mpesa": mpesa_client or mp.make_client(settings.mpesa, callback_url),
+             "sms": sms_sender or smsmod.make_sender(settings.sms)}
     pending = PendingStore()
     wording = sv.load_consent_wording(cfg)
 
@@ -115,7 +131,12 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             from agroshield_pricing.rainfall import make_source
             state["book"] = RateBook.build(cfg, make_source(cfg, allow_download=False),
                                            make_pet_source(cfg, allow_download=False))
-        return sv.Context(cfg, state["book"], vault, CsvKiamis(vault))
+        return sv.Context(cfg, state["book"], vault, CsvKiamis(vault), today=state["today"], mpesa=state["mpesa"],
+                          ussd_code=settings.ussd_code)
+
+    def flush_sms() -> None:
+        with transaction(factory) as s:
+            smsmod.send_pending(s, state["sms"], vault)
 
     app = FastAPI(title="AgroShield SACCO portal", docs_url=None, redoc_url=None)
     app.add_middleware(SessionMiddleware, secret_key=settings.session_secret, same_site="lax",
@@ -125,8 +146,10 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
     templates.env.filters["kes"] = lambda v: "n/a" if v is None else f"KES {v:,.0f}"
     templates.env.filters["pct"] = lambda v, d=0: "n/a" if v is None else f"{v * 100:.{d}f}%"
     templates.env.filters["num"] = lambda v, d=0: "n/a" if v is None else f"{v:,.{d}f}"
+    templates.env.filters["day"] = lambda d: "" if d is None else d.strftime("%d %b %Y")
     templates.env.filters["mask_id"] = lambda v: _masked(v, normalise_national_id, mask_national_id)
     templates.env.filters["mask_phone"] = lambda v: _masked(v, normalise_phone, mask_phone)
+    templates.env.filters["label"] = lambda v: (v or "").replace("_", " ")
 
     # ------------------------------------------------------------------ helpers
     def csrf(request: Request) -> str:
@@ -138,13 +161,22 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
         if not token or token != request.session.get("csrf"):
             raise HTTPException(403, "Form check failed. Reload the page and try again.")
 
+    def check_token(token: str) -> None:
+        if not hmac.compare_digest(token, settings.callback_token):
+            raise HTTPException(404)
+
     def officer_or_none(request: Request, s) -> Officer | None:
         oid = request.session.get("officer_id")
         return s.get(Officer, oid) if oid else None
 
+    def flash(request: Request, kind: str, text: str) -> None:
+        request.session["flash"] = [kind, text]       # never personal data
+
     def render(request: Request, name: str, officer: Officer | None = None, status: int = 200, **kw):
-        return templates.TemplateResponse(request, name, {"officer": officer, "csrf": csrf(request), "cfg": cfg,
-                                                          "dev_keys": settings.dev_keys, **kw}, status_code=status)
+        return templates.TemplateResponse(request, name, {
+            "officer": officer, "csrf": csrf(request), "cfg": cfg, "dev_keys": settings.dev_keys,
+            "mpesa_env": state["mpesa"].env, "sms_mode": settings.sms.mode, "consent_pending": not wording["reviewed"],
+            "flash": request.session.pop("flash", None), **kw}, status_code=status)
 
     def require(request: Request, s, role: str | None = None) -> Officer:
         off = officer_or_none(request, s)
@@ -153,6 +185,12 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
         if role and off.role != role:
             raise HTTPException(403, "Only a SACCO manager can do this.")
         return off
+
+    def own_policy(s, off: Officer, policy_id: str) -> Policy:
+        pol = s.get(Policy, policy_id)
+        if pol is None or pol.sacco_id != off.sacco_id:
+            raise HTTPException(404, "No such policy in your SACCO.")
+        return pol
 
     def enrol_input(form: dict) -> sv.EnrolmentInput:
         layers = [x for x in ("A", "B") if form.get(f"layer_{x}")] or ["B"]
@@ -165,7 +203,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             payment_route=form.get("payment_route", "sacco_deduction"), loan_linked=bool(form.get("loan_linked")),
             loan_ref=form.get("loan_ref") or None, consent_data_processing=bool(form.get("consent_data_processing")),
             consent_sms=bool(form.get("consent_sms")), consent_loan_linked_payout=bool(form.get("consent_loan_linked_payout")),
-            resilience={p.id: True for p in cfg.product.resilience.points if form.get(f"res_{p.id}")})
+            resilience={p.id: True for p in cfg.product.resilience.points if form.get(f"res_{p.id}")},
+            language=form.get("language", "en"))
 
     # ------------------------------------------------------------------ public
     @app.get("/", response_class=HTMLResponse)
@@ -233,7 +272,10 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
     @app.get("/enrol", response_class=HTMLResponse)
     def enrol_form(request: Request):
         with transaction(factory) as s:
-            return render(request, "enrol.html", require(request, s), form={}, errors={}, wording=wording)
+            off = require(request, s)
+            return render(request, "enrol.html", off, form={}, errors={}, wording=wording,
+                          gate=sv.consent_gate(ctx(), off.sacco),
+                          sales={w: sv.sales_status(ctx(), w, "LR") for w in cfg.pilot.wards})
 
     @app.post("/enrol/review", response_class=HTMLResponse)
     async def enrol_review(request: Request):
@@ -242,17 +284,19 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
         with transaction(factory) as s:
             off = require(request, s)
             inp = enrol_input(form)
-            pv = sv.preview(ctx(), s, inp)
+            pv = sv.preview(ctx(), s, inp, off.sacco)
             if not pv["ok"]:
                 # National ID and phone are never written back into the page; the officer re-types them.
                 safe = {k: v for k, v in form.items() if k not in ("national_id", "phone", "csrf_token")}
-                return render(request, "enrol.html", off, form=safe, errors=pv["errors"], wording=wording, status=422)
+                return render(request, "enrol.html", off, form=safe, errors=pv["errors"], wording=wording, status=422,
+                              gate=sv.consent_gate(ctx(), off.sacco),
+                              sales={w: sv.sales_status(ctx(), w, "LR") for w in cfg.pilot.wards})
             token = pending.put(off.id, inp)
             return render(request, "enrol_review.html", off, inp=inp, pv=pv, token=token, wording=wording,
                           ward=cfg.ward(inp.ward_id))
 
     @app.post("/enrol/confirm", response_class=HTMLResponse)
-    async def enrol_confirm(request: Request):
+    async def enrol_confirm(request: Request, background: BackgroundTasks):
         form = dict(await request.form())
         check_csrf(request, form.get("csrf_token", ""))
         with transaction(factory) as s:
@@ -265,13 +309,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             try:
                 pol = sv.enrol(ctx(), s, off.sacco, off, inp)
             except sv.EnrolmentError as e:
-                pv = sv.preview(ctx(), s, dataclasses.replace(inp, loan_linked=False))
+                pv = sv.preview(ctx(), s, dataclasses.replace(inp, loan_linked=False), off.sacco)
                 return render(request, "enrol_review.html", off, inp=inp, pv=pv, token=form.get("token"),
                               wording=wording, ward=cfg.ward(inp.ward_id), errors=e.errors, status=422)
             pending.pop(form.get("token", ""), off.id)
-            return render(request, "enrol_done.html", off, pol=pol, farmer=pol.farmer)
+            background.add_task(flush_sms)
+            return render(request, "enrol_done.html", off, pol=pol, farmer=pol.farmer,
+                          sms_queued=smsmod.sms_consent(s, pol.farmer))
 
-    # ------------------------------------------------------------------ members
+    # ------------------------------------------------------------------ members and payments
     @app.get("/members", response_class=HTMLResponse)
     def members(request: Request):
         with transaction(factory) as s:
@@ -299,7 +345,52 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             if f is None or f.sacco_id != off.sacco_id:
                 raise HTTPException(404, "No such member in your SACCO.")
             consents = s.scalars(select(Consent).where(Consent.farmer_id == f.id).order_by(Consent.captured_at)).all()
-            return render(request, "member.html", off, f=f, consents=consents, policies=f.policies)
+            reqs = s.scalars(select(MpesaRequest).join(Policy).where(Policy.farmer_id == f.id)
+                             .order_by(MpesaRequest.created_at.desc())).all()
+            msgs = s.scalars(select(SmsMessage).where(SmsMessage.farmer_id == f.id)
+                             .order_by(SmsMessage.created_at.desc())).all()
+            return render(request, "member.html", off, f=f, consents=consents, policies=f.policies, mpesa_requests=reqs,
+                          messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES)
+
+    @app.post("/policies/{policy_id}/stk")
+    def policy_stk(request: Request, policy_id: str, amount: str = Form(""), csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s)
+            pol = own_policy(s, off, policy_id)
+            try:
+                mp.request_premium(ctx(), s, pol, int(amount) if amount.strip().isdigit() else -1, off.username)
+                flash(request, "ok", f"M-Pesa request for KES {int(amount):,} sent to the farmer's phone.")
+            except (sv.PaymentError, mp.MpesaError) as e:
+                flash(request, "crit", str(e))
+            return RedirectResponse(f"/members/{pol.farmer_id}", status_code=303)
+
+    @app.post("/policies/{policy_id}/deduction")
+    def policy_deduction(request: Request, background: BackgroundTasks, policy_id: str, amount: str = Form(""),
+                         reference: str = Form(""), csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s)
+            pol = own_policy(s, off, policy_id)
+            try:
+                sv.record_payment(ctx(), s, pol, _float(amount) or 0, "sacco_deduction", reference, off.username)
+                flash(request, "ok", f"SACCO deduction of KES {float(amount):,.0f} recorded.")
+                background.add_task(flush_sms)
+            except (sv.PaymentError, ValueError) as e:
+                flash(request, "crit", str(e))
+            return RedirectResponse(f"/members/{pol.farmer_id}", status_code=303)
+
+    @app.post("/policies/{policy_id}/insurer-number")
+    def policy_insurer_number(request: Request, policy_id: str, insurer_policy_number: str = Form(""),
+                              csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            pol = own_policy(s, off, policy_id)
+            pol.insurer_policy_number = insurer_policy_number.strip()[:60] or None
+            audit(s, off.username, "policy.insurer_number_set", "policy", pol.id, policy_no=pol.policy_no)
+            flash(request, "ok", "Insurer policy number saved.")
+            return RedirectResponse(f"/members/{pol.farmer_id}", status_code=303)
 
     # ------------------------------------------------------------------ bulk
     @app.get("/bulk", response_class=HTMLResponse)
@@ -325,7 +416,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             return render(request, "bulk.html", off, report=report, token=token)
 
     @app.post("/bulk/commit", response_class=HTMLResponse)
-    async def bulk_commit(request: Request, token: str = Form(...), csrf_token: str = Form("")):
+    async def bulk_commit(request: Request, background: BackgroundTasks, token: str = Form(...),
+                          csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
         with transaction(factory) as s:
             off = require(request, s)
@@ -335,6 +427,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
             except sv.EnrolmentError as e:
                 s.rollback()   # all-or-nothing: no row from this file is kept
                 return render(request, "bulk.html", off, report=None, error=str(e), status=422)
+            background.add_task(flush_sms)
             return render(request, "bulk.html", off, report=None, committed=pols)
 
     # ------------------------------------------------------------------ KIAMIS
@@ -357,6 +450,75 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
                   errors=len(result["errors"]), source_sha256=result["source_sha256"])
             return render(request, "kiamis.html", off, result=result)
 
+    # ------------------------------------------------------------------ SMS outbox
+    @app.get("/sms", response_class=HTMLResponse)
+    def sms_outbox(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            msgs = s.scalars(select(SmsMessage).join(Farmer).where(Farmer.sacco_id == off.sacco_id)
+                             .order_by(SmsMessage.created_at.desc()).limit(200)).all()
+            return render(request, "sms.html", off, messages=msgs)
+
+    @app.post("/sms/send")
+    def sms_send(request: Request, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            counts = smsmod.send_pending(s, state["sms"], vault)
+            audit(s, off.username, "sms.sent", "sacco", str(off.sacco_id), **counts)
+        flash(request, "ok", "Outbox processed: " + (", ".join(f"{v} {k}" for k, v in counts.items()) or "nothing queued"))
+        return RedirectResponse("/sms", status_code=303)
+
+    # ------------------------------------------------------------------ M-Pesa simulator (development)
+    @app.get("/dev/mpesa", response_class=HTMLResponse)
+    def dev_mpesa(request: Request):
+        if state["mpesa"].env != "simulated":
+            raise HTTPException(404)
+        with transaction(factory) as s:
+            off = require(request, s)
+            reqs = s.scalars(select(MpesaRequest).join(Policy).where(Policy.sacco_id == off.sacco_id)
+                             .order_by(MpesaRequest.created_at.desc()).limit(50)).all()
+            return render(request, "dev_mpesa.html", off, requests=reqs)
+
+    @app.post("/dev/mpesa/{request_id}/{outcome}")
+    def dev_mpesa_complete(request: Request, background: BackgroundTasks, request_id: int, outcome: str,
+                           csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        if state["mpesa"].env != "simulated" or outcome not in ("success", "cancel"):
+            raise HTTPException(404)
+        with transaction(factory) as s:
+            off = require(request, s)
+            req = s.get(MpesaRequest, request_id)
+            if req is None or req.policy.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            res = mp.handle_callback(ctx(), s, state["mpesa"].simulate_callback(req, outcome == "success"))
+        background.add_task(flush_sms)
+        flash(request, "ok" if res["outcome"] == "paid" else "warn", f"Simulated callback: {res['outcome']}.")
+        return RedirectResponse("/dev/mpesa", status_code=303)
+
+    # ------------------------------------------------------------------ callbacks
+    @app.post("/ussd/{token}", response_class=PlainTextResponse)
+    def ussd(token: str, background: BackgroundTasks, sessionId: str = Form(""), serviceCode: str = Form(""),
+             phoneNumber: str = Form(""), text: str = Form("")):
+        check_token(token)
+        with transaction(factory) as s:
+            reply = ussdmod.handle(ctx(), s, phoneNumber, text)
+        background.add_task(flush_sms)
+        return PlainTextResponse(reply)
+
+    @app.post("/mpesa/callback/{token}")
+    async def mpesa_callback(token: str, request: Request, background: BackgroundTasks):
+        check_token(token)
+        try:
+            body = await request.json()
+        except ValueError:
+            body = {}
+        with transaction(factory) as s:
+            res = mp.handle_callback(ctx(), s, body)
+            audit(s, "mpesa", "mpesa.callback", "mpesa", None, outcome=res["outcome"])
+        background.add_task(flush_sms)
+        return JSONResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
     # ------------------------------------------------------------------ export
     @app.get("/export/policies.csv")
     def export(request: Request):
@@ -369,4 +531,6 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None) -
 
     app.state.factory = factory
     app.state.vault = vault
+    app.state.flush_sms = flush_sms
+    app.state.state = state
     return app

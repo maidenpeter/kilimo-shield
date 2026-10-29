@@ -7,7 +7,7 @@ SHA-256 is kept so every run manifest can say exactly which terms it used.
 from __future__ import annotations
 
 import hashlib
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
 
@@ -99,7 +99,24 @@ def _parse_md(md: str) -> tuple[int, int]:
     return month, day
 
 
+SALES_CLOSE_MIN_DAYS = 14   # sales close at least this many days before the planting window opens
+
+
+class SalesWindow(BaseModel):
+    """When cover for a season can be bought (MM-DD). Opens after the local harvest of the
+    previous season; may open in the previous calendar year."""
+    opens: str
+    closes: str
+
+    @field_validator("opens", "closes")
+    @classmethod
+    def _valid(cls, v: str) -> str:
+        _parse_md(v)
+        return v
+
+
 class SeasonCalendar(BaseModel):
+    sales_window: SalesWindow | None = None   # None: cover for this season is not sold
     planting_window: MonthDay      # v1: failed-onset window; planting rain searched up to its end
     planting_rain_from: str | None = None   # v1: first date a planting rain counts (default: window start)
     variety: str
@@ -125,6 +142,41 @@ class SeasonCalendar(BaseModel):
     @property
     def planting_month_day(self) -> tuple[int, int]:
         return _parse_md(self.planting_date)
+
+    def planting_window_opens(self, year: int) -> date:
+        m, d = _parse_md(self.planting_window.start)
+        return date(year, m, d)
+
+    def sales_window_for(self, year: int) -> tuple[date, date] | None:
+        """(opens, closes) for the season planted in `year`; both dates inclusive."""
+        if self.sales_window is None:
+            return None
+        start = self.planting_window_opens(year)
+        cm, cd = _parse_md(self.sales_window.closes)
+        closes = date(year, cm, cd) if (cm, cd) < (start.month, start.day) else date(year - 1, cm, cd)
+        om, od = _parse_md(self.sales_window.opens)
+        opens = date(closes.year, om, od) if (om, od) <= (cm, cd) else date(closes.year - 1, om, od)
+        return opens, closes
+
+    def open_sales_year(self, today: date) -> int | None:
+        """The planting year whose sales window contains today, or None if sales are closed."""
+        for year in (today.year, today.year + 1):
+            w = self.sales_window_for(year)
+            if w and w[0] <= today <= w[1]:
+                return year
+        return None
+
+    @model_validator(mode="after")
+    def _sales_close_before_planting(self):
+        if self.sales_window is not None:
+            for year in (2027, 2028):        # a common and a leap year
+                opens, closes = self.sales_window_for(year)
+                if (self.planting_window_opens(year) - closes).days < SALES_CLOSE_MIN_DAYS:
+                    raise ValueError(f"sales must close at least {SALES_CLOSE_MIN_DAYS} days before the planting "
+                                     f"window opens ({self.planting_window.start}); closes {self.sales_window.closes}")
+                if (closes - opens) < timedelta(days=7):
+                    raise ValueError("a sales window must be open for at least a week")
+        return self
 
     @model_validator(mode="after")
     def _unique_phases(self):
@@ -259,6 +311,7 @@ class LayerB(BaseModel):
     sensitivity_triggers: list[float]
     sensitivity_whc_mm: list[float] = []
     flowering: FloweringComponent
+    advance: "Advance | None" = None
     overrides: dict[str, dict[Season, "WrsiOverride"]] = {}
 
     @model_validator(mode="after")
@@ -287,7 +340,6 @@ class WrsiOverride(BaseModel):
     failed_onset_payout: float | None = Field(default=None, ge=0, le=1)
 
 
-LayerB.model_rebuild()
 
 
 def _band(periods: tuple[float, float]) -> tuple[float, float]:
@@ -328,6 +380,8 @@ class EventTest(BaseModel):
 class LayerA(BaseModel):
     """Anticipatory seed voucher triggered by the pre-season forecast."""
     version: str
+    enabled: bool = True           # False: dropped from the product; code kept, nothing priced or sold
+    disabled_reason: str = ""
     offered_wards: list[str]
     forecast_months: dict[Season, list[int]]
     issue_month: dict[Season, int]
@@ -346,6 +400,29 @@ class LayerA(BaseModel):
             if season == "LR" and issue >= min(months):
                 raise ValueError("the long-rains forecast must be issued before its first month")
         return self
+
+
+class Advance(BaseModel):
+    """EXPERIMENTAL early advance on Layer B: paid mid-season on a projected WRSI, deducted
+    from the end-of-season Layer B payout, never clawed back from the farmer."""
+    status: Literal["experimental", "approved"]
+    included_in_quotes: bool
+    offered_wards: list[str]
+    check_day_after_sos: int = Field(gt=0, lt=100)
+    projected_wrsi_below: float = Field(gt=0, le=100)
+    advance_share: float = Field(gt=0, lt=1)          # share of sum insured
+    forecast: str
+    validation_years: tuple[int, int]
+    threshold_grid: list[float]
+
+    @model_validator(mode="after")
+    def _experimental_not_sold(self):
+        if self.status == "experimental" and self.included_in_quotes:
+            raise ValueError("an EXPERIMENTAL advance cannot be included in quotes until approved")
+        return self
+
+
+LayerB.model_rebuild()
 
 
 class SyntheticForecast(BaseModel):
@@ -421,6 +498,8 @@ class ResiliencePoint(BaseModel):
 
 class Resilience(BaseModel):
     illustrative: bool
+    # Who pays for the discount. The insurer always receives the full gross premium.
+    funder: Literal["platform", "seed_company", "sacco"]
     discount_per_point: float = Field(gt=0, lt=1)
     discount_cap: float = Field(ge=0, lt=1)
     points: list[ResiliencePoint]
@@ -482,6 +561,10 @@ class Config(BaseModel):
         for wid in self.pilot.wards + [self.pilot.default_ward]:
             if wid not in self.wards:
                 raise ValueError(f"pilot ward {wid!r} is not defined in wards.yaml")
+        adv = self.product.layer_b.advance
+        for wid in (adv.offered_wards if adv else []):
+            if wid not in self.wards:
+                raise ValueError(f"layer_b.advance offered at unknown ward {wid!r}")
         for ward in self.wards.values():
             for season in ward.seasons:
                 cal = self.calendar(ward.id, season)

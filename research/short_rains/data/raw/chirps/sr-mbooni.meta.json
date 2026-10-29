@@ -1,0 +1,42 @@
+{
+  "ward_id": "sr-mbooni",
+  "dataset": "UCSB CHIRPS v2.0 daily, 0.05 deg, polygon mean",
+  "provider": "SERVIR ClimateSERV",
+  "request": {
+    "base_url": "https://climateserv.servirglobal.net/api",
+    "datatype": 0,
+    "operationtype": 5,
+    "intervaltype": 0,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            37.475,
+            -1.725
+          ],
+          [
+            37.575,
+            -1.725
+          ],
+          [
+            37.575,
+            -1.625
+          ],
+          [
+            37.475,
+            -1.625
+          ],
+          [
+            37.475,
+            -1.725
+          ]
+        ]
+      ]
+    }
+  },
+  "start_year": 1981,
+  "end_year": 2025,
+  "retrieved_at": "2026-10-29T16:52:29+00:00",
+  "sha256": "087a01bfb4eed00e9ae4adf3617cbac6d80176c4df20188d7be89a00e2609ef0"
+}

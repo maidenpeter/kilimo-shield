@@ -409,7 +409,8 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   {% endif %}
 
   {% set la = s.layer_a %}
-  <h2>Layer A: pre-season seed voucher, {{ s.season_label | lower }} <span class="chip SYNTHETIC">SYNTHETIC FORECAST</span></h2>
+  {% if la.dropped %}<h2>Layer A: pre-season seed voucher <span class="chip PENDING">DROPPED</span></h2>
+  {% else %}<h2>Layer A: pre-season seed voucher, {{ s.season_label | lower }} <span class="chip SYNTHETIC">SYNTHETIC FORECAST</span></h2>{% endif %}
   {% if la.available %}
   <p>Before planting, if the seasonal outlook gives at least a {{ la.terms.trigger_prob_below_normal | pct(0) }} chance of below-normal
     rain over {% for mth in la.forecast.months %}{{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][mth - 1] }}{% if not loop.last %}&ndash;{% endif %}{% endfor %},
