@@ -225,7 +225,7 @@ def test_duplicates_are_rejected(ctx, db):
         s.add(sacco)
         s.flush()
         sv.enrol(ctx, s, sacco, None, inp())
-        with pytest.raises(sv.EnrolmentError, match="already has a LR 2027 policy"):
+        with pytest.raises(sv.EnrolmentError, match="already has cover for long rains 2027 in Rongai West"):
             sv.enrol(ctx, s, sacco, None, inp())
         with pytest.raises(sv.EnrolmentError, match="another member number"):
             sv.enrol(ctx, s, sacco, None, inp(member_no="M-0999"))
@@ -372,7 +372,12 @@ def test_wizard_errors_drop_typed_id_and_phone(app):
     r = c.post("/enrol/review", data={**enrol_form(consent_data_processing=None), "csrf_token": tok})
     assert r.status_code == 422 and "must agree to data processing" in r.text
     assert_no_pii(r.text)
-    assert 'value="M-0100"' in r.text                                    # non-personal fields are kept
+    token = re.search(r'name="token" value="([^"]+)"', r.text).group(1)
+    for step in (3, 2):                                                  # Back to the first screen
+        r = c.post("/enrol/step", data={"csrf_token": tok, "token": token, "step": step, "nav": "back"})
+    assert "Step 1 of 5" in r.text and 'value="M-0100"' in r.text       # non-personal fields are kept
+    assert "Saved: *****926" in r.text                                   # ID only ever shown masked
+    assert_no_pii(r.text)
 
 
 def test_loan_link_without_consent_is_refused_at_confirm(app):

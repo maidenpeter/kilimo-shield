@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Import{% endblock %}
+{% block body %}
+<h1>Import</h1>
+
+<h2 id="bulk">Enrol many farmers from a spreadsheet</h2>
+<p>Upload a CSV file. It is checked first and nothing is saved until you confirm; then every row is saved together, or
+  none are.</p>
+{% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
+{% if committed %}
+<div class="alert ok" role="status"><b>{{ committed|length }} policies saved.</b></div>
+<div class="table-wrap"><table>
+  <thead><tr><th>Certificate</th><th>Member</th><th>Ward</th><th class="num">Farmer pays</th></tr></thead>
+  <tbody>{% for p in committed %}<tr><td>{{ p.policy_no }}</td><td>{{ p.farmer.member_no }}</td><td>{{ ward_label(p.ward_id) }}</td>
+    <td class="num">{{ p.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<form class="stack card" method="post" action="/bulk/check" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="file">CSV file</label><input id="file" name="file" type="file" accept=".csv,text/csv" required>
+  <p class="muted">Columns as in the <a href="/bulk/template.csv">template</a>. The agreement columns must say yes for each
+    purpose the farmer agreed to, after the statements were read to them. Discount items are separated by semicolons.</p>
+  <p><button class="btn" type="submit">Check file</button></p>
+</form>
+{% if report %}
+<h3>Check result: {{ report.rows }} rows</h3>
+{% if report.problems %}
+<div class="alert crit" role="alert">{{ report.problems|length }} row{{ 's' if report.problems|length > 1 }} need fixing. Nothing has been saved.</div>
+<div class="table-wrap"><table>
+  <thead><tr><th>Row</th><th>Member</th><th>Problem</th></tr></thead>
+  <tbody>{% for p in report.problems %}<tr><td>{{ p.row }}</td><td>{{ p.member_no or '' }}</td>
+    <td>{% for k, v in p.errors.items() %}<div><b>{{ k }}</b>: {{ v }}</div>{% endfor %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if report.valid %}
+<h3>{{ report.valid|length }} rows ready</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Row</th><th>Member</th><th>Ward</th><th class="num">Acres</th><th class="num">Gross</th><th class="num">Farmer pays</th></tr></thead>
+  <tbody>{% for r in report.valid %}<tr><td>{{ r.row }}</td><td>{{ r.member_no }}</td><td>{{ ward_label(r.ward_id) }}</td>
+    <td class="num">{{ r.acres|num(1) }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if report.ok %}
+<form method="post" action="/bulk/commit">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="token" value="{{ token }}">
+  <p><button class="btn" type="submit">Save all {{ report.valid|length }} enrolments</button>
+    <span class="muted">File sha256 {{ report.sha256[:12] }}</span></p>
+</form>
+{% endif %}
+{% endif %}
+
+{% if officer.role == 'manager' %}
+<h2 id="kiamis">KIAMIS records</h2>
+<p>Until a KIAMIS connection is agreed, import a KIAMIS CSV export. National IDs are hashed on import and the file is not
+  kept. Enrolment then checks declared acreage and certified seed purchases against it.</p>
+{% if kiamis_error %}<div class="alert crit" role="alert">{{ kiamis_error }}</div>{% endif %}
+{% if result %}
+<div class="alert ok" role="status"><b>Imported.</b> {{ result.added }} added, {{ result.updated }} updated.
+  <span class="muted">File sha256 {{ result.source_sha256[:12] }}</span></div>
+{% if result.errors %}<div class="alert warn"><b>{{ result.errors|length }} rows skipped:</b>
+  {% for e in result.errors[:20] %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+{% endif %}
+<form class="stack card" method="post" action="/kiamis" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="kfile">KIAMIS CSV export</label><input id="kfile" name="file" type="file" accept=".csv,text/csv" required>
+  <p class="muted">Columns: national_id, registered_acreage, certified_seed_purchased, subsidy_eligible.</p>
+  <p><button class="btn" type="submit">Import</button></p>
+</form>
+{% endif %}
+{% endblock %}

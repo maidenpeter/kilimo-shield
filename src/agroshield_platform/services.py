@@ -41,6 +41,13 @@ NAIROBI = timezone(timedelta(hours=3))     # East Africa Time, no daylight savin
 MIN_INSTALMENT_KES = 50
 REMINDER_DAYS = (7, 1)                     # SMS reminders this many days before sales close
 PAY_REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no 0/O or 1/I
+SEASON_WORDS = {"LR": "long rains", "SR": "short rains"}
+
+
+def season_label(season: str, year: int | None = None) -> str:
+    """Plain words for officers and farmers: "long rains 2027"."""
+    words = SEASON_WORDS.get(season, season)
+    return f"{words} {year}" if year else words
 
 
 class EnrolmentError(ValueError):
@@ -111,8 +118,9 @@ def sales_status(ctx: Context, ward_id: str, season: str) -> dict:
     """Whether cover for this ward and season can be bought today, and for which planting year."""
     try:
         cal = ctx.cfg.calendar(ward_id, season)
+        where = ctx.cfg.ward(ward_id).label
     except KeyError:
-        return {"open": False, "reason": f"no {season} cover is sold at {ward_id}"}
+        return {"open": False, "reason": f"no {season_label(season)} cover is sold in this ward"}
     today = ctx.date()
     year = cal.open_sales_year(today)
     if year is not None:
@@ -121,8 +129,8 @@ def sales_status(ctx: Context, ward_id: str, season: str) -> dict:
     upcoming = [w for y in (today.year, today.year + 1, today.year + 2) if (w := cal.sales_window_for(y)) and w[0] > today]
     nxt = upcoming[0][0] if upcoming else None
     return {"open": False, "next_opens": nxt,
-            "reason": f"sales for {season} cover at {ward_id} are closed"
-                      + (f"; the next window opens {nxt:%d %b %Y}" if nxt else "")}
+            "reason": f"sales of {season_label(season)} cover in {where} are closed"
+                      + (f"; the next sales window opens {nxt:%d %b %Y}" if nxt else "")}
 
 
 def consent_gate(ctx: Context, sacco: Sacco | None) -> str | None:
@@ -159,7 +167,7 @@ def _validate(ctx: Context, inp: EnrolmentInput) -> tuple[dict, dict]:
         if not st["open"]:
             errors["ward_id"] = st["reason"]
         elif inp.year is not None and inp.year != st["year"]:
-            errors["ward_id"] = f"sales are open for {inp.season} {st['year']}, not {inp.year}"
+            errors["ward_id"] = f"sales are open for {season_label(inp.season, st['year'])}, not {inp.year}"
         else:
             clean["year"], clean["sales_closes_on"] = st["year"], st["closes"]
     if not inp.acreage or inp.acreage <= 0:
@@ -236,7 +244,8 @@ def enrol(ctx: Context, s: Session, sacco: Sacco, officer: Officer | None, inp: 
         audit(s, actor, "farmer.created", "farmer", farmer.id, member_no=farmer.member_no, ward=farmer.ward_id, channel=channel)
 
     if existing_policy(s, farmer, inp.ward_id, inp.season, year):
-        raise EnrolmentError({"member_no": f"already has a {inp.season} {year} policy in {inp.ward_id}"})
+        raise EnrolmentError({"member_no": f"already has cover for {season_label(inp.season, year)} in "
+                                           f"{ctx.cfg.ward(inp.ward_id).label}"})
 
     wording = load_consent_wording(ctx.cfg)
     for purpose, granted in (("data_processing", inp.consent_data_processing), ("sms", inp.consent_sms),
@@ -347,6 +356,25 @@ def close_sales_windows(ctx: Context, s: Session) -> dict:
                                                       dedupe_key=f"reminder:{pol.id}:{days_left}"):
             reminded += 1
     return {"date": str(today), "lapsed": lapsed, "reminders": reminded}
+
+
+def owing(s: Session, sacco: Sacco) -> list[Policy]:
+    """Policies still waiting for some of the farmer share, soonest sales close first."""
+    pols = s.scalars(select(Policy).where(Policy.sacco_id == sacco.id, Policy.status == "pending_payment")).all()
+    return sorted((p for p in pols if p.balance_kes > 0), key=lambda p: (p.sales_closes_on, -p.balance_kes))
+
+
+def send_reminder(ctx: Context, s: Session, pol: Policy, actor: str) -> str:
+    """Officer-triggered payment reminder: at most one per policy per day, only with SMS consent.
+    Returns "queued", "already_sent" or "no_consent"."""
+    if not sms.sms_consent(s, pol.farmer):
+        return "no_consent"
+    msg = sms.queue(s, pol.farmer, "reminder", pol, dedupe_key=f"manual-reminder:{pol.id}:{ctx.date()}",
+                    ussd_code=ctx.ussd_code)
+    if msg is None:
+        return "already_sent"
+    audit(s, actor, "sms.reminder_requested", "policy", pol.id, policy_no=pol.policy_no)
+    return "queued"
 
 
 # ------------------------------------------------------------------ bulk CSV

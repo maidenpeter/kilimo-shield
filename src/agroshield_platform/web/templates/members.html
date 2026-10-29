@@ -2,23 +2,26 @@
 {% block title %}Members{% endblock %}
 {% block body %}
 <h1>Members</h1>
-<form method="post" action="/members" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<form method="post" action="/members" class="actions">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <label for="q" class="muted">Search by member number or name</label>
-  <input id="q" name="q" type="text" value="{{ query }}" style="max-width:280px">
-  <button class="btn small" type="submit">Search</button>
+  <label for="q" class="muted">Find by member number or name</label>
+  <input id="q" name="q" type="text" value="{{ query }}" style="max-width:260px">
+  <button class="btn small" type="submit">Find</button>
   {% if query %}<a class="btn ghost small" href="/members">Clear</a>{% endif %}
 </form>
 {% if rows %}
 <div class="table-wrap"><table>
-  <thead><tr><th>Member</th><th>Name</th><th>National ID</th><th>Phone</th><th>Ward</th><th>KIAMIS</th><th class="num">Policies</th></tr></thead>
-  <tbody>{% for f in rows %}
-    <tr><td><a href="/members/{{ f.id }}">{{ f.member_no }}</a></td><td>{{ f.full_name }}</td><td>{{ f.national_id_masked }}</td>
-      <td>{{ f.phone_masked }}</td><td>{{ f.ward_id }}</td><td>{{ f.kiamis_status.replace('_', ' ') }}</td>
-      <td class="num">{{ f.policies|length }}</td></tr>
+  <thead><tr><th>Farmer</th><th>ID</th><th>Phone</th><th>Ward</th><th>Cover</th></tr></thead>
+  <tbody>{% for f in rows %}{% set p = (f.policies|sort(attribute='created_at')|list)[-1] if f.policies else none %}
+    <tr><td><a href="/members/{{ f.id }}">{{ f.full_name }}</a><div class="muted">{{ f.member_no }}</div></td>
+      <td>{{ f.national_id_masked }}</td><td>{{ f.phone_masked }}</td><td>{{ ward_label(f.ward_id) }}</td>
+      <td>{% if not p %}none
+        {% elif p.status == 'pending_payment' %}<span class="chip warn">owes KES {{ '{:,.0f}'.format(p.balance_kes) }}</span>
+        {% elif p.status == 'active' %}<span class="chip">active</span>
+        {% else %}<span class="chip warn">{{ p.status|label }}</span>{% endif %}</td></tr>
   {% endfor %}</tbody>
 </table></div>
 {% else %}
-<div class="card"><p>{{ 'No members match.' if query else 'No members yet.' }} <a href="/enrol">Enrol a member</a>.</p></div>
+<div class="card"><p>{{ 'Nobody matches.' if query else 'No members yet.' }} <a href="/enrol">Enrol a farmer</a>.</p></div>
 {% endif %}
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Reports{% endblock %}
 {% block body %}
-<h1>{{ officer.sacco.name }}</h1>
+<h1>Reports: {{ officer.sacco.name }}</h1>
 <p class="muted">Portfolio for the policies your SACCO has enrolled. Premiums are illustrative until the product is filed.</p>
 <div class="tiles">
   <div class="tile"><div class="k">Members</div><div class="v">{{ pf.members|num }}</div></div>
@@ -20,7 +20,7 @@
 </div>
 
 <div class="card"><b>Sales windows (long rains)</b>
-  {% for wid, st in pf.sales.items() %}<div>{{ cfg.ward(wid).name }}:
+  {% for wid, st in pf.sales.items() %}<div>{{ cfg.ward(wid).label }}:
     {% if st.open %}<span class="chip">open</span> for {{ st.year }}, closes {{ st.closes|day }}
     {% else %}<span class="chip warn">closed</span>{% if st.next_opens %} opens {{ st.next_opens|day }}{% endif %}{% endif %}</div>{% endfor %}
   {% if pf.discount_by_funder %}<p class="muted" style="margin:6px 0 0">Resilience discounts to fund:
@@ -31,8 +31,8 @@
     <svg class="map" viewBox="0 0 {{ map.width }} {{ map.height }}" role="img"
          aria-label="Placeholder map of the pilot wards with policy counts">
       {% for w in map.wards %}
-      <rect class="ward" x="{{ w.x }}" y="{{ w.y }}" width="{{ w.w }}" height="{{ w.h }}" rx="4"><title>{{ w.name }}: {{ w.policies }} policies</title></rect>
-      <text x="{{ w.x + 8 }}" y="{{ w.y + 20 }}">{{ w.name.split('(')[0].replace('Illustrative ', '') }}</text>
+      <rect class="ward" x="{{ w.x }}" y="{{ w.y }}" width="{{ w.w }}" height="{{ w.h }}" rx="4"><title>{{ ward_label(w.id) }}: {{ w.policies }} policies</title></rect>
+      <text x="{{ w.x + 8 }}" y="{{ w.y + 20 }}">{{ ward_label(w.id) }}</text>
       <text x="{{ w.x + 8 }}" y="{{ w.y + 38 }}">{{ w.policies }} policies</text>
       {% endfor %}
     </svg>
@@ -43,7 +43,7 @@
     <h2 style="margin-top:0">Trigger status</h2>
     <table><tbody>
       {% for wid, t in pf.trigger_status.items() %}
-      <tr><td>{{ cfg.ward(wid).name }}</td><td><span class="chip">{{ t.status }}</span></td></tr>
+      <tr><td>{{ cfg.ward(wid).label }}</td><td><span class="chip">{{ t.status }}</span></td></tr>
       {% endfor %}
     </tbody></table>
     <p class="muted">{{ (pf.trigger_status.values()|first).note }}</p>
@@ -56,7 +56,7 @@
   <thead><tr><th>Ward</th><th class="num">Policies</th><th class="num">Acres</th><th class="num">Sum insured</th>
     <th class="num">Gross premium</th><th class="num">Loan-linked</th><th class="num">Loan-linked sum insured</th></tr></thead>
   <tbody>{% for w in pf.by_ward %}
-    <tr><td>{{ w.name }}</td><td class="num">{{ w.policies }}</td><td class="num">{{ w.acres|num(1) }}</td>
+    <tr><td>{{ ward_label(w.ward_id) }} <span class="muted">({{ w.ward_id }}, placeholder)</span></td><td class="num">{{ w.policies }}</td><td class="num">{{ w.acres|num(1) }}</td>
       <td class="num">{{ w.sum_insured_kes|kes }}</td><td class="num">{{ w.gross_kes|kes }}</td>
       <td class="num">{{ w.loan_linked }}</td><td class="num">{{ w.loan_linked_sum_insured_kes|kes }}</td></tr>
   {% endfor %}</tbody>

@@ -7,6 +7,9 @@
 wards:
   - id: ward-a
     name: "Illustrative Ward A (lowland, near Rongai)"
+    # Display name for officer and farmer screens. PLACEHOLDER: real-sounding, but
+    # not an IEBC ward; replaced by the real ward name once the pilot wards are agreed.
+    display_name: "Rongai West"
     illustrative: true
     centroid: {lat: -0.170, lon: 35.860}
     # Rainfall is averaged over a square box this wide (degrees) around the
@@ -24,6 +27,7 @@ wards:
 
   - id: ward-b
     name: "Illustrative Ward B (highland, near Molo)"
+    display_name: "Molo Highlands"          # PLACEHOLDER, not an IEBC ward
     illustrative: true
     centroid: {lat: -0.250, lon: 35.730}
     extraction_box_deg: 0.10

@@ -1,17 +1,32 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% block title %}Quote{% endblock %}
+{% block title %}Quick price{% endblock %}
 {% block body %}
-<h1>Quick quote</h1>
-<p class="muted">Price cover without enrolling anyone. Nothing personal is asked or stored.</p>
+<div class="wizard">
+<h1>Quick price</h1>
+<p class="muted">Check a price without enrolling anyone. Nothing about the farmer is asked or kept.</p>
 {% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
-<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start">
-  <form class="stack card" method="post" action="/quote">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    {{ m.cover_fields(cfg, form) }}
-    <p style="margin-top:16px"><button class="btn" type="submit">Get quote</button></p>
-  </form>
-  <div>{% if q %}{{ m.breakdown(q) }}
-    <p><a class="btn" href="/enrol">Enrol a member</a></p>{% endif %}</div>
+{% if q %}{{ m.price_answer(price, q) }}{% endif %}
+<form class="stack" method="post" action="/quote">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="ward_id">Ward</label>
+  <select id="ward_id" name="ward_id">
+    {% for wid in cfg.pilot.wards %}<option value="{{ wid }}" {% if form.get('ward_id') == wid %}selected{% endif %}>{{ ward_label(wid) }}</option>{% endfor %}
+  </select>
+  <label for="acreage">Acres of maize</label>
+  <input id="acreage" name="acreage" type="number" step="0.1" min="0.1" inputmode="decimal" value="{{ form.get('acreage', '') }}" required>
+  <label>Bought certified seed last season?</label>
+  <div class="choice">
+    <label><input type="radio" name="res_certified_seed_verified" value="1" {% if form.get('res_certified_seed_verified') %}checked{% endif %}> Yes</label>
+    <label><input type="radio" name="res_certified_seed_verified" value="" {% if not form.get('res_certified_seed_verified') %}checked{% endif %}> No</label>
+  </div>
+  <label for="sum_insured_kes_per_acre">Cover per acre</label>
+  <select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre">
+    {% for o in cfg.product.sum_insured.options_kes_per_acre %}
+    <option value="{{ o|int }}" {% if (form.get('sum_insured_kes_per_acre') or cfg.product.sum_insured.default_kes_per_acre)|float == o|float %}selected{% endif %}>KES {{ '{:,.0f}'.format(o) }}</option>
+    {% endfor %}
+  </select>
+  <div class="actions"><button class="btn" type="submit">Check price</button><a class="btn ghost" href="/enrol">Enrol a farmer</a></div>
+</form>
 </div>
 {% endblock %}

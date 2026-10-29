@@ -1,53 +1,30 @@
-{% macro steps(on) %}
-<ol class="steps" aria-label="Enrolment steps">
-  {% for label in ["Member", "Plot", "Cover", "Consent", "Price", "Payment and confirm"] %}
-  <li class="{{ 'on' if loop.index == on else 'done' if loop.index < on else '' }}"
-      {% if loop.index == on %}aria-current="step"{% endif %}>{{ label }}</li>
-  {% endfor %}
-</ol>
+{% macro progress(step, title) %}
+<div class="progress" aria-label="Enrolment progress">
+  <div class="lbl">Step {{ step }} of 5 &middot; {{ title }}</div>
+  <div class="bar"><span style="width:{{ step * 20 }}%"></span></div>
+</div>
 {% endmacro %}
 
 {% macro err(errors, key) %}{% if errors and errors.get(key) %}<div class="err" id="{{ key }}-err">{{ errors[key] }}</div>{% endif %}{% endmacro %}
 
-{% macro cover_fields(cfg, form, errors=None) %}
-<label for="ward_id">Ward</label>
-<select id="ward_id" name="ward_id" required>
-  {% for wid in cfg.pilot.wards %}{% set w = cfg.ward(wid) %}
-  <option value="{{ wid }}" {% if form.get('ward_id') == wid %}selected{% endif %}>{{ w.name }}</option>
-  {% endfor %}
-</select>{{ err(errors, 'ward_id') }}
-<label for="acreage">Maize acreage</label>
-<input id="acreage" name="acreage" type="number" step="0.1" min="0.1" value="{{ form.get('acreage', '') }}" required>
-{{ err(errors, 'acreage') }}
-<label>Layers</label>
-<label class="check"><input type="checkbox" name="layer_B" value="1" {% if form.get('layer_B') or not form %}checked{% endif %}>
-  <span><b>Layer B</b>: in-season rainfall index (WRSI), with a replanting seed voucher if the rains fail after planting.</span></label>
-{% if cfg.product.layer_a.enabled %}
-<label class="check"><input type="checkbox" name="layer_A" value="1" {% if form.get('layer_A') %}checked{% endif %}>
-  <span><b>Layer A</b>: pre-season seed voucher, paid on the seasonal forecast. Offered at
-    {% for wid in cfg.product.layer_a.offered_wards %}{{ cfg.ward(wid).name }}{{ ', ' if not loop.last }}{% endfor %} only.</span></label>
-{% endif %}
-{{ err(errors, 'layers') }}
-<label for="sum_insured_kes_per_acre">Layer B sum insured per acre</label>
-<select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre">
-  {% for o in cfg.product.sum_insured.options_kes_per_acre %}
-  <option value="{{ o }}" {% if (form.get('sum_insured_kes_per_acre') or cfg.product.sum_insured.default_kes_per_acre)|float == o|float %}selected{% endif %}>KES {{ '{:,.0f}'.format(o) }}</option>
-  {% endfor %}
-</select>
-<fieldset><legend>Resilience points (lower the farmer's share)</legend>
-  {% for p in cfg.product.resilience.points %}
-  <label class="check"><input type="checkbox" name="res_{{ p.id }}" value="1" {% if form.get('res_' ~ p.id) %}checked{% endif %}>
-    <span>{{ p.label }} <span class="chip">{{ p.points|num }} pts</span> <span class="muted">verified by {{ p.verified_by }}</span></span></label>
-  {% endfor %}
-  <p class="muted">{{ cfg.product.resilience.discount_per_point|pct }} off the farmer's share per point, capped at
-    {{ cfg.product.resilience.discount_cap|pct }}, paid by the {{ cfg.product.resilience.funder|label }}: the insurer still
-    receives the full gross premium. Illustrative values.</p>
-</fieldset>
+{# The price in one sentence first; the full build-up only behind "Details". #}
+{% macro price_answer(price, q) %}
+<div class="price-answer" role="status">
+  <p class="lead">Farmer pays KES {{ '{:,}'.format(price.farmer_pays) }} for {{ '%g'|format(price.acres) }} acre{{ 's' if price.acres != 1 }}
+    (KES {{ '{:,.0f}'.format(price.per_acre) }} per acre).</p>
+  <p>{% if price.subsidised and price.discount_kes %}The government pays half, and the certified-seed discount takes
+    KES {{ '{:,.0f}'.format(price.discount_kes) }} off the farmer's half.
+    {% elif price.subsidised %}The government pays the other half.
+    {% else %}No government help for this farm: it is only for farms of {{ price.eligibility }}.{% endif %}
+    Covers up to KES {{ '{:,.0f}'.format(price.cover_total) }} if the rains fail, plus a replanting seed voucher if they fail
+    just after planting.</p>
+  <details class="more"><summary>Details</summary>{{ breakdown(q) }}</details>
+</div>
 {% endmacro %}
 
 {% macro breakdown(q) %}
 <div class="card">
-  <h3 style="margin-top:0">{{ q.ward.name }}, {{ q.season }}: {{ q.acres|num(1) }} acres
+  <h3 style="margin-top:0">{{ ward_label(q.ward.id) }} ({{ q.ward.id }}), {{ q.season }}: {{ q.acres|num(1) }} acres
     {% if q.basis.illustrative %}<span class="chip warn">ILLUSTRATIVE</span>{% endif %}</h3>
   <div class="table-wrap"><table>
     <thead><tr><th>Layer</th><th>Cover</th><th class="num">Gross per acre</th><th class="num">Gross</th><th class="num">Government share</th></tr></thead>

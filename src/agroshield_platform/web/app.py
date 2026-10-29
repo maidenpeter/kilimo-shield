@@ -3,14 +3,16 @@
 Pages
   /                    public landing page for farmers and SACCOs
   /login, /logout      officer sign-in (scrypt passwords, signed session cookie)
-  /dashboard           portfolio, sales windows, ward map, subsidy receivable, loan exposure
-  /enrol               6-step enrolment wizard (steps 1-4 here, 5-6 on review)
-  /quote               quick quote, no enrolment
-  /members             members (national ID and phone masked); policies, payments, consents
-  /bulk                bulk enrolment from CSV: check, then commit all-or-nothing
-  /kiamis              KIAMIS CSV import (manual fallback), managers only
-  /sms                 SMS outbox, managers only
-  /dev/mpesa           complete simulated M-Pesa requests (MPESA_ENV=simulated only)
+  /dashboard           officer Home: who still owes, payment reminders, ward alerts, Enrol
+  /enrol               enrolment wizard, one step per screen: farmer, farm, agreement, price and pay
+  /quote               quick price, no enrolment
+  /members             members (national ID and phone masked); cover, payments, Details
+  /reports             managers: portfolio, sales windows, subsidy receivable, ward map, export
+  /import              managers: bulk enrolment from CSV (check, then all-or-nothing) and KIAMIS import
+  /sms, /dev/mpesa     Developer menu (development mode only): SMS log, M-Pesa simulator
+
+Two audiences: officers get plain language and their next task; pricing and portfolio
+detail sits under Reports and behind "Details" toggles.
   /export/policies.csv policy export, masked
 
 Callbacks (no session; a secret token in the path, never personal data)
@@ -25,6 +27,7 @@ from __future__ import annotations
 import dataclasses
 import hmac
 import logging
+import math
 import secrets
 import time
 from pathlib import Path
@@ -150,6 +153,9 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     templates.env.filters["mask_id"] = lambda v: _masked(v, normalise_national_id, mask_national_id)
     templates.env.filters["mask_phone"] = lambda v: _masked(v, normalise_phone, mask_phone)
     templates.env.filters["label"] = lambda v: (v or "").replace("_", " ")
+    templates.env.filters["short_day"] = lambda d: "" if d is None else f"{d.day} {d:%b}"
+    templates.env.globals["season_label"] = sv.season_label
+    templates.env.globals["ward_label"] = lambda wid: cfg.ward(wid).label if wid in cfg.wards else wid
 
     # ------------------------------------------------------------------ helpers
     def csrf(request: Request) -> str:
@@ -176,6 +182,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         return templates.TemplateResponse(request, name, {
             "officer": officer, "csrf": csrf(request), "cfg": cfg, "dev_keys": settings.dev_keys,
             "mpesa_env": state["mpesa"].env, "sms_mode": settings.sms.mode, "consent_pending": not wording["reviewed"],
+            "dev_mode": settings.dev_keys,
             "flash": request.session.pop("flash", None), **kw}, status_code=status)
 
     def require(request: Request, s, role: str | None = None) -> Officer:
@@ -235,19 +242,62 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         request.session.clear()
         return RedirectResponse("/", status_code=303)
 
-    # ------------------------------------------------------------------ dashboard
+    # ------------------------------------------------------------------ officer Home and manager Reports
+    def plain_price(q: dict) -> dict:
+        """The numbers behind the one-sentence price answer."""
+        due = math.ceil(q["farmer_pays_kes"] - 1e-9)
+        return {"farmer_pays": due, "acres": q["acres"], "per_acre": due / q["acres"],
+                "gov_kes": q["subsidy"]["government_share_kes"], "subsidised": q["subsidy"]["government_share_kes"] > 0,
+                "eligibility": q["subsidy"]["eligibility"], "discount_kes": q["resilience"]["discount_kes"],
+                "cover_total": q["total_sum_insured_kes"], "cover_per_acre": q["sum_insured_kes_per_acre"],
+                "voucher_per_acre": cfg.product.layer_b.germination_dry_spell.replant_cost_kes_per_acre}
+
+    def sales_summary(c: sv.Context) -> dict:
+        st = [sv.sales_status(c, w, "LR") for w in cfg.pilot.wards]
+        opened = [x["closes"] for x in st if x["open"]]
+        upcoming = [x["next_opens"] for x in st if not x["open"] and x.get("next_opens")]
+        return {"closes": min(opened) if opened else None, "next_opens": min(upcoming) if upcoming else None}
+
     @app.get("/dashboard", response_class=HTMLResponse)
-    def dashboard(request: Request):
+    def home(request: Request):
         with transaction(factory) as s:
             off = require(request, s)
+            c = ctx()
+            owe = sv.owing(s, off.sacco)
+            wards = sorted({f.ward_id for f in s.scalars(select(Farmer).where(Farmer.sacco_id == off.sacco_id))}) \
+                or list(cfg.pilot.wards)
+            return render(request, "home.html", off, owe=owe, owe_total=sum(p.balance_kes for p in owe),
+                          sales=sales_summary(c), wards=wards, today=c.date())
+
+    @app.post("/policies/{policy_id}/remind")
+    def policy_remind(request: Request, background: BackgroundTasks, policy_id: str, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s)
+            pol = own_policy(s, off, policy_id)
+            res = sv.send_reminder(ctx(), s, pol, off.username)
+            name = pol.farmer.full_name
+        if res == "queued":
+            background.add_task(flush_sms)
+            flash(request, "ok", f"Reminder sent to {name}.")
+        elif res == "already_sent":
+            flash(request, "warn", f"A reminder was already sent to {name} today.")
+        else:
+            flash(request, "warn", f"{name} did not agree to SMS. Please call them instead.")
+        return RedirectResponse(request.headers.get("referer") or "/dashboard", status_code=303)
+
+    @app.get("/reports", response_class=HTMLResponse)
+    def reports(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
             pf = sv.portfolio(ctx(), s, off.sacco)
             recent = s.scalars(select(Policy).where(Policy.sacco_id == off.sacco_id)
                                .order_by(Policy.created_at.desc()).limit(8)).all()
             wards = [cfg.ward(w) for w in cfg.pilot.wards]
-            return render(request, "dashboard.html", off, pf=pf, recent=recent, wards=wards,
+            return render(request, "reports.html", off, pf=pf, recent=recent, wards=wards,
                           map=ward_map(wards, {w["ward_id"]: w["policies"] for w in pf["by_ward"]}))
 
-    # ------------------------------------------------------------------ quote
+    # ------------------------------------------------------------------ quick price
     @app.get("/quote", response_class=HTMLResponse)
     def quote_form(request: Request):
         with transaction(factory) as s:
@@ -264,36 +314,99 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                           layers=[x for x in ("A", "B") if form.get(f"layer_{x}")] or ["B"],
                           sum_insured_kes_per_acre=_float(form.get("sum_insured_kes_per_acre")),
                           resilience={p.id: True for p in cfg.product.resilience.points if form.get(f"res_{p.id}")})
-                return render(request, "quote.html", off, form=form, q=q)
-            except QuoteError as e:
+                return render(request, "quote.html", off, form=form, q=q, price=plain_price(q))
+            except (QuoteError, ValueError) as e:
                 return render(request, "quote.html", off, form=form, q=None, error=str(e), status=422)
 
     # ------------------------------------------------------------------ enrolment wizard
+    # One step per screen; the draft is held server-side under a random token, so the
+    # national ID and phone are typed once and never written back into a page.
+    STEP_FIELDS = {1: ["member_no", "full_name", "national_id", "phone", "gender", "language"],
+                   2: ["ward_id", "acreage", "lat", "lon", "res_certified_seed_verified"],
+                   3: ["consent_data_processing", "consent_sms"],
+                   4: ["sum_insured_kes_per_acre", "payment_route", "loan_linked", "loan_ref",
+                       "consent_loan_linked_payout"]}
+    CHECKBOXES = {"consent_data_processing", "consent_sms", "loan_linked", "consent_loan_linked_payout",
+                  "res_certified_seed_verified"}
+    ERROR_STEP = {"member_no": 1, "full_name": 1, "national_id": 1, "phone": 1, "gender": 1, "language": 1,
+                  "ward_id": 2, "acreage": 2, "lat": 2, "consent_data_processing": 3, "consent": 3}
+
+    def take(draft: dict, form: dict, step: int) -> None:
+        for k in STEP_FIELDS.get(step, []):
+            v = form.get(k)
+            if k in ("national_id", "phone"):
+                if v and v.strip():
+                    draft[k] = v
+            elif k in CHECKBOXES:
+                draft[k] = "1" if v else ""
+            elif v is not None:
+                draft[k] = v
+
+    def step_errors(errors: dict, upto: int) -> dict:
+        return {k: v for k, v in errors.items() if ERROR_STEP.get(k, 4) <= upto}
+
+    def render_step(request, s, off, step: int, token: str, draft: dict, errors: dict | None = None, status: int = 200):
+        kw = {}
+        if step == 4:
+            pv = sv.preview(ctx(), s, dataclasses.replace(enrol_input(draft), loan_linked=False), off.sacco)
+            kw = {"pv": pv, "price": plain_price(pv["quote"]) if pv["quote"] else None}
+        c = ctx()
+        return render(request, "enrol_step.html", off, step=step, token=token, d=draft, errors=errors or {},
+                      wording=wording, gate=sv.consent_gate(c, off.sacco),
+                      sales={w: sv.sales_status(c, w, "LR") for w in cfg.pilot.wards},
+                      masked_id=_masked(draft.get("national_id", ""), normalise_national_id, mask_national_id)
+                      if draft.get("national_id") else None,
+                      masked_phone=_masked(draft.get("phone", ""), normalise_phone, mask_phone) if draft.get("phone") else None,
+                      status=status, **kw)
+
+    def first_problem(request, s, off, token, draft, errors, upto=4):
+        errs = step_errors(errors, upto)
+        if not errs:
+            return None
+        n = min(ERROR_STEP.get(k, 4) for k in errs)
+        return render_step(request, s, off, n, token, draft, {k: v for k, v in errs.items() if ERROR_STEP.get(k, 4) == n},
+                           status=422)
+
     @app.get("/enrol", response_class=HTMLResponse)
-    def enrol_form(request: Request):
+    def enrol_start(request: Request):
         with transaction(factory) as s:
             off = require(request, s)
-            return render(request, "enrol.html", off, form={}, errors={}, wording=wording,
-                          gate=sv.consent_gate(ctx(), off.sacco),
-                          sales={w: sv.sales_status(ctx(), w, "LR") for w in cfg.pilot.wards})
+            draft = {"sum_insured_kes_per_acre": str(int(cfg.product.sum_insured.default_kes_per_acre)),
+                     "ward_id": cfg.pilot.default_ward, "language": "en", "payment_route": "sacco_deduction"}
+            return render_step(request, s, off, 1, pending.put(off.id, draft), draft)
 
-    @app.post("/enrol/review", response_class=HTMLResponse)
-    async def enrol_review(request: Request):
+    @app.post("/enrol/step", response_class=HTMLResponse)
+    async def enrol_step(request: Request):
         form = dict(await request.form())
         check_csrf(request, form.get("csrf_token", ""))
         with transaction(factory) as s:
             off = require(request, s)
-            inp = enrol_input(form)
-            pv = sv.preview(ctx(), s, inp, off.sacco)
-            if not pv["ok"]:
-                # National ID and phone are never written back into the page; the officer re-types them.
-                safe = {k: v for k, v in form.items() if k not in ("national_id", "phone", "csrf_token")}
-                return render(request, "enrol.html", off, form=safe, errors=pv["errors"], wording=wording, status=422,
-                              gate=sv.consent_gate(ctx(), off.sacco),
-                              sales={w: sv.sales_status(ctx(), w, "LR") for w in cfg.pilot.wards})
-            token = pending.put(off.id, inp)
-            return render(request, "enrol_review.html", off, inp=inp, pv=pv, token=token, wording=wording,
-                          ward=cfg.ward(inp.ward_id))
+            token = form.get("token", "")
+            draft = pending.get(token, off.id)
+            step = max(1, min(4, int(form.get("step") or 1)))
+            nav = form.get("nav", "next")
+            take(draft, form, step)
+            if nav == "back":
+                return render_step(request, s, off, max(1, step - 1), token, draft)
+            if nav == "reprice":
+                return render_step(request, s, off, 4, token, draft)
+            pv = sv.preview(ctx(), s, enrol_input(draft), off.sacco)
+            return first_problem(request, s, off, token, draft, pv["errors"], upto=step) \
+                or render_step(request, s, off, min(4, step + 1), token, draft)
+
+    @app.post("/enrol/review", response_class=HTMLResponse)
+    async def enrol_review(request: Request):
+        """All answers at once (power users and tests): straight to the price step, or the first problem."""
+        form = dict(await request.form())
+        check_csrf(request, form.get("csrf_token", ""))
+        with transaction(factory) as s:
+            off = require(request, s)
+            draft = {k: v for k, v in form.items() if k != "csrf_token"}
+            draft.setdefault("sum_insured_kes_per_acre", str(int(cfg.product.sum_insured.default_kes_per_acre)))
+            token = pending.put(off.id, draft)
+            pv = sv.preview(ctx(), s, enrol_input(draft), off.sacco)
+            return first_problem(request, s, off, token, draft, pv["errors"], upto=3) \
+                or render_step(request, s, off, 4, token, draft)
 
     @app.post("/enrol/confirm", response_class=HTMLResponse)
     async def enrol_confirm(request: Request, background: BackgroundTasks):
@@ -301,20 +414,18 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         check_csrf(request, form.get("csrf_token", ""))
         with transaction(factory) as s:
             off = require(request, s)
-            inp: sv.EnrolmentInput = pending.get(form.get("token", ""), off.id)
-            inp.payment_route = form.get("payment_route", "sacco_deduction")
-            inp.loan_linked = bool(form.get("loan_linked"))
-            inp.loan_ref = form.get("loan_ref") or None
-            inp.consent_loan_linked_payout = bool(form.get("consent_loan_linked_payout"))
+            token = form.get("token", "")
+            draft = pending.get(token, off.id)
+            take(draft, form, 4)
             try:
-                pol = sv.enrol(ctx(), s, off.sacco, off, inp)
+                pol = sv.enrol(ctx(), s, off.sacco, off, enrol_input(draft))
             except sv.EnrolmentError as e:
-                pv = sv.preview(ctx(), s, dataclasses.replace(inp, loan_linked=False), off.sacco)
-                return render(request, "enrol_review.html", off, inp=inp, pv=pv, token=form.get("token"),
-                              wording=wording, ward=cfg.ward(inp.ward_id), errors=e.errors, status=422)
-            pending.pop(form.get("token", ""), off.id)
+                return first_problem(request, s, off, token, draft, e.errors) \
+                    or render_step(request, s, off, 4, token, draft, e.errors, status=422)
+            pending.pop(token, off.id)
             background.add_task(flush_sms)
-            return render(request, "enrol_done.html", off, pol=pol, farmer=pol.farmer,
+            q = pol.quote_snapshot
+            return render(request, "enrol_done.html", off, pol=pol, farmer=pol.farmer, price=plain_price(q),
                           sms_queued=smsmod.sms_consent(s, pol.farmer))
 
     # ------------------------------------------------------------------ members and payments
@@ -393,10 +504,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             return RedirectResponse(f"/members/{pol.farmer_id}", status_code=303)
 
     # ------------------------------------------------------------------ bulk
+    @app.get("/import", response_class=HTMLResponse)
+    def import_page(request: Request):
+        with transaction(factory) as s:
+            return render(request, "import.html", require(request, s, role="manager"), report=None, result=None)
+
     @app.get("/bulk", response_class=HTMLResponse)
     def bulk(request: Request):
         with transaction(factory) as s:
-            return render(request, "bulk.html", require(request, s), report=None)
+            return render(request, "import.html", require(request, s), report=None, result=None)
 
     @app.get("/bulk/template.csv")
     def bulk_template(request: Request):
@@ -413,7 +529,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             off = require(request, s)
             report = sv.bulk_check(ctx(), s, text, off.sacco)
             token = pending.put(off.id, text) if report["ok"] else None
-            return render(request, "bulk.html", off, report=report, token=token)
+            return render(request, "import.html", off, report=report, token=token, result=None)
 
     @app.post("/bulk/commit", response_class=HTMLResponse)
     async def bulk_commit(request: Request, background: BackgroundTasks, token: str = Form(...),
@@ -426,15 +542,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                 pols = sv.bulk_commit(ctx(), s, off.sacco, off, text)
             except sv.EnrolmentError as e:
                 s.rollback()   # all-or-nothing: no row from this file is kept
-                return render(request, "bulk.html", off, report=None, error=str(e), status=422)
+                return render(request, "import.html", off, report=None, result=None, error=str(e), status=422)
             background.add_task(flush_sms)
-            return render(request, "bulk.html", off, report=None, committed=pols)
+            return render(request, "import.html", off, report=None, result=None, committed=pols)
 
     # ------------------------------------------------------------------ KIAMIS
     @app.get("/kiamis", response_class=HTMLResponse)
     def kiamis(request: Request):
         with transaction(factory) as s:
-            return render(request, "kiamis.html", require(request, s, role="manager"), result=None)
+            return render(request, "import.html", require(request, s, role="manager"), result=None, report=None)
 
     @app.post("/kiamis", response_class=HTMLResponse)
     async def kiamis_import(request: Request, file: UploadFile, csrf_token: str = Form("")):
@@ -445,10 +561,10 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             try:
                 result = CsvKiamis(vault).import_csv(s, text)
             except ValueError as e:
-                return render(request, "kiamis.html", off, result=None, error=str(e), status=422)
+                return render(request, "import.html", off, result=None, report=None, kiamis_error=str(e), status=422)
             audit(s, off.username, "kiamis.imported", "kiamis", None, added=result["added"], updated=result["updated"],
                   errors=len(result["errors"]), source_sha256=result["source_sha256"])
-            return render(request, "kiamis.html", off, result=result)
+            return render(request, "import.html", off, result=result, report=None)
 
     # ------------------------------------------------------------------ SMS outbox
     @app.get("/sms", response_class=HTMLResponse)

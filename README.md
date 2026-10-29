@@ -142,6 +142,18 @@ request body and logs each quote to `var/audit/quotes.jsonl`; quotes carry no pe
 
 ## SACCO portal and data model (milestone 5)
 
+Since milestone 6b the portal serves two audiences:
+- **Officers** (the default) see Home, Enrol a farmer and Members, in plain words.
+  - Home shows who still owes, with a Send reminder button for each, then the ward alert line and the Enrol button.
+  - Enrolment is one step per screen (farmer, farm, agreement, price and payment, done), five screens in all.
+  - Each price is first given as one sentence.
+- **Managers** also get Reports (the portfolio, map and export) and Import (bulk CSV and KIAMIS together).
+- **Details toggles:** pricing build-up, quote IDs and index versions sit behind them.
+- **Developer menu:** the SMS log and M-Pesa simulator appear only with development keys.
+- **Ward names:** display names come from `config/wards.yaml` (placeholders).
+
+Before and after screenshots are in `docs/screenshots/m6b/` (open `index.html`).
+
 A server-rendered portal (FastAPI + Jinja, no JavaScript build, works on slow office
 connections) for SACCO officers:
 

@@ -72,6 +72,7 @@ class LatLon(BaseModel):
 class Ward(BaseModel):
     id: str
     name: str
+    display_name: str | None = None   # what officers and farmers see; placeholder until the real wards
     illustrative: bool
     centroid: LatLon
     extraction_box_deg: float = Field(gt=0, le=1)
@@ -80,6 +81,10 @@ class Ward(BaseModel):
     soil_illustrative: bool = True
     seasons: list[Season]
     notes: str = ""
+
+    @property
+    def label(self) -> str:
+        return self.display_name or self.name
 
 
 # ------------------------------------------------------------- phenology.yaml

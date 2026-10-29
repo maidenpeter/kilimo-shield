@@ -25,13 +25,15 @@ from .models import Officer, Sacco
 from .settings import load_settings
 
 DEMO_PASSWORD = "demo-only-change-me"
-# Fictional members. Ward B's long-rains sales window opens on 1 December, so the demo
-# enrols at Ward A only while it is closed.
+# Fictional smallholders (0.5 to 5 acres, so nobody owes more than a few thousand shillings).
+# Ward B's long-rains sales window opens on 1 December, so the demo enrols at Ward A only.
 DEMO_CSV = """member_no,full_name,phone,national_id,gender,ward_id,acreage,lat,lon,layers,sum_insured_kes_per_acre,payment_route,loan_linked,loan_ref,consent_data_processing,consent_sms,consent_loan_linked_payout,resilience,language
 D-0001,Wanjiku Kamau (fictional),0712 000 001,90000001,female,ward-a,2,,,B,10000,sacco_deduction,no,,yes,yes,no,certified_seed_verified;sacco_good_standing,sw
 D-0002,Kiprono Langat (fictional),0712 000 002,90000002,male,ward-a,3.5,,,B,10000,mpesa,yes,LN-0042,yes,yes,yes,practices_verified,en
 D-0003,Akinyi Otieno (fictional),0712 000 003,90000003,female,ward-a,1.5,,,B,5000,mpesa,no,,yes,no,no,,en
-D-0004,Mwangi Njoroge (fictional),0712 000 004,90000004,male,ward-a,25,,,B,15000,sacco_deduction,yes,LN-0107,yes,yes,yes,irrigation_partial;sacco_good_standing,sw
+D-0004,Mwangi Njoroge (fictional),0712 000 004,90000004,male,ward-a,4.5,,,B,10000,sacco_deduction,yes,LN-0107,yes,yes,yes,irrigation_partial;sacco_good_standing,sw
+D-0005,Chebet Rotich (fictional),0712 000 005,90000005,female,ward-a,0.5,,,B,10000,mpesa,no,,yes,yes,no,,sw
+D-0006,Otieno Ouma (fictional),0712 000 006,90000006,male,ward-a,5,,,B,10000,sacco_deduction,no,,yes,yes,no,certified_seed_verified,en
 """
 
 
@@ -73,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--username", required=True)
     o.add_argument("--name", required=True)
     o.add_argument("--role", choices=["officer", "manager"], default="officer")
-    sub.add_parser("demo", help="create a fictional demo SACCO, a demo manager and four fictional members")
+    sub.add_parser("demo", help="create a fictional demo SACCO, a demo officer and manager, and fictional members")
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8780)
@@ -125,14 +127,15 @@ def _demo(settings, factory) -> int:
     ctx = _context(settings)
     with transaction(factory) as s:
         if s.scalar(select(Sacco).where(Sacco.code == "DEMO")):
-            print("demo already set up: sign in as demo-manager")
+            print("demo already set up: sign in as demo-officer or demo-manager")
             return 0
         sacco = Sacco(code="DEMO", name="Demo SACCO (fictional)", is_demo=True)
         s.add(sacco)
         s.flush()
         officer = Officer(sacco_id=sacco.id, username="demo-manager", display_name="Demo Manager",
                           password_hash=hash_password(DEMO_PASSWORD), role="manager")
-        s.add(officer)
+        s.add_all([officer, Officer(sacco_id=sacco.id, username="demo-officer", display_name="Grace (demo officer)",
+                                    password_hash=hash_password(DEMO_PASSWORD), role="officer")])
         s.flush()
         pols = services.bulk_commit(ctx, s, sacco, officer, DEMO_CSV)
         # Payments, so every state shows: paid in full, part paid by M-Pesa, nothing yet, part by deduction.
@@ -144,7 +147,7 @@ def _demo(settings, factory) -> int:
         services.record_payment(ctx, s, pols[3], 1000, "sacco_deduction", "DEMO-DED-0004", officer.username)
     with transaction(factory) as s:
         sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
-    print(f"demo SACCO with {len(pols)} fictional members; sign in as demo-manager / {DEMO_PASSWORD}")
+    print(f"demo SACCO with {len(pols)} fictional members; sign in as demo-officer or demo-manager / {DEMO_PASSWORD}")
     return 0
 
 

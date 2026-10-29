@@ -1,27 +1,32 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m %}
 {% block title %}Enrolled{% endblock %}
 {% block body %}
-<div class="alert ok" role="status"><b>Enrolled.</b> Policy {{ pol.policy_no }} is saved and awaiting payment.</div>
-<div class="card">
-  <div class="split">
-    <span>Policy</span><span>{{ pol.policy_no }}</span>
-    <span>Member</span><span>{{ farmer.member_no }} {{ farmer.full_name }}</span>
+<div class="wizard">
+{{ m.progress(5, "Done") }}
+<div class="alert ok" role="status"><b>{{ farmer.full_name }} is enrolled</b> for {{ season_label(pol.season, pol.year) }}
+  rainfall cover in {{ ward_label(pol.ward_id) }}.</div>
+<p class="status-line">Farmer pays KES {{ '{:,}'.format(pol.amount_due_kes) }} by {{ pol.sales_closes_on|day }}.</p>
+<p>Cover starts once that is all paid, in one go or in parts, by
+  {{ 'SACCO deduction' if pol.payment_route == 'sacco_deduction' else 'M-Pesa' }}.
+  {% if pol.loan_linked %}Any payout goes to loan {{ pol.loan_ref }} first.{% endif %}
+  {% if sms_queued %}An SMS with these details is on its way to the farmer.{% else %}The farmer did not agree to SMS, so tell them in person.{% endif %}</p>
+<p class="muted">Certificate number {{ pol.policy_no }}. M-Pesa account number {{ pol.pay_ref }}.</p>
+<div class="actions">
+  <a class="btn" href="/members/{{ farmer.id }}">Take a payment</a>
+  <a class="btn ghost" href="/enrol">Enrol another farmer</a>
+</div>
+<details class="more"><summary>Details</summary>
+  <div class="card"><div class="split">
+    <span>Member</span><span>{{ farmer.member_no }}</span>
     <span>National ID</span><span>{{ farmer.national_id_masked }}</span>
     <span>Phone</span><span>{{ farmer.phone_masked }}</span>
-    <span>Ward and season</span><span>{{ cfg.ward(pol.ward_id).name }}, {{ pol.season }} {{ pol.year }}</span>
-    <span>Layers</span><span>{{ pol.layers }}</span>
     <span>Gross premium</span><span>{{ pol.gross_kes|kes }}</span>
     <span>Government share</span><span>{{ pol.government_share_kes|kes }} ({{ pol.subsidy_status }})</span>
-    <span>Resilience discount</span><span>{{ pol.discount_kes|kes }}</span>
-    <span>Discount funded by</span><span>{{ pol.discount_funder|label }}</span>
-    <span class="tot">Farmer pays</span><span class="tot">KES {{ '{:,}'.format(pol.amount_due_kes) }} by {{ pol.sales_closes_on|day }}
-      ({{ pol.payment_route|label }}; instalments allowed)</span>
-    <span>M-Pesa account reference</span><span>{{ pol.pay_ref }}</span>
-    {% if pol.loan_linked %}<span>Payout</span><span>to loan {{ pol.loan_ref }} first</span>{% endif %}
-  </div>
+    <span>Resilience discount</span><span>{{ pol.discount_kes|kes }}, funded by {{ pol.discount_funder|label }}</span>
+    <span>Layers</span><span>{{ pol.layers }}</span>
+    <span>Quote</span><span>{{ pol.quote_id }}</span>
+  </div></div>
+</details>
 </div>
-<p class="muted">Cover starts once the farmer's share is fully paid by {{ pol.sales_closes_on|day }}. Send an M-Pesa
-  request or record a SACCO deduction from the member page.
-  {% if sms_queued %}An enrolment SMS has been queued.{% else %}No SMS: the farmer did not agree to SMS.{% endif %}</p>
-<p><a class="btn" href="/enrol">Enrol another member</a> <a class="btn ghost" href="/members/{{ farmer.id }}">View member</a></p>
 {% endblock %}
