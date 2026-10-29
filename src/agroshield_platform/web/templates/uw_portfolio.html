@@ -44,6 +44,8 @@
       <text x="{{ e.label_w + r.w + 8 }}" y="{{ r.y + e.bar_h * 0.65 }}">{{ r.value|kes }}</text>
       {% endfor %}
     </svg>
+    <table class="visually-hidden"><caption>Exposure by ward</caption><thead><tr><th>Ward</th><th>In force</th><th>Pending payment</th></tr></thead>
+      <tbody>{% for r in e.rows %}<tr><td>{{ r.label }}</td><td>{{ r.active|kes }}</td><td>{{ r.pending|kes }}</td></tr>{% endfor %}</tbody></table>
     <figcaption class="legend"><span><i class="s1-bg"></i>In force</span><span><i class="s3-bg"></i>Pending payment</span></figcaption>
   </figure>
   <figure class="card chart-card m-0">
@@ -57,6 +59,8 @@
       <text x="{{ c.x + c.w / 2 }}" y="{{ pr.height - 4 }}" text-anchor="middle">{{ c.label }}</text>
       {% endfor %}
     </svg>
+    <table class="visually-hidden"><caption>Premium written by month</caption><thead><tr><th>Month</th><th>Gross premium</th></tr></thead>
+      <tbody>{% for c in pr.cols %}<tr><td>{{ c.label }}</td><td>{{ c.value|kes }}</td></tr>{% endfor %}</tbody></table>
     <figcaption class="muted">Months the policies were written; total {{ pf.gross_kes|kes }}.</figcaption>
   </figure>
 </div>
@@ -73,6 +77,8 @@
     <text x="{{ po.label_w + r.w + 8 }}" y="{{ r.y + po.bar_h * 0.65 }}">{{ r.value|kes }}</text>
     {% endfor %}
   </svg>
+    <table class="visually-hidden"><caption>Payout events</caption><thead><tr><th>Ward and date</th><th>Amount</th></tr></thead>
+    <tbody>{% for r in po.rows %}<tr><td>{{ r.label }}</td><td>{{ r.value|kes }}</td></tr>{% endfor %}</tbody></table>
   <figcaption class="muted">{% for ev in ch.events %}{{ ev.ward }} {{ ev.confirmed_on|day }}: {{ payout_kind(ev.kind) }}, {{ ev.count }} polic{{ 'y' if ev.count == 1 else 'ies' }}{% if ev.open %}, {{ ev.open }} still open{% endif %}{{ '; ' if not loop.last }}{% endfor %}.
     <a href="/uw/triggers">Triggers and payouts</a></figcaption>
   {% else %}

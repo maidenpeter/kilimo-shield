@@ -78,6 +78,8 @@ td.num, th.num { text-align: right; }
 tr.total td { font-weight: 650; }
 tr.hi td { background: var(--row-hi); }
 .table-wrap { overflow-x: auto; }
+summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .03em; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .chip.REAL { background: var(--chip-real); color: var(--chip-real-ink); }
 .chip.SYNTHETIC { background: var(--chip-syn); color: var(--chip-syn-ink); }
@@ -132,7 +134,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h2 style="border-top:0;margin-top:8px">Inputs and where they came from</h2>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Input</th><th>Status</th><th>Source</th><th>Note</th></tr>
       {% for p in r.provenance %}
@@ -176,7 +178,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h3>Event test</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Event</th><th>Start of season</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">Required</th><th>Result</th><th class="num">v0 payout</th></tr>
       {% for e in s.event_tests %}
@@ -191,7 +193,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <h3>Early-season triggers</h3>
   <p>Every season where the failed-onset or germination dry-spell trigger fired, with the rainfall that caused it.</p>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Season</th><th>Trigger</th><th class="num">Payout per acre</th><th>Rainfall that caused it</th></tr>
       {% for e in s.early_season_triggers %}
@@ -206,7 +208,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h3>Index terms</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Start of season</th><td>first dekad with &ge; {{ t.planting_rain_mm | num }} mm (planting rain), searched {{ s.calendar.planting_rain_from }} to {{ s.calendar.planting_window.end }}; the end of the window if none</td></tr>
       <tr><th>Failed onset</th><td>window rain below {{ t.failed_onset.window_rain_below_mm | num }} mm pays {{ t.failed_onset_payout | pct(0) }} of sum insured, no WRSI season (catastrophe-only cover)</td></tr>
@@ -231,7 +233,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h3>The 10 worst seasons</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">Rank</th><th>Season</th><th>Start of season</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
       {% for w in s.worst_seasons %}
@@ -256,7 +258,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <div class="card"><h4 style="margin:0 0 4px">v0 per-phase, {{ s.v0.payout_frequency | pct(0) }} of seasons</h4>{{ c.payouts_v0 | safe }}</div>
 
   <h3>v1 and v0 side by side</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Measure</th><th class="num">v1 WRSI ({{ t.version }})</th><th class="num">v0 per-phase ({{ s.v0.version }})</th></tr>
       <tr><td>Seasons with a payout</td><td class="num">{{ s.v1_metrics.payout_frequency | pct(0) }}</td><td class="num">{{ s.v0.payout_frequency | pct(0) }}</td></tr>
@@ -286,7 +288,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     {% if fl.enabled_in_product %}<b>included in this product</b>{% else %}<b>off</b>: shown beside the WRSI-only product for comparison and not in the price above{% endif %}.
     Metric: {{ fl.terms.metric | replace("_", " ") }} (trigger {{ fl.terms.trigger | num }}, exit {{ fl.terms.exit | num }}{% if fl.terms.metric == "longest_dry_spell" %} days, a day below {{ fl.terms.dry_day_mm | num(1) }} mm is dry{% else %}% short of crop water need{% endif %}),
     up to {{ fl.terms.max_payout | pct(0) }} of sum insured. CHIRPS daily values are disaggregated from five-day totals, so dry-spell lengths are approximate.</p>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Measure</th><th class="num">WRSI only</th><th class="num">WRSI + flowering ({{ fl.terms.metric | replace("_", " ") }})</th>
         <th class="num">WRSI + flowering ({{ fl.alternative.metric | replace("_", " ") }}, trigger {{ fl.alternative.trigger | num }}, exit {{ fl.alternative.exit | num }})</th></tr>
@@ -307,10 +309,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <p>Exit ({{ t.exit_wrsi | num }}) and failed-onset payout unchanged. Highlighted rows hit the main target of one WRSI or
     failed-onset payout every {{ s.target.main.return_period_years[0] | num }}&ndash;{{ s.target.main.return_period_years[1] | num }} seasons
     (placeholder, underwriter to confirm). Replanting vouchers do not depend on the WRSI trigger.</p>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">Trigger (WRSI)</th><th class="num">Main payouts</th><th class="num">About 1 in</th><th class="num">Any payout</th><th class="num">Expected loss</th>
-        <th class="num">1-in-10 loss</th><th class="num">Gross rate</th><th></th></tr>
+        <th class="num">1-in-10 loss</th><th class="num">Gross rate</th><th><span class="visually-hidden">Notes</span></th></tr>
       {% for row in s.trigger_sensitivity %}
       <tr class="{{ 'hi' if row.in_target_band else '' }}"><td class="num">{{ row.trigger_wrsi | num }}</td><td class="num">{{ row.main_frequency | pct(0) }}</td>
         <td class="num">{{ row.return_period_years | num(1) }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td><td class="num">{{ row.expected_loss | pct(1) }}</td>
@@ -322,10 +324,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h3>Placeholder soil: sensitivity to water holding capacity</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">Soil capacity</th><th class="num">Median WRSI</th><th class="num">Seasons paying</th><th class="num">Expected loss</th><th class="num">Gross rate</th>
-        {% for e in s.event_tests %}<th class="num">{{ e.year }} payout</th>{% endfor %}<th></th></tr>
+        {% for e in s.event_tests %}<th class="num">{{ e.year }} payout</th>{% endfor %}<th><span class="visually-hidden">Notes</span></th></tr>
       {% for row in s.whc_sensitivity %}
       <tr><td class="num">{{ row.whc_mm | num }} mm</td><td class="num">{{ row.median_wrsi | num }}</td><td class="num">{{ row.payout_frequency | pct(0) }}</td>
         <td class="num">{{ row.expected_loss | pct(1) }}</td><td class="num">{{ row.gross_rate | pct(1) }}</td>
@@ -337,9 +339,9 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <h3>Components, each priced on its own</h3>
   <p>At the {{ pr.default_sum_insured_kes_per_acre | kes }} sum insured, before the season cap. The product price below combines the components marked "in product".</p>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
-      <tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Expected payout per acre</th><th class="num">Gross premium alone</th><th></th></tr>
+      <tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Expected payout per acre</th><th class="num">Gross premium alone</th><th><span class="visually-hidden">Notes</span></th></tr>
       {% for c_ in s.components %}
       <tr><td>{{ c_.component }}</td><td class="num">{{ c_.seasons_paying }} ({{ c_.payout_frequency | pct(0) }})</td>
         <td class="num">{{ c_.expected_loss_kes | kes }}</td><td class="num">{{ c_.gross_kes_alone | kes }}</td>
@@ -352,7 +354,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   <p>Gross premium = (expected loss + risk margin) / (1 &minus; loadings), with loadings set as shares of gross.
     Risk margin: {{ pr.risk_margin_method.method }} &times; {{ pr.risk_margin_method.factor }}. Subsidy and the Resilience
     discount come in milestone 4 and reduce only the farmer's share.</p>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Component</th><th class="num">Rate of sum insured</th>
         {% for o in pr.per_acre %}<th class="num">At {{ o.sum_insured_kes_per_acre | kes }}/acre</th>{% endfor %}</tr>
@@ -428,7 +430,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <div class="tile"><div class="k">Layer A + Layer B gross</div><div class="v">{{ s.combined_gross_per_acre.total_gross_kes | kes }}</div>
       <div class="n">per acre at {{ s.combined_gross_per_acre.sum_insured_kes_per_acre | kes }} sum insured</div></div>
   </div>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Scored against</th><th class="num">Seasons with the event</th><th class="num">Hit rate</th><th class="num">False alarm rate</th><th class="num">False alarm ratio</th></tr>
       {% for key, label in [("below_normal_rain", "Below-normal Mar-May rain (the forecast's target)"), ("layer_b_payout", "Layer B paid (the loss the voucher should get ahead of)")] %}
@@ -456,10 +458,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     <div class="legend"><span><i style="background:var(--series-1)"></i>Hit rate: Layer B payout seasons</span><span><i style="background:var(--series-2)"></i>Hit rate: below-normal rain</span><span><i style="background:var(--series-3)"></i>Seasons with a voucher</span></div>
     {{ c.layer_a_skill | safe }}
   </div>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">Skill</th><th class="num">Seasons with a voucher</th><th class="num">Hit rate (Layer B)</th><th class="num">False alarm ratio (Layer B)</th>
-        <th class="num">Hit rate (below normal)</th><th class="num">Expected cost</th><th class="num">Gross per acre</th><th></th></tr>
+        <th class="num">Hit rate (below normal)</th><th class="num">Expected cost</th><th class="num">Gross per acre</th><th><span class="visually-hidden">Notes</span></th></tr>
       {% for r_ in la.skill_sweep %}
       <tr class="{{ 'hi' if r_.is_current else '' }}"><td class="num">{{ r_.skill | num(1) }}</td><td class="num">{{ r_.trigger_frequency | pct(0) }}</td>
         <td class="num">{{ r_.hit_rate_layer_b.median | pct(0) }}</td><td class="num">{{ r_.false_alarm_ratio_layer_b.median | pct(0) }}</td>
@@ -470,10 +472,10 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
   </div>
 
   <h3>How the voucher moves with the probability threshold</h3>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">P(below normal) threshold</th><th class="num">Seasons with a voucher</th><th class="num">Hit rate (Layer B)</th><th class="num">False alarm ratio (Layer B)</th>
-        <th class="num">Expected cost</th><th class="num">Gross per acre</th><th></th></tr>
+        <th class="num">Expected cost</th><th class="num">Gross per acre</th><th><span class="visually-hidden">Notes</span></th></tr>
       {% for r_ in la.threshold_sweep %}
       <tr class="{{ 'hi' if r_.is_current else '' }}"><td class="num">{{ r_.threshold | pct(0) }}</td><td class="num">{{ r_.trigger_frequency | pct(0) }}</td>
         <td class="num">{{ r_.hit_rate_layer_b.median | pct(0) }}</td><td class="num">{{ r_.false_alarm_ratio_layer_b.median | pct(0) }}</td>
@@ -487,7 +489,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <details>
     <summary>Season-by-season table ({{ b.seasons }} seasons)</summary>
-    <div class="card table-wrap">
+    <div class="card table-wrap" tabindex="0">
       <table>
         <tr><th>Year</th><th>Start of season</th><th class="num">Window rain</th><th class="num">Season rain</th><th class="num">Water need</th><th class="num">WRSI</th>
           <th class="num">Replanting voucher</th><th class="num">v1 payout</th><th class="num">v0 payout</th></tr>
@@ -521,7 +523,7 @@ Gross premium   (expected loss + risk margin) / (1 - sum of loadings), per sum-i
     ward's elevation, because FEWS NET Penman-Monteith PET was unreachable.</p>
 
   <h2>Reproduce this run</h2>
-  <div class="card table-wrap">
+  <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th>Command</th><td class="mono">{{ m.command }}</td></tr>
       <tr><th>Run id</th><td class="mono">{{ m.run_id }}</td></tr>

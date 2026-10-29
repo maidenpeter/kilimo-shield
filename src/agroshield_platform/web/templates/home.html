@@ -9,7 +9,7 @@
 <div class="empty first-run">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21V11"/><path d="M12 11C12 7 9 4 4 4c0 4 3 7 8 7zM12 13c0-3 2.5-6 7-6 0 3.5-2.5 6-7 6z"/></svg>
   <h2>Enrol your first farmer</h2>
-  <p>It takes five short screens: the member, the farm, the cover, consent and payment.</p>
+  <p>It takes a few short screens: the member, the farm, consent, then the cover and payment.</p>
   <div class="actions"><a class="btn big" href="/enrol">Enrol a farmer</a><a class="btn ghost small" href="/quote">Quick price</a>
     {% if officer.role == 'manager' %}<a class="btn ghost small" href="/import">Import a member list</a>{% endif %}</div>
 </div>
@@ -46,7 +46,7 @@
 
 {% for w in weather %}
 <div class="card weather"><b>Weather:</b> {{ w.summary_en }}
-  <details class="more"><summary>Kiswahili</summary>{{ w.summary_sw }}</details>
+  <details class="more"><summary>Kiswahili</summary><p lang="sw">{{ w.summary_sw }}</p></details>
   <div class="muted">{{ w.source_label }}{% if w.valid_from and w.valid_to %}, {{ w.valid_from|short_day }} to {{ w.valid_to|short_day }}{% endif %}
     {% if w.url %}&middot; <a href="{{ w.url }}" rel="noopener" target="_blank">original</a>{% endif %}</div></div>
 {% endfor %}

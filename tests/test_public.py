@@ -96,7 +96,10 @@ def test_every_photo_is_licensed_self_hosted_and_credited(c):
         for s in im["sizes"]:
             for ext in ("webp", "jpg"):
                 assert (STATIC / "img" / f"{im['key']}-{s['w']}.{ext}").exists()
-        assert im["file_page"] in page
+        used = any(f"'{im['key']}'" in (STATIC.parent / "templates" / "public" / f).read_text(encoding="utf-8")
+                   for f in ("home.html", "crops.html", "livestock.html", "how-it-works.html", "insurers.html", "saccos.html",
+                             "learn.html", "demo.html"))
+        assert (im["file_page"] in page) == used, im["key"]                    # every photo on a page is credited there
     doc = (STATIC.parents[3] / "docs" / "design" / "IMAGE_CREDITS.md").read_text(encoding="utf-8")
     assert all(im["file_page"] in doc for im in credits)
 

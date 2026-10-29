@@ -166,6 +166,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         return v is None or isinstance(v, jinja2.Undefined)
     templates.env.filters["kes"] = lambda v: "n/a" if missing(v) else f"KES {v:,.0f}"
     templates.env.filters["pct"] = lambda v, d=0: "n/a" if missing(v) else f"{v * 100:.{d}f}%"
+    # The farmer is asked for whole shillings, rounded up (services.enrol amount_due_kes), so show that figure.
+    templates.env.filters["kes_due"] = lambda v: "n/a" if missing(v) else f"KES {math.ceil(v - 1e-9):,}"
     templates.env.filters["num"] = lambda v, d=0: "n/a" if missing(v) else f"{v:,.{d}f}"
     templates.env.filters["day"] = lambda d: "" if d is None else d.strftime("%d %b %Y")
     templates.env.filters["mask_id"] = lambda v: _masked(v, normalise_national_id, mask_national_id)
@@ -187,6 +189,13 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     for f in (HERE / "static" / "img" / "credits.json", HERE / "static" / "img" / "shots" / "shots.json"):
         if f.exists():
             images.update({c["key"]: c for c in json.loads(f.read_text(encoding="utf-8"))})
+    # Where each photo is used, read from the templates so the Credits page can never drift from the pages.
+    page_names = {"home": "Home", "crops": "Crops", "livestock": "Livestock", "how-it-works": "How it works",
+                  "insurers": "For insurers", "saccos": "For SACCOs", "learn": "Learn", "demo": "Request a demo"}
+    for c in images.values():
+        if c.get("kind") != "screenshot":
+            c["used_on"] = ", ".join(label for name, label in page_names.items()
+                                     if f"'{c['key']}'" in (HERE / "templates" / "public" / f"{name}.html").read_text(encoding="utf-8"))
     templates.env.globals["images"] = images
     # Learn articles mark sources as [n]; turn each into a link to the numbered source list (input already escaped).
     cite_re = re.compile(r"\[(\d+)\]")
@@ -380,14 +389,14 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             off = require(request, s)
             pol = own_policy(s, off, policy_id)
             res = sv.send_reminder(ctx(), s, pol, off.username)
-            name = pol.farmer.full_name
+            ref = pol.policy_no                    # flash text goes in the session cookie: no names
         if res == "queued":
             background.add_task(flush_sms)
-            flash(request, "ok", f"Reminder sent to {name}.")
+            flash(request, "ok", f"Reminder sent for policy {ref}.")
         elif res == "already_sent":
-            flash(request, "warn", f"A reminder was already sent to {name} today.")
+            flash(request, "warn", f"A reminder was already sent for policy {ref} today.")
         else:
-            flash(request, "warn", f"{name} did not agree to SMS. Please call them instead.")
+            flash(request, "warn", f"The member on policy {ref} did not agree to SMS. Please call them instead.")
         return RedirectResponse(request.headers.get("referer") or "/dashboard", status_code=303)
 
     def ward_levels(s, sacco_id: int) -> dict:
@@ -422,7 +431,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         import csv
         import io
         buf = io.StringIO()
-        w = csv.writer(buf, lineterminator="\n")
+        from ..csvsafe import writer
+        w = writer(buf, lineterminator="\n")
         w.writerow(["record", "sacco", "remitted_on", "method", "reference", "period", "amount_kes", "status", "recorded_by",
                     "reviewed_by", "reviewed_at", "review_note"])
         for e in st["ledger"]:
@@ -701,10 +711,17 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         return PlainTextResponse(sv.bulk_template(), media_type="text/csv",
                                  headers={"Content-Disposition": "attachment; filename=agroshield-bulk-template.csv"})
 
+    async def read_upload(file: UploadFile, limit_mb: int) -> bytes:
+        """Read at most limit_mb; anything larger is refused before it fills memory."""
+        data = await file.read(limit_mb * 1_000_000 + 1)
+        if len(data) > limit_mb * 1_000_000:
+            raise HTTPException(413, f"That file is too large. The limit is {limit_mb} MB.")
+        return data
+
     @app.post("/bulk/check", response_class=HTMLResponse)
     async def bulk_check(request: Request, file: UploadFile, csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
-        text = (await file.read()).decode("utf-8-sig", errors="replace")
+        text = (await read_upload(file, 5)).decode("utf-8-sig", errors="replace")
         with transaction(factory) as s:
             off = require(request, s)
             report = sv.bulk_check(ctx(), s, text, off.sacco)
@@ -735,7 +752,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     @app.post("/kiamis", response_class=HTMLResponse)
     async def kiamis_import(request: Request, file: UploadFile, csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
-        text = (await file.read()).decode("utf-8-sig", errors="replace")
+        text = (await read_upload(file, 5)).decode("utf-8-sig", errors="replace")
         with transaction(factory) as s:
             off = require(request, s, role="manager")
             try:
@@ -848,7 +865,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             try:
                 mon.pay(ctx(), s, p, off.username, reference)
                 msg = (f"Voucher {p.voucher_code} marked used." if p.method == "voucher"
-                       else f"Payout of KES {p.amount_kes:,.0f} to {p.policy.farmer.full_name} recorded as paid.")
+                       else f"Payout of KES {p.amount_kes:,.0f} on policy {p.policy.policy_no} recorded as paid.")
                 flash(request, "ok", msg)
                 background.add_task(flush_sms)
             except (mon.PayoutError, mp.MpesaError) as e:
@@ -912,7 +929,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     async def weather_upload(request: Request, file: UploadFile, title: str = Form(""), valid_from: str = Form(""),
                              valid_to: str = Form(""), csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
-        data = await file.read()
+        data = await read_upload(file, 20)
         with transaction(factory) as s:
             off = require(request, s, role="manager")
             from datetime import date as _d

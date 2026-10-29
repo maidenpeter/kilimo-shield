@@ -12,6 +12,7 @@
     agroshield-portal weather-fetch # polite KMD check (at most once per page every 6 hours)
     agroshield-portal send-sms      # send queued SMS now
     agroshield-portal enquiries     # demo requests and livestock interest from the public site (masked)
+    agroshield-portal enquiries --delete AB12CD34   # delete one on request (audited)
 
 Passwords are read from AGROSHIELD_OFFICER_PASSWORD or prompted for; never passed as arguments.
 """
@@ -104,7 +105,8 @@ def main(argv: list[str] | None = None) -> int:
     mo.add_argument("--download", action="store_true", help="fetch the latest CHIRPS (live mode)")
     sub.add_parser("weather-fetch", help="check enabled weather sources politely")
     sub.add_parser("send-sms", help="send queued SMS")
-    sub.add_parser("enquiries", help="list public-site demo requests and livestock interest (contact details masked)")
+    en = sub.add_parser("enquiries", help="list public-site demo requests and livestock interest (contact details masked)")
+    en.add_argument("--delete", metavar="REF", help="delete one enquiry, for example when the person asks")
     args = ap.parse_args(argv)
 
     settings = load_settings()
@@ -151,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
         from .web.app import create_app
         if settings.dev_keys:
             logging.getLogger("agroshield").warning("running with development keys; do not use with real farmer data")
-        uvicorn.run(create_app(settings), host=args.host, port=args.port)
+        uvicorn.run(create_app(settings), host=args.host, port=args.port, log_config=_uvicorn_log_config())
     elif args.cmd == "monitor":
         from . import monitoring
         ctx = _context(settings)
@@ -165,7 +167,11 @@ def main(argv: list[str] | None = None) -> int:
             from . import sms
             sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
     elif args.cmd == "enquiries":
-        from .enquiries import listing
+        from .enquiries import delete, listing
+        if args.delete:
+            with transaction(factory) as s:
+                print("deleted" if delete(s, args.delete, "cli") else f"no enquiry {args.delete}")
+            return 0
         with transaction(factory) as s:
             rows = listing(s)
             for e in rows:
@@ -193,6 +199,20 @@ def main(argv: list[str] | None = None) -> int:
         with transaction(factory) as s:
             print("sms:", sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault) or "nothing queued")
     return 0
+
+
+def _uvicorn_log_config() -> dict:
+    """uvicorn's own logging, plus filters: the callback token in /ussd/<token> and /mpesa/callback/<token> is
+    redacted from access lines, and IDs and phone numbers are masked in every uvicorn line."""
+    import copy
+
+    from uvicorn.config import LOGGING_CONFIG
+    cfg = copy.deepcopy(LOGGING_CONFIG)
+    cfg["filters"] = {"scrub": {"()": "agroshield_platform.crypto.ScrubFilter"},
+                      "token": {"()": "agroshield_platform.crypto.CallbackTokenFilter"}}
+    for h in cfg["handlers"].values():
+        h["filters"] = ["token", "scrub"]
+    return cfg
 
 
 def _demo(settings, factory) -> int:

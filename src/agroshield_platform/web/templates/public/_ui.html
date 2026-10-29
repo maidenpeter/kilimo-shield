@@ -72,22 +72,22 @@
 <div id="form" class="card form-card">
   {% if sent %}
   <div class="alert ok" role="status"><b>Thank you. Your details are saved.</b> Reference {{ sent }}.
-    We will reply by email. Nothing has been shared with anyone else.</div>
+    We aim to reply by email. Nothing has been shared with anyone else.</div>
   {% endif %}
   {% if form_error %}<div class="alert crit" role="alert">{{ form_error }}</div>{% endif %}
   <form method="post" action="{{ action }}#form" class="stack" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <div class="hp" aria-hidden="true"><label for="{{ kind }}-website">Leave this empty</label>
-      <input id="{{ kind }}-website" name="website" tabindex="-1" autocomplete="off"></div>
+      <input id="{{ kind }}-website" type="text" name="website" tabindex="-1" autocomplete="off"></div>
     <div class="field-row">
       <div class="field"><label for="{{ kind }}-name">Your name</label>
-        <input id="{{ kind }}-name" name="name" autocomplete="name" required maxlength="120" value="{{ form.name if form }}"></div>
+        <input id="{{ kind }}-name" type="text" name="name" autocomplete="name" required maxlength="120" value="{{ form.name if form }}"></div>
       <div class="field"><label for="{{ kind }}-email">Email</label>
         <input id="{{ kind }}-email" name="email" type="email" autocomplete="email" required maxlength="254" value="{{ form.email if form }}"></div>
     </div>
     <div class="field-row">
       <div class="field"><label for="{{ kind }}-org">Organisation <span class="muted">(optional)</span></label>
-        <input id="{{ kind }}-org" name="organisation" autocomplete="organization" maxlength="120" value="{{ form.organisation if form }}"></div>
+        <input id="{{ kind }}-org" type="text" name="organisation" autocomplete="organization" maxlength="120" value="{{ form.organisation if form }}"></div>
       <div class="field"><label for="{{ kind }}-type">You are</label>
         <select id="{{ kind }}-type" name="org_type" required>
           <option value="">Choose one</option>
@@ -99,13 +99,13 @@
         <input id="{{ kind }}-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" value="{{ form.phone if form }}"></div>
       {% if show_county %}
       <div class="field"><label for="{{ kind }}-county">County <span class="muted">(optional)</span></label>
-        <input id="{{ kind }}-county" name="county" maxlength="40" value="{{ form.county if form }}"></div>
+        <input id="{{ kind }}-county" type="text" name="county" maxlength="40" value="{{ form.county if form }}"></div>
       {% endif %}
     </div>
     {% if show_message %}
     <div class="field"><label for="{{ kind }}-message">What would you like to see? <span class="muted">(optional)</span></label>
       <textarea id="{{ kind }}-message" name="message" rows="4" maxlength="1000">{{ form.message if form }}</textarea>
-      <p class="hint">Please do not include ID numbers. Phone numbers in this box are masked when stored.</p></div>
+      <p class="hint">Please do not include ID numbers or phone numbers in this box.</p></div>
     {% endif %}
     <label class="check"><input type="checkbox" name="consent" value="yes" required {% if form and form.consent == 'yes' %}checked{% endif %}>
       <span>{{ consent }}</span></label>

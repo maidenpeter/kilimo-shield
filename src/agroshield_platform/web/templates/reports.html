@@ -84,7 +84,7 @@
   <thead><tr><th>Policy</th><th>Member</th><th>Ward</th><th>Layers</th><th class="num">Farmer pays</th><th>Status</th></tr></thead>
   <tbody>{% for p in recent %}
     <tr><td>{{ p.policy_no }}</td><td><a href="/members/{{ p.farmer_id }}">{{ p.farmer.member_no }}</a> {{ p.farmer.full_name }}</td>
-      <td>{{ p.ward_id }}</td><td>{{ p.layers }}</td><td class="num">{{ p.farmer_pays_kes|kes }}</td>
+      <td>{{ p.ward_id }}</td><td>{{ p.layers }}</td><td class="num">{{ p.farmer_pays_kes|kes_due }}</td>
       <td><span class="chip {{ 'warn' if p.status != 'active' }}">{{ p.status|label }}</span></td></tr>
   {% endfor %}</tbody>
 </table></div>

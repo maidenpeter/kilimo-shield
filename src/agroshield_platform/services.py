@@ -496,7 +496,8 @@ def portfolio(ctx: Context, s: Session, sacco: Sacco) -> dict:
         "farmer_premium_due_kes": sum(p.balance_kes for p in pols if p.status == "pending_payment"),
         "premium_collected_kes": sum(p.paid_kes for p in pols),
         "refunds_due_kes": sum(p.refund_due_kes for p in pols),
-        "subsidy_receivable_kes": sum(p.government_share_kes for p in pols if p.subsidy_status == "not yet received"),
+        "subsidy_receivable_kes": sum(p.government_share_kes for p in pols
+                                      if p.subsidy_status == "not yet received" and p.status != "lapsed_unpaid"),
         "discount_by_funder": {f: sum(p.discount_kes for p in pols if p.discount_funder == f)
                                for f in sorted({p.discount_funder for p in pols})},
         "with_layer_a": sum(1 for p in pols if "A" in p.layers.split(",")),
@@ -509,8 +510,9 @@ def portfolio(ctx: Context, s: Session, sacco: Sacco) -> dict:
 
 
 def export_policies_csv(s: Session, sacco: Sacco) -> str:
+    from .csvsafe import writer
     out = io.StringIO()
-    w = csv.writer(out, lineterminator="\n")
+    w = writer(out, lineterminator="\n")
     w.writerow(["policy_no", "insurer_policy_number", "member_no", "full_name", "national_id", "phone", "ward_id",
                 "season", "year", "layers", "acres", "sum_insured_per_acre", "gross_kes", "government_share_kes",
                 "subsidy_status", "resilience_points", "discount_kes", "discount_funder", "farmer_pays_kes",

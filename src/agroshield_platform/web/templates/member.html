@@ -93,11 +93,12 @@
   <p class="muted">Record it here. It is reviewed and helps improve the cover; it does not change a payout.</p>
   <form class="stack" method="post" action="/members/{{ f.id }}/missed">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <fieldset class="choice-group"><legend>What happened?</legend>
     <div class="choice">
       <label><input type="radio" name="category" value="failed_no_payout" checked> Crop failed, no payout</label>
       <label><input type="radio" name="category" value="payout_too_small"> Payout too small</label>
       <label><input type="radio" name="category" value="other"> Other</label>
-    </div>
+    </div></fieldset>
     <label for="mnote">What the farmer said <span class="muted">(optional; no ID or phone numbers)</span></label>
     <input id="mnote" name="note" type="text" maxlength="500">
     <p><button class="btn small" type="submit">Record report</button></p>

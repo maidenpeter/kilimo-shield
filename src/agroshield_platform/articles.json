@@ -240,7 +240,8 @@
      "Water balance: from that start, the index runs a ten-day (dekad) water balance using maize crop water needs [1].",
      "Payout line (illustrative terms): there is no payout at WRSI 80 or above [1]. Below 80, the payout rises in a straight line, reaching the full sum insured at WRSI 50 or below [1]. As a worked example on these illustrative terms, a WRSI of 65 is halfway between 80 and 50, so it would pay half the sum insured [1].",
      "Failed onset (illustrative terms): if less than 80 mm falls over the whole planting window, the season is treated as never started and 25% of the sum insured is paid [1].",
-     "Replanting seed voucher (illustrative terms): if less than 20 mm falls in the 20 days after the planting rain, a replanting seed voucher worth KES 2,500 per acre is issued [1]. This happens at most once a season, and the season is then measured again from the next planting rain [1]."
+     "Replanting seed voucher (illustrative terms): if less than 20 mm falls in the 20 days after the planting rain, a replanting seed voucher worth KES 2,500 per acre is issued [1]. This happens at most once a season, and the season is then measured again from the next planting rain [1].",
+     "Season cap: all payouts in one season together never exceed the sum insured, and a seed voucher counts toward it [1]."
     ]
    },
    {
@@ -487,7 +488,7 @@
     "heading": "How a pasture-condition index works",
     "paragraphs": [
      "The Kenya Livestock Insurance Program (KLIP) uses the satellite Normalized Difference Vegetation Index (NDVI) to build an index of seasonal forage availability for each insured area [3]. When the index falls below a set threshold, a payout starts, and it grows as forage scarcity gets worse [3]. The index is worked out for a whole area, not for each herd [3].",
-     "Because the index looks at the whole area, it can miss what happens to one family's herd. In Marsabit, the Index-Based Livestock Insurance (IBLI) scheme covered only 62 to 77% of the herd mortality risk that households faced, mostly because losses vary from one household to the next [2]. In plain terms, a family can lose animals in a season when the index says the area as a whole was fine. This gap is known as basis risk [2]."
+     "Because the index looks at the whole area, it can miss what happens to one family's herd. An evaluation of IBLI in Marsabit found that most of this gap comes from losses that vary from one household to the next [2]. In plain terms, a family can lose animals in a season when the index says the area as a whole was fine. This gap is known as basis risk [2]."
     ]
    },
    {
@@ -517,7 +518,7 @@
     "heading": "Where AgroShield stands",
     "paragraphs": [
      "AgroShield's livestock cover, based on pasture condition, is in development and not available [4]. This article explains how such cover has worked in Kenya. It does not describe an AgroShield product you can buy.",
-     "AgroShield's live product is maize rainfall cover, priced per ward on a seasonal Water Requirement Satisfaction Index (WRSI) [4]. Its pricing is illustrative [4]. The pilot wards used so far are placeholders. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [4]."
+     "AgroShield's crop product, being prepared for a pilot, is maize rainfall cover, priced per ward on a seasonal Water Requirement Satisfaction Index (WRSI) [4]. Its pricing is illustrative [4]. The pilot wards used so far are placeholders. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [4]."
     ]
    }
   ],
@@ -694,10 +695,10 @@
     "source": 2
    },
    {
-    "term": "Indemnity",
-    "term_sw": "Fidia",
-    "definition": "An indemnity is a claim payment made under a policy, and in index insurance it is based on index values rather than on an assessment of each policyholder's own loss [2].",
-    "definition_sw": "Fidia ni malipo ya madai yanayotolewa chini ya sera, na katika bima ya fahirisi hutegemea thamani za fahirisi badala ya tathmini ya hasara ya kila mwenye bima [2].",
+    "term": "Indemnity cover",
+    "term_sw": "Bima ya fidia",
+    "definition": "On this site, indemnity cover means traditional crop insurance, where the claim payment follows an assessment of each policyholder's own loss; index insurance pays on index values instead [2].",
+    "definition_sw": "Kwenye tovuti hii, bima ya fidia ni bima ya kawaida ya mazao, ambapo malipo ya madai hufuata tathmini ya hasara ya kila mwenye bima; bima ya fahirisi hulipa kulingana na thamani za fahirisi badala yake [2].",
     "source": 2
    },
    {

@@ -34,7 +34,8 @@
         {% if officer.role == 'manager' %}<td>{% if p.status in ('approved', 'issued') %}
           <form method="post" action="/payouts/{{ p.id }}/pay" class="actions m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf }}">
-            {% if p.method != 'mpesa' %}<input name="reference" type="text" placeholder="{{ 'Agro-dealer ref' if p.method == 'voucher' else 'SACCO ref' }}" class="w-xs">{% endif %}
+            {% if p.method != 'mpesa' %}<input name="reference" type="text" placeholder="{{ 'Agro-dealer ref' if p.method == 'voucher' else 'SACCO ref' }}" class="w-xs"
+              aria-label="{{ 'Agro-dealer' if p.method == 'voucher' else 'SACCO' }} reference for policy {{ p.policy.policy_no }}">{% endif %}
             <button class="btn small" type="submit">{{ 'Mark used' if p.method == 'voucher' else 'Pay now' }}</button>
           </form>{% endif %}</td>{% endif %}</tr>
     {% endfor %}</tbody>

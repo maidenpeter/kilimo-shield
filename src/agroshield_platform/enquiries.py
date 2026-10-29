@@ -2,7 +2,8 @@
 
 Stored in the local database only. Nothing is emailed, posted or sent to any service. Name, email and phone are
 encrypted at rest (same vault as farmer data) with a masked copy for listings; free text is scrubbed of IDs and
-phone numbers. How long these are kept is not decided yet (docs/overnight/REVIEW.md, needs approval).
+phone numbers. `agroshield-portal enquiries --delete REF` removes one on request. How long they are kept
+is not decided yet (docs/overnight/REVIEW.md, needs approval).
 """
 from __future__ import annotations
 
@@ -81,3 +82,13 @@ def record(s: Session, vault: Vault, kind: str, form: dict) -> PublicEnquiry:
 
 def listing(s: Session) -> list[PublicEnquiry]:
     return list(s.scalars(select(PublicEnquiry).order_by(PublicEnquiry.created_at.desc())))
+
+
+def delete(s: Session, ref: str, actor: str) -> bool:
+    """Remove one enquiry and its contact details, for example when the person asks. The audit keeps only the reference."""
+    e = s.scalar(select(PublicEnquiry).where(PublicEnquiry.ref == ref.strip().upper()))
+    if e is None:
+        return False
+    s.delete(e)
+    audit(s, actor, "enquiry.deleted", "public_enquiry", e.ref, kind=e.kind)
+    return True

@@ -5,6 +5,9 @@
 </div>
 {% endmacro %}
 
+{# Put inside an input or select tag: marks it invalid and points it at its error message. #}
+{% macro invalid(errors, key) %}{% if errors and errors.get(key) %} aria-invalid="true" aria-describedby="{{ key }}-err"{% endif %}{% endmacro %}
+
 {% macro err(errors, key) %}{% if errors and errors.get(key) %}<div class="err" id="{{ key }}-err">{{ errors[key] }}</div>{% endif %}{% endmacro %}
 
 {# The price in one sentence first; the full build-up only behind "Details". #}
@@ -42,7 +45,7 @@
     <span>Resilience discount ({{ q.resilience.points|num }} pts, {{ q.resilience.discount_rate|pct }}{% if q.resilience.capped %}, capped{% endif %}),
       funded by the <b>{{ q.resilience.funder|label }}</b></span>
     <span class="num">&minus; {{ q.resilience.discount_kes|kes }}</span>
-    <span class="tot">Farmer pays</span><span class="tot num">{{ q.farmer_pays_kes|kes }}</span>
+    <span class="tot">Farmer pays</span><span class="tot num">{{ q.farmer_pays_kes|kes_due }}</span>
   </div>
   {% set fl = q.premium_flows %}
   <h4 class="mt-3 mb-1">Who pays the insurer</h4>

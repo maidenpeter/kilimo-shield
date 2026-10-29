@@ -138,7 +138,7 @@ def test_officer_home_tasks_and_reminder(app):
     assert "Gross premium" not in home and "KAIP" not in home and 'class="map"' not in home   # portfolio lives in Reports
     pid = re.search(r'action="/policies/([0-9a-f]{32})/remind"', home).group(1)
     r = c.post(f"/policies/{pid}/remind", data={"csrf_token": tok}, follow_redirects=True)
-    assert "Reminder sent to Test Farmer" in r.text
+    assert "Reminder sent for policy AGS-" in r.text
     r = c.post(f"/policies/{pid}/remind", data={"csrf_token": tok}, follow_redirects=True)
     assert "already sent" in r.text
     with transaction(app.state.factory) as s:

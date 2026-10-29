@@ -12,7 +12,7 @@
 <div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Certificate</th><th>Member</th><th>Ward</th><th class="num">Farmer pays</th></tr></thead>
   <tbody>{% for p in committed %}<tr><td>{{ p.policy_no }}</td><td>{{ p.farmer.member_no }}</td><td>{{ ward_label(p.ward_id) }}</td>
-    <td class="num">{{ p.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+    <td class="num">{{ p.farmer_pays_kes|kes_due }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
 <form class="stack card" method="post" action="/bulk/check" enctype="multipart/form-data">
@@ -37,7 +37,7 @@
 <div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Row</th><th>Member</th><th>Ward</th><th class="num">Acres</th><th class="num">Gross</th><th class="num">Farmer pays</th></tr></thead>
   <tbody>{% for r in report.valid %}<tr><td>{{ r.row }}</td><td>{{ r.member_no }}</td><td>{{ ward_label(r.ward_id) }}</td>
-    <td class="num">{{ r.acres|num(1) }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+    <td class="num">{{ r.acres|num(1) }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.farmer_pays_kes|kes_due }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}
 {% if report.ok %}

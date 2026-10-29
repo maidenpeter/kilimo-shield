@@ -18,20 +18,20 @@
     Kiswahili review, so real farmers cannot be enrolled yet. Demo SACCOs can practise.
     <details class="more"><summary>Details</summary>{{ gate }}</details></div>{% endif %}
   <label for="member_no">SACCO member number</label>
-  <input id="member_no" name="member_no" type="text" value="{{ d.get('member_no', '') }}" required>{{ m.err(errors, 'member_no') }}
+  <input id="member_no" name="member_no" type="text" value="{{ d.get('member_no', '') }}" required{{ m.invalid(errors, 'member_no') }}>{{ m.err(errors, 'member_no') }}
   <label for="full_name">Full name</label>
-  <input id="full_name" name="full_name" type="text" value="{{ d.get('full_name', '') }}" required>{{ m.err(errors, 'full_name') }}
+  <input id="full_name" name="full_name" type="text" value="{{ d.get('full_name', '') }}" required{{ m.invalid(errors, 'full_name') }}>{{ m.err(errors, 'full_name') }}
   <label for="national_id">National ID number</label>
   <input id="national_id" name="national_id" type="text" inputmode="numeric" {% if not masked_id %}required{% endif %}
-         {% if masked_id %}placeholder="Saved: {{ masked_id }} (leave blank to keep)"{% endif %}>{{ m.err(errors, 'national_id') }}
+         {% if masked_id %}placeholder="Saved: {{ masked_id }} (leave blank to keep)"{% endif %}{{ m.invalid(errors, 'national_id') }}>{{ m.err(errors, 'national_id') }}
   <label for="phone">M-Pesa phone number</label>
   <input id="phone" name="phone" type="text" inputmode="tel" {% if not masked_phone %}required placeholder="0712 345 678"{% endif %}
-         {% if masked_phone %}placeholder="Saved: {{ masked_phone }} (leave blank to keep)"{% endif %}>{{ m.err(errors, 'phone') }}
-  <label>Language for SMS and phone menus</label>
+         {% if masked_phone %}placeholder="Saved: {{ masked_phone }} (leave blank to keep)"{% endif %}{{ m.invalid(errors, 'phone') }}>{{ m.err(errors, 'phone') }}
+  <fieldset class="choice-group"><legend>Language for SMS and phone menus</legend>
   <div class="choice">
     <label><input type="radio" name="language" value="en" {% if d.get('language', 'en') == 'en' %}checked{% endif %}> English</label>
     <label><input type="radio" name="language" value="sw" {% if d.get('language') == 'sw' %}checked{% endif %}> Kiswahili</label>
-  </div>
+  </div></fieldset>
   <label for="gender">Gender <span class="muted">(optional)</span></label>
   <select id="gender" name="gender">
     {% for g in ["undisclosed", "female", "male", "other"] %}
@@ -42,19 +42,19 @@
 {% elif step == 2 %}
   <h1>The farm</h1>
   <label for="ward_id">Ward</label>
-  <select id="ward_id" name="ward_id">
+  <select id="ward_id" name="ward_id"{{ m.invalid(errors, 'ward_id') }}>
     {% for wid in cfg.pilot.wards %}{% set st = sales[wid] %}
     <option value="{{ wid }}" {% if d.get('ward_id') == wid %}selected{% endif %}>{{ ward_label(wid) }}{% if not st.open %} (sales closed{% if st.next_opens %}, open {{ st.next_opens|short_day }}{% endif %}){% endif %}</option>
     {% endfor %}
   </select>{{ m.err(errors, 'ward_id') }}
   <label for="acreage">Acres of maize</label>
-  <input id="acreage" name="acreage" type="text" inputmode="decimal" autocomplete="off" value="{{ d.get('acreage', '') }}" required>
+  <input id="acreage" name="acreage" type="text" inputmode="decimal" autocomplete="off" value="{{ d.get('acreage', '') }}" required{{ m.invalid(errors, 'acreage') }}>
   {{ m.err(errors, 'acreage') }}
-  <label>Bought certified seed last season?</label>
+  <fieldset class="choice-group"><legend>Bought certified seed last season?</legend>
   <div class="choice">
     <label><input type="radio" name="res_certified_seed_verified" value="1" {% if d.get('res_certified_seed_verified') %}checked{% endif %}> Yes</label>
     <label><input type="radio" name="res_certified_seed_verified" value="" {% if not d.get('res_certified_seed_verified') %}checked{% endif %}> No</label>
-  </div>
+  </div></fieldset>
   <p class="muted">Ask to see the receipt. It lowers the farmer's price. Other good-farming discounts are added later from
     checked records.</p>
   <label>Farm location <span class="muted">(optional)</span></label>
@@ -109,18 +109,18 @@
     <button class="btn ghost small" type="submit" name="nav" value="reprice" formaction="/enrol/step">Update price</button>
   </div>
 
-  <label>How will the farmer pay?</label>
+  <fieldset class="choice-group"><legend>How will the farmer pay?</legend>
   <div class="choice">
     <label><input type="radio" name="payment_route" value="sacco_deduction" {% if d.get('payment_route', 'sacco_deduction') == 'sacco_deduction' %}checked{% endif %}> SACCO deduction</label>
     <label><input type="radio" name="payment_route" value="mpesa" {% if d.get('payment_route') == 'mpesa' %}checked{% endif %}> M-Pesa</label>
-  </div>
+  </div></fieldset>
   <p class="muted">The farmer can pay in parts. Cover starts once it is all paid
     {% if pv.sales.sales_closes_on %}by {{ pv.sales.sales_closes_on|day }}{% else %}before sales close{% endif %}.</p>
 
   <label class="check"><input type="checkbox" name="loan_linked" value="1" {% if d.get('loan_linked') %}checked{% endif %}>
     <span><b>Pay any payout to the farmer's SACCO loan first</b></span></label>
   <label for="loan_ref">Loan number</label>
-  <input id="loan_ref" name="loan_ref" type="text" value="{{ d.get('loan_ref', '') }}">{{ m.err(errors, 'loan_ref') }}
+  <input id="loan_ref" name="loan_ref" type="text" value="{{ d.get('loan_ref', '') }}"{{ m.invalid(errors, 'loan_ref') }}>{{ m.err(errors, 'loan_ref') }}
   <label class="check"><input type="checkbox" name="consent_loan_linked_payout" value="1" {% if d.get('consent_loan_linked_payout') %}checked{% endif %}
     aria-describedby="c-loan"><span><b>The farmer agrees to this</b> (only if paying to a loan)</span></label>
   <div class="consent" id="c-loan">{{ wording.purposes.loan_linked_payout.en }}<div class="sw" lang="sw">{{ wording.purposes.loan_linked_payout.sw }}</div></div>

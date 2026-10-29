@@ -37,7 +37,7 @@
     <label for="en-{{ i.id }}">Summary in English (for officers)</label>
     <textarea id="en-{{ i.id }}" name="summary_en" rows="3" maxlength="480" class="w-lg">{{ i.summary_en or '' }}</textarea>
     <label for="sw-{{ i.id }}">Summary in Kiswahili</label>
-    <textarea id="sw-{{ i.id }}" name="summary_sw" rows="3" maxlength="480" class="w-lg">{{ i.summary_sw or '' }}</textarea>
+    <textarea id="sw-{{ i.id }}" name="summary_sw" lang="sw" rows="3" maxlength="480" class="w-lg">{{ i.summary_sw or '' }}</textarea>
     <div class="actions"><button class="btn small" type="submit">{{ 'Save and keep approved' if i.status == 'approved' else 'Approve' }}</button></div>
   </form>
   <div class="actions">

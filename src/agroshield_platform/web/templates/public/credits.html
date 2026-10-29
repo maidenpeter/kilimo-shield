@@ -10,7 +10,7 @@
   <div class="table-wrap" tabindex="0" role="region" aria-label="Photo credits"><table class="credits-table">
     <thead><tr><th>Photo</th><th>Description</th><th>Author</th><th>Licence</th><th>Used on</th></tr></thead>
     <tbody>
-    {% for c in images.values() if c.kind != 'screenshot' %}
+    {% for c in images.values() if c.kind != 'screenshot' and c.used_on %}
       <tr><td><div class="thumb"><img src="/static/img/{{ c.key }}-800.jpg" alt="" loading="lazy" decoding="async" width="{{ c.sizes[0].width }}" height="{{ c.sizes[0].height }}"></div></td>
         <td>{{ c.alt }}<div class="muted">{{ c.location }}</div><div class="muted"><a href="{{ c.file_page }}" rel="noopener">{{ c.title }}</a></div></td>
         <td>{{ c.author }}</td><td><a href="{{ c.license_url }}" rel="noopener">{{ c.license }}</a></td><td>{{ c.used_on }}</td></tr>

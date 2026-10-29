@@ -70,7 +70,21 @@ class ScrubFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.msg = scrub(str(record.msg))
         if record.args:
-            record.args = tuple(scrub(str(a)) for a in record.args)
+            # Keep non-text arguments (e.g. a %d status code) as they are unless masking changes them.
+            record.args = tuple(a if not isinstance(a, str) and scrub(str(a)) == str(a) else scrub(str(a))
+                                for a in record.args)
+        return True
+
+
+_CALLBACK_PATH = re.compile(r"(/ussd/|/mpesa/callback/)[^/?\s\"]+")
+
+
+class CallbackTokenFilter(logging.Filter):
+    """Redacts the shared secret in callback paths (/ussd/<token>, /mpesa/callback/<token>) from log lines."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg = _CALLBACK_PATH.sub(r"\1[token]", str(record.msg))
+        if record.args:
+            record.args = tuple(_CALLBACK_PATH.sub(r"\1[token]", a) if isinstance(a, str) else a for a in record.args)
         return True
 
 

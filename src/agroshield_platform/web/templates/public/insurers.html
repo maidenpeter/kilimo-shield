@@ -23,7 +23,7 @@
     <div class="table-wrap" tabindex="0" role="region" aria-label="Product structure"><table>
       <thead><tr><th>Part</th><th>Trigger (illustrative)</th><th>Payout (illustrative)</th></tr></thead>
       <tbody>
-        <tr><td>Drought</td><td>Season WRSI below 80</td><td>Straight line from 0 at WRSI 80 to the full sum insured at 50 or below</td></tr>
+        <tr><td>Drought</td><td>Season WRSI below 80</td><td>Straight line from 0 at WRSI 80 to the full sum insured at 50 or below, less any voucher already issued that season</td></tr>
         <tr><td>Failed onset</td><td>Less than 80 mm over the whole planting window</td><td>25% of sum insured; no WRSI season</td></tr>
         <tr><td>Replanting voucher</td><td>Less than 20 mm in the 20 days after the planting rain</td><td>Seed voucher, KES 2,500 per acre, once a season; season restarts</td></tr>
       </tbody>
@@ -81,7 +81,8 @@
           <li>Missed-payout reports from farmers are kept and reviewed, so basis risk can be measured over time.</li>
         </ul>
         <p>Kenya's draft index insurance regulations, reported as a 10-day payout rule{{ ui.cite(3) }}, were still a draft in
-          February 2026{{ ui.cite(4) }}. The payout clock in the workspace is built around that standard.</p>
+          February 2026{{ ui.cite(4) }}. The workspace clock counts 10 days from the date the index is confirmed, which can be
+          weeks after the trigger date the draft is reported to use, so it is not yet a compliance check.</p>
       </div>
       <div class="shot">{{ ui.picture('shot-uw-pricing', '') }}</div>
     </div>

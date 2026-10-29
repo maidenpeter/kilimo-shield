@@ -168,8 +168,9 @@ def bordereaux(s: Session, insurer: Insurer, month: str, cfg_hashes: dict) -> tu
     written = [p for p in pols if start <= p.created_at.date() < end]
 
     def out(cols, rows) -> bytes:
+        from .csvsafe import writer
         b = io.StringIO()
-        w = csv.writer(b, lineterminator="\n")
+        w = writer(b, lineterminator="\n")
         w.writerow(cols)
         w.writerows(rows)
         return b.getvalue().encode()
@@ -365,10 +366,11 @@ def charts(ctx: Context, s: Session, pols: list[Policy]) -> dict:
 
 def portfolio_csv(pf: dict) -> bytes:
     """Aggregated portfolio tables as CSV (no personal data: SACCO, ward and season totals only)."""
-    import csv
     import io
+
+    from .csvsafe import writer
     buf = io.StringIO()
-    w = csv.writer(buf, lineterminator="\n")
+    w = writer(buf, lineterminator="\n")
     w.writerow(["group", "name", "policies", "in_force", "acres", "sum_insured_kes", "in_force_sum_insured_kes", "gross_premium_kes"])
     for title, rows in (("sacco", pf["by_sacco"]), ("ward", pf["by_ward"]), ("season", pf["by_season"])):
         for r in rows:

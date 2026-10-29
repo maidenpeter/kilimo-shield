@@ -42,7 +42,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-price quote --ward ward-a --acres 2 --layers A,B --resilience certified_seed_verified` | Quote a farmer from the command line |
 | `agroshield-api` | Quote API on http://127.0.0.1:8770 (interactive docs at `/docs`) |
 | `agroshield-price validate` | Check the config without pricing |
-| `agroshield-portal demo` | Fictional demo SACCO, manager and four members (development keys only) |
+| `agroshield-portal demo` | Two fictional demo SACCOs with fictional members, an officer, a manager and an underwriter, a 2008 replay and one demo remittance (development keys only) |
+| `agroshield-portal enquiries [--delete REF]` | Public-site demo requests and livestock interest, contact details masked; delete one on request |
 | `agroshield-portal serve` | SACCO officer portal on http://127.0.0.1:8780 |
 | `agroshield-portal add-sacco` / `add-officer` | Set up a SACCO and its officers (password prompted) |
 | `agroshield-portal daily` | Lapse cover not fully paid at sales close, SMS reminders, send queued SMS |
@@ -145,7 +146,7 @@ request body and logs each quote to `var/audit/quotes.jsonl`; quotes carry no pe
 Since milestone 6b the portal serves two audiences:
 - **Officers** (the default) see Home, Enrol a farmer and Members, in plain words.
   - Home shows who still owes, with a Send reminder button for each, then the ward alert line and the Enrol button.
-  - Enrolment is one step per screen (farmer, farm, agreement, price and payment, done), five screens in all.
+  - Enrolment is one step per screen: member, farm, agreement, then cover, price and payment, then a done screen.
   - Each price is first given as one sentence.
 - **Managers** also get Reports (the portfolio, map and export) and Import (bulk CSV and KIAMIS together).
 - **Details toggles:** pricing build-up, quote IDs and index versions sit behind them.
@@ -157,8 +158,8 @@ Before and after screenshots are in `docs/screenshots/m6b/` (open `index.html`).
 A server-rendered portal (FastAPI + Jinja, no JavaScript build, works on slow office
 connections) for SACCO officers:
 
-- **Enrolment wizard** in six steps: member, plot, cover, consent, price, payment and
-  confirm. Prices come from the same rate book as the quote API.
+- **Enrolment wizard** (see above): member, farm, consent, then cover, price and payment, and a
+  confirmation. Prices come from the same rate book as the quote API.
 - **Bulk enrolment** from CSV: a dry run reports every problem row; saving is then
   all-or-nothing.
 - **Dashboard**: members, policies, acres, sum insured, premium due, KAIP subsidy
@@ -282,9 +283,9 @@ underwriters are kept out of SACCO pages.
 
 | Page | What |
 |---|---|
-| `/uw` Portfolio | Policies, acres, sum insured and gross premium by SACCO, ward and season; exposure concentration (largest single-ward loss if the index fully triggers) |
+| `/uw` Portfolio | KPI strip; charts of exposure by ward, premium by month and payout events; season and SACCO filters; tables by SACCO, ward and season; exposure concentration (largest single-ward loss if the index fully triggers); aggregated CSV |
 | `/uw/triggers` | WRSI and trigger status per ward; payouts waiting for approval; approve or hold with a reason (audited); the 10-day clock per event |
-| `/uw/money` | Farmer premium received (M-Pesa and SACCO deductions), outstanding, KAIP receivable ("not yet received"), refunds owed, payouts |
+| `/uw/money` | Farmer premium received (M-Pesa and SACCO deductions), outstanding, KAIP receivable ("not yet received"), refunds owed, payouts; premium settlement by SACCO (collected, remitted, confirmed, outstanding), confirm or query each remittance, CSV |
 | `/uw/bordereaux` | Monthly premium and payout bordereaux: ZIP of masked CSVs plus `manifest.json` with SHA-256 and row counts; exports audited |
 | `/uw/pricing` | Engine runs (index version, config hashes, links to the HTML reports), the run audit log, trigger and payout audit for its own policies |
 | `/uw/reinsurer` | One page: portfolio, exposure by ward, expected loss and 1-in-10 / 1-in-20 annual loss (as-if, from the engine's 1981-2025 seasons), ESG/TCFD reporting (never pricing) |
@@ -293,6 +294,21 @@ Payouts now wait for the underwriter: calculated, then approved (cash) or issued
 payout carries its reason. Farmers are told about a payout only once it is approved, and SACCO managers can pay only
 approved payouts. Set up with `agroshield-portal add-insurer`, `add-sacco --insurer`, `add-officer --insurer ...
 --role underwriter`. The demo adds `demo-underwriter`. Screenshots: `docs/screenshots/m7/index.html`.
+
+## Public site and premium settlement (overnight work, 29 to 30 Oct 2026)
+
+- **Public site**: Home, Crops, Livestock (in development, not quotable), How it works, For insurers, For SACCOs, Learn
+  (eight articles with sources, glossary in English and Kiswahili pending native-speaker review), Questions, Credits and
+  Request a demo. Photos are openly licensed Wikimedia Commons files, self-hosted (`tools/fetch_images.py`,
+  `docs/design/IMAGE_CREDITS.md`). The two public forms store to the local database only, encrypted, and nothing is
+  emailed; list or delete them with `agroshield-portal enquiries`.
+- **Premium settlement**: a SACCO manager records premium sent to the insurer at `/reports/premium`; the underwriter
+  confirms or queries it on `/uw/money`. A ledger only, audited, never edited (a correction is a negative entry).
+- **Design system**: `static/tokens.css` (light and dark), `static/app.css`, `static/nav.js`; see `docs/design/THEME.md`.
+- **Running in production**: schedule `agroshield-portal daily` once a day (for example 06:00 Africa/Nairobi, by cron or
+  Task Scheduler). It closes sales windows and lapses unpaid cover, sends reminders, runs ward monitoring (which creates
+  payouts once a trigger is confirmed) and sends queued SMS. Without it, cover never lapses and no payout is calculated.
+- Overnight QA, review and morning report: `docs/overnight/`.
 
 ## Research (task 3b: forecast skill)
 
@@ -390,6 +406,13 @@ src/agroshield_platform/
   settings.py, crypto.py keys from the environment; encryption, masking, log scrubbing, passwords
   models.py, db.py       SACCO, officer, farmer, plot, consent, policy, KIAMIS, audit tables
   services.py            enrolment, bulk CSV, portfolio, export
+  monitoring.py          daily ward monitoring, payouts (approve, hold, pay), missed-payout reports
+  underwriting.py        the insurer's workspace: portfolio, triggers, money, bordereaux, reinsurer summary
+  settlement.py          SACCO-to-insurer premium settlement ledger (records only; moves no money)
+  enquiries.py           public-site forms, stored locally and encrypted; nothing is emailed
+  content.py, articles.json   Learn articles (each claim with a source)
+  csvsafe.py             CSV exports that cannot run as spreadsheet formulas
+  weather.py             KMD advisories (display only, polite fetch rules)
   kiamis.py              KIAMIS adapter (not connected / CSV import)
   web/                   portal routes, templates, CSS
   locale.py, sms.py      English and Kiswahili strings (locales/); SMS outbox and senders

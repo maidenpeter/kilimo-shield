@@ -15,11 +15,11 @@
   </select>
   <label for="acreage">Acres of maize</label>
   <input id="acreage" name="acreage" type="text" inputmode="decimal" autocomplete="off" value="{{ form.get('acreage', '') }}" required>
-  <label>Bought certified seed last season?</label>
+  <fieldset class="choice-group"><legend>Bought certified seed last season?</legend>
   <div class="choice">
     <label><input type="radio" name="res_certified_seed_verified" value="1" {% if form.get('res_certified_seed_verified') %}checked{% endif %}> Yes</label>
     <label><input type="radio" name="res_certified_seed_verified" value="" {% if not form.get('res_certified_seed_verified') %}checked{% endif %}> No</label>
-  </div>
+  </div></fieldset>
   <label for="sum_insured_kes_per_acre">Cover per acre</label>
   <select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre">
     {% for o in cfg.product.sum_insured.options_kes_per_acre %}
