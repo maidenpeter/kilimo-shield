@@ -2,6 +2,18 @@
 {% block title %}Home{% endblock %}
 {% block body %}
 {% set n = owe|length %}
+{% if not members %}
+<h1 class="status-line">Welcome. No farmers are enrolled yet.
+  {% if sales.closes %}Sales close {{ sales.closes|short_day }}.{% elif sales.next_opens %}Sales are closed; they open {{ sales.next_opens|short_day }}.{% endif %}
+</h1>
+<div class="empty first-run">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21V11"/><path d="M12 11C12 7 9 4 4 4c0 4 3 7 8 7zM12 13c0-3 2.5-6 7-6 0 3.5-2.5 6-7 6z"/></svg>
+  <h2>Enrol your first farmer</h2>
+  <p>It takes five short screens: the member, the farm, the cover, consent and payment.</p>
+  <div class="actions"><a class="btn big" href="/enrol">Enrol a farmer</a><a class="btn ghost small" href="/quote">Quick price</a>
+    {% if officer.role == 'manager' %}<a class="btn ghost small" href="/import">Import a member list</a>{% endif %}</div>
+</div>
+{% else %}
 <h1 class="status-line">
   {% if n %}{{ n }} farmer{{ 's' if n != 1 }} still owe{{ 's' if n == 1 }} KES {{ '{:,.0f}'.format(owe_total) }}.{% else %}Everyone you enrolled has paid in full.{% endif %}
   {% if sales.closes %}Sales close {{ sales.closes|short_day }}.{% elif sales.next_opens %}Sales are closed; they open {{ sales.next_opens|short_day }}.{% endif %}
@@ -10,6 +22,7 @@
   <a class="btn big" href="/enrol">Enrol a farmer</a>
   <a class="btn ghost small" href="/quote">Quick price</a>
 </div>
+{% endif %}
 
 {# A rainfall alert for one of your wards goes above the payments list; with none, the quiet line sits at the bottom. #}
 {% for st in alerts %}

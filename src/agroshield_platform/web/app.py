@@ -46,7 +46,7 @@ from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request, Uplo
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -58,6 +58,7 @@ from .. import locale as L
 from .. import monitoring as mon
 from .. import mpesa as mp
 from .. import services as sv
+from .. import settlement as stl
 from .. import weather as wx
 from .. import sms as smsmod
 from .. import underwriting as uw
@@ -65,7 +66,7 @@ from .. import ussd as ussdmod
 from ..crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_national_id, normalise_phone, verify_password
 from ..db import audit, init_db, make_engine, transaction
 from ..kiamis import CsvKiamis
-from ..models import Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, SmsMessage, WeatherItem
+from ..models import Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, Sacco, SmsMessage, WeatherItem
 from ..settings import Settings, load_settings
 
 HERE = Path(__file__).parent
@@ -367,7 +368,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             owe = sv.owing(s, off.sacco)
             wards = sorted({f.ward_id for f in s.scalars(select(Farmer).where(Farmer.sacco_id == off.sacco_id))}) \
                 or list(cfg.pilot.wards)
-            return render(request, "home.html", off, owe=owe, owe_total=sum(p.balance_kes for p in owe),
+            members = s.scalar(select(func.count()).select_from(Farmer).where(Farmer.sacco_id == off.sacco_id))
+            return render(request, "home.html", off, owe=owe, owe_total=sum(p.balance_kes for p in owe), members=members,
                           sales=sales_summary(c), wards=wards, today=c.date(), alerts=mon.alerts_for(s, off.sacco_id),
                           weather=wx.visible_items(s, c.date())[:2])
 
@@ -409,6 +411,67 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             return render(request, "reports.html", off, pf=pf, recent=recent, wards=wards,
                           map=ward_map(wards, {w["ward_id"]: w["policies"] for w in pf["by_ward"]}),
                           levels=ward_levels(s, off.sacco_id))
+
+    # ------------------------------------------------------------------ premium settlement (SACCO side)
+    def csv_response(data: bytes, name: str):
+        from fastapi.responses import Response
+        return Response(data, media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})
+
+    def settlement_csv(st: dict) -> bytes:
+        import csv
+        import io
+        buf = io.StringIO()
+        w = csv.writer(buf, lineterminator="\n")
+        w.writerow(["record", "sacco", "remitted_on", "method", "reference", "period", "amount_kes", "status", "recorded_by",
+                    "reviewed_by", "reviewed_at", "review_note"])
+        for e in st["ledger"]:
+            w.writerow([e.ref, st["saccos"][e.sacco_id].code, e.remitted_on.isoformat(), e.method, e.reference, e.period or "",
+                        f"{e.amount_kes:.2f}", e.status, e.recorded_by, e.reviewed_by or "",
+                        e.reviewed_at.isoformat() if e.reviewed_at else "", e.review_note or ""])
+        w.writerow([])
+        w.writerow(["sacco", "collected_kes", "remitted_kes", "confirmed_kes", "outstanding_kes", "credit_kes"])
+        for r in st["rows"]:
+            w.writerow([r["sacco"].code] + [f"{r[k]:.2f}" for k in ("collected_kes", "remitted_kes", "confirmed_kes",
+                                                                    "outstanding_kes", "credit_kes")])
+        return buf.getvalue().encode("utf-8")
+
+    def settlement_page(request: Request, s, off, status: int = 200, **kw):
+        insurer_id = off.sacco.insurer_id
+        st = stl.summary(s, insurer_id, off.sacco_id) if insurer_id else {"rows": [], "ledger": [], "total": {}, "saccos": {}}
+        return render(request, "settlement.html", off, status=status, st=st, methods=stl.METHODS, today=ctx().date(), **kw)
+
+    @app.get("/reports/premium", response_class=HTMLResponse)
+    def settlement_view(request: Request):
+        with transaction(factory) as s:
+            return settlement_page(request, s, require(request, s, role="manager"))
+
+    @app.post("/reports/premium")
+    async def settlement_record(request: Request):
+        form = dict(await request.form())
+        check_csrf(request, form.get("csrf_token", ""))
+        try:
+            with transaction(factory) as s:
+                off = require(request, s, role="manager")
+                r = stl.record(s, off, form.get("amount", ""), form.get("remitted_on", ""), form.get("method", ""),
+                               form.get("reference", ""), form.get("note", ""), form.get("period", ""), today=ctx().date())
+                flash(request, "ok", f"Saved {r.ref}: KES {r.amount_kes:,.0f} sent on {r.remitted_on:%d %b %Y}. "
+                                     "The insurer will confirm it.")
+        except stl.SettlementError as e:
+            with transaction(factory) as s:
+                return settlement_page(request, s, require(request, s, role="manager"), status=422, error=str(e), form=form)
+        return RedirectResponse("/reports/premium", status_code=303)
+
+    @app.get("/reports/premium.csv")
+    def settlement_export(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            if not off.sacco.insurer_id:
+                raise HTTPException(404)
+            data = settlement_csv(stl.summary(s, off.sacco.insurer_id, off.sacco_id))
+            code = off.sacco.code
+            audit(s, off.username, "remittance.exported", "premium_remittance", code)
+        return csv_response(data, f"premium-sent-{code}.csv")
 
     # ------------------------------------------------------------------ quick price
     @app.get("/quote", response_class=HTMLResponse)
@@ -926,11 +989,39 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             raise HTTPException(404)
         return p
 
+    def uw_filters(request: Request, s, off) -> dict:
+        """Season and SACCO filters from the query string (codes only, never personal data)."""
+        saccos = list(s.scalars(select(Sacco).where(Sacco.insurer_id == off.insurer_id).order_by(Sacco.name)))
+        sacco = next((x for x in saccos if x.code == request.query_params.get("sacco")), None)
+        season = request.query_params.get("season") or None
+        seasons = sorted({(p.season, p.year) for p in uw.policies(s, off.insurer_id)}, key=lambda x: (-x[1], x[0]))
+        if season not in {f"{a}-{b}" for a, b in seasons}:
+            season = None
+        return {"saccos": saccos, "sacco": sacco, "season": season, "seasons": seasons}
+
+    def uw_filtered(request: Request, s, off):
+        f = uw_filters(request, s, off)
+        return f, uw.filter_policies(uw.policies(s, off.insurer_id), f["season"], f["sacco"].id if f["sacco"] else None)
+
     @app.get("/uw", response_class=HTMLResponse)
     def uw_portfolio(request: Request):
         with transaction(factory) as s:
             off = require(request, s, role="underwriter")
-            return render(request, "uw_portfolio.html", off, pf=uw.portfolio(ctx(), s, off.insurer))
+            c = ctx()
+            f, pols = uw_filtered(request, s, off)
+            return render(request, "uw_portfolio.html", off, pf=uw.portfolio(c, s, off.insurer, pols=pols),
+                          ch=uw.charts(c, s, pols), f=f)
+
+    @app.get("/uw/portfolio.csv")
+    def uw_portfolio_csv(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            f, pols = uw_filtered(request, s, off)
+            data = uw.portfolio_csv(uw.portfolio(ctx(), s, off.insurer, pols=pols))
+            code = off.insurer.code
+            audit(s, off.username, "portfolio.exported", "insurer", code, season=f["season"] or "all",
+                  sacco=f["sacco"].code if f["sacco"] else "all")
+        return csv_response(data, f"portfolio-{code}.csv")
 
     @app.get("/uw/triggers", response_class=HTMLResponse)
     def uw_triggers(request: Request):
@@ -986,7 +1077,31 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     def uw_money(request: Request):
         with transaction(factory) as s:
             off = require(request, s, role="underwriter")
-            return render(request, "uw_money.html", off, m=uw.money(s, off.insurer))
+            return render(request, "uw_money.html", off, m=uw.money(s, off.insurer), st=stl.summary(s, off.insurer_id),
+                          methods=stl.METHODS)
+
+    @app.post("/uw/settlement/{ref}")
+    def uw_settlement_review(request: Request, ref: str, decision: str = Form(""), note: str = Form(""),
+                             csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            try:
+                r = stl.review(s, off, ref, decision, note)
+                flash(request, "ok" if r.status == "confirmed" else "warn",
+                      f"{r.ref} {'confirmed' if r.status == 'confirmed' else 'queried'}: KES {r.amount_kes:,.0f}.")
+            except stl.SettlementError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/uw/money#settlement", status_code=303)
+
+    @app.get("/uw/settlement.csv")
+    def uw_settlement_csv(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            data = settlement_csv(stl.summary(s, off.insurer_id))
+            code = off.insurer.code
+            audit(s, off.username, "remittance.exported", "premium_remittance", code)
+        return csv_response(data, f"premium-settlement-{code}.csv")
 
     @app.get("/uw/bordereaux", response_class=HTMLResponse)
     def uw_bordereaux(request: Request):

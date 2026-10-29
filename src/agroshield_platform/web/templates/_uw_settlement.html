@@ -1,0 +1,41 @@
+{# Underwriter: SACCO-to-insurer premium settlement across all of this insurer's SACCOs. Included in uw_money.html. #}
+<h2 id="settlement">Premium settlement by SACCO</h2>
+<p class="muted">Farmer premium each SACCO has collected, what it reports sending to you, and what is still to come. Confirm each
+  remittance once it reaches your account, or query it with a reason. This is a record only: it moves no money.</p>
+{% set t = st.total %}
+<div class="kpi-strip tiles">
+  <div class="tile"><div class="k">Collected by SACCOs</div><div class="v">{{ t.collected_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Remitted</div><div class="v">{{ t.remitted_kes|kes }}</div><div class="n">{{ t.confirmed_kes|kes }} confirmed</div></div>
+  <div class="tile"><div class="k">Outstanding from SACCOs</div><div class="v">{{ t.outstanding_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Waiting for your check</div><div class="v">{{ t.unconfirmed_kes|kes }}</div><div class="n">{{ t.queried }} queried</div></div>
+</div>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Settlement by SACCO"><table>
+  <thead><tr><th>SACCO</th><th class="num">Collected</th><th class="num">Remitted</th><th class="num">Confirmed</th><th class="num">Outstanding</th>
+    <th>Last remitted</th><th>Last collected</th></tr></thead>
+  <tbody>{% for r in st.rows %}<tr><td>{{ r.sacco.name }}</td><td class="num">{{ r.collected_kes|kes }}</td><td class="num">{{ r.remitted_kes|kes }}</td>
+    <td class="num">{{ r.confirmed_kes|kes }}</td><td class="num">{{ r.outstanding_kes|kes }}{% if r.credit_kes %}<div class="muted">credit {{ r.credit_kes|kes }}</div>{% endif %}</td>
+    <td>{{ r.last_remitted_on|day if r.last_remitted_on else 'none' }}</td><td>{{ r.last_collected_at|day if r.last_collected_at else 'none' }}</td></tr>{% endfor %}</tbody>
+</table></div>
+<h3>Remittances</h3>
+{% if st.ledger %}
+<div class="table-wrap tall" tabindex="0" role="region" aria-label="Remittance records"><table>
+  <thead><tr><th>Date sent</th><th>SACCO</th><th>Record</th><th>Method and reference</th><th class="num">Amount</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+  <tbody>{% for e in st.ledger %}<tr><td>{{ e.remitted_on|day }}</td><td>{{ st.saccos[e.sacco_id].name }}</td>
+    <td>{{ e.ref }}{% if e.period %}<div class="muted">{{ e.period }}</div>{% endif %}</td><td>{{ methods[e.method] }} <code>{{ e.reference }}</code></td>
+    <td class="num">{{ e.amount_kes|kes }}</td>
+    <td>{% if e.status == 'confirmed' %}<span class="chip ok">confirmed</span><div class="muted">{{ e.reviewed_by }}</div>
+      {% elif e.status == 'queried' %}<span class="chip crit">queried</span><div class="muted">{{ e.review_note }}</div>
+      {% else %}<span class="chip warn">waiting</span>{% endif %}</td>
+    <td>{% if e.status != 'confirmed' %}
+      <form method="post" action="/uw/settlement/{{ e.ref }}" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label class="visually-hidden" for="q-{{ e.ref }}">Query reason for {{ e.ref }}</label>
+        <input id="q-{{ e.ref }}" name="note" type="text" maxlength="300" placeholder="Reason, if querying" class="w-xs">
+        <button class="btn small" name="decision" value="confirmed" type="submit">Confirm</button>
+        <button class="btn ghost small" name="decision" value="queried" type="submit">Query</button>
+      </form>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="actions"><a class="btn ghost small" href="/uw/settlement.csv">Download CSV</a></p>
+{% else %}
+<div class="empty"><h3>No remittances recorded yet</h3><p>When a SACCO manager records premium sent to you, it appears here for you to confirm.</p></div>
+{% endif %}

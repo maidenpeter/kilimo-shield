@@ -3,7 +3,7 @@
 {% block body %}
 <h1>Money</h1>
 {% set t = m.total %}
-<div class="tiles">
+<div class="kpi-strip tiles">
   <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ t.gross_kes|kes }}</div></div>
   <div class="tile"><div class="k">Farmer premium received</div><div class="v">{{ t.farmer_kes|kes }}</div>
     <div class="n">M-Pesa {{ t.mpesa_kes|kes }} &middot; SACCO deductions {{ t.sacco_deduction_kes|kes }}</div></div>
@@ -15,7 +15,7 @@
     <div class="n">{{ m.payouts.approved|kes }} approved unpaid &middot; {{ (m.payouts.calculated + m.payouts.held)|kes }} awaiting decision</div></div>
 </div>
 <h2>By SACCO</h2>
-<div class="table-wrap" tabindex="0" role="region"><table>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Money by SACCO"><table>
   <thead><tr><th>SACCO</th><th class="num">Gross written</th><th class="num">Received (M-Pesa)</th><th class="num">Received (deduction)</th>
     <th class="num">Outstanding</th><th class="num">KAIP receivable</th><th class="num">Refunds owed</th></tr></thead>
   <tbody>{% for r in m.rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.mpesa_kes|kes }}</td>
@@ -23,6 +23,6 @@
     <td class="num">{{ r.refunds_kes|kes }}</td></tr>{% endfor %}</tbody>
 </table></div>
 <p class="muted">Received = farmer share collected (M-Pesa STK or SACCO deduction). The insurer receives the full gross: farmer share,
-  KAIP share (a receivable until KAIP pays) and the Resilience discount from its funder. Settlement of SACCO-collected
-  premium to the insurer is not yet tracked (to agree with the underwriter).</p>
+  KAIP share (a receivable until KAIP pays) and the Resilience discount from its funder.</p>
+{% include "_uw_settlement.html" %}
 {% endblock %}

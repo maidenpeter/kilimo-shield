@@ -232,6 +232,10 @@ def _demo(settings, factory) -> int:
         s.add(second)
         s.flush()
         services.bulk_commit(ctx, s, second, officer, DEMO2_CSV)
+        # One fictional remittance of part of the collected premium, waiting for the underwriter to confirm.
+        from . import settlement
+        settlement.record(s, officer, "5000", ctx.date().isoformat(), "bank_transfer", "DEMO-BANK-0001",
+                          "fictional demo remittance", period=f"{ctx.date().year + 1}-LR", today=ctx.date())
     with transaction(factory) as s:
         sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
     print(f"demo SACCOs with fictional members; sign in as demo-officer, demo-manager or demo-underwriter / {DEMO_PASSWORD}")

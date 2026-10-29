@@ -57,8 +57,8 @@ def _group(pols, key) -> list[dict]:
     return [{"key": k, **v} for k, v in sorted(g.items(), key=lambda kv: str(kv[0]))]
 
 
-def portfolio(ctx: Context, s: Session, insurer: Insurer) -> dict:
-    pols = policies(s, insurer.id)
+def portfolio(ctx: Context, s: Session, insurer: Insurer, pols: list[Policy] | None = None) -> dict:
+    pols = policies(s, insurer.id) if pols is None else pols
     saccos = {x.id: x.name for x in s.scalars(select(Sacco).where(Sacco.insurer_id == insurer.id))}
     in_force = [p for p in pols if p.status == "active"]
     # Exposure: if the index fully triggers (WRSI at or below exit), every active policy in the ward pays its full
@@ -300,3 +300,83 @@ def esg(s: Session, insurer: Insurer, target_days: int) -> dict:
             "resilience_points_share": sum(1 for p in pols if p.resilience_points > 0) / len(pols) if pols else None,
             "missed_reports": len(s.scalars(select(MissedPayoutReport).where(MissedPayoutReport.policy_id.in_(ids))).all())
             if ids else 0}
+
+
+# ------------------------------------------------------------------ workspace charts and filters (display only)
+def filter_policies(pols, season: str | None = None, sacco_id: int | None = None) -> list[Policy]:
+    """season is "LR-2027" style (season-year); sacco_id one of the insurer's SACCOs. Unknown values filter nothing out."""
+    out = list(pols)
+    if season and "-" in season:
+        se, _, yr = season.partition("-")
+        if yr.isdigit():
+            out = [p for p in out if p.season == se and p.year == int(yr)]
+    if sacco_id is not None:
+        out = [p for p in out if p.sacco_id == sacco_id]
+    return out
+
+
+def _bars(items: list[tuple[str, float]], width: int = 640, bar_h: int = 28, gap: int = 12, label_w: int = 170) -> dict:
+    """Horizontal bar geometry for an inline SVG (values scaled to the largest)."""
+    top = max((v for _, v in items), default=0) or 1
+    span = width - label_w - 110
+    rows = [{"label": k, "value": v, "y": i * (bar_h + gap), "w": max(2, round(span * v / top)) if v else 0}
+            for i, (k, v) in enumerate(items)]
+    return {"rows": rows, "width": width, "height": max(1, len(items)) * (bar_h + gap), "bar_h": bar_h, "label_w": label_w}
+
+
+def _columns(items: list[tuple[str, float]], width: int = 640, height: int = 200) -> dict:
+    """Column chart geometry for an inline SVG, oldest month first."""
+    top = max((v for _, v in items), default=0) or 1
+    n = max(1, len(items))
+    step = (width - 40) / n
+    bw = max(4, min(56, round(step * 0.7)))
+    cols = [{"label": k, "value": v, "x": round(30 + i * step + (step - bw) / 2), "w": bw,
+             "h": round((height - 40) * v / top), "y": round(height - 20 - (height - 40) * v / top)} for i, (k, v) in enumerate(items)]
+    return {"cols": cols, "width": width, "height": height, "base": height - 20}
+
+
+def charts(ctx: Context, s: Session, pols: list[Policy]) -> dict:
+    """Exposure by ward, premium written by month and payout events, for the portfolio page."""
+    exp = defaultdict(lambda: [0.0, 0.0])
+    for p in pols:
+        k = ctx.cfg.ward(p.ward_id).label
+        exp[k][0 if p.status == "active" else 1] += _si(p) if p.status in ("active", "pending_payment") else 0
+    exposure = _bars(sorted(((k, v[0] + v[1]) for k, v in exp.items()), key=lambda kv: -kv[1]))
+    for r in exposure["rows"]:
+        a, pend = exp[r["label"]]
+        r["active"], r["pending"] = a, pend
+        r["w_active"] = round(r["w"] * a / (a + pend)) if a + pend else 0
+    months = defaultdict(float)
+    for p in pols:
+        months[p.created_at.strftime("%Y-%m")] += p.gross_kes
+    premium = _columns(sorted(months.items())[-12:])
+    ids = [p.id for p in pols]
+    pays = s.scalars(select(Payout).where(Payout.policy_id.in_(ids))).all() if ids else []
+    ev = defaultdict(lambda: {"amount": 0.0, "count": 0, "open": 0})
+    for p in pays:
+        key = (p.confirmed_on, ctx.cfg.ward(p.policy.ward_id).label, p.kind)
+        ev[key]["amount"] += p.amount_kes
+        ev[key]["count"] += 1
+        ev[key]["open"] += p.status in ("calculated", "held", "approved")
+    events = [{"confirmed_on": k[0], "ward": k[1], "kind": k[2], **v} for k, v in sorted(ev.items(), key=lambda kv: kv[0][0])]
+    payouts = _bars([(f"{e['ward']}, {e['confirmed_on']:%d %b %Y}", e["amount"]) for e in events])
+    return {"exposure": exposure, "premium": premium, "payouts": payouts, "events": events}
+
+
+def portfolio_csv(pf: dict) -> bytes:
+    """Aggregated portfolio tables as CSV (no personal data: SACCO, ward and season totals only)."""
+    import csv
+    import io
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["group", "name", "policies", "in_force", "acres", "sum_insured_kes", "in_force_sum_insured_kes", "gross_premium_kes"])
+    for title, rows in (("sacco", pf["by_sacco"]), ("ward", pf["by_ward"]), ("season", pf["by_season"])):
+        for r in rows:
+            w.writerow([title, r["name"], r["policies"], r["active"], round(r["acres"], 2), round(r["sum_insured_kes"], 2),
+                        round(r["in_force_sum_insured_kes"], 2), round(r["gross_kes"], 2)])
+    w.writerow([])
+    w.writerow(["exposure_ward", "season", "in_force_policies", "max_loss_kes", "share_of_season", "pending_sum_insured_kes"])
+    for e in pf["exposure"]:
+        w.writerow([e["ward"], e["label"], e["policies"], round(e["max_loss_kes"], 2),
+                    "" if e["share_of_season"] is None else round(e["share_of_season"], 4), round(e["pending_kes"], 2)])
+    return buf.getvalue().encode("utf-8")

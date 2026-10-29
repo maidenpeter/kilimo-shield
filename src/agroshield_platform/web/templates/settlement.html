@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Premium sent to the insurer{% endblock %}
+{% block body %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/reports">Reports</a> / Premium sent to the insurer</nav>
+<h1>Premium sent to the insurer</h1>
+<p class="muted">What {{ officer.sacco.name }} collected from members and what you have sent on to {{ officer.sacco.insurer.name if officer.sacco.insurer else 'the insurer' }}.
+  This is a record only: it does not move money.</p>
+{% if st.rows %}{% set r = st.rows[0] %}
+<div class="kpi-strip tiles">
+  <div class="tile"><div class="k">Collected from members</div><div class="v">{{ r.collected_kes|kes }}</div>
+    <div class="n">{% if r.last_collected_at %}last payment {{ r.last_collected_at|day }}{% else %}no payments yet{% endif %}</div></div>
+  <div class="tile"><div class="k">Sent to the insurer</div><div class="v">{{ r.remitted_kes|kes }}</div>
+    <div class="n">{{ r.confirmed_kes|kes }} confirmed by the insurer</div></div>
+  <div class="tile"><div class="k">Still to send</div><div class="v">{{ r.outstanding_kes|kes }}</div>
+    <div class="n">{% if r.credit_kes %}{{ r.credit_kes|kes }} sent more than collected{% else %}collected minus sent{% endif %}</div></div>
+  <div class="tile"><div class="k">Queried by the insurer</div><div class="v">{{ r.queried }}</div>
+    <div class="n">{{ 'check the note below' if r.queried else 'none' }}</div></div>
+</div>
+{% endif %}
+
+{% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
+<details class="more" {% if error or not st.ledger %}open{% endif %}><summary>Record money sent to the insurer</summary>
+  <form method="post" action="/reports/premium" class="stack card w-lg">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="rm-amount">Amount sent (KES)</label>
+    <input id="rm-amount" name="amount" type="text" inputmode="decimal" required value="{{ form.amount if form }}" class="w-sm">
+    <p class="hint">To correct a mistake, record the same amount with a minus sign and the same reference.</p>
+    <label for="rm-date">Date sent</label>
+    <input id="rm-date" name="remitted_on" type="date" required value="{{ form.remitted_on if form else today.isoformat() }}" class="w-sm">
+    <label for="rm-method">How it was sent</label>
+    <select id="rm-method" name="method" class="w-sm">{% for k, v in methods.items() %}<option value="{{ k }}" {% if form and form.method == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+    <label for="rm-ref">Bank or M-Pesa reference</label>
+    <input id="rm-ref" name="reference" type="text" required maxlength="40" value="{{ form.reference if form }}" class="w-sm">
+    <label for="rm-period">Period covered <span class="muted">(optional, e.g. 2027-LR or March 2027)</span></label>
+    <input id="rm-period" name="period" type="text" maxlength="20" value="{{ form.period if form }}" class="w-sm">
+    <label for="rm-note">Note <span class="muted">(optional)</span></label>
+    <input id="rm-note" name="note" type="text" maxlength="300" value="{{ form.note if form }}">
+    <div class="actions"><button class="btn" type="submit">Save record</button></div>
+  </form>
+</details>
+
+<h2>Records</h2>
+{% if st.ledger %}
+<div class="table-wrap" tabindex="0" role="region" aria-label="Remittance records"><table>
+  <thead><tr><th>Date sent</th><th>Record</th><th>Method</th><th>Reference</th><th>Period</th><th class="num">Amount</th><th>Insurer</th></tr></thead>
+  <tbody>{% for e in st.ledger %}<tr><td>{{ e.remitted_on|day }}</td><td>{{ e.ref }}<div class="muted">by {{ e.recorded_by }}</div></td>
+    <td>{{ methods[e.method] }}</td><td>{{ e.reference }}</td><td>{{ e.period or '' }}</td><td class="num">{{ e.amount_kes|kes }}</td>
+    <td>{% if e.status == 'confirmed' %}<span class="chip ok">confirmed</span>{% elif e.status == 'queried' %}<span class="chip crit">queried</span>
+      <div class="muted">{{ e.review_note }}</div>{% else %}<span class="chip warn">waiting</span>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="actions"><a class="btn ghost small" href="/reports/premium.csv">Download CSV</a></p>
+{% else %}
+<div class="empty"><h3>No money sent yet</h3><p>When you send collected premium to the insurer, record it here with the bank or M-Pesa
+  reference. The insurer will confirm it arrived.</p></div>
+{% endif %}
+{% endblock %}

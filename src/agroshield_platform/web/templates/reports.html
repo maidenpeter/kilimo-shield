@@ -19,6 +19,8 @@
     <div class="n">{{ pf.with_layer_a }} with Layer A</div></div>
 </div>
 
+<div class="card"><h2 class="mt-0">Premium sent to the insurer</h2>
+  <p class="m-0">Record what you send on to the insurer and see what is still to send. <a href="/reports/premium">Open premium settlement</a></p></div>
 <div class="card"><b>Sales windows (long rains)</b>
   {% for wid, st in pf.sales.items() %}<div>{{ cfg.ward(wid).label }}:
     {% if st.open %}<span class="chip">open</span> for {{ st.year }}, closes {{ st.closes|day }}

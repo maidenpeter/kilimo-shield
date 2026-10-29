@@ -3,20 +3,87 @@
 {% block body %}
 <h1>Portfolio: {{ pf.insurer.name }}</h1>
 <p class="muted">All policies written for {{ pf.insurer.code }} through its SACCOs. Illustrative pricing; placeholder wards.</p>
-<div class="tiles">
+{% set qs = ('?' ~ ['season=' ~ f.season if f.season else '', 'sacco=' ~ f.sacco.code if f.sacco else '']|select|join('&')) if (f.season or f.sacco) else '' %}
+<form class="filters" method="get" action="/uw" aria-label="Filter the portfolio">
+  <div class="field"><label for="f-season">Season</label>
+    <select id="f-season" name="season"><option value="">All seasons</option>
+      {% for se, yr in f.seasons %}<option value="{{ se }}-{{ yr }}" {% if f.season == se ~ '-' ~ yr %}selected{% endif %}>{{ season_label(se, yr) }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="f-sacco">SACCO</label>
+    <select id="f-sacco" name="sacco"><option value="">All SACCOs</option>
+      {% for x in f.saccos %}<option value="{{ x.code }}" {% if f.sacco and f.sacco.id == x.id %}selected{% endif %}>{{ x.name }}</option>{% endfor %}</select></div>
+  <div class="actions"><button class="btn small" type="submit">Apply</button>
+    {% if f.season or f.sacco %}<a class="btn ghost small" href="/uw">Clear</a>{% endif %}
+    <a class="btn ghost small" href="/uw/portfolio.csv{{ qs }}">Download CSV</a></div>
+</form>
+
+{% if not pf.policies %}
+<div class="empty"><h2>No policies {{ 'match these filters' if (f.season or f.sacco) else 'yet' }}</h2>
+  <p>{% if f.season or f.sacco %}Try another season or SACCO.{% else %}Policies appear here as soon as a SACCO enrols a farmer for your cover.{% endif %}</p></div>
+{% else %}
+<div class="kpi-strip tiles">
   <div class="tile"><div class="k">Policies written</div><div class="v">{{ pf.policies|num }}</div><div class="n">{{ pf.active }} in force (fully paid)</div></div>
   <div class="tile"><div class="k">Acres</div><div class="v">{{ pf.acres|num(1) }}</div></div>
   <div class="tile"><div class="k">Sum insured written</div><div class="v">{{ pf.sum_insured_kes|kes }}</div>
     <div class="n">{{ pf.in_force_sum_insured_kes|kes }} in force</div></div>
-  <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ pf.gross_kes|kes }}</div>
+    <div class="n">{{ (pf.gross_kes / pf.sum_insured_kes)|pct(1) if pf.sum_insured_kes else 'n/a' }} of sum insured</div></div>
   {% if pf.largest %}<div class="tile"><div class="k">Largest single-ward loss</div><div class="v">{{ pf.largest.max_loss_kes|kes }}</div>
     <div class="n">{{ pf.largest.ward }}, {{ pf.largest.label }}, if the index fully triggers</div></div>{% endif %}
 </div>
 
+<div class="grid-2">
+  <figure class="card chart-card m-0">
+    <h2 class="mt-0">Exposure by ward</h2>
+    {% set e = ch.exposure %}
+    <svg class="chart" width="{{ e.width }}" height="{{ e.height }}" viewBox="0 0 {{ e.width }} {{ e.height }}" role="img" aria-labelledby="ex-t">
+      <title id="ex-t">Sum insured by ward: in force and pending payment</title>
+      {% for r in e.rows %}
+      <text x="0" y="{{ r.y + e.bar_h * 0.65 }}">{{ r.label }}</text>
+      <rect class="s1" x="{{ e.label_w }}" y="{{ r.y }}" width="{{ r.w_active }}" height="{{ e.bar_h }}" rx="3"><title>{{ r.label }}: {{ r.active|kes }} in force</title></rect>
+      <rect class="s3" x="{{ e.label_w + r.w_active }}" y="{{ r.y }}" width="{{ r.w - r.w_active }}" height="{{ e.bar_h }}" rx="3"><title>{{ r.label }}: {{ r.pending|kes }} pending</title></rect>
+      <text x="{{ e.label_w + r.w + 8 }}" y="{{ r.y + e.bar_h * 0.65 }}">{{ r.value|kes }}</text>
+      {% endfor %}
+    </svg>
+    <figcaption class="legend"><span><i class="s1-bg"></i>In force</span><span><i class="s3-bg"></i>Pending payment</span></figcaption>
+  </figure>
+  <figure class="card chart-card m-0">
+    <h2 class="mt-0">Premium written by month</h2>
+    {% set pr = ch.premium %}
+    <svg class="chart" width="{{ pr.width }}" height="{{ pr.height }}" viewBox="0 0 {{ pr.width }} {{ pr.height }}" role="img" aria-labelledby="pr-t">
+      <title id="pr-t">Gross premium written per month</title>
+      <line class="axis" x1="20" y1="{{ pr.base }}" x2="{{ pr.width }}" y2="{{ pr.base }}"/>
+      {% for c in pr.cols %}
+      <rect class="s1" x="{{ c.x }}" y="{{ c.y }}" width="{{ c.w }}" height="{{ c.h }}" rx="3"><title>{{ c.label }}: {{ c.value|kes }}</title></rect>
+      <text x="{{ c.x + c.w / 2 }}" y="{{ pr.height - 4 }}" text-anchor="middle">{{ c.label }}</text>
+      {% endfor %}
+    </svg>
+    <figcaption class="muted">Months the policies were written; total {{ pf.gross_kes|kes }}.</figcaption>
+  </figure>
+</div>
+
+<figure class="card chart-card mt-4">
+  <h2 class="mt-0">Payout events</h2>
+  {% if ch.events %}
+  {% set po = ch.payouts %}
+  <svg class="chart" width="{{ po.width }}" height="{{ po.height }}" viewBox="0 0 {{ po.width }} {{ po.height }}" role="img" aria-labelledby="po-t">
+    <title id="po-t">Payout amount per confirmed trigger, by ward and date</title>
+    {% for r in po.rows %}
+    <text x="0" y="{{ r.y + po.bar_h * 0.65 }}">{{ r.label }}</text>
+    <rect class="s2" x="{{ po.label_w }}" y="{{ r.y }}" width="{{ r.w }}" height="{{ po.bar_h }}" rx="3"><title>{{ r.label }}: {{ r.value|kes }}</title></rect>
+    <text x="{{ po.label_w + r.w + 8 }}" y="{{ r.y + po.bar_h * 0.65 }}">{{ r.value|kes }}</text>
+    {% endfor %}
+  </svg>
+  <figcaption class="muted">{% for ev in ch.events %}{{ ev.ward }} {{ ev.confirmed_on|day }}: {{ payout_kind(ev.kind) }}, {{ ev.count }} polic{{ 'y' if ev.count == 1 else 'ies' }}{% if ev.open %}, {{ ev.open }} still open{% endif %}{{ '; ' if not loop.last }}{% endfor %}.
+    <a href="/uw/triggers">Triggers and payouts</a></figcaption>
+  {% else %}
+  <p class="muted m-0">No trigger has been confirmed on these policies.</p>
+  {% endif %}
+</figure>
+
 <h2>Exposure concentration by ward</h2>
 <p class="muted">Maximum loss = every in-force policy in the ward paying its full sum insured (WRSI at or below the exit).
   Pending cover becomes exposure once fully paid by sales close.</p>
-<div class="table-wrap" tabindex="0" role="region"><table>
+<div class="table-wrap tall" tabindex="0" role="region" aria-label="Exposure by ward"><table>
   <thead><tr><th>Ward</th><th>Season</th><th class="num">In-force policies</th><th class="num">Max loss (in force)</th>
     <th class="num">Share of season</th><th class="num">Pending sum insured</th></tr></thead>
   <tbody>{% for e in pf.exposure %}<tr><td>{{ e.ward }} <span class="muted">({{ e.ward_id }})</span></td><td>{{ e.label }}</td>
@@ -26,7 +93,7 @@
 
 {% for title, rows in (("By SACCO", pf.by_sacco), ("By ward", pf.by_ward), ("By season", pf.by_season)) %}
 <h2>{{ title }}</h2>
-<div class="table-wrap" tabindex="0" role="region"><table>
+<div class="table-wrap tall" tabindex="0" role="region" aria-label="Portfolio {{ title|lower }}"><table>
   <thead><tr><th>{{ title[3:]|capitalize }}</th><th class="num">Policies</th><th class="num">In force</th><th class="num">Acres</th>
     <th class="num">Sum insured</th><th class="num">In-force sum insured</th><th class="num">Gross premium</th></tr></thead>
   <tbody>{% for r in rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.policies }}</td><td class="num">{{ r.active }}</td>
@@ -34,4 +101,5 @@
     <td class="num">{{ r.in_force_sum_insured_kes|kes }}</td><td class="num">{{ r.gross_kes|kes }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endfor %}
+{% endif %}
 {% endblock %}

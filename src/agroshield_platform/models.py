@@ -376,3 +376,25 @@ class PublicEnquiry(Base):
     consent_text: Mapped[str] = mapped_column(String(300))         # the exact consent line the person agreed to
     status: Mapped[str] = mapped_column(String(12), default="new") # new | handled
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PremiumRemittance(Base):
+    """Premium a SACCO reports sending on to its insurer (a record, not a payment). Never edited or deleted:
+    a correction is a new negative entry. The insurer's underwriter confirms receipt or queries it."""
+    __tablename__ = "premium_remittance"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    sacco_id: Mapped[int] = mapped_column(ForeignKey("sacco.id"), index=True)
+    insurer_id: Mapped[int] = mapped_column(ForeignKey("insurer.id"), index=True)
+    amount_kes: Mapped[float] = mapped_column(Float)
+    remitted_on: Mapped[date] = mapped_column(Date)
+    method: Mapped[str] = mapped_column(String(16))                # bank_transfer | mpesa | cheque | other
+    reference: Mapped[str] = mapped_column(String(40))             # bank or M-Pesa reference
+    period: Mapped[str | None] = mapped_column(String(20))         # optional label, e.g. 2027-LR
+    note: Mapped[str | None] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(12), default="recorded")   # recorded | confirmed | queried
+    recorded_by: Mapped[str] = mapped_column(String(60))
+    reviewed_by: Mapped[str | None] = mapped_column(String(60))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

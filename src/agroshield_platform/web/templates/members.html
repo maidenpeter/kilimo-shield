@@ -22,6 +22,8 @@
   {% endfor %}</tbody>
 </table></div>
 {% else %}
-<div class="card"><p>{{ 'Nobody matches.' if query else 'No members yet.' }} <a href="/enrol">Enrol a farmer</a>.</p></div>
+<div class="empty"><h2>{{ 'Nobody matches "' ~ query ~ '"' if query else 'No members yet' }}</h2>
+  <p>{% if query %}Check the spelling, or search by member number.{% else %}Farmers appear here once you enrol them.{% endif %}</p>
+  <div class="actions"><a class="btn" href="/enrol">Enrol a farmer</a>{% if query %}<a class="btn ghost small" href="/members">Show all members</a>{% endif %}</div></div>
 {% endif %}
 {% endblock %}

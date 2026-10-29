@@ -430,3 +430,16 @@ dl.glossary .sw-term { color: var(--ink-3); font-weight: var(--fw-medium); }
   .hero-credit { position: relative; right: auto; bottom: auto; text-align: left; padding: 0 var(--gutter) var(--sp-3); }
 }
 @media (min-width: 900px) { .hero > .wrap { padding-bottom: calc(var(--section-y) + var(--sp-7)); } .hero-credit { max-width: 52ch; } }
+
+/* ---------- underwriter workspace charts and forms (Phase D) ---------- */
+svg.chart { background: none; border: 0; border-radius: 0; padding: 0; width: auto; max-width: 100%; height: auto; display: block; overflow: visible; }
+svg.chart text { font-size: var(--fs-sm); }
+.chart-card h2 { font-size: var(--fs-md); }
+.chart-card figcaption { margin-top: var(--sp-2); }
+.legend .s1-bg { background: var(--chart-1); } .legend .s2-bg { background: var(--chart-2); } .legend .s3-bg { background: var(--chart-3); }
+.inline-form { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.inline-form input { min-height: var(--tap); }
+.filters .field > label { margin-top: 0; }
+.filters .actions { margin: 0; }
+.empty.first-run { margin-top: var(--sp-4); } .empty .actions { justify-content: center; }
+.empty p { margin-inline: auto; }
