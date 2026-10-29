@@ -11,6 +11,7 @@
     agroshield-portal monitor --replay-year 2008 --as-of 2008-09-01  # replay a past season (labelled)
     agroshield-portal weather-fetch # polite KMD check (at most once per page every 6 hours)
     agroshield-portal send-sms      # send queued SMS now
+    agroshield-portal enquiries     # demo requests and livestock interest from the public site (masked)
 
 Passwords are read from AGROSHIELD_OFFICER_PASSWORD or prompted for; never passed as arguments.
 """
@@ -103,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     mo.add_argument("--download", action="store_true", help="fetch the latest CHIRPS (live mode)")
     sub.add_parser("weather-fetch", help="check enabled weather sources politely")
     sub.add_parser("send-sms", help="send queued SMS")
+    sub.add_parser("enquiries", help="list public-site demo requests and livestock interest (contact details masked)")
     args = ap.parse_args(argv)
 
     settings = load_settings()
@@ -162,6 +164,14 @@ def main(argv: list[str] | None = None) -> int:
         with transaction(factory) as s:
             from . import sms
             sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
+    elif args.cmd == "enquiries":
+        from .enquiries import listing
+        with transaction(factory) as s:
+            rows = listing(s)
+            for e in rows:
+                print(f"{e.created_at:%Y-%m-%d %H:%M}  {e.ref}  {e.kind:<18} {e.org_type:<9} {e.email_masked:<28} "
+                      f"{e.organisation or '':<30} {e.status}")
+            print(f"{len(rows)} enquiries. Stored locally only; nothing was emailed.")
     elif args.cmd == "weather-fetch":
         from . import weather
         with transaction(factory) as s:

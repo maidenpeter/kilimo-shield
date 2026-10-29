@@ -1,0 +1,76 @@
+{% extends "public/_page.html" %}
+{% import "public/_ui.html" as ui with context %}
+{% import "public/_sources.html" as s %}
+{% block title %}Livestock cover (in development){% endblock %}
+{% block description %}AgroShield livestock cover, based on satellite pasture condition, is in development and not yet available. Register interest.{% endblock %}
+{% block content %}
+{% set srcs = [s.SRC.nasa_ndvi, s.SRC.ibli, s.SRC.klip] %}
+<section class="hero short">
+  {{ ui.hero_photo('camels-marsabit') }}
+  <div class="wrap public">
+    <p class="eyebrow">Livestock</p>
+    <h1>Pasture cover for herders</h1>
+    <p><span class="label-dev">In development, not yet available</span></p>
+    <p>We are working on cover that pays herders when the pasture fails, measured by satellite. It cannot be quoted or
+      bought yet.</p>
+    <div class="actions"><a class="btn big on-dark" href="#form">Register interest</a><a class="btn big ghost on-dark" href="/learn/livestock-insurance">How pasture cover works</a></div>
+  </div>
+  {{ ui.hero_credit('camels-marsabit') }}
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <div class="split-2">
+      <div>
+        <h2 class="mt-0">The idea</h2>
+        <p>Satellites measure how green the land is. The usual measure, NDVI, runs from zero for no vegetation to close to one for
+          the densest green leaves{{ ui.cite(1) }}. A pasture index built from it can show when grazing in an area has failed,
+          without anyone counting animals.</p>
+        <p>Kenya has done this before. The IBLI pilot began in Marsabit in January 2010, using satellite vegetation data to
+          predict livestock deaths{{ ui.cite(2) }}. The government's KLIP programme later redesigned its cover to pay at the start
+          of a drought, so herders could buy fodder, water and veterinary care while animals were still alive{{ ui.cite(3) }}.</p>
+      </div>
+      {{ ui.picture('camels-north-horr', 'r-4x3') }}
+    </div>
+  </div>
+</section>
+
+<section class="section band">
+  <div class="wrap public">
+    <div class="sec-head"><h2>What we are checking first</h2>
+      <p>Before anything is offered, the data has to be good enough. This work is experimental.</p></div>
+    <div class="grid-cards">
+      <div class="feature">{{ ui.icon('map') }}<h3>Is the data there?</h3><p>Which free satellite vegetation records reach pastoral areas
+        such as Marsabit, Isiolo and Samburu, and how many years they go back.</p></div>
+      <div class="feature">{{ ui.icon('pulse') }}<h3>Would it have paid?</h3><p>How often a pasture trigger set at roughly one bad season
+        in five would have fired in past years, and whether those years match known droughts.</p></div>
+      <div class="feature">{{ ui.icon('shield') }}<h3>Who would carry it?</h3><p>Cover would be underwritten by a partner insurer
+        (to be named), like the crop cover. Nothing is agreed yet.</p></div>
+    </div>
+    <div class="grid-2 mt-5">
+      {{ ui.picture('samburu-arid', 'r-16x9') }}
+      {{ ui.picture('savannah-after-rains', 'r-16x9') }}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <div class="split-2 wide-left">
+      <div>
+        <h2 class="mt-0">Register interest</h2>
+        <p>Leave your details and we will tell you when livestock cover can be piloted. This does not sign you up for anything.</p>
+        {{ ui.enquiry_form('interest', '/livestock', enq.ORG_TYPES['livestock_interest'], enq.CONSENT['livestock_interest'],
+                           'Register interest', form, form_error, sent, show_county=true, show_message=false) }}
+      </div>
+      <div lang="sw" class="card pad-lg">
+        <h2 class="mt-0">Kwa wafugaji</h2>
+        <p class="chip warn">Kiswahili: inasubiri ukaguzi wa mzungumzaji asilia</p>
+        <p>Bima ya mifugo inayotegemea hali ya malisho bado inaandaliwa. Haipatikani sasa na haiwezi kununuliwa.</p>
+        <p>Acha jina na barua pepe yako, nasi tutakujulisha itakapoanza kujaribiwa.</p>
+      </div>
+    </div>
+    {{ ui.sources(srcs) }}
+  </div>
+</section>
+{% endblock %}

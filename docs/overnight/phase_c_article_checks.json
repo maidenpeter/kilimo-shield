@@ -1,0 +1,656 @@
+{
+ "note": "Fact-check log: each issue the adversarial checker found in a draft and how it was fixed.",
+ "issues": {
+  "index-insurance": [
+   {
+    "sentence": "In this article, \"index insurance\" and \"parametric insurance\" mean the same thing.",
+    "problem": "The facts never mention \"parametric insurance\" or say the two terms mean the same thing.",
+    "fix": "Deleted."
+   },
+   {
+    "sentence": "Index insurance pays out on the basis of a measure agreed in advance, such as rainfall, without needing claims assessors to visit the farm [1].",
+    "problem": "The [1] quote supports \"predetermined index (e.g. rainfall level)\" but not the assessor part. The IFC quote says index insurance \"does not necessarily require\" assessors, which is softer than \"without needing\". Nothing in the facts mentions assessors visiting the farm.",
+    "fix": "Split into two sentences: the index part cited to [1], and \"does not necessarily need claims assessors\" also cited to [1]. Dropped \"to visit the farm\"."
+   },
+   {
+    "sentence": "Traditional crop insurance is often called indemnity cover.",
+    "problem": "The term \"indemnity cover\" and the claim about what it is \"often called\" are not in any fact. The title and section heading also used \"indemnity cover\".",
+    "fix": "Deleted the sentence. Changed the title, heading and wording to \"traditional crop insurance\" or \"traditional cover\", which is what source [2] says."
+   },
+   {
+    "sentence": "Put simply, indemnity cover asks what this farm lost, while index cover asks what the weather measure showed.",
+    "problem": "Used the unsupported term \"indemnity cover\" and had no citation, though it restates a fact from [2].",
+    "fix": "Reworded to \"traditional cover\" and added [2]."
+   },
+   {
+    "sentence": "No farm loss assessment: removing field assessment cuts running costs, because traditional crop insurance has to send out large numbers of trained assessors [2].",
+    "problem": "The [2] quote only says index insurance \"reduces administrative costs by eliminating the need for assessors\". \"Large numbers of trained assessors\" is not in the quote.",
+    "fix": "Reworded: paying without field assessment reduces administrative costs, because assessors are not needed [2]."
+   },
+   {
+    "sentence": "Faster, more objective claims: without assessors, claims can be settled faster and more objectively [1].",
+    "problem": "The quote says index insurance \"does not necessarily require\" assessors. \"Without assessors\" overstates that.",
+    "fix": "Reworded to \"because index insurance does not necessarily need claims assessors\"."
+   },
+   {
+    "sentence": "Nobody can sway the claim: the payout depends on an independent weather measurement, not on what happens on the farm, so farmers cannot influence it, which reduces what insurers call moral hazard [2].",
+    "problem": "The quote is only about farmers (\"farmers have no ability or incentive to influence the claim\"), so \"Nobody\" is too broad. It never mentions \"moral hazard\". \"Cannot influence\" also leaves out \"no incentive\".",
+    "fix": "Changed the label to \"Farmers cannot sway the claim\". Reworded to say farmers have no ability or reason to influence it. Removed the moral hazard clause."
+   },
+   {
+    "sentence": "Same terms for everyone nearby: all farmers in a defined area buy on the same terms and payout scale, which the World Bank says virtually eliminates adverse selection for insurers [2].",
+    "problem": "\"Nearby\" is looser than the quote's \"defined area\". \"Buy\" is close to the quote's \"subscribe\" but not the same word.",
+    "fix": "Changed the label to \"Same terms for everyone in an area\" and \"buy\" to \"sign up\". Kept the World Bank wording, which [2] supports."
+   },
+   {
+    "sentence": "The main trade-off is basis risk. It is the gap between what the index pays and what the farmer actually lost [2].",
+    "problem": "\"Main trade-off\" is not in the quote, which says \"most problematic feature\". The first sentence also had no citation.",
+    "fix": "Reworded the opening to \"The biggest drawback is basis risk\" and kept the quote's own \"most problematic feature\" sentence, cited to [2]."
+   },
+   {
+    "sentence": "Basis risk grows with the distance between the weather station or satellite measurement and the farm [1].",
+    "problem": "The quote says \"measurement instrument and the field\". It does not mention weather stations or satellites.",
+    "fix": "Reworded to \"the instrument that measures the weather and the field\"."
+   },
+   {
+    "sentence": "Denser weather stations and finer satellite pixels help reduce it [1].",
+    "problem": "Not in the [1] quote. This was an unsupported inference.",
+    "fix": "Deleted. Replaced with the quote's own next point: some households with a loss may not be paid while others with no loss may be paid [1]."
+   },
+   {
+    "sentence": "A smaller area keeps the measurement closer to each farm, which matters because distance adds to basis risk [1].",
+    "problem": "No fact says that per-ward triggers keep measurement closer to farms or reduce basis risk. It applies source [1] to AgroShield's product without support.",
+    "fix": "Deleted."
+   },
+   {
+    "sentence": "The main terms are below, and all of them are illustrative [4].",
+    "problem": "The product facts mark only the payout terms and the voucher amount as illustrative. They do not mark the failed onset rule or the timing that way.",
+    "fix": "Reworded to say the payout terms and voucher amount are illustrative [4]."
+   },
+   {
+    "sentence": "Every trigger calculation is versioned and logged, so any result can be checked later [4].",
+    "problem": "\"So any result can be checked later\" is not in the product facts.",
+    "fix": "Removed that clause."
+   },
+   {
+    "sentence": "Livestock cover based on pasture condition is in development and not yet available [4].",
+    "problem": "\"Not yet\" implies it will become available. The product facts only say \"not available\".",
+    "fix": "Changed to \"not available\"."
+   },
+   {
+    "sentence": "Index insurance pays on a weather measure agreed in advance, not on a visit to your farm. (summary)",
+    "problem": "\"A visit to your farm\" is not in the facts. Source [2] contrasts an ex-ante payout scale with an ex-post loss assessment.",
+    "fix": "Reworded the summary to \"not on an assessment of your farm's loss\". Also removed the word \"honest\" from the summary."
+   },
+   {
+    "sentence": "Taking the farm visit out of the claim changes several things for farmers, SACCOs and insurers.",
+    "problem": "\"Farm visit\" framing is not in the facts. The sources talk about field or loss assessment.",
+    "fix": "Reworded to \"Taking field loss assessment out of the claim\"."
+   },
+   {
+    "sentence": "So we ask farmers to tell us when it does.",
+    "problem": "A statement about how AgroShield works with no citation.",
+    "fix": "Added [4]."
+   }
+  ],
+  "basis-risk": [
+   {
+    "sentence": "Index insurance does not send an assessor to your field. It pays when a measured index, such as rainfall, crosses a set level.",
+    "problem": "These two sentences state facts with no citation. The 'crosses a set level' wording is not in the verified facts.",
+    "fix": "Merged them into one sentence based on fact [2] ('payouts follow an index rather than an assessed loss') and cited [2]."
+   },
+   {
+    "sentence": "Basis risk is the chance that the index reading does not match the actual loss on a farmer's own field [1].",
+    "problem": "This drifts slightly from the quote, which says basis risk 'arises when the index measurements do not match an individual insured's actual losses'.",
+    "fix": "Reworded to 'Basis risk arises when the index reading does not match a farmer's actual losses [1].'"
+   },
+   {
+    "sentence": "The second case is the one farmers remember.",
+    "problem": "This claim about how farmers behave has no source.",
+    "fix": "Deleted."
+   },
+   {
+    "sentence": "Rain can miss one farm and fall on the next.",
+    "problem": "This states a weather fact that is not in the verified facts, and it has no citation.",
+    "fix": "Deleted. Kept only the point that follows from [3], reworded as 'One field can suffer a loss that the area average does not show.'"
+   },
+   {
+    "sentence": "The index cut herders' exposure to large shared losses by an average of 62.8% [4].",
+    "problem": "The quote says IBLI (the insurance) reduced exposure. It does not say the index alone did.",
+    "fix": "Changed 'The index' to 'The insurance'. Also added [4] to the study's lead-in sentence."
+   },
+   {
+    "sentence": "For a SACCO selling cover, the members' trust in the SACCO itself is at stake.",
+    "problem": "This goes beyond source [2], which names donors, governments and the private sector. It is stated as fact.",
+    "fix": "Hedged it and tied it to the product facts: 'AgroShield cover is sold through SACCOs [7], so a SACCO's standing with its members could be part of that risk.'"
+   },
+   {
+    "sentence": "Insurance also works better alongside other tools.",
+    "problem": "This states a finding with no citation and is stronger than source [6], which only says researchers 'suggest' combining tools.",
+    "fix": "Folded it into the cited sentence as 'Researchers also recommend combining...' [6]."
+   },
+   {
+    "sentence": "Three design choices aim to reduce basis risk.",
+    "problem": "The product facts never say these features are meant to reduce basis risk. The sentence states an intent with no source.",
+    "fix": "Changed it to 'Three parts of the design touch on basis risk.' Retitled the section 'How AgroShield's design relates to basis risk' and updated the summary to match."
+   },
+   {
+    "sentence": "A smaller area is more likely to be uniform in weather, which is one of the recognised ways to lower basis risk [1].",
+    "problem": "Source [1] does not say smaller areas are more uniform. That is an unsupported inference presented as a sourced fact.",
+    "fix": "Reworded to what [1] supports: 'Basis risk falls when each index area is uniform in weather and farming methods [1], so the size of the index area matters.'"
+   },
+   {
+    "sentence": "Second, maize cover uses a seasonal Water Requirement Satisfaction Index (WRSI) for each ward instead of a plain rainfall total [7].",
+    "problem": "'Instead of a plain rainfall total' is not in the product facts. The sentence also leaves out that pricing is illustrative.",
+    "fix": "Removed the comparison and added 'and its pricing is illustrative' [7]."
+   },
+   {
+    "sentence": "There is no payout at WRSI 80 or above, rising in a straight line to the full sum insured at WRSI 50 or below (illustrative terms) [7].",
+    "problem": "The sentence is ungrammatical: 'rising' attaches to 'no payout'. It also made the paragraph five sentences long, over the four-sentence limit.",
+    "fix": "Split it into two cited sentences and merged the water-balance and start-of-season sentences, so the paragraph has four sentences."
+   },
+   {
+    "sentence": "This is not a binding audit rule: a report does not change a payout [7].",
+    "problem": "'Binding audit rule' loosely mixes the Tanzania audit (binding on an audit, not on payouts) with AgroShield's reports.",
+    "fix": "Reworded to 'This is not the same as the audit rule described above, because a report does not change a payout [7].'"
+   },
+   {
+    "sentence": "None of these steps removes basis risk, because no index measures each farmer's own loss [3].",
+    "problem": "'No index measures each farmer's own loss' is broader than the quote, which says an index predicts average losses in an area.",
+    "fix": "Reworded to 'because an index estimates the average loss in an area, not each farmer's own loss [3].'"
+   },
+   {
+    "sentence": "They aim to narrow the gap and to make it visible when it happens.",
+    "problem": "This claims AgroShield's intent with no citation, and the product facts do not support it.",
+    "fix": "Replaced it with a sentence from the product facts: missed-payout reports are reviewed and kept to improve the index [7]."
+   },
+   {
+    "sentence": "The northern Kenya evidence above comes from livestock insurance.",
+    "problem": "This states a fact about the cited studies but has no citation.",
+    "fix": "Added [4]. Also added the product fact on daily monitoring ('nothing is final until the data covers it') [7] to the limits paragraph."
+   },
+   {
+    "sentence": "(whole draft: dash check)",
+    "problem": "Checked every sentence for em or en dashes used as punctuation. Only ordinary hyphens appear, and number ranges are written with 'to'.",
+    "fix": "No change needed."
+   },
+   {
+    "sentence": "(whole draft: partnership check)",
+    "problem": "Checked for any implied partnership or logo. World Bank, ILRI and UC Davis appear only as cited research publishers, and the insurer stays 'partner insurer (to be named)'.",
+    "fix": "No change needed."
+   }
+  ],
+  "crop-index": [
+   {
+    "sentence": "AgroShield maize cover pays out based on a rainfall index, not on a visit to your farm [1].",
+    "problem": "The product facts do not mention farm visits. 'Not on a visit to your farm' is an added claim.",
+    "fix": "Reworded to what the product facts support: maize rainfall cover whose payouts follow a seasonal WRSI for the ward."
+   },
+   {
+    "sentence": "A maize plant needs different amounts of water as it grows.",
+    "problem": "This states an external fact with no citation.",
+    "fix": "Merged into the next sentence, which cites [2]. The FEWS NET quote supports a crop coefficient that adjusts the water need for growth stage."
+   },
+   {
+    "sentence": "In the model, the crop's need is worked out from potential evapotranspiration (how much water the weather would draw from a crop that never ran short), adjusted for the crop's growth stage [2].",
+    "problem": "The definition of potential evapotranspiration in brackets is not in the verified facts. It came from memory.",
+    "fix": "Deleted the bracketed definition. Kept the supported wording: PET adjusted by a crop coefficient for growth stage."
+   },
+   {
+    "sentence": "The US Geological Survey later adapted and extended it for FEWS NET, the Famine Early Warning Systems Network [2].",
+    "problem": "The quote from source [2] does not spell out the name FEWS NET. The full name comes from the Funk et al. quote [6].",
+    "fix": "Added citation [6] for the expanded name."
+   },
+   {
+    "sentence": "WRSI has been used to watch crops in Kenya for years.",
+    "problem": "There is no citation, and 'for years' in Kenya is not supported. The facts only show that USGS uses WRSI to monitor crops and that a 2006 fact sheet covered the 2000 drought.",
+    "fix": "Replaced with 'USGS scientists use WRSI to monitor crops [3].'"
+   },
+   {
+    "sentence": "The African Risk Capacity, an African Union agency, uses WRSI in its Africa RiskView software, which underpins its parametric drought insurance for member states [4].",
+    "problem": "The ARC quote does not support 'an African Union agency' or 'for member states'. The quote says the modelled drought response costs are the basis for ARC's flagship parametric drought insurance products.",
+    "fix": "Removed the unsupported descriptors and reworded to match the quote."
+   },
+   {
+    "sentence": "The rainfall in the index comes from CHIRPS, short for Climate Hazards Group InfraRed Precipitation with Station data [5].",
+    "problem": "The quote from source [5] does not give the expanded name. The only provided form of the name is the Funk et al. title [6] ('climate hazards infrared precipitation with stations'), which has no 'Group'. AgroShield's use of CHIRPS is a product fact that should cite [1].",
+    "fix": "Split into two sentences. AgroShield's use of CHIRPS cites [1], and the name is given as in the [6] title and cited [6]."
+   },
+   {
+    "sentence": "It covers 50 degrees south to 50 degrees north in grid cells 0.05 degrees across, from 1981 to near-present [5].",
+    "problem": "The quote says it uses 0.05 degree resolution satellite imagery. It does not say the data comes in grid cells 0.05 degrees across.",
+    "fix": "Reworded to 'uses satellite imagery at 0.05 degree resolution' and kept the coverage and date range."
+   },
+   {
+    "sentence": "CHIRPS was built to support FEWS NET and was designed for monitoring agricultural drought [6].",
+    "problem": "The Funk et al. quote only supports 'developed to support FEWS NET'. 'Designed for monitoring agricultural drought' is not in the quote.",
+    "fix": "Deleted the unsupported clause."
+   },
+   {
+    "sentence": "Water balance: from that start, the index tracks water ten days at a time, comparing rainfall with what maize needs at each stage [1].",
+    "problem": "The product facts say 'a ten-day (dekad) water balance with maize crop water needs'. 'At each stage' is not in the product facts.",
+    "fix": "Reworded to 'runs a ten-day (dekad) water balance using maize crop water needs'."
+   },
+   {
+    "sentence": "For example, a WRSI of 65 sits halfway along that line, so it would pay half the sum insured [1].",
+    "problem": "This is a worked example, not a stated product fact. The citation could suggest the source says it.",
+    "fix": "Kept it because the arithmetic follows from the stated terms. Reworded to make clear it is a worked example 'on these illustrative terms'."
+   },
+   {
+    "sentence": "Livestock cover based on pasture condition is in development and not yet available [1].",
+    "problem": "'Not yet' implies it will launch. The product facts only say 'in development and not available'.",
+    "fix": "Changed 'not yet available' to 'not available'."
+   },
+   {
+    "sentence": "An index can miss what happened on a single farm.",
+    "problem": "This general claim has no citation and is not stated in the facts.",
+    "fix": "Deleted it. The paragraph now opens with the supported missed-payout reporting sentence."
+   }
+  ],
+  "kaip-subsidy": [
+   {
+    "sentence": "Here is how the programme is run, what it reports it has achieved, and why AgroShield counts the subsidy only once it is paid. (summary)",
+    "problem": "The product facts do not say AgroShield counts the subsidy only once it is paid. This is an unsupported product claim.",
+    "fix": "Changed the end of the summary to 'and where AgroShield fits'."
+   },
+   {
+    "sentence": "When we show what a farmer pays, we show the subsidy as not yet received until it has actually been paid.",
+    "problem": "Unsupported product claim. Nothing in the PRODUCT FACTS describes how AgroShield displays or treats the subsidy.",
+    "fix": "Deleted. Replaced with a supported statement that this page does not say how a subsidy would apply to an AgroShield policy, and that this depends on the programme's rules."
+   },
+   {
+    "sentence": "A promised subsidy is not money in hand. We do not want a farmer or a SACCO to plan around funds that may arrive late, or not at all.",
+    "problem": "Unsupported product policy, and it implies without any source that government subsidy payments arrive late or not at all.",
+    "fix": "Deleted."
+   },
+   {
+    "sentence": "The government subsidy paid half of that, KSh 1,232, so the farmer paid the other KSh 1,232 [1].",
+    "problem": "The quote gives the premium and the subsidy only. It does not state the farmer's share.",
+    "fix": "Removed the farmer-share clause: 'The government subsidy paid half of that, KSh 1,232 [1].'"
+   },
+   {
+    "sentence": "Kenya's government helps smallholder farmers pay for crop insurance.",
+    "problem": "Factual statement with no citation. The subsidy quote says 'farmers ... for 0.5 to 20 acres', not 'smallholder farmers'.",
+    "fix": "Reworded to 'Kenya's government helps farmers pay for crop insurance [1].'"
+   },
+   {
+    "sentence": "This rule is set out in a presentation by the State Department for Agriculture.",
+    "problem": "Factual statement with no citation.",
+    "fix": "Reworded to 'This is described in a presentation by the State Department for Agriculture [1].'"
+   },
+   {
+    "sentence": "The presentation includes a worked maize example.",
+    "problem": "Factual statement with no citation.",
+    "fix": "Added [1]."
+   },
+   {
+    "sentence": "The scheme grew out of a pilot of area yield index insurance from 2016 to 2017, which started in three counties [1].",
+    "problem": "'Grew out of' claims a causal link that the source does not state. The source only lists the pilot and then the 2018 launch.",
+    "fix": "Reworded to 'Area yield index insurance was piloted from 2016 to 2017, starting in three counties [1].'"
+   },
+   {
+    "sentence": "A pool of private insurers provides the cover.",
+    "problem": "Uncited. The source refers to a lead insurer of a pool of private insurers and does not say the pool 'provides the cover'.",
+    "fix": "Merged into a cited sentence: 'A lead insurer, acting for a pool of private insurers, receives both the farmers' premiums and the government subsidy on behalf of the pool [1].'"
+   },
+   {
+    "sentence": "KAIP is run as a public-private partnership [1].",
+    "problem": "The present tense states a current fact. The source is a March 2024 presentation.",
+    "fix": "Reworded to 'The presentation describes the programme as a public-private partnership [1].'"
+   },
+   {
+    "sentence": "So every product sold under the programme has been through the regulator first.",
+    "problem": "An inference that goes beyond the source, which says only that IRA approves products developed by underwriters.",
+    "fix": "Deleted. Moved the IRA sentence into the previous paragraph so it meets the 2 to 4 sentence rule."
+   },
+   {
+    "sentence": "Most smallholders still face a bad season with no cover at all.",
+    "problem": "Unsourced elaboration. 'Face a bad season' is not in the facts.",
+    "fix": "Deleted. The cited sentence before it already gives the below 0.5% figure."
+   },
+   {
+    "sentence": "Subsidy rules are a government decision, and they do not stay fixed.",
+    "problem": "An uncited general claim. The facts show only that two sources (2017 and 2024) describe the rules differently.",
+    "fix": "Reworded to 'Descriptions of the subsidy rules have differed over time.' Changed the section heading to 'Check the current rules'."
+   },
+   {
+    "sentence": "Our pricing is illustrative [3], and our pilot wards are placeholders, so no figure on our site is a final price.",
+    "problem": "A citation sat in the middle of the sentence, and 'pilot wards are placeholders' is not in the PRODUCT FACTS (it is a house-rule disclosure). 'No figure on our site' is too broad, because the site also shows cited external figures.",
+    "fix": "Split into 'Our pricing is illustrative [3].' and 'Our pilot wards are placeholders, so the prices shown are examples, not final quotes.'"
+   },
+   {
+    "sentence": "Nothing in this article means AgroShield is part of KAIP or endorsed by the government.",
+    "problem": "The article also names APA Insurance, IRA and the World Bank. The disclaimer did not cover them, so a partnership could be read in.",
+    "fix": "Extended the disclaimer to say the article does not mean AgroShield works with APA Insurance, IRA, the World Bank or any other insurer."
+   },
+   {
+    "sentence": "Source 3 date: \"2026\"",
+    "problem": "No date was provided for the AgroShield methodology page. The date was invented.",
+    "fix": "Changed to 'Current version'."
+   },
+   {
+    "sentence": "(word count after fixes)",
+    "problem": "Deleting the unsupported subsidy-handling paragraph brought the body close to the 450-word minimum.",
+    "fix": "Added one paragraph of cited product facts (WRSI pricing per ward; triggers per ward, never per county; versioned and logged)."
+   }
+  ],
+  "livestock-insurance": [
+   {
+    "sentence": "The index covers a whole area, so every insured household in that area is treated the same way [3].",
+    "problem": "The source only says the index is 'area-aggregated'. It does not say every household in the area is treated the same way, so the second half of the sentence goes beyond what the source says.",
+    "fix": "Reworded to 'The index is worked out for a whole area, not for each herd [3].'"
+   },
+   {
+    "sentence": "That is also the weakness. In Marsabit, the Index-Based Livestock Insurance (IBLI) pilot covered only 62 to 77% of the herd mortality risk...",
+    "problem": "Source [2] is a 2015 evaluation that says 'In Marsabit, IBLI covers only 62-77%'. It does not call IBLI a pilot at that point. The draft also presented a finding about IBLI as a weakness of the KLIP index it had just described.",
+    "fix": "Reworded to say that an area index can miss what happens to one herd, then gave the figure as 'In Marsabit, the Index-Based Livestock Insurance (IBLI) scheme covered only 62 to 77%...' [2]. The IBLI full name is now introduced here."
+   },
+   {
+    "sentence": "Insurers call this gap basis risk.",
+    "problem": "The term comes from source [2] but the sentence had no citation. The source also never says what 'insurers' call it.",
+    "fix": "Changed to 'This gap is known as basis risk [2].'"
+   },
+   {
+    "sentence": "For livestock, the measure is the condition of the pasture, seen from space.",
+    "problem": "This presents one approach as the only one for all livestock cover, and it had no citation.",
+    "fix": "Narrowed to the Kenyan schemes in this article and cited: 'In the Kenyan schemes described here, that measure is the condition of the pasture, seen by satellite [1][3].'"
+   },
+   {
+    "sentence": "The money changed how families planned to cope. After the 2011 payouts, the share of households planning to eat fewer meals dropped by 22 percentage points...",
+    "problem": "The first sentence states a research finding with no citation. 'Dropped by' reads as a change over time, but the source reports an effect of IBLI ('IBLI results in a 22-percentage point drop').",
+    "fix": "Merged into one cited sentence: 'The study found that after the 2011 payouts, IBLI led to a 22 percentage point drop in the share of households planning to eat fewer meals, and almost halved the share planning to sell more livestock [1].'"
+   },
+   {
+    "sentence": "The first contracts were built to replace animals that had already died.",
+    "problem": "This is a factual claim with no citation. 'The first contracts' is vague and does not match the source, which talks about one product being redesigned.",
+    "fix": "Merged into a cited sentence: 'KLIP's product was redesigned from replacing dead animals to protecting live ones, so payouts come at the start of a drought, during the rainy season [3].'"
+   },
+   {
+    "sentence": "Cash that arrives after the herd has died can only help a family rebuild.",
+    "problem": "'Can only' is an absolute claim that no source supports.",
+    "fix": "Softened to 'Cash that arrives after animals have died can help a family restock.'"
+   },
+   {
+    "sentence": "Its pricing is illustrative and its pilot wards are placeholders [4].",
+    "problem": "The product facts support 'illustrative pricing'. They do not say the pilot wards are placeholders. That disclosure comes from the house rules, so citing [4] for it was wrong.",
+    "fix": "Split into 'Its pricing is illustrative [4].' and an uncited disclosure: 'The pilot wards used so far are placeholders.'"
+   },
+   {
+    "sentence": "Source 3 date: 'Undated; data runs to the end of the 2020 long rains season'",
+    "problem": "The facts say only that no date is printed on the pages that were read. 'Undated' claims more than that.",
+    "fix": "Changed to 'No date printed on the pages read; data runs to the end of the 2020 long rains season'."
+   },
+   {
+    "sentence": "Summary: 'How satellite vegetation indices let insurers cover herds without counting animals...'",
+    "problem": "'Without counting animals' is the writer's own conclusion, not something the sources say.",
+    "fix": "Changed to 'How satellite measures of pasture are used to insure herds in Kenya...'."
+   }
+  ],
+  "replanting-cover": [
+   {
+    "sentence": "It watches the weather at each farmer's location and pays out when the weather index shows poor rainfall that forces replanting [2].",
+    "problem": "The source says ACRE Africa (not the product) monitors the weather, and that the cover is for poor rainfall that forces replanting, with a payment triggered when the index shows adverse weather. The draft merged these two statements into one and changed who does the monitoring.",
+    "fix": "Split into two sentences that follow the quote: the product covers poor rainfall that forces replanting, and ACRE Africa monitors the weather at each farmer's location, with a payment triggered when the weather index shows adverse weather."
+   },
+   {
+    "sentence": "It then serves as the entry point to ACRE Hakika, a paid weather index extension product [6].",
+    "problem": "The 3ie quote says only 'a paid extension product'. 'Weather index' is not in the quote.",
+    "fix": "Merged with the sentence before it: 'It starts as free cover until the end of germination and is the first step into ACRE Hakika, a paid extension product [6].'"
+   },
+   {
+    "sentence": "The Replanting Guarantee was launched in 2013 [4]. In 2016 it recorded over 100,000 registrations ... which a 2017 African Insurance Awards entry calls 519 percent growth since launch [4].",
+    "problem": "Source 4 is a self-submitted nominee entry, but the launch date was stated as plain fact and the entry was not called a nominee entry.",
+    "fix": "Credited both figures to 'a 2017 African Insurance Awards nominee entry'."
+   },
+   {
+    "sentence": "Getting buyers to register was a challenge.",
+    "problem": "Factual claim with no citation.",
+    "fix": "Deleted it and folded the point into the cited sentence: 'ACRE worked with the Busara Center to understand and test what was driving low uptake of the cover [1].'"
+   },
+   {
+    "sentence": "In tests that used social messages and a simpler process, registration rose by between 12 and 24 percent [1].",
+    "problem": "The quote says 'social framing and simplified processes increased registration rates'. 'Social messages' and 'registration rose' change its meaning.",
+    "fix": "Reworded to 'Social framing and simpler processes increased registration rates by between 12 and 24 percent [1].'"
+   },
+   {
+    "sentence": "Its maize rainfall cover is priced on a seasonal Water Requirement Satisfaction Index (WRSI) for each ward, using CHIRPS satellite rainfall from 1981 to 2025 [7].",
+    "problem": "The product facts say the index (not the price) uses CHIRPS rainfall, and they describe the crop pricing as illustrative. The draft left out 'illustrative' and the dekad water balance with maize crop water needs.",
+    "fix": "Said the pricing is illustrative and based on the WRSI, then added a separate sentence: the index uses CHIRPS satellite rainfall for each ward from 1981 to 2025 and a ten-day (dekad) water balance with maize crop water needs."
+   },
+   {
+    "sentence": "The voucher sits inside a wider seasonal policy.",
+    "problem": "A statement about how AgroShield works, with no citation.",
+    "fix": "Reworded to 'The voucher is one part of a wider seasonal cover [7].'"
+   },
+   {
+    "sentence": "Both use a weather index rather than a farm visit [2][7].",
+    "problem": "'Rather than a farm visit' does not appear in any provided fact.",
+    "fix": "Reworded to 'Both rely on a weather index [2][7].'"
+   },
+   {
+    "sentence": "Both use satellite technology, ACRE to geotag and monitor farms [3] and AgroShield to measure rainfall in each ward [7].",
+    "problem": "It repeats an earlier point and says AgroShield 'measures' rainfall, when the product facts say it uses CHIRPS satellite rainfall data. The article was also over the 800-word limit.",
+    "fix": "Deleted. ACRE's satellite geotagging is still covered in the first section, and AgroShield's use of CHIRPS rainfall is covered in the AgroShield section."
+   },
+   {
+    "sentence": "Both products answer the same problem: rain that fails just after planting, so the farmer needs seed again [1][7].",
+    "problem": "Calling both 'products' overstates the match. Only AgroShield's voucher, not its whole maize cover, matches ACRE's replanting cover.",
+    "fix": "Reworded to 'ACRE's cover and AgroShield's voucher deal with the same problem: a lack of rain after planting that leaves the farmer needing seed again [1][7].'"
+   },
+   {
+    "sentence": "ACRE's cover starts free with the seed bag and leads into a paid product [6], and claims are paid through M-Pesa or as a discount on the next purchase [3].",
+    "problem": "'With the seed bag' is not in source 6; it comes from source 3 (cover comes with each maize seed purchase). The M-Pesa and discount point repeats the first section and pushed the article over the word limit.",
+    "fix": "Reworded to 'ACRE's cover comes with the seed purchase, starts free and leads into a paid product [3][6].' Removed the repeated payment detail."
+   },
+   {
+    "sentence": "AgroShield's voucher is one part of a priced seasonal maize cover sold through SACCOs, and the season keeps being measured after the voucher is issued [7].",
+    "problem": "'Priced' leaves out that the pricing is illustrative, and 'keeps being measured' is looser than the product fact (measured again from the next planting rain), which is already stated earlier.",
+    "fix": "Shortened to 'AgroShield's voucher is one part of a seasonal maize cover sold through SACCOs [7].'"
+   },
+   {
+    "sentence": "AgroShield has no partnership with ACRE Africa, and this article does not compare prices.",
+    "problem": "It states a fact about AgroShield's business relationships that is not in the product facts.",
+    "fix": "Reworded as a disclaimer about the article: 'It does not imply any partnership between AgroShield and ACRE Africa, and it does not compare prices.'"
+   },
+   {
+    "sentence": "In one case described by ACRE Africa, a Kenyan farmer received a payout of about KES 900 ...",
+    "problem": "It did not say which product the payout came from, although the source says it was a Replanting Guarantee payout.",
+    "fix": "Changed to 'a Replanting Guarantee payout of about KES 900'."
+   },
+   {
+    "sentence": "Source 7 date: \"2026\"",
+    "problem": "No date was given for the AgroShield methodology page. The date was made up.",
+    "fix": "Changed to 'Undated (current methodology page)'."
+   },
+   {
+    "sentence": "Whole article (body length)",
+    "problem": "With the corrections the body came to about 813 words, over the 800-word limit.",
+    "fix": "Removed repeated sentences so the body is about 795 words. No em or en dashes were found."
+   }
+  ],
+  "index-insurance-regulations": [
+   {
+    "sentence": "This article explains what they would do and how AgroShield is designed to pay quickly anyway. (summary)",
+    "problem": "Overclaims. 'Pay quickly anyway' suggests AgroShield already meets or beats the reported 10-day rule, but its 10 days run from index confirmation and need insurer approval. The summary was also three sentences, not one or two.",
+    "fix": "Rewrote it as two sentences: the draft is published, it is not yet law, and the article compares AgroShield's payout timing with it."
+   },
+   {
+    "sentence": "Index insurance pays out when a measured index, such as rainfall, crosses a set level. It does not pay on an inspection of each farm.",
+    "problem": "A general fact about index insurance with no citation and not in the verified facts. The point about 'no inspection of each farm' is not supported anywhere.",
+    "fix": "Replaced it with a cited product fact: AgroShield's maize payouts depend on a seasonal WRSI worked out from rainfall for each ward [5]."
+   },
+   {
+    "sentence": "At that point no timeline had been set for enacting the rules, and the draft could still be changed to reflect the comments [1].",
+    "problem": "Bowmans wrote 'at the moment' on 14 November 2025, before the 21 November deadline. 'At that point' wrongly ties the statement to the close of comments.",
+    "fix": "Split it in two. Bowmans said the draft may be amended after the comments, and when Bowmans wrote on 14 November 2025 there was no timeline for enactment."
+   },
+   {
+    "sentence": "Once gazetted, the regulations will give legal force to index-based insurance [3].",
+    "problem": "States the AKI journal's forward-looking view as fact without saying who said it.",
+    "fix": "Attributed it to the Association of Kenya Insurers journal article."
+   },
+   {
+    "sentence": "We have not seen a source confirming that the rules have been gazetted. Everything below describes the draft as reported, and the final rules may be different.",
+    "problem": "'Everything below' also covered the AgroShield sections, which are not about the draft.",
+    "fix": "Reworded to 'None of the sources we rely on says the rules have been gazetted' and 'The rules described below are the draft as reported'."
+   },
+   {
+    "sentence": "The paper noted that Kenya currently sets no legal deadline for settling these claims [2].",
+    "problem": "'Currently' is the position as of 9 November 2025. Readers now could take it as today's position.",
+    "fix": "Changed to 'at the time, Kenya set no legal deadline'."
+   },
+   {
+    "sentence": "A payout that arrives soon after a failed season can still help with seed, food or school fees. A payout that arrives months later helps much less.",
+    "problem": "Specific claims about uses of payouts (school fees and so on) with no source among the provided facts.",
+    "fix": "Softened to a general statement with no specific claims: money that arrives soon after a failed season is more useful than money that arrives months later."
+   },
+   {
+    "sentence": "Sources reporting on the draft list these duties:",
+    "problem": "Penalties and licence cancellation are IRA powers, not duties of insurers, so 'duties' is inaccurate. The heading 'Other duties in the draft' had the same problem.",
+    "fix": "Changed to 'Reports on the draft also list these points' and changed the heading to 'Other points in the draft'."
+   },
+   {
+    "sentence": "Fines of up to Sh1 million for insurers that do not comply, or cancellation of their licence, or an order to take remedial action [2].",
+    "problem": "The source says 'penalties' and frames them as IRA powers.",
+    "fix": "Reworded to 'IRA powers to impose penalties of up to Sh1 million...'."
+   },
+   {
+    "sentence": "Keeping basis risk low. Basis risk is when the index does not match real losses on the farm [2].",
+    "problem": "The source says insurers must 'minimise' basis risk and defines it as the data trigger not 'perfectly' matching actual losses. 'On the farm' is added wording.",
+    "fix": "Reworded to 'Keeping basis risk as low as possible. Basis risk is when the index does not perfectly match actual losses [2].'"
+   },
+   {
+    "sentence": "How AgroShield is designed to pay within 10 days (heading)",
+    "problem": "Misleading. It suggests AgroShield matches the draft's 10-day rule, but AgroShield counts from confirmation, not trigger, and needs insurer approval.",
+    "fix": "Changed the heading to 'How AgroShield handles payout timing'."
+   },
+   {
+    "sentence": "The insurer makes the payout, and our job is to have the numbers ready quickly.",
+    "problem": "Not in the product facts ('our job is to have the numbers ready quickly' is invented).",
+    "fix": "Deleted it. The insurer's approval role is covered by the cited payout-timing sentence."
+   },
+   {
+    "sentence": "Nothing is final until the data covers the whole period [5].",
+    "problem": "'The whole period' adds detail not in the product facts ('nothing is final until the data covers it').",
+    "fix": "Reworded to 'These daily results are not final until the rainfall data covers them [5].'"
+   },
+   {
+    "sentence": "Our design counts from when the index is confirmed and includes the insurer's approval [5].",
+    "problem": "The product facts say payouts are paid within 10 days of confirmation, after the insurer approves them. They do not say the approval falls inside the 10 days.",
+    "fix": "Reworded to 'Our design counts from when the index is confirmed, and payment also needs the insurer's approval [5].'"
+   },
+   {
+    "sentence": "If the final rules keep the reported wording, we would work with the insurer so that confirmation and approval fit inside the ten days.",
+    "problem": "An unsupported forward commitment that involves the insurer. It is not in the product facts and implies a compliance plan.",
+    "fix": "Replaced it with a neutral statement: the two are not the same, and our design will need to be checked against the final rules."
+   },
+   {
+    "sentence": "The index uses CHIRPS satellite rainfall for each ward from 1981 to 2025 and a seasonal Water Requirement Satisfaction Index (WRSI) for maize [5].",
+    "problem": "Supported, but the WRSI part now appears in the first section.",
+    "fix": "Kept the CHIRPS part and added the cited, illustrative payout scale (WRSI 80 to 50) so readers can see how the index sets payouts."
+   },
+   {
+    "sentence": "A clear record like this supports the kind of filing the draft reportedly asks for, such as pricing and an explanation of how the index was built [2].",
+    "problem": "Implies AgroShield fits or is ready for the draft's filing rules. Source [2] says nothing about AgroShield, and the product facts do not make this claim.",
+    "fix": "Deleted it."
+   },
+   {
+    "sentence": "Each report is reviewed and kept to improve the index, which helps us find basis risk [5].",
+    "problem": "'Which helps us find basis risk' is not in the product facts.",
+    "fix": "Removed that clause."
+   },
+   {
+    "sentence": "AgroShield's maize rainfall cover uses illustrative pricing, and its pilot wards are placeholders [5].",
+    "problem": "The product facts support illustrative pricing and terms. The placeholder status of the pilot wards comes from the house rules, not the methodology page, so citing [5] for it is wrong.",
+    "fix": "Split it in two. Illustrative pricing and payout terms are cited [5]. The placeholder pilot wards are stated without the [5] citation."
+   },
+   {
+    "sentence": "Final prices and wards will depend on the partner insurer and on the rules the IRA finally adopts.",
+    "problem": "Speculative and not in the facts. It also assumes the IRA will adopt final rules.",
+    "fix": "Replaced it with 'Prices, terms and wards may change', which follows from their being illustrative and placeholders."
+   }
+  ],
+  "glossary": [
+   {
+    "sentence": "(Article structure) The draft has one section, 'About this glossary'.",
+    "problem": "House rules require 3 to 6 sections, each with a heading.",
+    "fix": "Split the introduction into three headed sections: 'About this glossary', 'About the Kiswahili' and 'About AgroShield terms'. No new facts were added."
+   },
+   {
+    "sentence": "If you spot a better Kiswahili word, tell your SACCO officer so it can be passed on.",
+    "problem": "This describes a feedback process through SACCO officers. The product facts don't mention it, so it is an invented process.",
+    "fix": "Deleted."
+   },
+   {
+    "sentence": "The pricing and payout terms shown here are illustrative, and the pilot wards are placeholders [1].",
+    "problem": "The product facts support 'illustrative pricing' and 'illustrative terms' but say nothing about pilot wards, so the [1] citation did not cover the second half. The house rules still require the placeholder statement.",
+    "fix": "Split the sentence. The illustrative-terms sentence keeps [1]. The pilot-ward placeholder line is kept as a house-rule disclaimer with no citation."
+   },
+   {
+    "sentence": "Parametric cover is another name used on this site for index insurance: the payout depends on a measured value, such as a rainfall index, that is set out in the policy in advance.",
+    "problem": "No citation. The word 'parametric' appears in no fact, and 'a measured value set out in the policy in advance' misreads the World Bank quote, where the payout scale (not the value) is pre-set.",
+    "fix": "Reworded as a site convention tied to the cited quote: payouts follow index values and a scale set out in the policy in advance, not an assessment of each farmer's own loss [2]. Added source 2."
+   },
+   {
+    "sentence": "An indemnity is a payment made to make up for a loss, and in index insurance it is based on index values rather than on an assessment of each policyholder's loss [2].",
+    "problem": "The general definition 'a payment made to make up for a loss' is not in the cited quote, which only speaks of 'indemnity payments' in index insurance.",
+    "fix": "Reworded to 'a claim payment made under a policy', with the index-based part matching the quote."
+   },
+   {
+    "sentence": "The sum insured is the most the cover can pay, and in index insurance it is usually based on the cost of production and fixed in the policy in advance [2].",
+    "problem": "'The most the cover can pay' is not in the World Bank quote.",
+    "fix": "Removed that claim. Kept the quote-backed part ('normally based on production cost, fixed in the policy in advance') [2] and added the product fact that AgroShield maize cover pays the full sum insured at WRSI 50 or below (illustrative) [1]."
+   },
+   {
+    "sentence": "A premium subsidy is when a government pays part of the farmer's premium, which is the most common way governments support crop insurance, often about half the premium and up to 80 percent in some countries [2].",
+    "problem": "The quote says 'the most common government intervention' and does not limit it to crop insurance, so 'crop insurance' widens the scope beyond the quote.",
+    "fix": "Reworded to 'the most common way governments intervene, often covering around 50 percent of the premium and up to 80 percent in some countries [2]'."
+   },
+   {
+    "sentence": "The trigger is the index level at which cover starts and a payout becomes due [2]; for AgroShield maize cover it is a WRSI below 80, set per ward and never per county (illustrative terms) [1].",
+    "problem": "The trigger is a level, not a range. The product facts say there is no payout at WRSI 80 or above, so the trigger level is 80 and payouts start below it. 'A WRSI below 80' mixes the two up.",
+    "fix": "Reworded: the trigger is a WRSI of 80, so a payout starts when a ward's WRSI falls below 80, and triggers are set per ward, never per county (illustrative terms) [1]."
+   },
+   {
+    "sentence": "The exit is the index level at which the full sum insured is paid, and for AgroShield maize cover this is a WRSI of 50 or below (illustrative terms) [1].",
+    "problem": "The term 'exit' and its general definition are not in the product facts or any cited source.",
+    "fix": "Framed as a site convention ('On this site, the exit is...'). The cited part is limited to the product fact (full sum insured at WRSI 50 or below)."
+   },
+   {
+    "sentence": "A payout is the money the cover pays: AgroShield pays nothing at WRSI 80 or above, rising in a straight line to the full sum insured at WRSI 50 or below, and payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [1].",
+    "problem": "'AgroShield pays' wrongly suggests AgroShield is the payer, when cover is underwritten by the partner insurer. The 'illustrative terms' flag from the product facts was also missing.",
+    "fix": "Changed to 'AgroShield maize cover pays nothing...' and added '(illustrative terms)'."
+   },
+   {
+    "sentence": "A dekad is one of three parts of a month (the 1st to the 10th, the 11th to the 20th, and the 21st to the last day), so the third dekad can be longer or shorter than 10 days [2].",
+    "problem": "The cited quote only says a dekad is 'a conventional way of dividing a month in three intervals'. The day ranges and the third-dekad length are not in the quote.",
+    "fix": "Trimmed to the quote [2] and added the product fact that AgroShield's water balance uses ten-day (dekad) steps [1]."
+   },
+   {
+    "sentence": "The start of season is when the crop season is taken to begin, and crop water models use the onset of rains as a stand-in for it [5]; ...",
+    "problem": "The quote comes from one FEWS NET product document. 'Crop water models' in general widens it beyond what the source supports.",
+    "fix": "Narrowed to 'FEWS NET's crop water products use the onset of rains as a stand-in for it [5]'."
+   },
+   {
+    "sentence": "NDVI is a satellite measure of green vegetation that runs from minus one to plus one, where zero means no vegetation and values near plus one mean very dense green leaves [4].",
+    "problem": "The minus one to plus one range is not in the cited quote. The quote gives 'close to +1 (0.8 - 0.9)' as the highest possible density of green leaves.",
+    "fix": "Removed the range and matched the quote: zero means no vegetation, and values close to plus one (0.8 to 0.9) mean the highest possible density of green leaves [4]."
+   },
+   {
+    "sentence": "The sales window is the period when cover can be bought, and it must close before cover begins so that farmers cannot wait to see how the weather turns out [2].",
+    "problem": "The quote only says the sales period must close before the coverage period begins. The reason given ('so farmers cannot wait...') is not in the quote. The quote is also specific to index insurance.",
+    "fix": "Removed the reason and scoped the sentence to index insurance: it must close before the cover period begins [2]."
+   },
+   {
+    "sentence": "A SACCO is a member-owned savings and credit co-operative, and AgroShield cover is sold through SACCOs, where farmers can also report a missed payout [1].",
+    "problem": "'Member-owned savings and credit co-operative' is an outside fact that appears in neither the facts nor the product facts. The Kiswahili term also added an unsourced expansion.",
+    "fix": "Defined SACCOs only by their role in the product facts (cover is sold through them, and missed-payout reports can be made through them; a report is reviewed but does not change a payout) [1]. Simplified term_sw to 'SACCO'."
+   },
+   {
+    "sentence": "(Kiswahili definitions for the entries above)",
+    "problem": "The Kiswahili text repeated each problem in the English definitions.",
+    "fix": "Rewrote each affected Kiswahili definition to match its corrected English one."
+   }
+  ]
+ }
+}

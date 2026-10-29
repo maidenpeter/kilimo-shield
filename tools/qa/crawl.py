@@ -37,13 +37,14 @@ SCHEMES = ["light", "dark"]
 
 # Static routes per role; dynamic ones (a member page, a pricing report) are discovered from links.
 ROUTES = {
-    "public": ["/", "/login"],
+    "public": ["/", "/crops", "/livestock", "/how-it-works", "/insurers", "/saccos", "/learn", "/faq", "/credits", "/demo",
+               "/login"],
     "officer": ["/dashboard", "/enrol", "/quote", "/members", "/payouts", "/bulk", "/dev/mpesa"],
     "manager": ["/dashboard", "/enrol", "/quote", "/members", "/payouts", "/reports", "/import", "/weather", "/sms",
                 "/dev/mpesa"],
     "underwriter": ["/uw", "/uw/triggers", "/uw/money", "/uw/bordereaux", "/uw/pricing", "/uw/reinsurer"],
 }
-DISCOVER = {"officer": [r"^/members/[0-9a-f]{32}$"], "manager": [r"^/members/[0-9a-f]{32}$"],
+DISCOVER = {"public": [r"^/learn/[a-z0-9-]+$"], "officer": [r"^/members/[0-9a-f]{32}$"], "manager": [r"^/members/[0-9a-f]{32}$"],
             "underwriter": [r"^/uw/runs/[^/]+/report\.html$"]}
 SKIP_LINK = re.compile(r"^/(logout|export/|bulk/template|uw/bordereaux/.+\.zip|weather/\d+/pdf)")
 

@@ -1,0 +1,113 @@
+{% extends "public/_page.html" %}
+{% import "public/_ui.html" as ui %}
+{% import "public/_sources.html" as s %}
+{% block title %}For insurers and reinsurers{% endblock %}
+{% block description %}Product structure, data sources, audit trail and the underwriter workspace behind AgroShield's ward-level maize cover.{% endblock %}
+{% block content %}
+{% set srcs = [s.SRC.chirps, s.SRC.wrsi, s.SRC.bd10, s.SRC.ey] %}
+<section class="hero short">
+  {{ ui.hero_photo('village-maize') }}
+  <div class="wrap public">
+    <p class="eyebrow">For insurers and reinsurers</p>
+    <h1>You carry the risk. You should see every number.</h1>
+    <p>AgroShield builds and runs the index, the pricing and the monitoring. Your underwriters see the whole book, approve every
+      payout and can rebuild any premium from the inputs.</p>
+    <div class="actions"><a class="btn big on-dark" href="/demo">Request a demo</a><a class="btn big ghost on-dark" href="#workspace">See the workspace</a></div>
+  </div>
+  {{ ui.hero_credit('village-maize') }}
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <div class="sec-head"><h2>Product structure</h2><p>One maize season-long cover per ward and season. Terms are illustrative until you file them.</p></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Product structure"><table>
+      <thead><tr><th>Part</th><th>Trigger (illustrative)</th><th>Payout (illustrative)</th></tr></thead>
+      <tbody>
+        <tr><td>Drought</td><td>Season WRSI below 80</td><td>Straight line from 0 at WRSI 80 to the full sum insured at 50 or below</td></tr>
+        <tr><td>Failed onset</td><td>Less than 80 mm over the whole planting window</td><td>25% of sum insured; no WRSI season</td></tr>
+        <tr><td>Replanting voucher</td><td>Less than 20 mm in the 20 days after the planting rain</td><td>Seed voucher, KES 2,500 per acre, once a season; season restarts</td></tr>
+      </tbody>
+    </table></div>
+    <div class="grid-cards mt-5">
+      <div class="feature">{{ ui.icon('coins') }}<h3>You receive the full premium</h3><p>Subsidy and Resilience discounts change who pays,
+        never what the insurer receives. Subsidy is shown as a receivable until paid.</p></div>
+      <div class="feature">{{ ui.icon('shield') }}<h3>You approve every payout</h3><p>Calculated payouts wait for your underwriter to
+        approve or hold them with a reason. The platform never pays on its own.</p></div>
+      <div class="feature">{{ ui.icon('map') }}<h3>Ward-level exposure</h3><p>Maximum loss per ward and season, so concentration is visible
+        before sales close.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band">
+  <div class="wrap public">
+    <div class="sec-head"><h2>Data sources</h2></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Data sources"><table>
+      <thead><tr><th>Input</th><th>Source</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Rainfall</td><td>CHIRPS, satellite plus gauge, 0.05 degree, from 1981{{ ui.cite(1) }}</td><td>In use, 1981 to 2025.
+          CHIRPS version 2 ends after December 2026, so a move to version 3 is planned{{ ui.cite(1) }}.</td></tr>
+        <tr><td>Crop index</td><td>WRSI water balance, after FAO and FEWS NET{{ ui.cite(2) }}</td><td>In use (index version recorded per run)</td></tr>
+        <tr><td>Evaporation</td><td>FAO-56 Hargreaves from NASA POWER temperatures</td><td>Fallback, flagged in every output. FEWS NET
+          evaporation not yet downloaded.</td></tr>
+        <tr><td>Validation</td><td>FEWS NET end-of-season WRSI per ward</td><td>Not yet downloaded; compared automatically once present</td></tr>
+        <tr><td>Yields</td><td>Ward yield history</td><td>Not available, so basis risk is reported as not measurable</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="section" id="workspace">
+  <div class="wrap public">
+    <div class="sec-head"><h2>The underwriter workspace</h2><p>Real screenshots of the running system, on fictional demo data.</p></div>
+    <div class="shots-grid">
+      {% for k in ['shot-uw-portfolio', 'shot-uw-triggers', 'shot-uw-money', 'shot-uw-bordereaux'] %}
+      <div class="shot">{{ ui.picture(k, '', sizes='(min-width: 1200px) 580px, (min-width: 768px) 50vw, 100vw') }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section band" id="audit">
+  <div class="wrap public">
+    <div class="split-2">
+      <div>
+        <h2 class="mt-0">Audit trail</h2>
+        <ul class="kicker-list">
+          <li>Every pricing run saves a manifest: index version, config hashes, input checksums, code version and a results hash.</li>
+          <li>Every ward trigger calculation is versioned and logged with the data it used.</li>
+          <li>Every policy, payment, approval, hold and payout is an audit event with who and when.</li>
+          <li>Bordereaux come with a manifest and a checksum for each file.</li>
+          <li>Missed-payout reports from farmers are kept and reviewed, so basis risk can be measured over time.</li>
+        </ul>
+        <p>Kenya's draft index insurance regulations, reported as a 10-day payout rule{{ ui.cite(3) }}, were still a draft in
+          February 2026{{ ui.cite(4) }}. The payout clock in the workspace is built around that standard.</p>
+      </div>
+      <div class="shot">{{ ui.picture('shot-uw-pricing', '') }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <h2 class="mt-0">Still to be agreed</h2>
+    <p>We would rather you see the gaps now than in due diligence.</p>
+    <ul class="kicker-list placeholder-list">
+      <li><b>Partner insurer:</b> to be named. No insurer, reinsurer or regulator has approved this product.</li>
+      <li><b>Pilot wards:</b> placeholders in Nakuru County; the pilot SACCO is not yet chosen.</li>
+      <li><b>Loadings and margin:</b> placeholders for the insurer to set.</li>
+      <li><b>Subsidy terms:</b> to be confirmed with the programme and the insurer.</li>
+      <li><b>Consent wording:</b> pending legal review and Kiswahili review; live enrolment is blocked until then.</li>
+      <li><b>Payments:</b> M-Pesa sandbox only; real M-Pesa payouts are switched off.</li>
+      <li><b>Weather advisories by SMS:</b> off until written permission from the Kenya Meteorological Department.</li>
+      <li><b>Livestock:</b> in development, not quotable.</li>
+    </ul>
+    <div class="cta-band mt-5">
+      <h2>Walk through it with us</h2>
+      <p>Pricing reports, a trigger replay of a past drought season, and sample bordereaux, all on fictional data.</p>
+      <div class="actions"><a class="btn big on-dark" href="/demo">Request a demo</a></div>
+    </div>
+    {{ ui.sources(srcs) }}
+  </div>
+</section>
+{% endblock %}

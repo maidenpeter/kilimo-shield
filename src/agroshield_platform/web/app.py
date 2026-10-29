@@ -31,14 +31,17 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import hmac
+import json
 import logging
 import math
+import re
 import secrets
 import time
 from datetime import timedelta
 from pathlib import Path
 
 import jinja2
+from markupsafe import Markup
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -50,6 +53,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from agroshield_pricing.config import load_config
 from agroshield_pricing.quote import QuoteError, RateBook, quote
 
+from .. import enquiries as enq
 from .. import locale as L
 from .. import monitoring as mon
 from .. import mpesa as mp
@@ -176,6 +180,17 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                                                        "payout_too_small": "Payout too small", "other": "Other"}.get(k, k)
     weather_raw, weather_sources = wx.load_sources(settings.config_dir)
     templates.env.globals["ward_label"] = lambda wid: cfg.ward(wid).label if wid in cfg.wards else wid
+    # Licence-checked photos (tools/fetch_images.py): key -> credit, alt text and the sizes on disk.
+    # Demo screenshots of the workspace (tools/qa/shots.py) share the same macro but are not credited photos.
+    images = {}
+    for f in (HERE / "static" / "img" / "credits.json", HERE / "static" / "img" / "shots" / "shots.json"):
+        if f.exists():
+            images.update({c["key"]: c for c in json.loads(f.read_text(encoding="utf-8"))})
+    templates.env.globals["images"] = images
+    # Learn articles mark sources as [n]; turn each into a link to the numbered source list (input already escaped).
+    cite_re = re.compile(r"\[(\d+)\]")
+    templates.env.filters["cites"] = lambda text: Markup(cite_re.sub(
+        r'<sup><a href="#src-\1" aria-label="Source \1">[\1]</a></sup>', str(text)))
 
     # ------------------------------------------------------------------ helpers
     def csrf(request: Request) -> str:
@@ -242,7 +257,6 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             resilience={p.id: True for p in cfg.product.resilience.points if form.get(f"res_{p.id}")},
             language=form.get("language", "en"))
 
-    # ------------------------------------------------------------------ public
     # ------------------------------------------------------------------ public site
     # Path -> template under templates/public/. A page whose template is not written yet shows a short
     # "being written" page instead of a 404, so the navbar never leads nowhere.
@@ -251,12 +265,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                     "/learn": "learn.html", "/faq": "faq.html", "/credits": "credits.html", "/demo": "demo.html"}
 
     def public_page(request: Request, name: str, status: int = 200, **kw):
+        from .. import content
         with transaction(factory) as s:
             off = officer_or_none(request, s)
         tpl = f"public/{name}"
         if not (HERE / "templates" / tpl).exists():
             tpl = "public/_writing.html"
-        return render(request, tpl, off, status=status, **kw)
+        kw.setdefault("articles", content.ARTICLES)
+        kw.setdefault("sent", request.session.pop("enquiry_sent", None))      # reference shown after a form is stored
+        return render(request, tpl, off, status=status, enq=enq, **kw)
 
     def _public_route(path: str, name: str):
         def view(request: Request):
@@ -267,13 +284,40 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     for _path, _name in PUBLIC_PAGES.items():
         _public_route(_path, _name)
 
+    def enquiry_post(request: Request, kind: str, page: str, form: dict):
+        """Store a public form locally (no email is sent). Post, redirect, get: the reference comes back via the session."""
+        check_csrf(request, form.get("csrf_token", ""))
+        if form.get("website"):                                    # hidden field people never fill in
+            raise HTTPException(400, "Form check failed.")
+        last = request.session.get("enquiry_at", 0)
+        if time.time() - last < 20:
+            raise HTTPException(429, "Please wait a few seconds before sending another form.")
+        try:
+            with transaction(factory) as s:
+                e = enq.record(s, vault, kind, form)
+                ref = e.ref
+        except enq.EnquiryError as err:
+            return public_page(request, page, status=422, form_error=str(err), form=form)
+        request.session["enquiry_at"] = time.time()
+        request.session["enquiry_sent"] = ref
+        path = "/demo" if kind == "demo" else "/livestock"
+        return RedirectResponse(f"{path}#form", status_code=303)
+
+    @app.post("/demo")
+    async def demo_post(request: Request):
+        return enquiry_post(request, "demo", "demo.html", dict(await request.form()))
+
+    @app.post("/livestock")
+    async def livestock_post(request: Request):
+        return enquiry_post(request, "livestock_interest", "livestock.html", dict(await request.form()))
+
     @app.get("/learn/{slug}", response_class=HTMLResponse)
     def learn_article(request: Request, slug: str):
         from .. import content
         art = content.article(slug)
         if art is None:
             raise HTTPException(404, "No such article.")
-        return public_page(request, "article.html", art=art, articles=content.ARTICLES)
+        return public_page(request, "article.html", art=art)
 
     @app.get("/login", response_class=HTMLResponse)
     def login_form(request: Request):

@@ -1,0 +1,35 @@
+{% extends "public/_page.html" %}
+{% import "public/_ui.html" as ui %}
+{% block title %}Learn{% endblock %}
+{% block description %}Plain-language articles on index insurance in Kenya, each with its sources, and an English and Kiswahili glossary.{% endblock %}
+{% block content %}
+<section class="hero short">
+  {{ ui.hero_photo('kericho-farms') }}
+  <div class="wrap public">
+    <p class="eyebrow">Learn</p>
+    <h1>Index insurance, in plain words</h1>
+    <p>How this kind of cover works, where it falls short, and the rules in Kenya. Every figure links to its source.</p>
+  </div>
+  {{ ui.hero_credit('kericho-farms') }}
+</section>
+<section class="section">
+  <div class="wrap public">
+    {% for topic in ['Basics', 'Crops', 'Livestock', 'Kenya', 'Reference'] %}
+    {% set items = articles|selectattr('topic', 'equalto', topic)|list %}
+    {% if items %}
+    <h2{% if loop.first %} class="mt-0"{% endif %}>{{ topic }}</h2>
+    <div class="article-list">
+      {% for a in items %}
+      <article class="article-card"><h3><a href="/learn/{{ a.slug }}">{{ a.title }}</a></h3><p>{{ a.summary }}</p>
+        <p class="meta">{{ a.reading_minutes }} min read &middot; {{ a.sources|length }} sources</p></article>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="callout mt-5"><p class="m-0">How these were written: each article was drafted only from facts we checked against the
+      source page, then checked again sentence by sentence. Anything we could not verify was left out. Mentioning an organisation
+      does not mean it works with AgroShield.</p></div>
+    <p class="mt-4"><a href="/faq">Common questions</a></p>
+  </div>
+</section>
+{% endblock %}

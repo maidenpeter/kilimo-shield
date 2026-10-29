@@ -1,0 +1,44 @@
+{% extends "public/_page.html" %}
+{% import "public/_ui.html" as ui %}
+{% import "public/_sources.html" as s %}
+{% block title %}Questions{% endblock %}
+{% block description %}Common questions about AgroShield crop cover from insurers, SACCOs and farmers.{% endblock %}
+{% macro q(question) %}<details class="faq"><summary>{{ question }}</summary>{{ caller() }}</details>{% endmacro %}
+{% block content %}
+{% set srcs = [s.SRC.wb2011, s.SRC.kaip, s.SRC.bd10, s.SRC.ey, s.SRC.chirps] %}
+<div class="wrap public">
+  <div class="sec-head mt-5"><h1>Questions</h1><p>Short answers. Each links to the full explanation.</p></div>
+  <div class="grid-2">
+    <section aria-labelledby="q-ins">
+      <h2 id="q-ins" class="mt-0">Insurers and reinsurers</h2>
+      {% call q("Who carries the risk?") %}<p>The partner insurer (to be named), and any reinsurer behind it. AgroShield builds and runs
+        the index, the pricing and the monitoring, and never pays a claim on its own: every payout waits for the underwriter's approval.</p>{% endcall %}
+      {% call q("Can we reproduce a premium?") %}<p>Yes. Every pricing run saves its inputs, config hashes and a results hash. Re-running
+        with the same inputs gives the same hash. <a href="/how-it-works#pricing">How pricing works</a>.</p>{% endcall %}
+      {% call q("Which rainfall data do you use?") %}<p>CHIRPS, a satellite and rain gauge record from the Climate Hazards Center at UC Santa
+        Barbara that starts in 1981{{ ui.cite(5) }}. Pricing uses 1981 to 2025.</p>{% endcall %}
+      {% call q("Is there a legal deadline for payouts?") %}<p>Kenya's draft index insurance regulations were reported to require payouts
+        within ten days of the trigger{{ ui.cite(3) }}. They were still a draft in February 2026{{ ui.cite(4) }}.
+        <a href="/learn/index-insurance-regulations">More on the draft</a>.</p>{% endcall %}
+      {% call q("What is not ready yet?") %}<p>The partner insurer, the pilot SACCO and wards, loadings, subsidy terms and the review of the
+        consent wording. The full list is on <a href="/insurers">For insurers</a>.</p>{% endcall %}
+    </section>
+    <section aria-labelledby="q-far">
+      <h2 id="q-far" class="mt-0">SACCOs and farmers</h2>
+      {% call q("How much does it cost?") %}<p>It depends on the ward, the acres and the cover chosen. A SACCO officer can show a quote in a
+        few minutes, including any subsidy and discount. All prices are illustrative until the product is filed.</p>{% endcall %}
+      {% call q("Does the government pay part of it?") %}<p>The State Department for Agriculture describes a 50% premium subsidy for farmers
+        insuring 0.5 to 20 acres{{ ui.cite(2) }}. AgroShield shows that share as "not yet received" until it is paid.
+        <a href="/learn/kaip-subsidy">About the subsidy</a>.</p>{% endcall %}
+      {% call q("Why can I not buy once the rains start?") %}<p>Sales of index cover must close before cover begins, so nobody can wait to
+        see the weather first{{ ui.cite(1) }}. That keeps the price fair for everyone.</p>{% endcall %}
+      {% call q("My crop failed but there was no payout. What now?") %}<p>That is called basis risk: the index follows the ward, not each field.
+        Report it by USSD or through your SACCO. Every report is recorded and reviewed to improve the cover, but it does not change a
+        payout. <a href="/learn/basis-risk">Basis risk, explained</a>.</p>{% endcall %}
+      {% call q("Can the payout go to my SACCO loan?") %}<p>Yes, if you agree when you enrol. Otherwise it goes to you by M-Pesa.</p>{% endcall %}
+      {% call q("Is there cover for livestock?") %}<p>Not yet. It is in development. <a href="/livestock">Register interest</a>.</p>{% endcall %}
+    </section>
+  </div>
+  {{ ui.sources(srcs) }}
+</div>
+{% endblock %}

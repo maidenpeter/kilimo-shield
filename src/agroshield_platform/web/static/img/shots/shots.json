@@ -1,0 +1,102 @@
+[
+ {
+  "key": "shot-uw-portfolio",
+  "kind": "screenshot",
+  "path": "/uw",
+  "alt": "Underwriter portfolio: policies, sums insured and premium by ward and SACCO (fictional demo data)",
+  "caption": "Portfolio and exposure by ward and SACCO",
+  "sizes": [
+   {
+    "width": 800,
+    "height": 500,
+    "w": 800
+   },
+   {
+    "width": 1440,
+    "height": 900,
+    "w": 1600
+   }
+  ],
+  "ratio": 0.625
+ },
+ {
+  "key": "shot-uw-triggers",
+  "kind": "screenshot",
+  "path": "/uw/triggers",
+  "alt": "Triggers and payouts: ward index status and payouts waiting for approval (fictional demo data)",
+  "caption": "Triggers and payouts, with approve or hold and the 10-day clock",
+  "sizes": [
+   {
+    "width": 800,
+    "height": 500,
+    "w": 800
+   },
+   {
+    "width": 1440,
+    "height": 900,
+    "w": 1600
+   }
+  ],
+  "ratio": 0.625
+ },
+ {
+  "key": "shot-uw-money",
+  "kind": "screenshot",
+  "path": "/uw/money",
+  "alt": "Money: premium collected, subsidy pending and payouts by status (fictional demo data)",
+  "caption": "Premium, subsidy and payout money in one place",
+  "sizes": [
+   {
+    "width": 800,
+    "height": 500,
+    "w": 800
+   },
+   {
+    "width": 1440,
+    "height": 900,
+    "w": 1600
+   }
+  ],
+  "ratio": 0.625
+ },
+ {
+  "key": "shot-uw-bordereaux",
+  "kind": "screenshot",
+  "path": "/uw/bordereaux",
+  "alt": "Bordereaux: monthly premium and claims files with checksums (fictional demo data)",
+  "caption": "Bordereaux with a manifest and checksum for each file",
+  "sizes": [
+   {
+    "width": 800,
+    "height": 500,
+    "w": 800
+   },
+   {
+    "width": 1440,
+    "height": 900,
+    "w": 1600
+   }
+  ],
+  "ratio": 0.625
+ },
+ {
+  "key": "shot-uw-pricing",
+  "kind": "screenshot",
+  "path": "/uw/pricing",
+  "alt": "Pricing runs and audit: every engine run with its config and data hashes (fictional demo data)",
+  "caption": "Pricing runs you can reproduce from the inputs",
+  "sizes": [
+   {
+    "width": 800,
+    "height": 500,
+    "w": 800
+   },
+   {
+    "width": 1440,
+    "height": 900,
+    "w": 1600
+   }
+  ],
+  "ratio": 0.625
+ }
+]

@@ -39,7 +39,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 agroshield_pricing = ["templates/*.html"]
-agroshield_platform = ["web/templates/*.html", "web/static/*"]
+agroshield_platform = ["articles.json", "web/templates/*.html", "web/templates/public/*.html", "web/static/*",
+                       "web/static/*/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

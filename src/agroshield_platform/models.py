@@ -355,3 +355,24 @@ class WeatherItem(Base):
     approved_by: Mapped[str | None] = mapped_column(String(60))
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PublicEnquiry(Base):
+    """A "Request a demo" or livestock "Register interest" form from the public site. Stored here only:
+    nothing is emailed or sent anywhere. Contact details are encrypted like farmer data, with a masked copy."""
+    __tablename__ = "public_enquiry"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    kind: Mapped[str] = mapped_column(String(20))                  # demo | livestock_interest
+    name_enc: Mapped[str] = mapped_column(Text)
+    email_enc: Mapped[str] = mapped_column(Text)
+    email_masked: Mapped[str] = mapped_column(String(80))
+    phone_enc: Mapped[str | None] = mapped_column(Text)
+    phone_masked: Mapped[str | None] = mapped_column(String(24))
+    organisation: Mapped[str | None] = mapped_column(String(120))
+    org_type: Mapped[str] = mapped_column(String(20))              # insurer | reinsurer | sacco | herder | other ...
+    county: Mapped[str | None] = mapped_column(String(40))
+    message: Mapped[str | None] = mapped_column(String(1000))      # scrubbed of IDs and phone numbers
+    consent_text: Mapped[str] = mapped_column(String(300))         # the exact consent line the person agreed to
+    status: Mapped[str] = mapped_column(String(12), default="new") # new | handled
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

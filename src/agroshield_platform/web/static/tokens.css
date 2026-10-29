@@ -46,7 +46,7 @@
   --focus: #0B7A6D;
   --hero-from: #013A31; --hero-mid: #015D52; --hero-to: #0F1117;
   --hero-ink: #F2FBF9; --hero-sub: #D5EEEA;
-  --overlay: rgba(15, 17, 23, 0.55);
+  --overlay: rgba(15, 17, 23, 0.55); --overlay-strong: rgba(1, 40, 34, 0.86);
   --map-bg: #E6EFEC;
   --chart-1: #00695C; --chart-2: #B8760A; --chart-3: #0B5E8A; --chart-4: #7A4E9E;
   --grid: #E7E1D5;
@@ -108,7 +108,7 @@
     --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
     --focus: #5EEAD4;
     --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
-    --overlay: rgba(11, 13, 19, 0.62); --map-bg: #111922;
+    --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
     --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
     --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
     --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
@@ -126,7 +126,7 @@
   --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
   --focus: #5EEAD4;
   --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
-  --overlay: rgba(11, 13, 19, 0.62); --map-bg: #111922;
+  --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
   --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
   --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
   --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);

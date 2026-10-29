@@ -1,0 +1,105 @@
+{% extends "public/_page.html" %}
+{% import "public/_ui.html" as ui %}
+{% import "public/_sources.html" as s %}
+{% block title %}Crop cover{% endblock %}
+{% block description %}Maize rainfall cover for smallholders in Kenya: a drought payout, a failed-start payout and a replanting seed voucher, decided by a ward index.{% endblock %}
+{% block content %}
+{% set srcs = [s.SRC.wrsi, s.SRC.chirps, s.SRC.kaip, s.SRC.wb2011] %}
+<section class="hero short">
+  {{ ui.hero_photo('maize-kuria') }}
+  <div class="wrap public">
+    <p class="eyebrow">Crops &middot; ready to pilot</p>
+    <h1>Maize cover that pays when the ward's rains fail</h1>
+    <p>One season-long cover with three parts. The ward's rainfall decides every payout, the same way for every insured farmer in the ward.</p>
+    <div class="actions"><a class="btn big on-dark" href="/how-it-works">How it works</a><a class="btn big ghost on-dark" href="/saccos">Buy through a SACCO</a></div>
+  </div>
+  {{ ui.hero_credit('maize-kuria') }}
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <div class="sec-head">
+      <h2>What the cover pays for</h2>
+      <p>All amounts and levels below are illustrative until the partner insurer (to be named) files the product.</p>
+    </div>
+    <div class="grid-cards">
+      <div class="feature">{{ ui.icon('sun') }}<h3>A dry season</h3>
+        <p>The crop water index (WRSI) scores how well the season's rain met the maize crop's needs, where 100 means no
+          shortfall{{ ui.cite(1) }}. Nothing is paid at 80 or above. Below 80 the payout grows, up to the full sum insured at 50
+          or below, the level FEWS NET treats as crop failure{{ ui.cite(1) }}.</p></div>
+      <div class="feature">{{ ui.icon('rain') }}<h3>Rains that never start</h3>
+        <p>If less than 80 mm of rain falls over the whole planting window, the season is treated as never started and a
+          quarter of the sum insured is paid.</p></div>
+      <div class="feature">{{ ui.icon('seed') }}<h3>Rain that stops after planting</h3>
+        <p>If less than 20 mm falls in the 20 days after the planting rain, the farmer gets a replanting seed voucher
+          (KES 2,500 per acre, illustrative), at most once a season. The season is then measured again from the next planting rain.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band">
+  <div class="wrap public">
+    <div class="split-2">
+      <div>
+        <h2 class="mt-0">How a farmer buys it</h2>
+        <ol class="timeline">
+          <li><span class="dot">1</span><div><h3>Enrol with the SACCO</h3><p>The SACCO officer records the farm, the acres and the cover
+            chosen, and asks for consent in English or Kiswahili.</p></div></li>
+          <li><span class="dot">2</span><div><h3>Pay before sales close</h3><p>Premium can be paid in instalments by SACCO deduction or
+            M-Pesa. Sales close well before planting, so nobody can buy after seeing the weather{{ ui.cite(4) }}. Cover starts
+            only once the premium is fully paid.</p></div></li>
+          <li><span class="dot">3</span><div><h3>The ward is watched all season</h3><p>Satellite rainfall for the ward{{ ui.cite(2) }}
+            is checked every day. The farmer gets an SMS when a payout or a seed voucher is due.</p></div></li>
+          <li><span class="dot">4</span><div><h3>Payout, if the index says so</h3><p>The insurer approves the payout and it goes to the
+            farmer by M-Pesa or, if the farmer agreed, first to their SACCO loan.</p></div></li>
+        </ol>
+      </div>
+      {{ ui.picture('maize-siaya', 'r-4x3') }}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap public">
+    <div class="grid-2">
+      <div class="card pad-lg">
+        <h2 class="mt-0">Who pays the premium</h2>
+        <p>Kenya's State Department for Agriculture describes a 50% premium subsidy for farmers insuring 0.5 to 20 acres of the insured crop{{ ui.cite(3) }}.
+          AgroShield shows that share separately and marks it "not yet received" until the money arrives. Outside 0.5 to 20
+          acres, no subsidy is assumed.</p>
+        <p>Farmers who used certified seed or good practices last season can earn a discount on their own share. The insurer
+          always receives the full premium: the discount is paid by a named funder, and it does not change how payouts work.</p>
+        <p><a href="/learn/kaip-subsidy">About the subsidy</a></p>
+      </div>
+      <div class="card pad-lg">
+        <h2 class="mt-0">The honest trade-off</h2>
+        <p>The cover pays on the ward's index, not on a visit to each field. That keeps it cheap to run and quick to pay, but a
+          very local loss can fall outside the index. This is called basis risk.</p>
+        <p>If a farmer's crop failed and no payout came, or it was too small, they can report it by USSD or through their SACCO.
+          Every report is recorded and reviewed to improve the index. A report does not change a payout.</p>
+        <p><a href="/learn/basis-risk">Basis risk, explained</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band">
+  <div class="wrap public">
+    <div class="split-2">
+      {{ ui.picture('farmer-shamba', 'r-4x3') }}
+      <div lang="sw">
+        <h2 class="mt-0">Kwa mkulima</h2>
+        <p class="chip warn">Kiswahili: inasubiri ukaguzi wa mzungumzaji asilia</p>
+        <ul class="kicker-list">
+          <li>Unalipa ada ya bima kupitia SACCO yako kabla ya msimu wa kupanda.</li>
+          <li>Mvua ya wadi yako ikikosa, unalipwa bila mtu kuja kukagua shamba.</li>
+          <li>Mvua ikikatika mara baada ya kupanda, unapata vocha ya mbegu za kupanda upya.</li>
+          <li>Angalia bima yako kwa USSD kwenye simu yoyote, kwa Kiswahili au Kiingereza.</li>
+        </ul>
+        <p lang="en" class="muted">For farmers, in Kiswahili. The English above is the reference until a native speaker reviews this text.</p>
+      </div>
+    </div>
+    {{ ui.sources(srcs) }}
+  </div>
+</section>
+{% endblock %}

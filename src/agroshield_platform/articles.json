@@ -1,0 +1,883 @@
+[
+ {
+  "slug": "index-insurance",
+  "title": "Parametric versus indemnity cover",
+  "summary": "Index (parametric) insurance pays on an index set in advance, not on an assessment of your farm's loss. Here is how that differs from traditional crop insurance, what you gain, the trade-off, and where AgroShield's maize cover fits.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "What index insurance is",
+    "paragraphs": [
+     "Index insurance pays out on the basis of a measure agreed in advance, such as rainfall level [1]. That measure is called the index. Index insurance does not necessarily need claims assessors [1].",
+     "The index is set before the insurance period starts [1]. It tracks how far conditions such as rainfall or temperature move away from normal levels [1].",
+     "On this site, parametric cover means the same as index insurance, and indemnity cover means traditional crop insurance that pays on an assessed loss."
+    ]
+   },
+   {
+    "heading": "How it differs from traditional crop insurance",
+    "paragraphs": [
+     "In a traditional crop insurance contract, the payout follows a loss assessment made after the event [2].",
+     "An index contract works differently. It uses a payout scale agreed in advance, which sets how much is paid for each unit of the weather measure [2]. Put simply, traditional cover asks what this farm lost, while index cover asks what the weather measure showed [2]."
+    ]
+   },
+   {
+    "heading": "The benefits",
+    "paragraphs": [
+     "Taking field loss assessment out of the claim changes several things for farmers, SACCOs and insurers."
+    ],
+    "bullets": [
+     "Lower running costs: paying without field assessment reduces administrative costs, because assessors are not needed [2].",
+     "Faster, more objective claims: because index insurance does not necessarily need claims assessors, claims can be settled more quickly and more objectively [1].",
+     "Farmers cannot sway the claim: the payout depends on an independent weather measurement, not on what farmers do, so farmers have no ability or reason to influence it [2].",
+     "Same terms for everyone in an area: all farmers in a defined area sign up on the same terms and payout scale, which the World Bank says virtually eliminates adverse selection for insurers [2]."
+    ]
+   },
+   {
+    "heading": "The trade-off: basis risk",
+    "paragraphs": [
+     "The biggest drawback is basis risk. It is the gap between what the index pays and what the farmer actually lost [2]. The World Bank calls it the most problematic feature of index insurance [2].",
+     "Because the trigger matches losses only imperfectly, index insurance can pay in years with no losses and fail to pay in years when there are losses [3]. Any honest index product has to say this plainly.",
+     "The greater the distance between the instrument that measures the weather and the field, the greater the basis risk [1]. Some households that suffer a loss may not be paid, while others with no loss may receive payments [1]."
+    ]
+   },
+   {
+    "heading": "How AgroShield's crop cover fits",
+    "paragraphs": [
+     "AgroShield is the technology, pricing and monitoring layer. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [4]. Our maize rainfall cover is priced on a seasonal Water Requirement Satisfaction Index (WRSI) for each ward [4]. The pricing shown today is illustrative and our pilot wards are placeholders [4].",
+     "The index uses CHIRPS satellite rainfall for each ward from 1981 to 2025, with a ten-day (dekad) water balance based on maize crop water needs [4]. The season starts at the first dekad with at least 25 mm of rain in the ward's planting window [4]. Triggers are set per ward, never per county [4].",
+     "The main terms are below. The payout terms and the voucher amount are illustrative [4]."
+    ],
+    "bullets": [
+     "Drought payout: nothing is paid at WRSI 80 or above, rising in a straight line to the full sum insured at WRSI 50 or below [4].",
+     "Failed onset: if less than 80 mm falls over the whole planting window, the season never started and 25% of the sum insured is paid [4].",
+     "Replanting seed voucher: if less than 20 mm falls in the 20 days after the planting rain, a seed voucher worth KES 2,500 per acre is issued, at most once a season, and the season is measured again from the next planting rain [4].",
+     "Timing: daily monitoring runs the same index on the latest rainfall, and nothing is final until the data covers it [4]. Payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [4]."
+    ]
+   },
+   {
+    "heading": "When the index misses a loss",
+    "paragraphs": [
+     "Basis risk means an index will sometimes miss a real loss [3]. So we ask farmers to tell us when it does [4].",
+     "A farmer whose crop failed but who got no payout, or too small a payout, can report it by USSD or through their SACCO [4]. Each report is reviewed and kept to improve the index, but a report does not change a payout [4]. Every trigger calculation is versioned and logged [4].",
+     "Livestock cover based on pasture condition is in development and not available [4]."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "Insurance (IFC Financial Inclusion page, includes FAQ: Index Insurance from the Global Index Insurance Facility)",
+    "publisher": "International Finance Corporation (World Bank Group), Global Index Insurance Facility",
+    "date": "Undated web page, accessed 2026-10-29",
+    "url": "https://www.ifc.org/en/what-we-do/sector-expertise/financial-institutions/financial-inclusion/insurance"
+   },
+   {
+    "n": 2,
+    "title": "Weather Index Insurance for Agriculture: Guidance for Development Practitioners (Agriculture and Rural Development Discussion Paper 50)",
+    "publisher": "World Bank",
+    "date": "November 2011",
+    "url": "https://documents1.worldbank.org/curated/en/590721468155130451/pdf/662740NWP0Box30or0Ag020110final0web.pdf"
+   },
+   {
+    "n": 3,
+    "title": "How to Measure Whether Index Insurance Provides Reliable Protection (Policy Research Working Paper 7744), by Karlijn Morsink, Daniel Jonathan Clarke and Shadreck Mapfumo",
+    "publisher": "World Bank Group, Finance and Markets Global Practice",
+    "date": "July 2016",
+    "url": "https://financialprotectionforum.org/sites/default/files/WPS7744.pdf"
+   },
+   {
+    "n": 4,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Basics"
+ },
+ {
+  "slug": "basis-risk",
+  "title": "Basis risk, explained honestly",
+  "summary": "Basis risk is the gap between what an insurance index measures and what a farmer actually loses. This explains why it happens, why it matters for trust, and how AgroShield's design relates to it without claiming to remove it.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "What basis risk is",
+    "paragraphs": [
+     "Index insurance pays according to a measured index, not an assessment of each farmer's loss [2]. Basis risk arises when the index reading does not match a farmer's actual losses [1].",
+     "This means a policy can pay in a year with no losses [2]. It can also fail to pay in a year when farmers do lose crops [2]."
+    ]
+   },
+   {
+    "heading": "Why it happens",
+    "paragraphs": [
+     "An index built from rainfall, vegetation or area yields estimates the average loss in an area, not the loss of each farmer [3]. For that reason, basis risk can never be fully removed [3]. One field can suffer a loss that the area average does not show.",
+     "A study of index-based livestock insurance in northern Kenya shows the size of the gap [4]. The insurance cut herders' exposure to large shared losses by an average of 62.8% [4]. But the benefit was limited, because many losses were specific to individual households [4]. Depending on the region, insured herders were still left with an average of 62.3% to 76.7% of their original risk from high loss events [4]."
+    ]
+   },
+   {
+    "heading": "Why it matters for trust",
+    "paragraphs": [
+     "Research in northern Kenya found that basis risk plays a major role in whether herders choose to buy index insurance at all [5]. A farmer who pays, loses a crop and receives nothing has good reason to doubt the product.",
+     "The damage can spread beyond one farm. World Bank researchers warn that offering index insurance that does not reliably pay can damage the reputation of the donors, governments and companies behind it [2]. AgroShield cover is sold through SACCOs [7], so a SACCO's standing with its members could be part of that risk."
+    ]
+   },
+   {
+    "heading": "Recognised ways to reduce it",
+    "paragraphs": [
+     "Basis risk falls when each index area is uniform in weather and farming methods [1]. It also falls when there are more weather stations or satellite pixels covering the area [1].",
+     "Another tool is an audit rule, which lets farmers report losses the index missed [3]. In a Tanzania pilot, if more than 30% of farmers complained, the insurer had to carry out an audit to check the index [3].",
+     "Researchers also recommend combining index insurance with stress-tolerant seed varieties and savings and credit products designed around risk, because insurance alone is likely to stay expensive [6]."
+    ]
+   },
+   {
+    "heading": "How AgroShield's design relates to basis risk",
+    "paragraphs": [
+     "AgroShield is the technology, pricing and monitoring layer [7]. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [7]. Three parts of the design touch on basis risk.",
+     "First, triggers are set per ward, never per county [7]. The index uses CHIRPS satellite rainfall for each ward from 1981 to 2025 [7]. Basis risk falls when each index area is uniform in weather and farming methods [1], so the size of the index area matters.",
+     "Second, maize cover is priced on a seasonal Water Requirement Satisfaction Index (WRSI) for each ward, and its pricing is illustrative [7]. The index runs a ten-day (dekad) water balance against maize crop water needs, and the season starts at the first dekad with at least 25 mm of rain in the ward's planting window [7]. No payout is made at WRSI 80 or above [7]. The payout rises in a straight line to the full sum insured at WRSI 50 or below (illustrative terms) [7].",
+     "The early season is covered too. If less than 80 mm falls over the whole planting window, the season never started and 25% of the sum insured is paid [7]. If less than 20 mm falls in the 20 days after the planting rain, a replanting seed voucher is issued (KES 2,500 per acre, illustrative) at most once a season, and the season is measured again from the next planting rain [7].",
+     "Third, a farmer whose crop failed but who got no payout, or too small a payout, can report it by USSD or through the SACCO [7]. Each report is reviewed and kept to improve the index [7]. This is not the same as the audit rule described above, because a report does not change a payout [7]."
+    ]
+   },
+   {
+    "heading": "What we do not claim",
+    "paragraphs": [
+     "None of these steps removes basis risk, because an index estimates the average loss in an area, not each farmer's own loss [3]. Missed-payout reports are reviewed and kept so that cases the index missed can be used to improve it [7].",
+     "AgroShield's pricing is illustrative and its pilot wards are placeholders [7]. Daily monitoring runs the same index on the latest rainfall, and nothing is final until the data covers it [7]. Every trigger calculation is versioned and logged [7]. Payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [7].",
+     "The northern Kenya evidence above comes from livestock insurance [4]. AgroShield's own livestock cover (pasture condition) is in development and not available [7]."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "What is basis risk? (FAQ)",
+    "publisher": "Global Index Insurance Facility (now Global Inclusive Insurance Facility), World Bank Group",
+    "date": "Undated FAQ page (accessed 2026-10-29)",
+    "url": "https://globalinclusiveinsuranceforum.org/faq/what-basis-risk"
+   },
+   {
+    "n": 2,
+    "title": "How to Measure Whether Index Insurance Provides Reliable Protection (Policy Research Working Paper 7744), Morsink, Clarke and Mapfumo",
+    "publisher": "World Bank Group, Finance and Markets Global Practice",
+    "date": "July 2016",
+    "url": "https://financialprotectionforum.org/sites/default/files/WPS7744.pdf"
+   },
+   {
+    "n": 3,
+    "title": "An Audit Rule to Protect Farmers in Case an Insurance Index Fails (Innovation Lab for Assets and Market Access Spotlight)",
+    "publisher": "Feed the Future Innovation Lab for Assets and Market Access, UC Davis (USAID funded)",
+    "date": "November 2017",
+    "url": "https://basis.ucdavis.edu/sites/g/files/dgvnsk466/files/2017-11/Spotlight%20audit%20rule%20Nov%202017.pdf"
+   },
+   {
+    "n": 4,
+    "title": "Basis Risk and the Welfare Gains from Index Insurance: Evidence from Northern Kenya (MPRA Paper No. 59153), Jensen, Barrett and Mude",
+    "publisher": "Cornell University and International Livestock Research Institute (ILRI), via Munich Personal RePEc Archive",
+    "date": "September 2014",
+    "url": "https://mpra.ub.uni-muenchen.de/59153/1/MPRA_paper_59153.pdf"
+   },
+   {
+    "n": 5,
+    "title": "How basis risk and spatiotemporal adverse selection influence demand for index insurance: Evidence from northern Kenya, Jensen, Mude and Barrett, Food Policy vol. 74",
+    "publisher": "Food Policy (Elsevier), peer-reviewed; abstract on EconPapers",
+    "date": "2018",
+    "url": "https://econpapers.repec.org/RePEc:eee:jfpoli:v:74:y:2018:i:c:p:172-198"
+   },
+   {
+    "n": 6,
+    "title": "Index Insurance for Developing Country Agriculture: A Reassessment, Carter, de Janvry, Sadoulet and Sarris, Annual Review of Resource Economics vol. 9",
+    "publisher": "Annual Review of Resource Economics (Annual Reviews), peer-reviewed; abstract on EconPapers",
+    "date": "2017",
+    "url": "https://econpapers.repec.org/RePEc:anr:reseco:v:9:y:2017:p:421-438"
+   },
+   {
+    "n": 7,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Basics"
+ },
+ {
+  "slug": "crop-index",
+  "title": "How the crop index works",
+  "summary": "What the Water Requirement Satisfaction Index (WRSI) measures, where it and the CHIRPS rainfall data come from, and how AgroShield measures each ward's maize season step by step, with illustrative payout terms.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "What the index measures",
+    "paragraphs": [
+     "AgroShield maize cover is rainfall cover, and its payouts follow a rainfall index for your ward [1]. The index is the Water Requirement Satisfaction Index, or WRSI, worked out each season for each ward [1]. Triggers are set per ward, never per county [1].",
+     "WRSI is an indicator of how well a crop performs, based on how much water it had during the growing season [2]. It compares the water the crop actually used with the water it needed [2]. A score of 100 means the crop had all the water it needed, with no shortfall [2].",
+     "In the model, the crop's water need is worked out from potential evapotranspiration, adjusted by a crop coefficient so that the need changes with the crop's growth stage [2]. The model's two most important inputs are rainfall and potential evapotranspiration [2]."
+    ]
+   },
+   {
+    "heading": "Where WRSI comes from",
+    "paragraphs": [
+     "WRSI was first developed by the UN Food and Agriculture Organization (FAO) [2]. The US Geological Survey later adapted and extended it for FEWS NET, the Famine Early Warning Systems Network [2] [6]. FEWS NET treats a seasonal WRSI below 50 as a crop failure [2].",
+     "USGS scientists use WRSI to monitor crops [3]. A 2006 USGS fact sheet used WRSI maps to show that the 2000 drought badly affected maize growing areas of Kenya [3]. The African Risk Capacity (ARC) uses WRSI in its Africa RiskView software, and the drought costs modelled there are the basis for ARC's main parametric drought insurance products [4]. Naming these bodies here does not mean they work with AgroShield."
+    ]
+   },
+   {
+    "heading": "Where the rainfall comes from: CHIRPS",
+    "paragraphs": [
+     "The rainfall in the index comes from CHIRPS [1]. The name is short for Climate Hazards InfraRed Precipitation with Stations [6]. It is made by the Climate Hazards Center at UC Santa Barbara and combines satellite images with rain gauge readings [5]. It covers 50 degrees south to 50 degrees north, uses satellite imagery at 0.05 degree resolution, and runs from 1981 to near-present [5].",
+     "CHIRPS was developed to support FEWS NET [6]. AgroShield uses CHIRPS rainfall for each ward from 1981 to 2025 [1]. Daily monitoring runs the same index on the latest rainfall [1]."
+    ]
+   },
+   {
+    "heading": "An AgroShield season, step by step",
+    "paragraphs": [
+     "The steps below show how one ward's season is measured [1]. All pricing, payout amounts and terms here are illustrative, and our pilot wards are placeholders, not final [1]."
+    ],
+    "bullets": [
+     "Start of season: the season starts in the first dekad (ten-day period) with at least 25 mm of rain in the ward's planting window [1]. The FEWS NET model uses the same 25 mm opening, and also looks for at least 20 mm in total over the next two dekads [2].",
+     "Water balance: from that start, the index runs a ten-day (dekad) water balance using maize crop water needs [1].",
+     "Payout line (illustrative terms): there is no payout at WRSI 80 or above [1]. Below 80, the payout rises in a straight line, reaching the full sum insured at WRSI 50 or below [1]. As a worked example on these illustrative terms, a WRSI of 65 is halfway between 80 and 50, so it would pay half the sum insured [1].",
+     "Failed onset (illustrative terms): if less than 80 mm falls over the whole planting window, the season is treated as never started and 25% of the sum insured is paid [1].",
+     "Replanting seed voucher (illustrative terms): if less than 20 mm falls in the 20 days after the planting rain, a replanting seed voucher worth KES 2,500 per acre is issued [1]. This happens at most once a season, and the season is then measured again from the next planting rain [1]."
+    ]
+   },
+   {
+    "heading": "From index to payment",
+    "paragraphs": [
+     "Nothing is final until the rainfall data covers the period being measured [1]. Payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [1]. Every trigger calculation is versioned and logged [1].",
+     "Cover is underwritten by a partner insurer (to be named) and sold through SACCOs, while AgroShield provides the technology, pricing and monitoring [1]. Livestock cover based on pasture condition is in development and not available [1].",
+     "If your crop failed but you got no payout, or too small a payout, you can report it by USSD or through your SACCO [1]. Each report is reviewed and kept to improve the index, but a report does not change a payout [1]."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   },
+   {
+    "n": 2,
+    "title": "CHIRPS: Croplands WRSI, Aug-Dec (product documentation: Water Requirement Satisfaction Index)",
+    "publisher": "USGS FEWS NET (earlywarning.usgs.gov)",
+    "date": "Undated product page, read 2026-10-29",
+    "url": "https://earlywarning.usgs.gov/fews/product/927/"
+   },
+   {
+    "n": 3,
+    "title": "Famine Early Warning System Network (FEWS NET), Fact Sheet 2006-3022",
+    "publisher": "U.S. Geological Survey",
+    "date": "February 2006",
+    "url": "https://pubs.usgs.gov/fs/2006/3022/report.pdf"
+   },
+   {
+    "n": 4,
+    "title": "Drought (Africa RiskView)",
+    "publisher": "African Risk Capacity (ARC)",
+    "date": "Undated web page, read 2026-10-29",
+    "url": "https://arc.int/drought"
+   },
+   {
+    "n": 5,
+    "title": "CHIRPS: Rainfall Estimates from Rain Gauge and Satellite Observations",
+    "publisher": "Climate Hazards Center, UC Santa Barbara",
+    "date": "Undated web page, read 2026-10-29",
+    "url": "https://www.chc.ucsb.edu/data/chirps"
+   },
+   {
+    "n": 6,
+    "title": "The climate hazards infrared precipitation with stations: a new environmental record for monitoring extremes (Funk et al.)",
+    "publisher": "Scientific Data (Nature), vol. 2, article 150066",
+    "date": "2015",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4672685/"
+   }
+  ],
+  "topic": "Crops"
+ },
+ {
+  "slug": "replanting-cover",
+  "title": "Seed-linked replanting cover in Kenya",
+  "summary": "ACRE Africa's Replanting Guarantee tied rainfall cover to the seed bag so maize farmers could replant after a dry start. Here is how published sources describe it, and how AgroShield's replanting seed voucher is similar and different.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "What the Replanting Guarantee does",
+    "paragraphs": [
+     "Planting is a bet on the first rains. If the rain stops soon after the seed goes in, the seed can fail and the farmer has to buy more.",
+     "ACRE Africa developed the Replanting Guarantee as a micro-insurance product for maize farmers [1]. It lets a farmer re-invest in another bag of seed within the planting period if a lack of rain affects the crop [1].",
+     "It is a weather index product that covers poor rainfall that forces replanting [2]. ACRE Africa monitors the weather at each farmer's location, and a payment is triggered if the weather index shows adverse weather [2]. In the version described in a Busara Center case study, if there is no rain for 21 days, ACRE automatically enables the farmer to buy another packet of Duma 43 maize seed [1].",
+     "ACRE uses satellite technology to geotag and monitor farms, and pays claims into farmers' mobile wallets through Safaricom's M-Pesa [3]. Farmers can also choose an automatic discount on their next seed or fertilizer purchase [3]. In one case described by ACRE Africa, a Kenyan farmer received a Replanting Guarantee payout of about KES 900 (about 9 US dollars) on her phone through M-Pesa [2]."
+    ]
+   },
+   {
+    "heading": "Cover that comes in the seed bag",
+    "paragraphs": [
+     "The registration card for the cover comes inside the seed pack, with instructions telling the farmer how to register [1]. It starts as free cover until the end of germination and is the first step into ACRE Hakika, a paid extension product [6].",
+     "According to a 2017 African Insurance Awards nominee entry, the Replanting Guarantee was launched in 2013 [4]. In 2016 it recorded over 100,000 registrations across Kenya's two rain seasons, which the entry calls 519 percent growth since launch [4]. A 2015 Corporate Knights article, citing Safaricom, reported that more than 9,000 bags of seed were sold and more than 700 farmers were compensated during the February to April 2014 planting season [5].",
+     "ACRE worked with the Busara Center to understand and test what was driving low uptake of the cover [1]. Social framing and simpler processes increased registration rates by between 12 and 24 percent [1]."
+    ]
+   },
+   {
+    "heading": "How AgroShield's replanting seed voucher works",
+    "paragraphs": [
+     "AgroShield is the technology, pricing and monitoring layer for its cover, which is underwritten by a partner insurer (to be named) and sold through SACCOs [7]. Its maize rainfall cover has illustrative pricing based on a seasonal Water Requirement Satisfaction Index (WRSI) for each ward [7]. The index uses CHIRPS satellite rainfall for each ward from 1981 to 2025 and a ten-day (dekad) water balance with maize crop water needs [7]. The season starts at the first dekad with at least 25 mm of rain in the ward's planting window [7].",
+     "If less than 20 mm falls in the 20 days after that planting rain, a replanting seed voucher is issued [7]. The voucher is worth KES 2,500 per acre (illustrative) and is issued at most once a season [7]. The season is then measured again from the next planting rain [7].",
+     "The voucher is one part of a wider seasonal cover [7]. There is no payout at WRSI 80 or above, and the payout rises in a straight line to the full sum insured at WRSI 50 or below (illustrative terms) [7]. If less than 80 mm falls over the whole planting window, the season never started and 25% of the sum insured is paid [7]."
+    ]
+   },
+   {
+    "heading": "Similar idea, different design",
+    "paragraphs": [
+     "ACRE's cover and AgroShield's voucher deal with the same problem: a lack of rain after planting that leaves the farmer needing seed again [1][7]. Both rely on a weather index [2][7].",
+     "The triggers differ. In the case study version, ACRE's cover acts after 21 days without rain [1]. AgroShield's voucher is issued when less than 20 mm falls in the 20 days after the planting rain [7]. ACRE monitors the weather at each farmer's location [2], while AgroShield sets triggers per ward, never per county [7].",
+     "The way cover is sold also differs. ACRE's cover comes with the seed purchase, starts free and leads into a paid product [3][6]. AgroShield's voucher is one part of a seasonal maize cover sold through SACCOs [7]."
+    ]
+   },
+   {
+    "heading": "What to keep in mind",
+    "paragraphs": [
+     "This article does not imply any partnership between AgroShield and ACRE Africa, and it does not compare prices. AgroShield's pricing is illustrative and its pilot wards are placeholders [7]. Every trigger calculation is versioned and logged [7].",
+     "Daily monitoring runs the same index on the latest rainfall, and nothing is final until the data covers it [7]. Payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [7].",
+     "A farmer whose crop failed but who got no payout, or too small a payout, can report it by USSD or through the SACCO [7]. Each report is reviewed and kept to improve the index, but a report does not change a payout [7]."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "Increasing smallholder uptake of seed insurance (case study)",
+    "publisher": "Busara Center for Behavioral Economics, with ACRE Africa and FSD Kenya",
+    "date": "Undated (no date printed on the PDF)",
+    "url": "https://busara-microsite.s3.us-east-2.amazonaws.com/case-studies/A25.Increasing+smallholder+uptake+of+seed+insurance.pdf"
+   },
+   {
+    "n": 2,
+    "title": "\"The Insurance Works!\" A story told by Jacinta Mutuse",
+    "publisher": "Global Index Insurance Facility (blog post authored by ACRE Africa)",
+    "date": "2017-03-08",
+    "url": "https://www.globalinclusiveinsuranceforum.org/blog/insurance-works-story-told-jacinta-mutuse"
+   },
+   {
+    "n": 3,
+    "title": "ACRE Africa: Protecting Rural Africa Through Creative Partnerships and Technology",
+    "publisher": "Global Index Insurance Facility",
+    "date": "2020-01-28",
+    "url": "https://www.globalinclusiveinsuranceforum.org/news/acre-africa-protecting-rural-africa-through-creative-partnerships-and-technology"
+   },
+   {
+    "n": 4,
+    "title": "African Insurance Awards 2017: nominee entry (Selin Konrat, Esther Kimani)",
+    "publisher": "African Insurance Awards",
+    "date": "2017",
+    "url": "https://africaninsuranceawards.org/events/3/nominees/37-selin-konrat-esther-kimani"
+   },
+   {
+    "n": 5,
+    "title": "Climate-smart agriculture from the ground up",
+    "publisher": "Corporate Knights (author Mogens Bisgaard)",
+    "date": "2015-12-02",
+    "url": "https://corporateknights.com/?p=11554"
+   },
+   {
+    "n": 6,
+    "title": "Formative evaluation of increasing uptake of ACRE Hakika",
+    "publisher": "International Initiative for Impact Evaluation (3ie); authors Mercy Musya and Mercy Muttai, Busara Center",
+    "date": "Undated on page (DOI 10.23846/TW13FE16)",
+    "url": "https://www.3ieimpact.org/evidence-hub/publications/other-evaluations/formative-evaluation-increasing-uptake-acre-hakika"
+   },
+   {
+    "n": 7,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "Undated (current methodology page)",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Crops"
+ },
+ {
+  "slug": "kaip-subsidy",
+  "title": "Kenya's crop insurance subsidy (KAIP)",
+  "summary": "Kenya's government pays half the crop insurance premium for farmers insuring 0.5 to 20 acres. Here is how the programme is run, what it reports it has achieved, and where AgroShield fits.",
+  "reading_minutes": 3,
+  "sections": [
+   {
+    "heading": "What the subsidy is",
+    "paragraphs": [
+     "Kenya's government helps farmers pay for crop insurance [1]. Under its government-supported programme, it pays 50% of the premium for farmers insuring between 0.5 and 20 acres of the insured crop [1].",
+     "This is described in a presentation by the State Department for Agriculture [1]. Kennedy Anahinga, Head of Crop Insurance, gave it at a disaster risk financing workshop in South Africa on 6 March 2024 [1]. It is the main source for this article.",
+     "The presentation includes a worked maize example [1]. A sum insured of KSh 41,080 carried a premium of 6%, which came to KSh 2,464 [1]. The government subsidy paid half of that, KSh 1,232 [1]."
+    ]
+   },
+   {
+    "heading": "How the programme is run",
+    "paragraphs": [
+     "Area yield index insurance was piloted from 2016 to 2017, starting in three counties [1]. During the pilot, 1,000 farmers bought cover for their crop [1]. The Kenya Agricultural Insurance Programme (KAIP) was launched in 2018 [1].",
+     "The presentation describes the programme as a public-private partnership [1]. A lead insurer, acting for a pool of private insurers, receives both the farmers' premiums and the government subsidy on behalf of the pool [1]. At the time of the presentation, the lead insurer managing the pool was APA Insurance [1]. The insurance regulator, IRA, approves the products that underwriters develop [1]."
+    ]
+   },
+   {
+    "heading": "What the programme says it has achieved",
+    "paragraphs": [
+     "By March 2024, the programme had reached 1.8 million farmers against a target of 5 million [1]. Of those farmers, 42% were women [1].",
+     "The State Department for Agriculture reports that 55,000 farmers had received claim payments totalling US$2.5 million [1]. Over the five years before the presentation, the national government paid a total of US$3 million in premium subsidies for farmers [1].",
+     "Even so, the presentation says fewer than 0.5% of Kenya's smallholder farmers have crop insurance [1]. These are the programme's own figures, and we have not checked them against other sources."
+    ]
+   },
+   {
+    "heading": "Check the current rules",
+    "paragraphs": [
+     "Descriptions of the subsidy rules have differed over time. A 2017 World Bank country profile described the early design: a 50 percent premium subsidy for a maximum of five acres, for farmers growing maize or wheat [2]. The 2024 presentation describes a subsidy for 0.5 to 20 acres of the insured crop [1].",
+     "Before you rely on the subsidy, check the current rules with your SACCO or insurer. The acreage limits, the crops covered and the money available may not be the same next season."
+    ]
+   },
+   {
+    "heading": "Where AgroShield fits",
+    "paragraphs": [
+     "AgroShield is the technology, pricing and monitoring layer for maize rainfall cover [3]. The cover is underwritten by a partner insurer (to be named) and sold through SACCOs [3]. Our pricing is illustrative [3]. Our pilot wards are placeholders, so the prices shown are examples, not final quotes.",
+     "Our maize cover is priced on a seasonal Water Requirement Satisfaction Index (WRSI) for each ward [3]. Triggers are set per ward, never per county, and every trigger calculation is versioned and logged [3].",
+     "This page does not say how a government subsidy would apply to an AgroShield policy. That depends on the programme's rules at the time, so ask your SACCO.",
+     "Nothing in this article means AgroShield is part of KAIP or endorsed by the government. It also does not mean AgroShield works with APA Insurance, IRA, the World Bank or any other insurer."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "Area Yield Index Insurance Kenya Chapter (file name: Kenya AYII experience.pdf)",
+    "publisher": "State Department for Agriculture, Kenya (hosted by the Financial Protection Forum)",
+    "date": "2024-03-06",
+    "url": "https://www.financialprotectionforum.org/sites/default/files/Kenya%20AYII%20experience.pdf"
+   },
+   {
+    "n": 2,
+    "title": "Kenya (Disaster Risk Financing and Insurance Program country profile)",
+    "publisher": "World Bank Group, Disaster Risk Financing and Insurance Program",
+    "date": "2017",
+    "url": "https://documents1.worldbank.org/curated/en/309301512133479025/pdf/BRI-CountryProfileKenya-PUBLIC.pdf"
+   },
+   {
+    "n": 3,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "Current version",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Kenya"
+ },
+ {
+  "slug": "livestock-insurance",
+  "title": "Livestock insurance in Kenya: pasture-condition indices",
+  "summary": "How satellite measures of pasture are used to insure herds in Kenya, from the IBLI pilot in Marsabit to the government's KLIP programme and its shift to paying early. AgroShield's own livestock cover is in development and not available.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "Why herds need a different kind of cover",
+    "paragraphs": [
+     "After a drought, it is hard for an insurer to visit every herd and count the animals that died. Pastoralists move with their animals, and losses can be spread over a wide area. Checking each claim one by one would be slow and costly.",
+     "Index insurance takes another route. It watches one measure that everyone can check, and pays when that measure shows trouble. In the Kenyan schemes described here, that measure is the condition of the pasture, seen by satellite [1][3]."
+    ]
+   },
+   {
+    "heading": "How a pasture-condition index works",
+    "paragraphs": [
+     "The Kenya Livestock Insurance Program (KLIP) uses the satellite Normalized Difference Vegetation Index (NDVI) to build an index of seasonal forage availability for each insured area [3]. When the index falls below a set threshold, a payout starts, and it grows as forage scarcity gets worse [3]. The index is worked out for a whole area, not for each herd [3].",
+     "Because the index looks at the whole area, it can miss what happens to one family's herd. In Marsabit, the Index-Based Livestock Insurance (IBLI) scheme covered only 62 to 77% of the herd mortality risk that households faced, mostly because losses vary from one household to the next [2]. In plain terms, a family can lose animals in a season when the index says the area as a whole was fine. This gap is known as basis risk [2]."
+    ]
+   },
+   {
+    "heading": "Where it started: the IBLI pilot in Marsabit",
+    "paragraphs": [
+     "The IBLI pilot was launched in January 2010 in Marsabit District in northern Kenya [1]. Its contract used satellite measures of vegetation cover to predict average livestock deaths in local communities [1]. Households received a payout if predicted average livestock deaths reached 15% [1].",
+     "The first payouts were made in October and November 2011 [1]. Households in the study received about 10,000 Kenyan shillings (roughly USD 150) on average [1].",
+     "The study found that after the 2011 payouts, IBLI led to a 22 percentage point drop in the share of households planning to eat fewer meals, and almost halved the share planning to sell more livestock [1]. A later evaluation found that during the 2011 drought, insured households were 36% less likely to expect to rely on distress sales of livestock and 25% less likely to expect to cut meals [2]."
+    ]
+   },
+   {
+    "heading": "KLIP: cover paid for by the government",
+    "paragraphs": [
+     "KLIP began in October 2015 by buying fully subsidised cover for five tropical livestock units for each of 5,000 vulnerable households in Turkana and Wajir [3]. It then grew to eight counties and about 18,000 pastoralists a year [3].",
+     "In the 2016-17 insurance year, KLIP covered six counties, with 14,010 households in the short rains season and 13,776 in the long rains season [3]. It paid about USD 2.15 million for the short rains and USD 3.13 million for the long rains (about USD 5.3 million in total), against USD 1.64 million in premiums [3].",
+     "By the end of the 2020 long rains season, the Government of Kenya had paid about USD 9.5 million in KLIP premiums [3]. About USD 10 million had been paid out to beneficiaries by then [3]."
+    ]
+   },
+   {
+    "heading": "Paying early, while animals are still alive",
+    "paragraphs": [
+     "KLIP's product was redesigned from replacing dead animals to protecting live ones, so payouts come at the start of a drought, during the rainy season [3]. The money is meant to help herders buy fodder, water and veterinary care [3].",
+     "The thinking is simple. Cash that arrives after animals have died can help a family restock. Cash that arrives while the pasture is failing can help keep the animals alive."
+    ]
+   },
+   {
+    "heading": "Where AgroShield stands",
+    "paragraphs": [
+     "AgroShield's livestock cover, based on pasture condition, is in development and not available [4]. This article explains how such cover has worked in Kenya. It does not describe an AgroShield product you can buy.",
+     "AgroShield's live product is maize rainfall cover, priced per ward on a seasonal Water Requirement Satisfaction Index (WRSI) [4]. Its pricing is illustrative [4]. The pilot wards used so far are placeholders. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [4]."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "Coping with Drought: Assessing the Impacts of Livestock Insurance in Kenya (I4 Brief no. 2012-1), by Michael R. Carter and Sarah A. Janzen",
+    "publisher": "Index Insurance Innovation Initiative (I4), BASIS / University of California, Davis (hosted on ILRI's CGSpace repository)",
+    "date": "March 2012",
+    "url": "https://cgspace.cgiar.org/bitstreams/71636f2a-da64-4005-9740-2c43826eb5ec/download"
+   },
+   {
+    "n": 2,
+    "title": "The Favorable Impacts of Index-Based Livestock Insurance: Evaluation Results from Ethiopia and Kenya (I4 Brief 2015-03), by Nathan D. Jensen, Christopher B. Barrett and Andrew G. Mude",
+    "publisher": "Index Insurance Innovation Initiative (I4) / BASIS, University of California, Davis",
+    "date": "July 2015",
+    "url": "https://basis.ucdavis.edu/sites/g/files/dgvnsk466/files/2017-02/BASIS-BRIEF1.pdf"
+   },
+   {
+    "n": 3,
+    "title": "Building financial resilience in pastoral communities in Africa: Lessons learned from implementing the Kenya Livestock Insurance Program (KLIP), by Francesco Fava, Nathaniel Jensen, James Sina, Andrew Mude and Barry Maher",
+    "publisher": "World Bank Group (Disaster Risk Financing and Insurance Program) with the International Livestock Research Institute (ILRI)",
+    "date": "No date printed on the pages read; data runs to the end of the 2020 long rains season",
+    "url": "https://documents1.worldbank.org/curated/en/888931613729186587/pdf/Building-Financial-Resilience-in-Pastoral-Communities-in-Africa-Lessons-Learned-from-Implementing-the-Kenya-Livestock-Insurance-Program-KLIP.pdf"
+   },
+   {
+    "n": 4,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Livestock"
+ },
+ {
+  "slug": "index-insurance-regulations",
+  "title": "Kenya's draft index insurance regulations",
+  "summary": "Kenya's insurance regulator has published draft rules for index insurance, including a reported 10-day payout deadline. This article explains what the draft would do, why it is not yet law, and how AgroShield's payout timing compares.",
+  "reading_minutes": 4,
+  "sections": [
+   {
+    "heading": "What the draft is",
+    "paragraphs": [
+     "In 2025, Kenya's Insurance Regulatory Authority (IRA) published 13 draft regulations for the insurance sector [1]. One of them is the Insurance (Index Insurance) Regulations, 2025 [1].",
+     "The aim is to create a formal set of rules for index insurance in Kenya [1]. So far this type of cover has been used mainly for risks in farming [1]. AgroShield's maize cover is an example: payouts depend on a seasonal Water Requirement Satisfaction Index (WRSI), worked out from rainfall for each ward [5]."
+    ]
+   },
+   {
+    "heading": "It is still a draft",
+    "paragraphs": [
+     "The IRA took comments on the draft from industry and the public until 21 November 2025 [1]. Bowmans said the draft may be changed after that to include the comments [1]. When Bowmans wrote on 14 November 2025, no timeline had been set for enacting the rules [1].",
+     "In February 2026, EY still described the Index Insurance Regulations 2025 as a draft [4]. EY said the IRA was still reviewing stakeholder submissions [4]. An article in the Association of Kenya Insurers journal says that once gazetted, the regulations will give legal force to index-based insurance [3].",
+     "None of the sources we rely on says the rules have been gazetted. The rules described below are the draft as reported, and the final rules may be different."
+    ]
+   },
+   {
+    "heading": "The reported 10-day payout rule",
+    "paragraphs": [
+     "Business Daily reported that the draft says insurers must make index insurance payouts within ten days after the index has been triggered [2]. The paper noted that, at the time, Kenya set no legal deadline for settling these claims [2]. Bowmans also said the draft would set maximum claim payout periods [1].",
+     "For a farmer, timing matters. Money that arrives soon after a failed season is more useful than money that arrives months later."
+    ]
+   },
+   {
+    "heading": "Other points in the draft",
+    "paragraphs": [
+     "The draft would set out how the IRA approves index insurance products and the minimum features those products must have [1]. Reports on the draft also list these points:"
+    ],
+    "bullets": [
+     "IRA pre-approval for every index product [2].",
+     "IRA powers to impose penalties of up to Sh1 million on insurers that do not comply, to cancel their licence, or to order them to take remedial action [2].",
+     "Keeping basis risk as low as possible. Basis risk is when the index does not perfectly match actual losses [2].",
+     "Filing the policy wording, the pricing and an explanation of how the index was built [2].",
+     "Using independent calculating agents vetted and recognised by the IRA [2].",
+     "A key features statement for each policy, no cancelling once cover has begun, a way to resolve disputes, and a backup payout formula for when the main index data is not available [3]."
+    ]
+   },
+   {
+    "heading": "How AgroShield handles payout timing",
+    "paragraphs": [
+     "AgroShield is the technology, pricing and monitoring layer [5]. Cover is underwritten by a partner insurer (to be named) and sold through SACCOs [5].",
+     "Daily monitoring runs the same index on the latest rainfall [5]. These daily results are not final until the rainfall data covers them [5]. Payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [5].",
+     "There is one difference to note. As reported, the draft counts ten days from when the index is triggered [2]. Our design counts from when the index is confirmed, and payment also needs the insurer's approval [5]. So the two are not the same, and our design will need to be checked against the final rules.",
+     "Triggers are set per ward, never per county, and every trigger calculation is versioned and logged [5]. The index uses CHIRPS satellite rainfall for each ward from 1981 to 2025 [5]. Under the illustrative terms, there is no payout at WRSI 80 or above, and the payout rises in a straight line to the full sum insured at WRSI 50 or below [5].",
+     "A farmer whose crop failed but who got no payout, or too small a payout, can report it by USSD or through the SACCO [5]. Each report is reviewed and kept to improve the index [5]. A report does not change a payout [5]."
+    ]
+   },
+   {
+    "heading": "What this means for you",
+    "paragraphs": [
+     "AgroShield's maize rainfall cover uses illustrative pricing and illustrative payout terms [5]. Its pilot wards are placeholders for now. Prices, terms and wards may change. Livestock cover based on pasture condition is in development and not available [5].",
+     "We will update this page if the IRA gazettes final rules. Until then, treat the 10-day rule as a reported draft, not as law."
+    ]
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "Kenya: Proposed regulatory changes to insurance sector",
+    "publisher": "Bowmans (law firm)",
+    "date": "14 November 2025",
+    "url": "https://bowmanslaw.com/insights/kenya-proposed-regulatory-changes-to-insurance-sector/"
+   },
+   {
+    "n": 2,
+    "title": "Kenya to cap 10-day payout rule in new climate insurance law",
+    "publisher": "Business Daily (Nation Media Group)",
+    "date": "9 November 2025",
+    "url": "https://www.businessdailyafrica.com/bd/economy/kenya-to-cap-10-day-payout-rule-in-new-climate-insurance-law-5257706"
+   },
+   {
+    "n": 3,
+    "title": "The Insurer, Vol 33, December 2025: How legal support for agricultural insurance can drive Africa's sustainability (by Patrick Alushula)",
+    "publisher": "Association of Kenya Insurers",
+    "date": "December 2025",
+    "url": "https://www.akinsure.com/content/uploads/documents/AKI__JOURNAL_DEC_2025_(web).pdf?t=0028"
+   },
+   {
+    "n": 4,
+    "title": "Kenya's Insurance Regulatory Authority issues draft regulations: key changes and implications",
+    "publisher": "EY Global Tax News",
+    "date": "11 February 2026",
+    "url": "https://taxnews.ey.com/news/2026-0409-kenyas-insurance-regulatory-authority-issues-draft-regulations-key-changes-and-implications"
+   },
+   {
+    "n": 5,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   }
+  ],
+  "topic": "Kenya"
+ },
+ {
+  "slug": "glossary",
+  "title": "Glossary: English and Kiswahili",
+  "summary": "Plain definitions of the 21 insurance and weather terms used on this site, in English and Kiswahili. The Kiswahili is a draft pending native-speaker review.",
+  "reading_minutes": 5,
+  "sections": [
+   {
+    "heading": "About this glossary",
+    "paragraphs": [
+     "This glossary explains the words used across the AgroShield site, in English and Kiswahili. Each term has a one-sentence definition. Where a definition comes from a published source, a number in square brackets points to the sources list at the end."
+    ]
+   },
+   {
+    "heading": "About the Kiswahili",
+    "paragraphs": [
+     "The Kiswahili terms and definitions are pending review by a native speaker. Until that review is done, please treat them as a working draft. Use the English as the reference."
+    ]
+   },
+   {
+    "heading": "About AgroShield terms",
+    "paragraphs": [
+     "Some definitions describe how AgroShield cover works. AgroShield is the technology, pricing and monitoring layer, and cover is underwritten by a partner insurer (to be named) and sold through SACCOs [1].",
+     "The pricing and payout terms shown here are illustrative [1]. The pilot wards named on this site are placeholders. Livestock cover (pasture condition) is in development and not available [1]."
+    ]
+   }
+  ],
+  "glossary": [
+   {
+    "term": "Index insurance",
+    "term_sw": "Bima ya fahirisi",
+    "definition": "Index insurance pays claims based on an index that stands in for losses, rather than on an assessment of each policyholder's own losses [2].",
+    "definition_sw": "Bima ya fahirisi hulipa madai kulingana na fahirisi inayowakilisha hasara, badala ya kukagua hasara ya kila mwenye bima mmoja mmoja [2].",
+    "source": 2
+   },
+   {
+    "term": "Parametric cover",
+    "term_sw": "Bima ya vigezo",
+    "definition": "On this site, parametric cover means the same as index insurance: payouts follow index values and a scale set out in the policy in advance, not an assessment of each farmer's own loss [2].",
+    "definition_sw": "Kwenye tovuti hii, bima ya vigezo ina maana sawa na bima ya fahirisi: malipo hufuata thamani za fahirisi na kiwango kilichowekwa mapema kwenye sera, si tathmini ya hasara ya kila mkulima [2].",
+    "source": 2
+   },
+   {
+    "term": "Indemnity",
+    "term_sw": "Fidia",
+    "definition": "An indemnity is a claim payment made under a policy, and in index insurance it is based on index values rather than on an assessment of each policyholder's own loss [2].",
+    "definition_sw": "Fidia ni malipo ya madai yanayotolewa chini ya sera, na katika bima ya fahirisi hutegemea thamani za fahirisi badala ya tathmini ya hasara ya kila mwenye bima [2].",
+    "source": 2
+   },
+   {
+    "term": "Basis risk",
+    "term_sw": "Hatari ya tofauti",
+    "definition": "Basis risk is the gap between what the index pays and the loss the farmer actually suffers, so a payout can be higher or lower than the real loss [2].",
+    "definition_sw": "Hatari ya tofauti ni pengo kati ya kile fahirisi inacholipa na hasara halisi aliyopata mkulima, hivyo malipo yanaweza kuwa makubwa au madogo kuliko hasara halisi [2].",
+    "source": 2
+   },
+   {
+    "term": "Premium",
+    "term_sw": "Ada ya bima",
+    "definition": "A premium is the money charged for insurance cover, and it reflects the expected loss [3].",
+    "definition_sw": "Ada ya bima ni pesa inayotozwa kwa kinga ya bima, na kiasi chake huakisi hasara inayotarajiwa [3].",
+    "source": 3
+   },
+   {
+    "term": "Sum insured",
+    "term_sw": "Kiasi cha bima",
+    "definition": "In index insurance, the sum insured is normally based on the cost of production and fixed in the policy in advance [2]; AgroShield maize cover pays the full sum insured when a ward's WRSI is 50 or below (illustrative terms) [1].",
+    "definition_sw": "Katika bima ya fahirisi, kiasi cha bima kwa kawaida hutegemea gharama za uzalishaji na huwekwa kwenye sera mapema [2]; bima ya mahindi ya AgroShield hulipa kiasi chote cha bima WRSI ya wadi ikiwa 50 au chini yake (masharti ya mfano) [1].",
+    "source": 2
+   },
+   {
+    "term": "Premium subsidy",
+    "term_sw": "Ruzuku ya ada ya bima",
+    "definition": "A premium subsidy is when a government pays part of the premium, and it is the most common way governments intervene, often covering around 50 percent of the premium and up to 80 percent in some countries [2].",
+    "definition_sw": "Ruzuku ya ada ya bima ni pale serikali inapolipa sehemu ya ada ya bima, na ndiyo njia ya kawaida zaidi ambayo serikali huingilia kati, mara nyingi karibu asilimia 50 ya ada na hadi asilimia 80 katika baadhi ya nchi [2].",
+    "source": 2
+   },
+   {
+    "term": "Trigger",
+    "term_sw": "Kiwango cha kuanza malipo",
+    "definition": "The trigger is the index level at which cover starts and a payout becomes due [2]; for AgroShield maize cover it is a WRSI of 80, so a payout starts when a ward's WRSI falls below 80, and triggers are set per ward, never per county (illustrative terms) [1].",
+    "definition_sw": "Kiwango cha kuanza malipo ni kiwango cha fahirisi ambapo kinga ya bima huanza na malipo yanastahili [2]; kwa bima ya mahindi ya AgroShield ni WRSI ya 80, hivyo malipo huanza WRSI ya wadi ikishuka chini ya 80, na viwango hivi huwekwa kwa kila wadi, si kwa kaunti (masharti ya mfano) [1].",
+    "source": 2
+   },
+   {
+    "term": "Exit",
+    "term_sw": "Kiwango cha malipo kamili",
+    "definition": "On this site, the exit is the index level at which the full sum insured is paid, which for AgroShield maize cover is a WRSI of 50 or below (illustrative terms) [1].",
+    "definition_sw": "Kwenye tovuti hii, kiwango cha malipo kamili ni kiwango cha fahirisi ambapo kiasi chote cha bima hulipwa, ambacho kwa bima ya mahindi ya AgroShield ni WRSI ya 50 au chini yake (masharti ya mfano) [1].",
+    "source": 1
+   },
+   {
+    "term": "Payout",
+    "term_sw": "Malipo",
+    "definition": "A payout is the money the cover pays: AgroShield maize cover pays nothing at WRSI 80 or above, rising in a straight line to the full sum insured at WRSI 50 or below (illustrative terms), and payouts are designed to be paid within 10 days of the index being confirmed, after the insurer approves them [1].",
+    "definition_sw": "Malipo ni pesa ambazo bima hulipa: bima ya mahindi ya AgroShield hailipi chochote WRSI ikiwa 80 au zaidi, kisha malipo hupanda kwa mstari ulionyooka hadi kiasi chote cha bima WRSI ikiwa 50 au chini (masharti ya mfano), na yamepangwa kulipwa ndani ya siku 10 tangu fahirisi ithibitishwe, baada ya kampuni ya bima kuyaidhinisha [1].",
+    "source": 1
+   },
+   {
+    "term": "WRSI (Water Requirement Satisfaction Index)",
+    "term_sw": "WRSI (Fahirisi ya Kutosheleza Mahitaji ya Maji)",
+    "definition": "The WRSI is a seasonal score of how well rainfall met the maize crop's water needs in a ward, worked out from a ten-day (dekad) water balance [1].",
+    "definition_sw": "WRSI ni alama ya msimu inayoonyesha jinsi mvua ilivyokidhi mahitaji ya maji ya zao la mahindi katika wadi, ikikokotolewa kutokana na mizania ya maji ya kila dekadi (siku kumi) [1].",
+    "source": 1
+   },
+   {
+    "term": "CHIRPS",
+    "term_sw": "CHIRPS (data ya mvua ya setilaiti)",
+    "definition": "CHIRPS is a satellite rainfall record, and AgroShield uses it for each ward from 1981 to 2025 [1].",
+    "definition_sw": "CHIRPS ni kumbukumbu ya mvua inayotokana na setilaiti, na AgroShield huitumia kwa kila wadi tangu mwaka 1981 hadi 2025 [1].",
+    "source": 1
+   },
+   {
+    "term": "Dekad",
+    "term_sw": "Dekadi",
+    "definition": "A dekad is one of the three parts a month is conventionally divided into [2], and AgroShield's water balance works in these ten-day steps [1].",
+    "definition_sw": "Dekadi ni moja ya sehemu tatu ambazo mwezi hugawanywa kwa kawaida [2], na mizania ya maji ya AgroShield hukokotolewa kwa hatua hizi za siku kumi [1].",
+    "source": 2
+   },
+   {
+    "term": "Start of season",
+    "term_sw": "Mwanzo wa msimu",
+    "definition": "The start of season is when the crop season is taken to begin, and FEWS NET's crop water products use the onset of rains as a stand-in for it [5]; AgroShield takes it as the first dekad with at least 25 mm of rain in the ward's planting window [1].",
+    "definition_sw": "Mwanzo wa msimu ni wakati msimu wa zao unapohesabiwa kuanza, na bidhaa za FEWS NET za kukadiria maji ya mazao hutumia kuanza kwa mvua kama kiashiria chake [5]; AgroShield huuchukulia kuwa dekadi ya kwanza yenye angalau milimita 25 za mvua ndani ya kipindi cha kupanda cha wadi [1].",
+    "source": 5
+   },
+   {
+    "term": "Failed onset",
+    "term_sw": "Msimu kushindwa kuanza",
+    "definition": "A failed onset is when less than 80 mm of rain falls over the whole planting window, so the season is treated as never having started and 25% of the sum insured is paid [1].",
+    "definition_sw": "Msimu kushindwa kuanza ni pale mvua iliyonyesha katika kipindi chote cha kupanda inapokuwa chini ya milimita 80, hivyo msimu huhesabiwa kuwa haukuanza kabisa na asilimia 25 ya kiasi cha bima hulipwa [1].",
+    "source": 1
+   },
+   {
+    "term": "Replanting voucher",
+    "term_sw": "Vocha ya mbegu za kupanda upya",
+    "definition": "A replanting voucher is a seed voucher (KES 2,500 per acre, illustrative) issued at most once a season if less than 20 mm of rain falls in the 20 days after the planting rain, after which the season is measured again from the next planting rain [1].",
+    "definition_sw": "Vocha ya mbegu za kupanda upya ni vocha ya mbegu (KES 2,500 kwa ekari, kiasi cha mfano) inayotolewa si zaidi ya mara moja kwa msimu ikiwa mvua iliyonyesha katika siku 20 baada ya mvua ya kupanda ni chini ya milimita 20, kisha msimu hupimwa upya kuanzia mvua inayofuata ya kupanda [1].",
+    "source": 1
+   },
+   {
+    "term": "NDVI (Normalized Difference Vegetation Index)",
+    "term_sw": "NDVI (Fahirisi ya Uoto wa Kijani)",
+    "definition": "NDVI is a satellite measure of green vegetation, where zero means no vegetation and values close to plus one (0.8 to 0.9) mean the highest possible density of green leaves [4].",
+    "definition_sw": "NDVI ni kipimo cha setilaiti cha uoto wa kijani, ambapo sifuri humaanisha hakuna uoto na thamani karibu na chanya moja (0.8 hadi 0.9) humaanisha msongamano mkubwa kabisa wa majani ya kijani [4].",
+    "source": 4
+   },
+   {
+    "term": "Sales window",
+    "term_sw": "Kipindi cha mauzo",
+    "definition": "The sales window is the period when cover can be bought, and for index insurance it must close before the cover period begins [2].",
+    "definition_sw": "Kipindi cha mauzo ni muda ambao bima inaweza kununuliwa, na kwa bima ya fahirisi lazima kifungwe kabla kipindi cha kinga ya bima hakijaanza [2].",
+    "source": 2
+   },
+   {
+    "term": "Reinsurance",
+    "term_sw": "Bima mtawanyo (reinsurance)",
+    "definition": "Reinsurance is cover for insurers: a reinsurer is an insurer that takes on risks from another insurer in return for a premium [6].",
+    "definition_sw": "Bima mtawanyo ni bima kwa kampuni za bima: kampuni ya bima mtawanyo huchukua hatari kutoka kwa kampuni nyingine ya bima kwa malipo ya ada [6].",
+    "source": 6
+   },
+   {
+    "term": "Bordereau",
+    "term_sw": "Bordereau (orodha ya hatari zilizokatiwa bima)",
+    "definition": "A bordereau is a report an insurer sends to its reinsurer listing the individual risks it has insured under a reinsurance treaty [7].",
+    "definition_sw": "Bordereau ni ripoti ambayo kampuni ya bima humtumia mtoa bima mtawanyo wake, ikiorodhesha kila hatari iliyoikatia bima chini ya mkataba wa bima mtawanyo [7].",
+    "source": 7
+   },
+   {
+    "term": "SACCO",
+    "term_sw": "SACCO",
+    "definition": "A SACCO is one of the organisations through which AgroShield cover is sold, and a farmer whose crop failed but who got no payout, or too small a payout, can report it through the SACCO (each report is reviewed but does not change a payout) [1].",
+    "definition_sw": "SACCO ni mojawapo ya vyama ambavyo bima ya AgroShield huuzwa kupitia kwao, na mkulima ambaye mazao yake yalishindwa lakini hakupata malipo, au alipata malipo madogo mno, anaweza kuripoti kupitia SACCO (kila ripoti hukaguliwa lakini haibadilishi malipo) [1].",
+    "source": 1
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "title": "How AgroShield works",
+    "publisher": "AgroShield",
+    "date": "2026",
+    "url": "/how-it-works"
+   },
+   {
+    "n": 2,
+    "title": "Weather Index Insurance for Agriculture: Guidance for Development Practitioners (Agriculture and Rural Development Discussion Paper 50), PDF pages 25, 28, 33, 61, 98 and 100",
+    "publisher": "World Bank",
+    "date": "November 2011",
+    "url": "https://documents1.worldbank.org/curated/en/590721468155130451/pdf/662740NWP0Box30or0Ag020110final0web.pdf"
+   },
+   {
+    "n": 3,
+    "title": "Glossary of Insurance Terms",
+    "publisher": "National Association of Insurance Commissioners (NAIC)",
+    "date": "No date shown on page (read 2026-10-29)",
+    "url": "https://content.naic.org/glossary-insurance-terms"
+   },
+   {
+    "n": 4,
+    "title": "Measuring Vegetation (NDVI & EVI)",
+    "publisher": "NASA Earth Observatory",
+    "date": "Published 30 August 2000; last updated 14 November 2025",
+    "url": "https://science.nasa.gov/earth/earth-observatory/measuring-vegetation-ndvi-evi"
+   },
+   {
+    "n": 5,
+    "title": "FEWS SOS, WRSI, and SWI Zip Products: Instruction and Explanation Document",
+    "publisher": "USGS / FEWS NET",
+    "date": "3 February 2025",
+    "url": "https://edcintl.cr.usgs.gov/downloads/sciweb1/shared/fews/web/documentation/wrsi/W_images.pdf"
+   },
+   {
+    "n": 6,
+    "title": "IAIS Glossary, page 8",
+    "publisher": "International Association of Insurance Supervisors (IAIS)",
+    "date": "December 2024",
+    "url": "https://www.iais.org/uploads/2024/12/IAIS-Glossary.pdf"
+   },
+   {
+    "n": 7,
+    "title": "LLM11000 - Lloyd's Manual: Glossary",
+    "publisher": "HM Revenue and Customs (GOV.UK)",
+    "date": "Last updated 9 February 2026",
+    "url": "https://www.gov.uk/hmrc-internal-manuals/lloyds-manual/llm11000"
+   }
+  ],
+  "topic": "Reference"
+ }
+]
