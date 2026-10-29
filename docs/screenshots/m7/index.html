@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milestone 7 Screens</title>
+<style>
+:root { color-scheme: light; --bg:#f4f6f5; --ink:#0a201b; --ink2:#4c685f; --card:#fff; --line:#d9e2df; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg:#0b1512; --ink:#e0f2f1; --ink2:#9fbdb6; --card:#12201c; --line:#24403a; } }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#0b1512; --ink:#e0f2f1; --ink2:#9fbdb6; --card:#12201c; --line:#24403a; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, sans-serif; }
+main { max-width:1200px; margin:0 auto; padding:24px 16px 64px; }
+h2 { margin:32px 0 8px; border-top:1px solid var(--line); padding-top:12px; }
+figure { margin:12px 0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px; }
+figcaption { color:var(--ink2); font-size:.85rem; margin-bottom:6px; font-weight:600; }
+img { width:100%; height:auto; border-radius:6px; display:block; }
+.phones { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+.phones img { max-width:393px; }
+</style></head>
+<body><main>
+<h1>Milestone 7: underwriter workspace, monitoring and payouts</h1>
+<p>Fictional demo data. The 2008 long rains at Rongai West are a labelled replay of a real drought in the CHIRPS record.</p>
+<h2>Underwriter workspace (demo-underwriter)</h2>
+<figure><figcaption>Portfolio</figcaption><img src="uw-portfolio.png" alt="Underwriter portfolio"></figure>
+<figure><figcaption>Triggers and payouts</figcaption><img src="uw-triggers.png" alt="Triggers and payouts"></figure>
+<figure><figcaption>Money</figcaption><img src="uw-money.png" alt="Money"></figure>
+<figure><figcaption>Bordereaux</figcaption><img src="uw-bordereaux.png" alt="Bordereaux"></figure>
+<figure><figcaption>Pricing runs and audit</figcaption><img src="uw-pricing.png" alt="Pricing and audit"></figure>
+<figure><figcaption>Reinsurer summary</figcaption><img src="uw-reinsurer.png" alt="Reinsurer summary"></figure>
+<h2>SACCO officer (demo-officer)</h2>
+<figure><figcaption>Home, desktop: the ward alert sits above the payments list</figcaption><img src="officer-home-desktop.png" alt="Officer Home desktop"></figure>
+<figure><figcaption>Payout Tracker, desktop</figcaption><img src="officer-payouts-desktop.png" alt="Payout Tracker desktop"></figure>
+<div class="phones">
+<figure><figcaption>Home, phone</figcaption><img src="officer-home-375.png" alt="Officer Home on a phone"></figure>
+<figure><figcaption>Payout Tracker, phone</figcaption><img src="officer-payouts-375.png" alt="Payout Tracker on a phone"></figure>
+<figure><figcaption>Underwriter triggers, phone</figcaption><img src="uw-triggers-375.png" alt="Underwriter triggers on a phone"></figure>
+</div>
+</main></body></html>

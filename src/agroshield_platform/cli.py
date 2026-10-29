@@ -1,10 +1,15 @@
 """agroshield-portal: set up SACCOs and officers, run the SACCO portal and its daily job.
 
-    agroshield-portal add-sacco --code NKR01 --name "Example SACCO"
+    agroshield-portal add-insurer --code UW01 --name "Example Insurer"
+    agroshield-portal add-sacco --code NKR01 --name "Example SACCO" --insurer UW01
     agroshield-portal add-officer --sacco NKR01 --username jane --name "Jane W." --role manager
+    agroshield-portal add-officer --insurer UW01 --username amina --name "Amina K." --role underwriter
     agroshield-portal demo          # fictional demo SACCO, manager and members (development keys only)
     agroshield-portal serve --port 8780
-    agroshield-portal daily         # lapse unpaid cover after sales close, reminders, send SMS
+    agroshield-portal daily         # sales close and reminders, ward monitoring, KMD check, send SMS
+    agroshield-portal monitor [--as-of 2027-05-20] [--download]   # ward rainfall status and payouts
+    agroshield-portal monitor --replay-year 2008 --as-of 2008-09-01  # replay a past season (labelled)
+    agroshield-portal weather-fetch # polite KMD check (at most once per page every 6 hours)
     agroshield-portal send-sms      # send queued SMS now
 
 Passwords are read from AGROSHIELD_OFFICER_PASSWORD or prompted for; never passed as arguments.
@@ -21,8 +26,8 @@ from sqlalchemy import select
 
 from .crypto import ScrubFilter, Vault, hash_password
 from .db import audit, init_db, make_engine, transaction
-from .models import Officer, Sacco
-from .settings import load_settings
+from .models import Insurer, Officer, Sacco
+from .settings import REPO, load_settings
 
 DEMO_PASSWORD = "demo-only-change-me"
 # Fictional smallholders (0.5 to 5 acres, so nobody owes more than a few thousand shillings).
@@ -34,6 +39,12 @@ D-0003,Akinyi Otieno (fictional),0712 000 003,90000003,female,ward-a,1.5,,,B,500
 D-0004,Mwangi Njoroge (fictional),0712 000 004,90000004,male,ward-a,4.5,,,B,10000,sacco_deduction,yes,LN-0107,yes,yes,yes,irrigation_partial;sacco_good_standing,sw
 D-0005,Chebet Rotich (fictional),0712 000 005,90000005,female,ward-a,0.5,,,B,10000,mpesa,no,,yes,yes,no,,sw
 D-0006,Otieno Ouma (fictional),0712 000 006,90000006,male,ward-a,5,,,B,10000,sacco_deduction,no,,yes,yes,no,certified_seed_verified,en
+"""
+
+
+DEMO2_CSV = """member_no,full_name,phone,national_id,gender,ward_id,acreage,lat,lon,layers,sum_insured_kes_per_acre,payment_route,loan_linked,loan_ref,consent_data_processing,consent_sms,consent_loan_linked_payout,resilience,language
+M-0001,Nafula Wekesa (fictional),0712 000 011,90000011,female,ward-a,3,,,B,10000,mpesa,no,,yes,yes,no,certified_seed_verified,sw
+M-0002,Kamau Gitau (fictional),0712 000 012,90000012,male,ward-a,2.5,,,B,15000,sacco_deduction,no,,yes,yes,no,,en
 """
 
 
@@ -66,40 +77,71 @@ def main(argv: list[str] | None = None) -> int:
         h.addFilter(ScrubFilter())
     ap = argparse.ArgumentParser(prog="agroshield-portal")
     sub = ap.add_subparsers(dest="cmd", required=True)
+    i = sub.add_parser("add-insurer")
+    i.add_argument("--code", required=True)
+    i.add_argument("--name", required=True)
     a = sub.add_parser("add-sacco")
     a.add_argument("--code", required=True)
     a.add_argument("--name", required=True)
     a.add_argument("--county", default="Nakuru")
+    a.add_argument("--insurer", help="insurer code that underwrites this SACCO's cover")
     o = sub.add_parser("add-officer")
-    o.add_argument("--sacco", required=True, help="SACCO code")
+    o.add_argument("--sacco", help="SACCO code (officers and managers)")
+    o.add_argument("--insurer", help="insurer code (underwriters)")
     o.add_argument("--username", required=True)
     o.add_argument("--name", required=True)
-    o.add_argument("--role", choices=["officer", "manager"], default="officer")
+    o.add_argument("--role", choices=["officer", "manager", "underwriter"], default="officer")
     sub.add_parser("demo", help="create a fictional demo SACCO, a demo officer and manager, and fictional members")
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8780)
-    sub.add_parser("daily", help="lapse cover unpaid at sales close, queue reminders, send SMS")
+    dl = sub.add_parser("daily", help="sales close and reminders, ward monitoring, KMD check, send SMS")
+    dl.add_argument("--download", action="store_true", help="fetch the latest CHIRPS for monitoring")
+    mo = sub.add_parser("monitor", help="ward rainfall status; confirmed triggers create payouts")
+    mo.add_argument("--as-of", type=lambda v: __import__("datetime").date.fromisoformat(v))
+    mo.add_argument("--replay-year", type=int, help="replay a past season from the committed history (labelled replay)")
+    mo.add_argument("--download", action="store_true", help="fetch the latest CHIRPS (live mode)")
+    sub.add_parser("weather-fetch", help="check enabled weather sources politely")
     sub.add_parser("send-sms", help="send queued SMS")
     args = ap.parse_args(argv)
 
     settings = load_settings()
     factory = init_db(make_engine(settings.database_url))
 
-    if args.cmd == "add-sacco":
+    def insurer(code):
+        ins = s.scalar(select(Insurer).where(Insurer.code == code.upper()))
+        if ins is None:
+            sys.exit(f"no insurer with code {code}")
+        return ins
+
+    if args.cmd == "add-insurer":
         with transaction(factory) as s:
-            s.add(Sacco(code=args.code.upper(), name=args.name, county=args.county, is_demo=False))
+            s.add(Insurer(code=args.code.upper(), name=args.name))
+            audit(s, "cli", "insurer.created", "insurer", args.code.upper())
+        print(f"insurer {args.code.upper()} added")
+    elif args.cmd == "add-sacco":
+        with transaction(factory) as s:
+            ins = insurer(args.insurer) if args.insurer else None
+            s.add(Sacco(code=args.code.upper(), name=args.name, county=args.county, is_demo=False,
+                        insurer_id=ins.id if ins else None))
             audit(s, "cli", "sacco.created", "sacco", args.code.upper())
         print(f"SACCO {args.code.upper()} added")
     elif args.cmd == "add-officer":
         with transaction(factory) as s:
-            sacco = s.scalar(select(Sacco).where(Sacco.code == args.sacco.upper()))
-            if sacco is None:
-                sys.exit(f"no SACCO with code {args.sacco}")
-            s.add(Officer(sacco_id=sacco.id, username=args.username, display_name=args.name,
-                          password_hash=hash_password(_password()), role=args.role))
+            if args.role == "underwriter":
+                if not args.insurer or args.sacco:
+                    sys.exit("an underwriter belongs to an insurer (--insurer), not a SACCO")
+                where = insurer(args.insurer)
+                s.add(Officer(insurer_id=where.id, username=args.username, display_name=args.name,
+                              password_hash=hash_password(_password()), role="underwriter"))
+            else:
+                where = s.scalar(select(Sacco).where(Sacco.code == (args.sacco or "").upper()))
+                if where is None:
+                    sys.exit(f"no SACCO with code {args.sacco}")
+                s.add(Officer(sacco_id=where.id, username=args.username, display_name=args.name,
+                              password_hash=hash_password(_password()), role=args.role))
             audit(s, "cli", "officer.created", "officer", args.username, role=args.role)
-        print(f"officer {args.username} added to {sacco.code}")
+        print(f"{args.role} {args.username} added to {where.code}")
     elif args.cmd == "demo":
         return _demo(settings, factory)
     elif args.cmd == "serve":
@@ -108,12 +150,36 @@ def main(argv: list[str] | None = None) -> int:
         if settings.dev_keys:
             logging.getLogger("agroshield").warning("running with development keys; do not use with real farmer data")
         uvicorn.run(create_app(settings), host=args.host, port=args.port)
+    elif args.cmd == "monitor":
+        from . import monitoring
+        ctx = _context(settings)
+        with transaction(factory) as s:
+            for st in monitoring.run_monitoring(ctx, s, as_of=args.as_of, year=args.replay_year,
+                                                mode="replay" if args.replay_year else "live",
+                                                allow_download=args.download):
+                print(f"{st.ward_id} {st.season} {st.year} as of {st.as_of}: {st.phase} / {st.level}"
+                      f" (data to {st.data_through}, projected WRSI {st.projected_wrsi})")
+        with transaction(factory) as s:
+            from . import sms
+            sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
+    elif args.cmd == "weather-fetch":
+        from . import weather
+        with transaction(factory) as s:
+            print(weather.fetch(s, settings.config_dir, REPO))
     elif args.cmd in ("daily", "send-sms"):
-        from . import services, sms
+        from . import monitoring, services, sms, weather
         ctx = _context(settings)
         with transaction(factory) as s:
             if args.cmd == "daily":
                 print(services.close_sales_windows(ctx, s))
+                for st in monitoring.run_monitoring(ctx, s, allow_download=args.download):
+                    print(f"{st.ward_id} {st.season} {st.year}: {st.phase} / {st.level}")
+        if args.cmd == "daily":
+            try:
+                with transaction(factory) as s:
+                    print("weather:", weather.fetch(s, settings.config_dir, REPO))
+            except Exception as e:                  # weather is display only; never blocks the daily job
+                print("weather check failed:", type(e).__name__)
         with transaction(factory) as s:
             print("sms:", sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault) or "nothing queued")
     return 0
@@ -129,9 +195,14 @@ def _demo(settings, factory) -> int:
         if s.scalar(select(Sacco).where(Sacco.code == "DEMO")):
             print("demo already set up: sign in as demo-officer or demo-manager")
             return 0
-        sacco = Sacco(code="DEMO", name="Demo SACCO (fictional)", is_demo=True)
+        ins = Insurer(code="DEMOUW", name="Demo Insurer (fictional)", is_demo=True)
+        s.add(ins)
+        s.flush()
+        sacco = Sacco(code="DEMO", name="Demo SACCO (fictional)", is_demo=True, insurer_id=ins.id)
         s.add(sacco)
         s.flush()
+        s.add(Officer(insurer_id=ins.id, username="demo-underwriter", display_name="Demo Underwriter",
+                      password_hash=hash_password(DEMO_PASSWORD), role="underwriter"))
         officer = Officer(sacco_id=sacco.id, username="demo-manager", display_name="Demo Manager",
                           password_hash=hash_password(DEMO_PASSWORD), role="manager")
         s.add_all([officer, Officer(sacco_id=sacco.id, username="demo-officer", display_name="Grace (demo officer)",
@@ -145,10 +216,41 @@ def _demo(settings, factory) -> int:
             mpesa.handle_callback(ctx, s, ctx.mpesa.simulate_callback(req, success=True))
             mpesa.request_premium(ctx, s, pols[2], pols[2].amount_due_kes, officer.username)   # left pending
         services.record_payment(ctx, s, pols[3], 1000, "sacco_deduction", "DEMO-DED-0004", officer.username)
+        _demo_replay(ctx, s, sacco, officer)
+        # A second distributor for the same insurer, so the underwriter sees more than one SACCO.
+        second = Sacco(code="DEMO2", name="Demo Molo SACCO (fictional)", is_demo=True, insurer_id=ins.id)
+        s.add(second)
+        s.flush()
+        services.bulk_commit(ctx, s, second, officer, DEMO2_CSV)
     with transaction(factory) as s:
         sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
-    print(f"demo SACCO with {len(pols)} fictional members; sign in as demo-officer or demo-manager / {DEMO_PASSWORD}")
+    print(f"demo SACCOs with fictional members; sign in as demo-officer, demo-manager or demo-underwriter / {DEMO_PASSWORD}")
     return 0
+
+
+def _demo_replay(ctx, s, sacco, officer) -> None:
+    """REPLAY of the 2008 long rains at Ward A (a real drought season in the committed CHIRPS record), so the
+    Payout Tracker has something to show. Labelled "replay" everywhere; the farmers are the same fictional ones."""
+    import dataclasses
+    from datetime import date, datetime
+
+    from . import monitoring, services
+    past = dataclasses.replace(ctx, today=date(2007, 12, 15))          # inside the LR 2008 sales window
+    pols = services.bulk_commit(past, s, sacco, officer, "\n".join(DEMO_CSV.strip().splitlines()[:5]) + "\n")
+    for i, pol in enumerate(pols[:3]):                                  # three paid in time; one never paid
+        services.record_payment(past, s, pol, pol.amount_due_kes, "sacco_deduction", f"DEMO-2008-{i}", officer.username,
+                                received_at=datetime(2008, 1, 20, 10, 0, tzinfo=services.NAIROBI))
+    services.close_sales_windows(dataclasses.replace(ctx, today=date(2008, 2, 15)), s)   # the unpaid one lapses
+    for as_of in (date(2008, 4, 20), date(2008, 6, 1), date(2008, 9, 1)):
+        monitoring.run_monitoring(dataclasses.replace(ctx, today=as_of), s, as_of=as_of, mode="replay", year=2008,
+                                  wards=["ward-a"])
+    # The underwriter approves two payouts (the SACCO pays one of them); the third waits for a decision.
+    from .models import Payout
+    pays = s.scalars(select(Payout).order_by(Payout.id)).all()
+    for p in pays[:2]:
+        monitoring.approve(ctx, s, p, "demo-underwriter")
+    if pays:
+        monitoring.pay(ctx, s, pays[0], officer.username, "DEMO-SACCO-CR-1" if pays[0].method == "sacco_loan" else None)
 
 
 if __name__ == "__main__":

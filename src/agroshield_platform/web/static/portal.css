@@ -170,3 +170,15 @@ details.devmenu > summary::-webkit-details-marker { display: none; }
 details.devmenu .panel { position: absolute; left: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r-md); padding: 6px; min-width: 180px; box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 10; }
 details.devmenu .panel a { display: block; }
+/* Touch: every tap target at least 44 px; no double-tap zoom delay. */
+a, button, summary, label, input[type=radio], input[type=checkbox] { touch-action: manipulation; }
+.brand { display: inline-block; padding: 10px 0; }
+button.busy { opacity: .75; cursor: progress; }
+@media (pointer: coarse) {
+  .btn.small, details.menu > summary, details.devmenu > summary, details.more > summary { min-height: 44px; display: inline-flex; align-items: center; }
+  .check { min-height: 44px; align-items: center; }
+}
+/* Ward map coloured by the latest monitoring level (Reports). */
+svg.map .ward.lvl-watch { fill: var(--warn-soft); stroke: var(--warn); }
+svg.map .ward.lvl-alert, svg.map .ward.lvl-payout { fill: var(--crit-soft); stroke: var(--crit); }
+.ward-alert-top a { margin-left: 4px; }

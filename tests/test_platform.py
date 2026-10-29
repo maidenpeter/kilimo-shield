@@ -353,7 +353,7 @@ def test_portal_enrolment_wizard_end_to_end(app):
     assert done.status_code == 200 and "AGS-TST01-LR" in done.text
     assert_no_pii(review.text)
     assert_no_pii(done.text)
-    for page, shown in (("/dashboard", "AGS-TST01-LR"), ("/members", "*****926")):
+    for page, shown in (("/dashboard", "Test Farmer (fictional)"), ("/members", "*****926")):
         r = c.get(page)
         assert r.status_code == 200 and shown in r.text
         assert_no_pii(r.text)

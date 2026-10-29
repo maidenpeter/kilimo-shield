@@ -98,10 +98,11 @@ def test_navigation_by_role(app):
     login(man, "manager")
     home = off.get("/dashboard").text
     nav = re.search(r'<nav class="main".*?</nav>', home, re.S).group(0)
-    assert [x for x in re.findall(r">([^<>]+)</a>", nav)] == ["Home", "Enrol a farmer", "Members"]
+    assert [x for x in re.findall(r">([^<>]+)</a>", nav)] == ["Home", "Enrol a farmer", "Members", "Payouts"]
     assert 'href="/quote"' in home                                        # Quick price stays on Home
     mnav = re.search(r'<nav class="main".*?</nav>', man.get("/dashboard").text, re.S).group(0)
-    assert re.findall(r">([^<>]+)</a>", mnav)[:5] == ["Home", "Enrol a farmer", "Members", "Reports", "Import"]
+    assert re.findall(r">([^<>]+)</a>", mnav)[:7] == ["Home", "Enrol a farmer", "Members", "Payouts", "Reports",
+                                                     "Import", "Weather"]
     assert off.get("/reports").status_code == 403 and off.get("/import").status_code == 403
     assert man.get("/reports").status_code == 200 and "KAIP subsidy receivable" in man.get("/reports").text
     imp = man.get("/import").text

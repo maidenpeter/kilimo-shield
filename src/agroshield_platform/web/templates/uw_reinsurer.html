@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Reinsurer summary{% endblock %}
+{% block body %}
+<h1>Reinsurer summary: {{ pf.insurer.name }}</h1>
+<p class="muted">Prepared {{ today|day }}. Illustrative pricing and placeholder wards; the index is the B-series seasonal WRSI on
+  CHIRPS with a flagged Hargreaves PET fallback.</p>
+
+<h2>Portfolio</h2>
+<div class="tiles">
+  <div class="tile"><div class="k">Policies / in force</div><div class="v">{{ pf.policies }} / {{ pf.active }}</div></div>
+  <div class="tile"><div class="k">Sum insured written</div><div class="v">{{ pf.sum_insured_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
+  {% if pf.largest %}<div class="tile"><div class="k">Largest ward max loss</div><div class="v">{{ pf.largest.max_loss_kes|kes }}</div>
+    <div class="n">{{ pf.largest.ward }}, {{ pf.largest.label }}</div></div>{% endif %}
+</div>
+
+<h2>Loss distribution (as-if, from the pricing engine)</h2>
+<p class="muted">Each season's book (in force plus pending) run through every historical season in the engine's CHIRPS record:
+  per-ward payout shares by year times today's sum insured, summed across wards in the same year, so wards that fail
+  together are counted together. Quantiles are empirical (90th and 95th percentile of annual loss).</p>
+{% for b in books %}
+<div class="card">
+  <h3 style="margin-top:0">{{ b.label }}: sum insured {{ b.sum_insured_kes|kes }}, gross premium {{ b.gross_premium_kes|kes }}</h3>
+  <div class="split">
+    <span>Expected annual loss</span><span class="num">{{ b.expected_loss_kes|kes }} ({{ (b.expected_loss_kes / b.sum_insured_kes)|pct(2) }} of SI)</span>
+    <span>1-in-10 annual loss</span><span class="num">{{ b.loss_1_in_10_kes|kes }}</span>
+    <span>1-in-20 annual loss</span><span class="num">{{ b.loss_1_in_20_kes|kes }}</span>
+    <span>Worst year in record</span><span class="num">{{ b.max_kes|kes }}</span>
+    <span>Loss ratio at expected loss</span><span class="num">{{ (b.expected_loss_kes / b.gross_premium_kes)|pct(0) if b.gross_premium_kes else 'n/a' }}</span>
+  </div>
+  <p class="muted">{{ b.seasons }} seasons, {{ b.years[0] }}&ndash;{{ b.years[1] }}. Worst:
+    {% for w in b.worst_years %}{{ w.year }} ({{ w.loss_kes|kes }}){{ ', ' if not loop.last }}{% endfor %}.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Ward</th><th class="num">Sum insured</th><th class="num">Payout frequency</th><th class="num">Expected loss</th>
+      <th class="num">1-in-10</th><th class="num">1-in-20</th></tr></thead>
+    <tbody>{% for w in b.wards %}<tr><td>{{ w.ward }} ({{ w.ward_id }})</td><td class="num">{{ w.sum_insured_kes|kes }}</td>
+      <td class="num">{{ w.payout_frequency|pct }}</td><td class="num">{{ w.expected_loss_kes|kes }}</td>
+      <td class="num">{{ w.loss_1_in_10_kes|kes }}</td><td class="num">{{ w.loss_1_in_20_kes|kes }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% else %}<p class="muted">No cover written yet.</p>{% endfor %}
+
+<h2>Engine burn by ward (per unit of sum insured)</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Ward</th><th>Seasons</th><th class="num">Payout frequency</th><th class="num">Expected loss</th><th class="num">1-in-10</th><th class="num">1-in-20</th></tr></thead>
+  <tbody>{% for w, r in burn.items() %}<tr><td>{{ ward_label(w) }} ({{ w }})</td><td>{{ r.years[0] }}&ndash;{{ r.years[1] }}</td>
+    <td class="num">{{ r.frequency|pct }}</td><td class="num">{{ r.expected_loss|pct(2) }}</td><td class="num">{{ r.loss_1_in_10|pct(1) }}</td>
+    <td class="num">{{ r.loss_1_in_20|pct(1) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<h2>ESG and climate-risk reporting <span class="chip warn">reporting only, never pricing</span></h2>
+<p class="muted">Borrowed idea #6 (docs/BORROWED_FROM_MVP.md). These figures describe the book for reinsurers and climate funds.
+  Nothing in the pricing package reads them (tested).</p>
+<div class="grid3">
+  <div class="card"><h3 style="margin-top:0">Social (inclusion)</h3><div class="split">
+    <span>Farmers covered</span><span>{{ esg.farmers }}</span>
+    <span>Women</span><span>{{ esg.women_share|pct if esg.women_share is not none else 'n/a' }}</span>
+    <span>Smallholders (5 acres or less)</span><span>{{ esg.smallholder_share|pct if esg.smallholder_share is not none else 'n/a' }}</span>
+    <span>With KAIP subsidy</span><span>{{ esg.subsidised_share|pct if esg.subsidised_share is not none else 'n/a' }}</span>
+    <span>Loan-linked</span><span>{{ esg.loan_linked_share|pct if esg.loan_linked_share is not none else 'n/a' }}</span></div></div>
+  <div class="card"><h3 style="margin-top:0">Payout performance</h3><div class="split">
+    <span>Payouts paid</span><span>{{ esg.payouts_paid }} ({{ esg.paid_to_farmers_kes|kes }})</span>
+    <span>Median days to pay</span><span>{{ esg.median_days_to_pay|num(0) if esg.median_days_to_pay is not none else 'n/a' }}</span>
+    <span>Within {{ esg.target_days }} days</span><span>{{ esg.within_target|pct if esg.within_target is not none else 'n/a' }}</span>
+    <span>Missed-payout reports</span><span>{{ esg.missed_reports }}</span></div>
+    {% if esg.replay_excluded %}<p class="muted">{{ esg.replay_excluded }} replayed payout{{ 's' if esg.replay_excluded != 1 }}
+      left out of the timing figures.</p>{% endif %}</div>
+  <div class="card"><h3 style="margin-top:0">Climate risk (TCFD)</h3>
+    <p class="muted" style="margin:0">Physical risk: drought exposure per ward as above (frequency, 1-in-10, 1-in-20, worst year).
+      Adaptation: {{ esg.resilience_points_share|pct if esg.resilience_points_share is not none else 'n/a' }} of policies earned Resilience points
+      (certified seed, verified practices). Governance: versioned index ({{ cfg.product.layer_b.version }}), audited trigger runs,
+      basis-risk reports reviewed and kept. Metrics and targets: to agree with the reinsurer.</p></div>
+</div>
+{% endblock %}

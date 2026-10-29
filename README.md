@@ -6,8 +6,8 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1-6 of 10 (quote API in 4; SACCO portal and data model in 5; USSD, M-Pesa
-and SMS in 6) and research task 3b.
+**Status:** milestones 1-7 of 10 (quote API in 4; SACCO portal and data model in 5; USSD, M-Pesa
+and SMS in 6; ward monitoring, Payout Tracker and weather advisories in 7) and research task 3b.
 Layer B is a seasonal WRSI index (B-1.2.0) with failed-onset and germination dry-spell
 triggers; the superseded per-phase index (v0) is kept for comparison only. Layer A
 (anticipatory seed voucher) is **dropped from the product** (2026-10-29): its code is kept,
@@ -236,6 +236,63 @@ environment variables always win. **Never paste a key into a chat, an issue or a
 `ANTHROPIC_API_KEY` is reserved for the photo rider (milestone 8). It will assist human
 reviewers with crop-photo triage, and reviewers keep the decision. Layer B payouts, triggers
 and prices never depend on a language model, so they stay reproducible and auditable.
+
+## Monitoring, payouts and weather (milestone 7)
+
+- **Daily ward monitoring** (`agroshield_pricing/monitor.py`, `agroshield-portal monitor` and `daily`).
+  - Runs the same `season_wrsi` the prices come from, on observed CHIRPS up to the latest day, with each ward's
+    climatology (all other years) for the rest of the season.
+  - A failed onset is confirmed at the end of the planting window; a germination dry spell after its 20-day
+    check; the WRSI payout at the end of the growing period. Before that everything is a labelled projection.
+  - A test checks that the season's own later rain never changes a mid-season result (no look-ahead).
+  - Every run is stored (`ward_status`) and audited with the index version, the config hash and a SHA-256 of
+    the rainfall it used.
+  - CHIRPS final rainfall lags by about three weeks, so the 10-day payout clock starts when the index is
+    confirmed, not when the rain fell.
+- **Payouts** come only from confirmed triggers, and only for cover that was active (fully paid by sales close).
+  - Drought payouts and failed-onset payouts are a share of sum insured, capped at the cover. Replanting seed
+    vouchers have a code.
+  - They are due within 10 days (`monitoring.payout_within_days`) and go to M-Pesa (simulated B2C until the
+    insurer's initiator credentials exist) or to the SACCO loan when loan-linked.
+  - Farmers get SMS when a payout is calculated and when it is paid.
+- **Payout Tracker** (`/payouts`): each ward's status in plain words, payouts and their due dates, late flags,
+  "Pay now" for managers, and technical detail under Details.
+- **Missed-payout reports** (the basis-risk channel): farmers use USSD option 5 ("Report crop loss"); officers
+  use the member page.
+  - Each report snapshots the ward status, is reviewed by a manager with an outcome, and never changes a payout.
+- **Weather advisories** (`config/weather.yaml`, `/weather`) are display only. Pricing, monitoring and payouts
+  never import the weather module (tested).
+  - KMD Nakuru county forecasts are fetched politely: identifying User-Agent, robots.txt checked on every run,
+    at most once per URL every 6 hours, every request logged, PDFs stored by SHA-256 with their validity dates.
+  - A manual PDF upload is the fallback.
+  - An item shows on officers' Home only after a manager writes and approves English and Kiswahili summaries,
+    and it disappears after its validity date.
+  - No automatic sends, and no SMS of KMD content until written permission is on file
+    (`sms_distribution_allowed: false`).
+  - Tuko and Kenya News Agency stay off and are never contacted.
+- **Demo:** `agroshield-portal demo` adds a labelled **replay** of the 2008 long rains at Ward A, a real drought
+  in the CHIRPS record (final WRSI 67.6, 41% payout), so the tracker has something to show.
+
+## Underwriter workspace (milestone 7)
+
+The underwriter is the paying customer; SACCOs are distribution. An `Insurer` underwrites one or more SACCOs, and
+each policy records its insurer at sale. The `underwriter` role belongs to one insurer, sees every SACCO's policies
+for that insurer and never another insurer's book (tested). SACCO users cannot open the workspace, and
+underwriters are kept out of SACCO pages.
+
+| Page | What |
+|---|---|
+| `/uw` Portfolio | Policies, acres, sum insured and gross premium by SACCO, ward and season; exposure concentration (largest single-ward loss if the index fully triggers) |
+| `/uw/triggers` | WRSI and trigger status per ward; payouts waiting for approval; approve or hold with a reason (audited); the 10-day clock per event |
+| `/uw/money` | Farmer premium received (M-Pesa and SACCO deductions), outstanding, KAIP receivable ("not yet received"), refunds owed, payouts |
+| `/uw/bordereaux` | Monthly premium and payout bordereaux: ZIP of masked CSVs plus `manifest.json` with SHA-256 and row counts; exports audited |
+| `/uw/pricing` | Engine runs (index version, config hashes, links to the HTML reports), the run audit log, trigger and payout audit for its own policies |
+| `/uw/reinsurer` | One page: portfolio, exposure by ward, expected loss and 1-in-10 / 1-in-20 annual loss (as-if, from the engine's 1981-2025 seasons), ESG/TCFD reporting (never pricing) |
+
+Payouts now wait for the underwriter: calculated, then approved (cash) or issued (seed voucher), then paid. A held
+payout carries its reason. Farmers are told about a payout only once it is approved, and SACCO managers can pay only
+approved payouts. Set up with `agroshield-portal add-insurer`, `add-sacco --insurer`, `add-officer --insurer ...
+--role underwriter`. The demo adds `demo-underwriter`. Screenshots: `docs/screenshots/m7/index.html`.
 
 ## Research (task 3b: forecast skill)
 

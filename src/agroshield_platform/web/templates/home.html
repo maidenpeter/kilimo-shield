@@ -11,13 +11,19 @@
   <a class="btn ghost small" href="/quote">Quick price</a>
 </div>
 
+{# A rainfall alert for one of your wards goes above the payments list; with none, the quiet line sits at the bottom. #}
+{% for st in alerts %}
+<div class="alert {{ 'crit' if st.level == 'alert' else 'warn' }} ward-alert-top" role="alert">
+  <b>{{ ward_label(st.ward_id) }}, {{ season_label(st.season, st.year) }}{% if st.mode == 'replay' %} (replay){% endif %}:</b>
+  {{ ward_line(st) }} <a href="/payouts">See payouts</a></div>
+{% endfor %}
+
 {% if n %}
 <h2 style="margin-top:16px">Still to pay</h2>
 <ul class="owe">
   {% for p in owe[:8] %}
   <li><div class="who-owes"><a href="/members/{{ p.farmer_id }}">{{ p.farmer.full_name }}</a>
-      <div class="sub">owes KES {{ '{:,.0f}'.format(p.balance_kes) }} of {{ '{:,}'.format(p.amount_due_kes) }} &middot; by {{ p.sales_closes_on|short_day }}
-        &middot; {{ p.policy_no }}</div></div>
+      <div class="sub">owes KES {{ '{:,.0f}'.format(p.balance_kes) }} &middot; by {{ p.sales_closes_on|short_day }}</div></div>
     <form method="post" action="/policies/{{ p.id }}/remind"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <button class="btn ghost small" type="submit">Send reminder</button></form></li>
   {% endfor %}
@@ -25,7 +31,16 @@
 {% if n > 8 %}<p><a href="/members">See all {{ n }} farmers who owe</a></p>{% endif %}
 {% endif %}
 
+{% for w in weather %}
+<div class="card weather"><b>Weather:</b> {{ w.summary_en }}
+  <details class="more"><summary>Kiswahili</summary>{{ w.summary_sw }}</details>
+  <div class="muted">{{ w.source_label }}{% if w.valid_from and w.valid_to %}, {{ w.valid_from|short_day }} to {{ w.valid_to|short_day }}{% endif %}
+    {% if w.url %}&middot; <a href="{{ w.url }}" rel="noopener" target="_blank">original</a>{% endif %}</div></div>
+{% endfor %}
+
+{% if not alerts %}
 <div class="ward-alert">{% if wards|length == 1 %}Your ward, {{ ward_label(wards[0]) }}: no rainfall alerts.
   {% else %}Your wards ({% for w in wards %}{{ ward_label(w) }}{{ ', ' if not loop.last }}{% endfor %}): no rainfall alerts.{% endif %}
-  <span class="muted">Rainfall checks for each ward will show here.</span></div>
+  <a href="/payouts">Rainfall and payouts</a></div>
+{% endif %}
 {% endblock %}

@@ -31,22 +31,28 @@
     <svg class="map" viewBox="0 0 {{ map.width }} {{ map.height }}" role="img"
          aria-label="Placeholder map of the pilot wards with policy counts">
       {% for w in map.wards %}
-      <rect class="ward" x="{{ w.x }}" y="{{ w.y }}" width="{{ w.w }}" height="{{ w.h }}" rx="4"><title>{{ ward_label(w.id) }}: {{ w.policies }} policies</title></rect>
+      {% set st = levels.get(w.id) %}
+      <rect class="ward lvl-{{ st.level if st else 'none' }}" x="{{ w.x }}" y="{{ w.y }}" width="{{ w.w }}" height="{{ w.h }}" rx="4"><title>{{ ward_label(w.id) }}: {{ w.policies }} policies{% if st %}; {{ ward_line(st) }}{% endif %}</title></rect>
       <text x="{{ w.x + 8 }}" y="{{ w.y + 20 }}">{{ ward_label(w.id) }}</text>
       <text x="{{ w.x + 8 }}" y="{{ w.y + 38 }}">{{ w.policies }} policies</text>
       {% endfor %}
     </svg>
-    <p class="muted">Placeholder ward boxes (the rainfall extraction areas), not real ward boundaries. Real boundaries and the
-      live trigger map come with monitoring in milestone 7.</p>
+    <p class="muted">Placeholder ward boxes (the rainfall extraction areas), coloured by the latest daily check: amber for
+      watch, red for alert or a confirmed payout. Real IEBC ward boundaries replace the boxes once the pilot wards are agreed.</p>
   </div>
   <div class="card">
     <h2 style="margin-top:0">Trigger status</h2>
     <table><tbody>
-      {% for wid, t in pf.trigger_status.items() %}
-      <tr><td>{{ cfg.ward(wid).label }}</td><td><span class="chip">{{ t.status }}</span></td></tr>
+      {% for wid in cfg.pilot.wards %}{% set st = levels.get(wid) %}
+      <tr><td>{{ cfg.ward(wid).label }}</td>
+        <td>{% if st %}<span class="chip {{ 'warn' if st.level in ('watch', 'alert', 'payout') }}">{{ st.level }}</span>
+          {{ season_label(st.season, st.year) }}{% if st.mode == 'replay' %} (replay){% endif %}: {{ ward_line(st) }}
+          <div class="muted">WRSI {{ st.projected_wrsi|num(1) if st.projected_wrsi is not none else 'n/a' }}
+            ({{ 'final' if 'wrsi_final' in st.result.confirmed else 'projected' }}), data to {{ st.data_through|day if st.data_through else 'none' }}</div>
+          {% else %}<span class="chip">no cover sold</span>{% endif %}</td></tr>
       {% endfor %}
     </tbody></table>
-    <p class="muted">{{ (pf.trigger_status.values()|first).note }}</p>
+    <p class="muted">{{ cfg.monitoring.data_note }} <a href="/payouts">Payout Tracker</a></p>
   </div>
 </div>
 

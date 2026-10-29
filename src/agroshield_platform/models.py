@@ -28,6 +28,16 @@ class Base(DeclarativeBase):
     pass
 
 
+class Insurer(Base):
+    """The underwriter: the paying customer. SACCOs distribute its cover; it sees only its own book."""
+    __tablename__ = "insurer"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(16), unique=True)
+    name: Mapped[str] = mapped_column(String(120))
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Sacco(Base):
     __tablename__ = "sacco"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -37,20 +47,25 @@ class Sacco(Base):
     # Demo SACCOs hold fictional members only. Live enrolment (is_demo False) is blocked
     # until the consent wording has a recorded legal and Kiswahili review.
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    insurer_id: Mapped[int | None] = mapped_column(ForeignKey("insurer.id"))     # who underwrites its cover
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    insurer: Mapped[Insurer | None] = relationship()
 
 
 class Officer(Base):
     __tablename__ = "officer"
     id: Mapped[int] = mapped_column(primary_key=True)
-    sacco_id: Mapped[int] = mapped_column(ForeignKey("sacco.id"))
+    # SACCO users (officer, manager) have a SACCO; underwriters have an insurer and no SACCO.
+    sacco_id: Mapped[int | None] = mapped_column(ForeignKey("sacco.id"))
+    insurer_id: Mapped[int | None] = mapped_column(ForeignKey("insurer.id"))
     username: Mapped[str] = mapped_column(String(60), unique=True)
     display_name: Mapped[str] = mapped_column(String(120))
     password_hash: Mapped[str] = mapped_column(String(200))
-    role: Mapped[str] = mapped_column(String(20), default="officer")      # officer | manager
+    role: Mapped[str] = mapped_column(String(20), default="officer")      # officer | manager | underwriter
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    sacco: Mapped[Sacco] = relationship()
+    sacco: Mapped[Sacco | None] = relationship()
+    insurer: Mapped[Insurer | None] = relationship()
 
 
 class Farmer(Base):
@@ -118,6 +133,7 @@ class Policy(Base):
     farmer_id: Mapped[str] = mapped_column(ForeignKey("farmer.id"))
     plot_id: Mapped[str] = mapped_column(ForeignKey("plot.id"))
     sacco_id: Mapped[int] = mapped_column(ForeignKey("sacco.id"))
+    insurer_id: Mapped[int | None] = mapped_column(ForeignKey("insurer.id"), index=True)   # underwriter at sale
     ward_id: Mapped[str] = mapped_column(String(40))
     season: Mapped[str] = mapped_column(String(4))
     year: Mapped[int] = mapped_column(Integer)
@@ -231,3 +247,111 @@ class AuditEvent(Base):
     entity: Mapped[str] = mapped_column(String(40))
     entity_id: Mapped[str | None] = mapped_column(String(40))
     details: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+# ------------------------------------------------------------------ milestone 7
+class WardStatus(Base):
+    """One monitoring run for a ward and season (agroshield_pricing.monitor). Never edited."""
+    __tablename__ = "ward_status"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ward_id: Mapped[str] = mapped_column(String(40), index=True)
+    season: Mapped[str] = mapped_column(String(4))
+    year: Mapped[int] = mapped_column(Integer)
+    as_of: Mapped[date] = mapped_column(Date)
+    data_through: Mapped[date | None] = mapped_column(Date)
+    mode: Mapped[str] = mapped_column(String(10))                  # live | replay
+    phase: Mapped[str] = mapped_column(String(20))                 # before_season | waiting_for_rains | in_season | complete
+    level: Mapped[str] = mapped_column(String(10))                 # none | normal | watch | alert | payout
+    projected_wrsi: Mapped[float | None] = mapped_column(Float)
+    projected_share: Mapped[float] = mapped_column(Float, default=0.0)
+    index_version: Mapped[str] = mapped_column(String(20))
+    inputs_sha256: Mapped[str | None] = mapped_column(String(64))
+    result: Mapped[dict] = mapped_column(JSON)                     # the full monitor output
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class Payout(Base):
+    """A payout on one policy, created only from a CONFIRMED trigger."""
+    __tablename__ = "payout"
+    __table_args__ = (UniqueConstraint("policy_id", "kind"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    policy_id: Mapped[str] = mapped_column(ForeignKey("policy.id"))
+    kind: Mapped[str] = mapped_column(String(24))                  # wrsi | failed_onset | replant_voucher
+    share: Mapped[float | None] = mapped_column(Float)             # share of sum insured (cash payouts)
+    amount_kes: Mapped[float] = mapped_column(Float)
+    ward_status_id: Mapped[int] = mapped_column(ForeignKey("ward_status.id"))
+    index_version: Mapped[str] = mapped_column(String(20))
+    confirmed_on: Mapped[date] = mapped_column(Date)               # the day the index confirmed the trigger
+    due_by: Mapped[date] = mapped_column(Date)                     # confirmed_on + payout_within_days
+    method: Mapped[str] = mapped_column(String(16))                # mpesa | sacco_loan | voucher
+    # calculated -> approved (cash) or issued (voucher) by the underwriter -> paid / redeemed; or held with a reason
+    status: Mapped[str] = mapped_column(String(16), default="calculated")
+    approved_by: Mapped[str | None] = mapped_column(String(60))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    hold_reason: Mapped[str | None] = mapped_column(String(300))
+    voucher_code: Mapped[str | None] = mapped_column(String(16), unique=True)
+    reference: Mapped[str | None] = mapped_column(String(40))      # M-Pesa B2C receipt or SACCO reference
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    paid_by: Mapped[str | None] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    policy: Mapped[Policy] = relationship()
+    ward_status: Mapped[WardStatus] = relationship()
+
+
+class MissedPayoutReport(Base):
+    """Basis-risk report: "my crop failed but the payout did not match". Recorded and reviewed;
+    it never changes a payout, it informs index review."""
+    __tablename__ = "missed_payout_report"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    farmer_id: Mapped[str] = mapped_column(ForeignKey("farmer.id"))
+    policy_id: Mapped[str | None] = mapped_column(ForeignKey("policy.id"))
+    ward_id: Mapped[str] = mapped_column(String(40))
+    season: Mapped[str] = mapped_column(String(4))
+    year: Mapped[int] = mapped_column(Integer)
+    category: Mapped[str] = mapped_column(String(24))              # failed_no_payout | payout_too_small | other
+    channel: Mapped[str] = mapped_column(String(10))               # ussd | portal
+    note: Mapped[str | None] = mapped_column(String(500))          # officer's words, scrubbed of IDs and phones
+    index_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)   # ward status when reported
+    status: Mapped[str] = mapped_column(String(12), default="open")    # open | reviewed
+    outcome: Mapped[str | None] = mapped_column(String(30))
+    review_note: Mapped[str | None] = mapped_column(String(500))
+    reviewed_by: Mapped[str | None] = mapped_column(String(60))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reported_by: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    farmer: Mapped[Farmer] = relationship()
+    policy: Mapped[Policy | None] = relationship()
+
+
+class WeatherFetch(Base):
+    """Each request to a weather source, so the minimum interval and robots.txt are provable."""
+    __tablename__ = "weather_fetch"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(30), index=True)
+    url: Mapped[str] = mapped_column(String(400))
+    status: Mapped[str] = mapped_column(String(20))                # ok | skipped_interval | disallowed | error
+    detail: Mapped[str | None] = mapped_column(String(300))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class WeatherItem(Base):
+    """A weather advisory (display only). Shown only after a person writes and approves the summary."""
+    __tablename__ = "weather_item"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    source: Mapped[str] = mapped_column(String(30))                # config id, e.g. kmd_nakuru
+    source_label: Mapped[str] = mapped_column(String(40))          # e.g. "Source: KMD"
+    title: Mapped[str] = mapped_column(String(300))
+    url: Mapped[str | None] = mapped_column(String(400))
+    pdf_sha256: Mapped[str | None] = mapped_column(String(64), unique=True)
+    pdf_path: Mapped[str | None] = mapped_column(String(300))
+    text_excerpt: Mapped[str | None] = mapped_column(Text)
+    valid_from: Mapped[date | None] = mapped_column(Date)
+    valid_to: Mapped[date | None] = mapped_column(Date)
+    origin: Mapped[str] = mapped_column(String(10))                # fetched | uploaded
+    summary_en: Mapped[str | None] = mapped_column(String(480))
+    summary_sw: Mapped[str | None] = mapped_column(String(480))
+    status: Mapped[str] = mapped_column(String(12), default="draft")   # draft | approved | withdrawn
+    approved_by: Mapped[str | None] = mapped_column(String(60))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

@@ -48,7 +48,7 @@
     {% endfor %}
   </select>{{ m.err(errors, 'ward_id') }}
   <label for="acreage">Acres of maize</label>
-  <input id="acreage" name="acreage" type="number" step="0.1" min="0.1" inputmode="decimal" value="{{ d.get('acreage', '') }}" required>
+  <input id="acreage" name="acreage" type="text" inputmode="decimal" autocomplete="off" value="{{ d.get('acreage', '') }}" required>
   {{ m.err(errors, 'acreage') }}
   <label>Bought certified seed last season?</label>
   <div class="choice">

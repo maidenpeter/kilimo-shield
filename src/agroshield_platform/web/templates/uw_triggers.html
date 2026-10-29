@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Triggers and payouts{% endblock %}
+{% block body %}
+<h1>Triggers and payouts</h1>
+<p class="muted">Index B-series WRSI per ward, run daily on CHIRPS (projections until the data covers each part of the season).
+  Payouts are created only from confirmed triggers and wait here for approval; the farmer is told only after approval.
+  Target: paid within {{ cfg.monitoring.payout_within_days }} days of confirmation.</p>
+
+<h2>Ward status</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Ward</th><th>Season</th><th>Mode</th><th>As of / data to</th><th>Phase</th><th>Level</th>
+    <th class="num">WRSI</th><th class="num">Trigger / exit</th><th class="num">Payout share</th><th>Confirmed</th><th class="num">In force</th></tr></thead>
+  <tbody>{% for r in tr.status %}{% set st = r.st %}<tr><td>{{ r.ward }} <span class="muted">({{ r.ward_id }})</span></td>
+    <td>{{ season_label(r.season, r.year) }}</td>
+    {% if st %}<td>{{ st.mode }}</td><td>{{ st.as_of|day }} / {{ st.data_through|day if st.data_through else 'none' }}</td>
+    <td>{{ st.phase|label }}</td><td><span class="chip {{ 'warn' if st.level in ('watch', 'alert', 'payout') }}">{{ st.level }}</span></td>
+    <td class="num">{{ st.projected_wrsi|num(2) if st.projected_wrsi is not none else 'n/a' }}{{ ' (final)' if 'wrsi_final' in st.result.confirmed else '' }}</td>
+    <td class="num">{{ st.result.trigger_wrsi|num }} / {{ st.result.exit_wrsi|num }}</td><td class="num">{{ st.projected_share|pct(1) }}</td>
+    <td>{{ st.result.confirmed|join(', ') or '-' }}</td>
+    {% else %}<td colspan="8" class="muted">not checked yet</td>{% endif %}<td class="num">{{ r.active }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<h2>Payout clock per event</h2>
+{% if tr.events %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Event</th><th>Confirmed</th><th>Due by</th><th class="num">Days left</th><th class="num">Payouts</th>
+    <th class="num">Amount</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for e in tr.events %}<tr><td>{{ e.ward }}, {{ e.label }}{% if e.st.mode == 'replay' %} <span class="chip warn">replay</span>{% endif %}
+      <div class="muted">run {{ e.st.id }}, index {{ e.st.index_version }}</div></td>
+    <td>{{ e.confirmed_on|day }}</td><td>{{ e.due_by|day }}</td>
+    <td class="num">{% if e.done %}done{% elif e.days_left < 0 %}<span class="chip warn">{{ -e.days_left }} days late</span>{% else %}{{ e.days_left }}{% endif %}</td>
+    <td class="num">{{ e.count }}</td><td class="num">{{ e.amount_kes|kes }}</td>
+    <td>{% for k, v in e.by_status.items() %}{{ k }} {{ v }}{{ ', ' if not loop.last }}{% endfor %}</td>
+    <td>{% if e.by_status.get('calculated') %}<form method="post" action="/uw/payouts/approve-event/{{ e.st.id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn small" type="submit">Approve all calculated</button></form>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">No confirmed triggers yet.</p>{% endif %}
+
+<h2>Waiting for approval ({{ tr.pending|length }})</h2>
+{% if tr.pending %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Policy</th><th>SACCO / member</th><th>Kind</th><th class="num">Share</th><th class="num">Amount</th>
+    <th>Method</th><th>Due by</th><th>Status</th><th>Decision</th></tr></thead>
+  <tbody>{% for p in tr.pending %}<tr><td>{{ p.policy.policy_no }}<div class="muted">{{ p.policy.insurer_policy_number or 'no insurer number yet' }}</div></td>
+    <td>{{ p.policy.farmer.sacco.code }} / {{ p.policy.farmer.member_no }}</td><td>{{ p.kind }}</td>
+    <td class="num">{{ p.share|pct(1) if p.share is not none else '-' }}</td><td class="num">{{ p.amount_kes|kes }}</td>
+    <td>{{ p.method|label }}{% if p.method == 'sacco_loan' %} {{ p.policy.loan_ref }}{% endif %}</td><td>{{ p.due_by|day }}</td>
+    <td>{{ p.status }}{% if p.hold_reason %}<div class="muted">{{ p.hold_reason }}</div>{% endif %}</td>
+    <td><div class="actions" style="margin:0">
+      <form method="post" action="/uw/payouts/{{ p.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <button class="btn small" type="submit">Approve</button></form>
+      <form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" style="max-width:170px" required>
+        <button class="btn ghost small" type="submit">Hold</button></form></div></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">Nothing waiting.</p>{% endif %}
+
+{% if tr.approved %}
+<h2>Approved, waiting for the SACCO to pay ({{ tr.approved|length }})</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Policy</th><th>Kind</th><th class="num">Amount</th><th>Method</th><th>Approved</th><th>Due by</th><th></th></tr></thead>
+  <tbody>{% for p in tr.approved %}<tr><td>{{ p.policy.policy_no }}</td><td>{{ p.kind }}</td><td class="num">{{ p.amount_kes|kes }}</td>
+    <td>{{ p.method|label }}</td><td>{{ p.approved_by }} {{ p.approved_at.strftime('%d %b %Y') }}</td><td>{{ p.due_by|day }}</td>
+    <td><form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" style="max-width:170px" required>
+      <button class="btn ghost small" type="submit">Hold</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<p class="muted">{{ cfg.monitoring.data_note }}</p>
+{% endblock %}

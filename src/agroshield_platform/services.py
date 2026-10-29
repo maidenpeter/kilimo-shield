@@ -261,7 +261,8 @@ def enrol(ctx: Context, s: Session, sacco: Sacco, officer: Officer | None, inp: 
 
     seq = (s.scalar(select(func.count()).select_from(Policy).where(Policy.sacco_id == sacco.id)) or 0) + 1
     pol = Policy(policy_no=f"AGS-{sacco.code}-{inp.season}{year % 100:02d}-{seq:05d}", pay_ref=_new_pay_ref(s),
-                 farmer_id=farmer.id, plot_id=plot.id, sacco_id=sacco.id, ward_id=inp.ward_id, season=inp.season,
+                 farmer_id=farmer.id, plot_id=plot.id, sacco_id=sacco.id, insurer_id=sacco.insurer_id,
+                 ward_id=inp.ward_id, season=inp.season,
                  year=year, layers=",".join(sorted(set(inp.layers))), acres=inp.acreage,
                  sum_insured_per_acre=q["sum_insured_kes_per_acre"], gross_kes=q["gross_premium_kes"],
                  government_share_kes=q["subsidy"]["government_share_kes"],
@@ -503,10 +504,7 @@ def portfolio(ctx: Context, s: Session, sacco: Sacco) -> dict:
         "by_ward": sorted(by_ward.values(), key=lambda w: w["ward_id"]),
         "gender": {g: n for g, n in genders},
         "sales": {w: sales_status(ctx, w, "LR") for w in ctx.cfg.pilot.wards},
-        # Live trigger status (and so "members in wards approaching trigger") comes with the
-        # daily monitoring job in milestone 7.
-        "trigger_status": {w: {"status": "not monitored yet", "note": "Daily ward monitoring arrives in milestone 7."}
-                           for w in ctx.cfg.pilot.wards},
+        # Trigger status per ward comes from the daily monitoring runs (monitoring.py, Reports and Payouts).
     }
 
 

@@ -5,7 +5,8 @@ far as `text` ("" first, then "2", "2*1", ...). We answer "CON <screen>" to
 continue or "END <screen>" to finish. Screens are at most 182 characters.
 
     main  1 My cover   2 Pay premium (full or instalment, M-Pesa STK push)
-          3 Payouts (from milestone 7)   4 Language   0 Help
+          3 Payouts (ward rainfall status and this farmer's payouts)   4 Language
+          5 Report crop loss (missed-payout report; never changes a payout)   0 Help
 
 Enrolment stays with the SACCO officer, who reads the consent statements to the
 farmer; USSD serves members who are already enrolled.
@@ -64,7 +65,9 @@ def handle(ctx: Context, s: Session, phone: str, text: str) -> str:
     if choice == "2":
         return _pay(ctx, s, f, lang, rest)
     if choice == "3":
-        return _end(L.t(lang, "ussd.payouts"))
+        return _payouts(ctx, s, f, lang)
+    if choice == "5":
+        return _report(ctx, s, f, lang, rest)
     if choice == "4":
         if not rest:
             return _con(L.t(lang, "ussd.language_menu"))
@@ -89,6 +92,44 @@ def _cover(s: Session, f: Farmer, lang: str) -> str:
     if p.refund_due_kes > 0:
         out += L.t(lang, "ussd.cover_refund", refund=L.kes(p.refund_due_kes))
     return _end(out)
+
+
+def _payouts(ctx: Context, s: Session, f: Farmer, lang: str) -> str:
+    from .models import Payout
+    from .monitoring import latest, ward_key
+    p = _policy(s, f)
+    if p is None:
+        return _end(L.t(lang, "ussd.no_policy"))
+    out = [L.t(lang, "ussd.payouts_head", ward=ctx.cfg.ward(p.ward_id).label, season=L.season(lang, p.season, p.year))]
+    if p.status != "active":
+        out.append(L.t(lang, "ussd.not_active", cert=p.policy_no, status=L.status(lang, p.status)))
+        return _end("\n".join(out))
+    out.append(L.t(lang, f"ward.{ward_key(latest(s, p.ward_id, p.season, p.year))}"))
+    pays = s.scalars(select(Payout).where(Payout.policy_id == p.id).order_by(Payout.id)).all()
+    if any(po.status in ("calculated", "held") for po in pays):
+        out.append(L.t(lang, "ussd.payout_checking"))          # nothing promised before the insurer approves
+    for po in pays:
+        amount = f"{po.amount_kes:,.0f}"
+        if po.status in ("calculated", "held"):
+            continue
+        if po.kind == "replant_voucher":
+            out.append(L.t(lang, "ussd.voucher", code=po.voucher_code, amount=amount))
+        elif po.status == "paid":
+            out.append(L.t(lang, "ussd.payout_paid", amount=amount, on=po.paid_at.strftime("%d/%m/%Y")))
+        else:
+            out.append(L.t(lang, "ussd.payout_due", amount=amount, by=po.due_by.strftime("%d/%m/%Y")))
+    return _end("\n".join(out))
+
+
+def _report(ctx: Context, s: Session, f: Farmer, lang: str, rest: list[str]) -> str:
+    from .monitoring import report_missed
+    if not rest:
+        return _con(L.t(lang, "ussd.report_menu"))
+    category = {"1": "failed_no_payout", "2": "payout_too_small"}.get(rest[0])
+    if category is None:
+        return _end(L.t(lang, "ussd.report_back"))
+    r = report_missed(ctx, s, f, category, "ussd", "ussd")
+    return _end(L.t(lang, "ussd.report_done", ref=r.ref))
 
 
 def _pay(ctx: Context, s: Session, f: Farmer, lang: str, rest: list[str]) -> str:

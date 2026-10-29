@@ -46,3 +46,17 @@ validation:
   # Real ward yields as data/raw/yields/<ward>_<season>.csv (columns: year,
   # yield_t_per_ha). Basis risk is only reported when this exists.
   yields_dir: data/raw/yields
+
+monitoring:
+  # Daily ward monitoring (milestone 7). The same WRSI index as pricing is run on
+  # observed CHIRPS up to the latest day available, with each ward's climatology
+  # (all other years) standing in for the rest of the season. Nothing is final
+  # until the data covers it.
+  watch_margin_wrsi: 5          # projected index within 5 points above the trigger: "watch"
+  payout_within_days: 10        # payouts are paid within 10 days of the index confirming
+  voucher_valid_days: 30        # replanting seed vouchers: redeem within 30 days
+  live_cache_dir: data/raw/monitoring
+  data_note: >-
+    CHIRPS final rainfall is published about three weeks after the end of each
+    month, so the index for a dekad is confirmed only then. The 10-day payout
+    clock starts when the index is confirmed, not when the rain fell.

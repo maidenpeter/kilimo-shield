@@ -11,33 +11,44 @@
   M-Pesa {{ mpesa_env }}; SMS {{ 'recorded, not sent' if sms_mode == 'log' else sms_mode }}.</div>{% endif %}
 {% set here = request.url.path %}
 {% macro links(officer) %}
+  {% if officer.role == 'underwriter' %}
+  <a href="/uw" {% if here == '/uw' %}aria-current="page"{% endif %}>Portfolio</a>
+  <a href="/uw/triggers" {% if here == '/uw/triggers' %}aria-current="page"{% endif %}>Triggers and payouts</a>
+  <a href="/uw/money" {% if here == '/uw/money' %}aria-current="page"{% endif %}>Money</a>
+  <a href="/uw/bordereaux" {% if here == '/uw/bordereaux' %}aria-current="page"{% endif %}>Bordereaux</a>
+  <a href="/uw/pricing" {% if here == '/uw/pricing' %}aria-current="page"{% endif %}>Pricing and audit</a>
+  <a href="/uw/reinsurer" {% if here == '/uw/reinsurer' %}aria-current="page"{% endif %}>Reinsurer summary</a>
+  {% else %}
   <a href="/dashboard" {% if here == '/dashboard' %}aria-current="page"{% endif %}>Home</a>
   <a href="/enrol" {% if here.startswith('/enrol') %}aria-current="page"{% endif %}>Enrol a farmer</a>
   <a href="/members" {% if here.startswith('/members') %}aria-current="page"{% endif %}>Members</a>
+  <a href="/payouts" {% if here == '/payouts' %}aria-current="page"{% endif %}>Payouts</a>
   {% if officer.role == 'manager' %}
   <a href="/reports" {% if here == '/reports' %}aria-current="page"{% endif %}>Reports</a>
   <a href="/import" {% if here in ('/import', '/kiamis') or here.startswith('/bulk') %}aria-current="page"{% endif %}>Import</a>
+  <a href="/weather" {% if here == '/weather' %}aria-current="page"{% endif %}>Weather</a>
+  {% endif %}
   {% endif %}
 {% endmacro %}
 {% macro dev_links(officer) %}
-  {% if officer.role == 'manager' %}<a class="dev" href="/sms" {% if here == '/sms' %}aria-current="page"{% endif %}>SMS log</a>{% endif %}
-  {% if mpesa_env == 'simulated' %}<a class="dev" href="/dev/mpesa" {% if here == '/dev/mpesa' %}aria-current="page"{% endif %}>M-Pesa simulator</a>{% endif %}
+  {% if officer.role == 'underwriter' %}{% elif officer.role == 'manager' %}<a class="dev" href="/sms" {% if here == '/sms' %}aria-current="page"{% endif %}>SMS log</a>{% endif %}
+  {% if mpesa_env == 'simulated' and officer.role != 'underwriter' %}<a class="dev" href="/dev/mpesa" {% if here == '/dev/mpesa' %}aria-current="page"{% endif %}>M-Pesa simulator</a>{% endif %}
 {% endmacro %}
 <header class="top"><div class="wrap">
-  <a class="brand" href="{{ '/dashboard' if officer else '/' }}">AgroShield<span>KE</span></a>
+  <a class="brand" href="{{ ('/uw' if officer.role == 'underwriter' else '/dashboard') if officer else '/' }}">AgroShield<span>KE</span></a>
   {% if officer %}
   <nav class="main" aria-label="Portal">
     {{ links(officer) }}
-    {% if dev_mode %}<details class="devmenu"><summary>Developer &#9662;</summary>
+    {% if dev_mode and officer.role != 'underwriter' %}<details class="devmenu"><summary>Developer &#9662;</summary>
       <div class="panel">{{ dev_links(officer) }}</div></details>{% endif %}
   </nav>
-  <div class="who"><span class="name">{{ officer.display_name }} &middot; {{ officer.sacco.name }}</span>
+  <div class="who"><span class="name">{{ officer.display_name }} &middot; {{ officer.sacco.name if officer.sacco else officer.insurer.name }}</span>
     <form method="post" action="/logout" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <button class="btn ghost small" type="submit">Sign out</button></form></div>
   <details class="menu"><summary class="btn small">Menu</summary>
     <div class="panel">
       {{ links(officer) }}
-      {% if dev_mode %}<div class="sep">Developer</div>{{ dev_links(officer) }}{% endif %}
+      {% if dev_mode and officer.role != 'underwriter' %}<div class="sep">Developer</div>{{ dev_links(officer) }}{% endif %}
       <div class="sep">{{ officer.display_name }}</div>
       <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf }}">
         <button type="submit">Sign out</button></form>
@@ -55,5 +66,28 @@
 </div></main>
 <footer><div class="wrap">AgroShield is the technology and pricing layer; cover is underwritten by a licensed Kenyan insurer
   (to be named) and distributed through SACCOs. Illustrative pricing and placeholder wards during development.</div></footer>
+<script>
+// Feedback and a double-submit guard: the tapped button says "Working..." until the next page arrives.
+document.addEventListener("submit", function (e) {
+  var f = e.target, b = e.submitter;
+  if (f.dataset.busy) { e.preventDefault(); return; }
+  f.dataset.busy = "1";
+  if (b && b.tagName === "BUTTON") setTimeout(function () {   // after the form data (incl. this button) is taken
+    b.dataset.label = b.textContent; b.textContent = "Working…"; b.setAttribute("aria-busy", "true"); b.classList.add("busy");
+  }, 0);
+  setTimeout(reset, 15000);
+});
+function reset() {
+  document.querySelectorAll("form[data-busy]").forEach(function (f) { delete f.dataset.busy; });
+  document.querySelectorAll("button.busy").forEach(function (b) {
+    b.textContent = b.dataset.label; b.removeAttribute("aria-busy"); b.classList.remove("busy"); });
+}
+window.addEventListener("pageshow", reset);   // coming Back to a page must not leave it locked
+// A tap outside an open menu closes it, so the menu never sits over the page and swallows a tap.
+document.addEventListener("click", function (e) {
+  document.querySelectorAll("details.menu[open], details.devmenu[open]").forEach(function (d) {
+    if (!d.contains(e.target)) d.removeAttribute("open"); });
+});
+</script>
 </body>
 </html>

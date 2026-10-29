@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Weather{% endblock %}
+{% block body %}
+<h1>Weather advisories</h1>
+<p>KMD county forecasts are checked politely (at most once every 6 hours per page). Nothing shows to officers until you
+  write a short English and Kiswahili summary and approve it. Every item keeps its source label and a link. Weather
+  advisories never affect prices, triggers or payouts.</p>
+<div class="alert warn"><b>No SMS.</b> KMD content is not sent by SMS until we hold KMD's written permission; there are no
+  automatic sends.</div>
+
+<div class="actions">
+  <form method="post" action="/weather/fetch"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <button class="btn" type="submit">Check KMD now</button></form>
+</div>
+<details class="more"><summary>Upload a PDF instead</summary>
+  <form class="stack card" method="post" action="/weather/upload" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="wfile">KMD PDF</label><input id="wfile" name="file" type="file" accept="application/pdf" required>
+    <label for="wtitle">Title</label><input id="wtitle" name="title" type="text">
+    <label for="wfrom">Valid from</label><input id="wfrom" name="valid_from" type="date">
+    <label for="wto">Valid to</label><input id="wto" name="valid_to" type="date">
+    <p><button class="btn small" type="submit">Upload</button></p>
+  </form>
+</details>
+
+<h2>Items</h2>
+{% for i in items %}
+<div class="card">
+  <h3 style="margin-top:0">{{ i.title }} <span class="chip {{ 'warn' if i.status != 'approved' }}">{{ i.status }}</span></h3>
+  <p class="muted">{{ i.source_label }}{% if i.valid_from %} &middot; valid {{ i.valid_from|day }} to {{ i.valid_to|day }}{% endif %}
+    &middot; {{ i.origin }} &middot; <a href="/weather/{{ i.id }}/pdf">PDF</a>{% if i.url %} &middot; <a href="{{ i.url }}" rel="noopener" target="_blank">original</a>{% endif %}
+    &middot; sha256 {{ (i.pdf_sha256 or '')[:12] }}</p>
+  {% if i.text_excerpt %}<details class="more"><summary>Text from the PDF</summary><p class="muted">{{ i.text_excerpt }}</p></details>{% endif %}
+  {% if i.status != 'withdrawn' %}
+  <form class="stack" method="post" action="/weather/{{ i.id }}/approve">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="en-{{ i.id }}">Summary in English (for officers)</label>
+    <textarea id="en-{{ i.id }}" name="summary_en" rows="3" maxlength="480" style="width:100%;max-width:560px">{{ i.summary_en or '' }}</textarea>
+    <label for="sw-{{ i.id }}">Summary in Kiswahili</label>
+    <textarea id="sw-{{ i.id }}" name="summary_sw" rows="3" maxlength="480" style="width:100%;max-width:560px">{{ i.summary_sw or '' }}</textarea>
+    <div class="actions"><button class="btn small" type="submit">{{ 'Save and keep approved' if i.status == 'approved' else 'Approve' }}</button></div>
+  </form>
+  <div class="actions">
+    <form method="post" action="/weather/{{ i.id }}/sms"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <button class="btn ghost small" type="submit" {% if sms_blocked(i) %}aria-describedby="smsno-{{ i.id }}"{% endif %}>Send by SMS</button></form>
+    <form method="post" action="/weather/{{ i.id }}/withdraw"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <button class="btn ghost small" type="submit">Withdraw</button></form>
+  </div>
+  {% if sms_blocked(i) %}<p class="muted" id="smsno-{{ i.id }}">{{ sms_blocked(i) }}</p>{% endif %}
+  {% endif %}
+  {% if i.approved_by %}<p class="muted">Approved by {{ i.approved_by }} {{ i.approved_at.strftime('%d %b %Y %H:%M') }}</p>{% endif %}
+</div>
+{% else %}<p class="muted">No items yet. Check KMD now, or upload a PDF.</p>{% endfor %}
+
+<details class="more"><summary>Sources and recent requests</summary>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Source</th><th>On</th><th>Shown</th><th>SMS</th><th>Terms checked</th><th>Note</th></tr></thead>
+    <tbody>{% for s in sources.values() %}<tr><td>{{ s.name }}</td><td>{{ 'yes' if s.enabled else 'off' }}</td>
+      <td>{{ 'yes' if s.display_allowed else 'no' }}</td><td>{{ 'allowed' if s.sms_distribution_allowed else 'no' }}</td>
+      <td>{{ s.terms_checked_on }}</td><td>{{ s.note }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>When</th><th>Source</th><th>Result</th><th>URL</th></tr></thead>
+    <tbody>{% for f in fetches %}<tr><td>{{ f.at.strftime('%d %b %H:%M') }}</td><td>{{ f.source }}</td><td>{{ f.status }} {{ f.detail or '' }}</td>
+      <td class="muted">{{ f.url }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</details>
+{% endblock %}

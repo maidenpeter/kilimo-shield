@@ -9,7 +9,11 @@ Pages
   /members             members (national ID and phone masked); cover, payments, Details
   /reports             managers: portfolio, sales windows, subsidy receivable, ward map, export
   /import              managers: bulk enrolment from CSV (check, then all-or-nothing) and KIAMIS import
+  /payouts             Payout Tracker: ward rainfall status, payouts, missed-payout reports
+  /weather             managers: KMD advisories, review and approve summaries (display only)
   /sms, /dev/mpesa     Developer menu (development mode only): SMS log, M-Pesa simulator
+  /uw/...              Underwriter workspace (role underwriter only; its own insurer's book only): portfolio,
+                       triggers and payout approval, money, bordereaux, pricing runs and audit, reinsurer summary
 
 Two audiences: officers get plain language and their next task; pricing and portfolio
 detail sits under Reports and behind "Details" toggles.
@@ -25,13 +29,16 @@ server-side under a random token (in memory: one process, cleared on restart).
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import hmac
 import logging
 import math
 import secrets
 import time
+from datetime import timedelta
 from pathlib import Path
 
+import jinja2
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,14 +50,18 @@ from starlette.middleware.sessions import SessionMiddleware
 from agroshield_pricing.config import load_config
 from agroshield_pricing.quote import QuoteError, RateBook, quote
 
+from .. import locale as L
+from .. import monitoring as mon
 from .. import mpesa as mp
 from .. import services as sv
+from .. import weather as wx
 from .. import sms as smsmod
+from .. import underwriting as uw
 from .. import ussd as ussdmod
 from ..crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_national_id, normalise_phone, verify_password
 from ..db import audit, init_db, make_engine, transaction
 from ..kiamis import CsvKiamis
-from ..models import Consent, Farmer, MpesaRequest, Officer, Policy, SmsMessage
+from ..models import Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, SmsMessage, WeatherItem
 from ..settings import Settings, load_settings
 
 HERE = Path(__file__).parent
@@ -88,7 +99,7 @@ class PendingStore:
 
 
 def _float(v: str | None) -> float | None:
-    v = (v or "").strip()
+    v = (v or "").strip().replace(",", ".")      # some Android keyboards type a decimal comma
     return float(v) if v else None
 
 
@@ -122,7 +133,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     factory: sessionmaker = init_db(make_engine(settings.database_url))
     vault = Vault(settings.encryption_key, settings.lookup_key)
     callback_url = f"{settings.mpesa.callback_base_url.rstrip('/')}/mpesa/callback/{settings.callback_token}"
-    state = {"book": book, "today": today,
+    state = {"book": book, "today": today, "tables": None,
              "mpesa": mpesa_client or mp.make_client(settings.mpesa, callback_url),
              "sms": sms_sender or smsmod.make_sender(settings.sms)}
     pending = PendingStore()
@@ -146,15 +157,24 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                        https_only=False, max_age=8 * 3600)
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
-    templates.env.filters["kes"] = lambda v: "n/a" if v is None else f"KES {v:,.0f}"
-    templates.env.filters["pct"] = lambda v, d=0: "n/a" if v is None else f"{v * 100:.{d}f}%"
-    templates.env.filters["num"] = lambda v, d=0: "n/a" if v is None else f"{v:,.{d}f}"
+    def missing(v) -> bool:                     # None, or a key a result dict does not have
+        return v is None or isinstance(v, jinja2.Undefined)
+    templates.env.filters["kes"] = lambda v: "n/a" if missing(v) else f"KES {v:,.0f}"
+    templates.env.filters["pct"] = lambda v, d=0: "n/a" if missing(v) else f"{v * 100:.{d}f}%"
+    templates.env.filters["num"] = lambda v, d=0: "n/a" if missing(v) else f"{v:,.{d}f}"
     templates.env.filters["day"] = lambda d: "" if d is None else d.strftime("%d %b %Y")
     templates.env.filters["mask_id"] = lambda v: _masked(v, normalise_national_id, mask_national_id)
     templates.env.filters["mask_phone"] = lambda v: _masked(v, normalise_phone, mask_phone)
     templates.env.filters["label"] = lambda v: (v or "").replace("_", " ")
+    templates.env.filters["days"] = lambda n: timedelta(days=n)
     templates.env.filters["short_day"] = lambda d: "" if d is None else f"{d.day} {d:%b}"
     templates.env.globals["season_label"] = sv.season_label
+    templates.env.globals["ward_line"] = lambda st: L.t("en", f"ward.{mon.ward_key(st)}")
+    templates.env.globals["payout_kind"] = lambda k: {"wrsi": "Drought payout", "failed_onset": "Rains failed to start",
+                                                       "replant_voucher": "Replanting seed voucher"}.get(k, k)
+    templates.env.globals["missed_kind"] = lambda k: {"failed_no_payout": "Crop failed, no payout",
+                                                       "payout_too_small": "Payout too small", "other": "Other"}.get(k, k)
+    weather_raw, weather_sources = wx.load_sources(settings.config_dir)
     templates.env.globals["ward_label"] = lambda wid: cfg.ward(wid).label if wid in cfg.wards else wid
 
     # ------------------------------------------------------------------ helpers
@@ -189,9 +209,18 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         off = officer_or_none(request, s)
         if off is None or not off.active:
             raise HTTPException(303, headers={"Location": "/login"})
+        if off.role == "underwriter" and role != "underwriter":
+            raise HTTPException(303, headers={"Location": "/uw"})     # SACCO pages are not for the insurer
         if role and off.role != role:
-            raise HTTPException(403, "Only a SACCO manager can do this.")
+            raise HTTPException(403, "Only the insurer's underwriters can see this." if role == "underwriter"
+                                else "Only a SACCO manager can do this.")
         return off
+
+    def get_or_404(s, model, key):
+        obj = s.get(model, key)
+        if obj is None:
+            raise HTTPException(404)
+        return obj
 
     def own_policy(s, off: Officer, policy_id: str) -> Policy:
         pol = s.get(Policy, policy_id)
@@ -234,7 +263,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             request.session.clear()
             request.session["officer_id"] = off.id
             audit(s, off.username, "login", "officer", str(off.id))
-        return RedirectResponse("/dashboard", status_code=303)
+            home = "/uw" if off.role == "underwriter" else "/dashboard"
+        return RedirectResponse(home, status_code=303)
 
     @app.post("/logout")
     def logout(request: Request, csrf_token: str = Form("")):
@@ -267,7 +297,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             wards = sorted({f.ward_id for f in s.scalars(select(Farmer).where(Farmer.sacco_id == off.sacco_id))}) \
                 or list(cfg.pilot.wards)
             return render(request, "home.html", off, owe=owe, owe_total=sum(p.balance_kes for p in owe),
-                          sales=sales_summary(c), wards=wards, today=c.date())
+                          sales=sales_summary(c), wards=wards, today=c.date(), alerts=mon.alerts_for(s, off.sacco_id),
+                          weather=wx.visible_items(s, c.date())[:2])
 
     @app.post("/policies/{policy_id}/remind")
     def policy_remind(request: Request, background: BackgroundTasks, policy_id: str, csrf_token: str = Form("")):
@@ -286,6 +317,16 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             flash(request, "warn", f"{name} did not agree to SMS. Please call them instead.")
         return RedirectResponse(request.headers.get("referer") or "/dashboard", status_code=303)
 
+    def ward_levels(s, sacco_id: int) -> dict:
+        """Latest monitoring result per ward, for the newest season this SACCO has cover in."""
+        out = {}
+        for w, season, y in mon.sacco_seasons(s, sacco_id):
+            if w not in out:
+                st = mon.latest(s, w, season, y)
+                if st:
+                    out[w] = st
+        return out
+
     @app.get("/reports", response_class=HTMLResponse)
     def reports(request: Request):
         with transaction(factory) as s:
@@ -295,7 +336,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                                .order_by(Policy.created_at.desc()).limit(8)).all()
             wards = [cfg.ward(w) for w in cfg.pilot.wards]
             return render(request, "reports.html", off, pf=pf, recent=recent, wards=wards,
-                          map=ward_map(wards, {w["ward_id"]: w["policies"] for w in pf["by_ward"]}))
+                          map=ward_map(wards, {w["ward_id"]: w["policies"] for w in pf["by_ward"]}),
+                          levels=ward_levels(s, off.sacco_id))
 
     # ------------------------------------------------------------------ quick price
     @app.get("/quote", response_class=HTMLResponse)
@@ -460,8 +502,12 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                              .order_by(MpesaRequest.created_at.desc())).all()
             msgs = s.scalars(select(SmsMessage).where(SmsMessage.farmer_id == f.id)
                              .order_by(SmsMessage.created_at.desc())).all()
+            pays = s.scalars(select(Payout).join(Policy).where(Policy.farmer_id == f.id).order_by(Payout.id)).all()
+            missed = s.scalars(select(MissedPayoutReport).where(MissedPayoutReport.farmer_id == f.id)
+                               .order_by(MissedPayoutReport.created_at.desc())).all()
             return render(request, "member.html", off, f=f, consents=consents, policies=f.policies, mpesa_requests=reqs,
-                          messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES)
+                          messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES, payouts=pays,
+                          missed=missed)
 
     @app.post("/policies/{policy_id}/stk")
     def policy_stk(request: Request, policy_id: str, amount: str = Form(""), csrf_token: str = Form("")):
@@ -634,6 +680,307 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             audit(s, "mpesa", "mpesa.callback", "mpesa", None, outcome=res["outcome"])
         background.add_task(flush_sms)
         return JSONResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+    # ------------------------------------------------------------------ Payout Tracker
+    @app.get("/payouts", response_class=HTMLResponse)
+    def payouts(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s)
+            c = ctx()
+            cards = []
+            for w, season, y in mon.sacco_seasons(s, off.sacco_id):
+                st = mon.latest(s, w, season, y)
+                rows = s.scalars(select(Payout).join(Policy).where(Policy.sacco_id == off.sacco_id, Policy.ward_id == w,
+                                                                   Policy.season == season, Policy.year == y)
+                                 .order_by(Payout.due_by, Payout.id)).all()
+                n_active = len(s.scalars(select(Policy).where(Policy.sacco_id == off.sacco_id, Policy.ward_id == w,
+                                                              Policy.season == season, Policy.year == y,
+                                                              Policy.status == "active")).all())
+                cards.append({"ward_id": w, "season": season, "year": y, "st": st, "payouts": rows, "active": n_active})
+            reports = s.scalars(select(MissedPayoutReport).join(Farmer).where(Farmer.sacco_id == off.sacco_id)
+                                .order_by(MissedPayoutReport.created_at.desc()).limit(100)).all()
+            return render(request, "payouts.html", off, cards=cards, reports=reports, today=c.date(),
+                          overdue=mon.overdue, outcomes=mon.REVIEW_OUTCOMES)
+
+    @app.post("/payouts/{payout_id}/pay")
+    def payout_pay(request: Request, background: BackgroundTasks, payout_id: int, reference: str = Form(""),
+                   csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            p = s.get(Payout, payout_id)
+            if p is None or p.policy.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            try:
+                mon.pay(ctx(), s, p, off.username, reference)
+                msg = (f"Voucher {p.voucher_code} marked used." if p.method == "voucher"
+                       else f"Payout of KES {p.amount_kes:,.0f} to {p.policy.farmer.full_name} recorded as paid.")
+                flash(request, "ok", msg)
+                background.add_task(flush_sms)
+            except (mon.PayoutError, mp.MpesaError) as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/payouts", status_code=303)
+
+    @app.post("/members/{farmer_id}/missed")
+    def missed_report(request: Request, farmer_id: str, category: str = Form(""), note: str = Form(""),
+                      csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s)
+            f = s.get(Farmer, farmer_id)
+            if f is None or f.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            try:
+                r = mon.report_missed(ctx(), s, f, category, "portal", off.username, note)
+                flash(request, "ok", f"Recorded as {r.ref}. It will be reviewed; it does not change a payout.")
+            except ValueError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse(f"/members/{farmer_id}", status_code=303)
+
+    @app.post("/missed/{report_id}/review")
+    def missed_review(request: Request, report_id: int, outcome: str = Form(""), note: str = Form(""),
+                      csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            r = s.get(MissedPayoutReport, report_id)
+            if r is None or r.farmer.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            try:
+                mon.review_missed(s, r, outcome, note, off.username)
+                flash(request, "ok", f"{r.ref} reviewed.")
+            except ValueError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/payouts#reports", status_code=303)
+
+    # ------------------------------------------------------------------ weather (display only)
+    @app.get("/weather", response_class=HTMLResponse)
+    def weather(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            items = s.scalars(select(WeatherItem).order_by(WeatherItem.created_at.desc()).limit(50)).all()
+            from ..models import WeatherFetch
+            fetches = s.scalars(select(WeatherFetch).order_by(WeatherFetch.at.desc()).limit(15)).all()
+            return render(request, "weather.html", off, items=items, fetches=fetches, sources=weather_sources,
+                          sms_blocked=lambda i: wx.sms_blocked(i, weather_sources))
+
+    @app.post("/weather/fetch")
+    def weather_fetch(request: Request, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            res = wx.fetch(s, settings.config_dir, Path(cfg.root).parent)
+            audit(s, off.username, "weather.fetch_requested", "weather", None, **res)
+        flash(request, "ok", "Checked sources: " + ", ".join(f"{k} {v}" for k, v in res.items()))
+        return RedirectResponse("/weather", status_code=303)
+
+    @app.post("/weather/upload")
+    async def weather_upload(request: Request, file: UploadFile, title: str = Form(""), valid_from: str = Form(""),
+                             valid_to: str = Form(""), csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        data = await file.read()
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            from datetime import date as _d
+            try:
+                item = wx.store_pdf(s, Path(cfg.root).parent / weather_raw["store_dir"], weather_sources["kmd_nakuru"],
+                                    data, title.strip() or file.filename, None, "uploaded",
+                                    _d.fromisoformat(valid_from) if valid_from else None,
+                                    _d.fromisoformat(valid_to) if valid_to else None)
+                flash(request, "ok" if item else "warn", "Uploaded. Write and approve a summary before it shows."
+                      if item else "That document is already here.")
+            except (wx.WeatherError, ValueError) as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/weather", status_code=303)
+
+    @app.post("/weather/{item_id}/approve")
+    def weather_approve(request: Request, item_id: int, summary_en: str = Form(""), summary_sw: str = Form(""),
+                        csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            item = get_or_404(s, WeatherItem, item_id)
+            try:
+                wx.approve(s, item, summary_en, summary_sw, off.username)
+                flash(request, "ok", "Approved. It now shows on Home for officers.")
+            except wx.WeatherError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/weather", status_code=303)
+
+    @app.post("/weather/{item_id}/withdraw")
+    def weather_withdraw(request: Request, item_id: int, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            item = get_or_404(s, WeatherItem, item_id)
+            item.status = "withdrawn"
+            audit(s, off.username, "weather.withdrawn", "weather_item", str(item.id))
+        return RedirectResponse("/weather", status_code=303)
+
+    @app.post("/weather/{item_id}/sms")
+    def weather_sms(request: Request, item_id: int, csrf_token: str = Form("")):
+        """There is no automatic send. Even this manual one refuses until written permission is on file."""
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            item = get_or_404(s, WeatherItem, item_id)
+            reason = wx.sms_blocked(item, weather_sources)
+            audit(s, off.username, "weather.sms_refused" if reason else "weather.sms_requested", "weather_item", str(item.id))
+        flash(request, "warn", reason or "SMS of weather content is not built yet.")
+        return RedirectResponse("/weather", status_code=303)
+
+    @app.get("/weather/{item_id}/pdf")
+    def weather_pdf(request: Request, item_id: int):
+        from fastapi.responses import FileResponse
+        with transaction(factory) as s:
+            require(request, s)
+            item = s.get(WeatherItem, item_id)
+            if item is None or not item.pdf_path or not Path(item.pdf_path).exists():
+                raise HTTPException(404)
+            return FileResponse(item.pdf_path, media_type="application/pdf")
+
+    # ------------------------------------------------------------------ underwriter workspace
+    def engine_tables() -> dict:
+        if state["tables"] is None:
+            from agroshield_pricing.engine import price_ward
+            from agroshield_pricing.pet import make_pet_source
+            from agroshield_pricing.rainfall import make_source
+            rs, ps = make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False)
+            state["tables"] = {w: price_ward(cfg, w, rs, ps).seasons["LR"].table for w in cfg.pilot.wards}
+        return state["tables"]
+
+    def uw_payout(s, off: Officer, payout_id: int) -> Payout:
+        p = s.get(Payout, payout_id)
+        if p is None or p.policy.insurer_id != off.insurer_id:
+            raise HTTPException(404)
+        return p
+
+    @app.get("/uw", response_class=HTMLResponse)
+    def uw_portfolio(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            return render(request, "uw_portfolio.html", off, pf=uw.portfolio(ctx(), s, off.insurer))
+
+    @app.get("/uw/triggers", response_class=HTMLResponse)
+    def uw_triggers(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            c = ctx()
+            return render(request, "uw_triggers.html", off, tr=uw.triggers(c, s, off.insurer, c.date()))
+
+    @app.post("/uw/payouts/{payout_id}/approve")
+    def uw_approve(request: Request, background: BackgroundTasks, payout_id: int, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            p = uw_payout(s, off, payout_id)
+            try:
+                mon.approve(ctx(), s, p, off.username)
+                flash(request, "ok", f"Approved {p.policy.policy_no} {payout_kind_text(p.kind)} KES {p.amount_kes:,.0f}.")
+                background.add_task(flush_sms)
+            except mon.PayoutError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/uw/triggers", status_code=303)
+
+    @app.post("/uw/payouts/approve-event/{status_id}")
+    def uw_approve_event(request: Request, background: BackgroundTasks, status_id: int, csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            ids = {p.id for p in uw.policies(s, off.insurer_id)}
+            pays = s.scalars(select(Payout).where(Payout.ward_status_id == status_id, Payout.status == "calculated")).all()
+            n = 0
+            for p in pays:
+                if p.policy_id in ids:
+                    mon.approve(ctx(), s, p, off.username)
+                    n += 1
+        background.add_task(flush_sms)
+        flash(request, "ok", f"Approved {n} payout{'s' if n != 1 else ''}.")
+        return RedirectResponse("/uw/triggers", status_code=303)
+
+    @app.post("/uw/payouts/{payout_id}/hold")
+    def uw_hold(request: Request, payout_id: int, reason: str = Form(""), csrf_token: str = Form("")):
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            p = uw_payout(s, off, payout_id)
+            try:
+                mon.hold(s, p, reason, off.username)
+                flash(request, "warn", f"Held {p.policy.policy_no}: {p.hold_reason}")
+            except mon.PayoutError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse("/uw/triggers", status_code=303)
+
+    @app.get("/uw/money", response_class=HTMLResponse)
+    def uw_money(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            return render(request, "uw_money.html", off, m=uw.money(s, off.insurer))
+
+    @app.get("/uw/bordereaux", response_class=HTMLResponse)
+    def uw_bordereaux(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            months = uw.months_with_activity(s, off.insurer)
+            manifests = [uw.bordereaux(s, off.insurer, mth, dict(cfg.file_hashes))[1] for mth in months[:12]]
+            return render(request, "uw_bordereaux.html", off, manifests=manifests)
+
+    @app.get("/uw/bordereaux/{month}.zip")
+    def uw_bordereaux_zip(request: Request, month: str):
+        import re as _re
+        from fastapi.responses import Response
+        if not _re.fullmatch(r"\d{4}-\d{2}", month):
+            raise HTTPException(404)
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            data, manifest = uw.bordereaux(s, off.insurer, month, dict(cfg.file_hashes))
+            audit(s, off.username, "bordereaux.exported", "insurer", str(off.insurer_id), month=month,
+                  file_sha256=hashlib.sha256(data).hexdigest())
+        return Response(data, media_type="application/zip", headers={
+            "Content-Disposition": f"attachment; filename=bordereaux-{off.insurer.code}-{month}.zip"})
+
+    @app.get("/uw/pricing", response_class=HTMLResponse)
+    def uw_pricing(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            repo = Path(cfg.root).parent
+            return render(request, "uw_pricing.html", off, runs=uw.pricing_runs(repo), log=uw.run_log(repo),
+                          events=uw.audit_events(s, off.insurer), current=dict(cfg.file_hashes))
+
+    @app.get("/uw/runs/{run_id}/report.html", response_class=HTMLResponse)
+    def uw_run_report(request: Request, run_id: str):
+        import re as _re
+        from fastapi.responses import FileResponse
+        if not _re.fullmatch(r"[0-9TZ]+_[a-z0-9-]+_[0-9a-f]+", run_id):
+            raise HTTPException(404)
+        with transaction(factory) as s:
+            require(request, s, role="underwriter")
+        f = Path(cfg.root).parent / "runs" / run_id / "report.html"
+        if not f.exists():
+            raise HTTPException(404)
+        return FileResponse(f, media_type="text/html")
+
+    @app.get("/uw/reinsurer", response_class=HTMLResponse)
+    def uw_reinsurer(request: Request):
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            c = ctx()
+            pf = uw.portfolio(c, s, off.insurer)
+            tables = engine_tables()
+            books = [uw.as_if_losses(c, s, off.insurer, tables, season, y) for season, y in pf["seasons"]]
+            return render(request, "uw_reinsurer.html", off, pf=pf, books=[b for b in books if b["sum_insured_kes"]],
+                          esg=uw.esg(s, off.insurer, cfg.monitoring.payout_within_days), today=c.date(),
+                          burn={w: price_burn(w) for w in cfg.pilot.wards})
+
+    def price_burn(w: str) -> dict:
+        t = engine_tables()[w]
+        sh = t["payout_share"]
+        return {"expected_loss": float(sh.mean()), "loss_1_in_10": float(sh.quantile(0.9)),
+                "loss_1_in_20": float(sh.quantile(0.95)), "frequency": float((sh > 0).mean()),
+                "years": [int(t.index.min()), int(t.index.max())]}
+
+    def payout_kind_text(k: str) -> str:
+        return {"wrsi": "drought payout", "failed_onset": "failed-onset payout", "replant_voucher": "seed voucher"}.get(k, k)
 
     # ------------------------------------------------------------------ export
     @app.get("/export/policies.csv")

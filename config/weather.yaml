@@ -1,0 +1,46 @@
+# Weather news and advisories: DISPLAY ONLY. Nothing here is read by pricing,
+# triggers or payouts (tested). Checks behind each entry: docs/WEATHER_ADVISORIES.md.
+#
+# Each source: shown only after a person writes and approves a short English and
+# Kiswahili summary; every item carries its label ("Source: KMD") and a link.
+# There are no automatic sends. SMS of a source's content needs
+# sms_distribution_allowed: true, which needs that source's written permission.
+user_agent: "AgroShield-weather/0.1 (contact: mrnwanngari@gmail.com)"
+store_dir: var/weather            # downloaded PDFs, named by SHA-256 (git-ignored)
+
+sources:
+  - id: kmd_nakuru
+    name: Kenya Meteorological Department
+    label: "Source: KMD"
+    kind: kmd_county
+    enabled: true
+    listing_url: https://meteo.go.ke/our-products/county-forecasts/
+    county_slug: nakuru
+    min_interval_hours: 6          # never the same URL twice within 6 hours
+    respect_robots: true           # checked on every run (robots.txt was 404 on 2026-10-28)
+    display_allowed: true
+    sms_distribution_allowed: false   # decision 2026-10-28: no SMS until KMD's written permission is on file
+    terms_checked_on: "2026-10-28"
+    note: "No robots.txt and no published terms. Display with label and link; no SMS without written permission."
+
+  - id: tuko
+    name: Tuko News
+    label: "Source: Tuko"
+    kind: rss
+    enabled: false                 # terms forbid automated access and commercial use (2026-10-28)
+    listing_url: https://www.tuko.co.ke/rss/kenya.rss
+    display_allowed: false
+    sms_distribution_allowed: false
+    terms_checked_on: "2026-10-28"
+    note: "Stays off. Needs written permission from Tuko (Legit Media)."
+
+  - id: kna
+    name: Kenya News Agency
+    label: "Source: KNA"
+    kind: rss
+    enabled: false                 # no published terms; paid content subscription exists
+    listing_url: https://www.kenyanews.go.ke/feed/
+    display_allowed: false
+    sms_distribution_allowed: false
+    terms_checked_on: "2026-10-28"
+    note: "Not built until KNA confirms in writing that headline, source, date and link may be shown."

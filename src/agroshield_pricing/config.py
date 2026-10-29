@@ -54,6 +54,15 @@ class ValidationSettings(BaseModel):
     yields_dir: str
 
 
+class Monitoring(BaseModel):
+    """Daily ward monitoring and payout timing (pilot.yaml `monitoring`)."""
+    watch_margin_wrsi: float = Field(default=5, ge=0, le=30)   # projected index this close above the trigger: "watch"
+    payout_within_days: int = Field(default=10, gt=0, le=60)   # from the index confirming to money paid
+    voucher_valid_days: int = Field(default=30, gt=0, le=180)
+    live_cache_dir: str = "data/raw/monitoring"
+    data_note: str = ""
+
+
 class Pilot(BaseModel):
     county: str
     crop: str
@@ -544,6 +553,7 @@ class Config(BaseModel):
     rainfall: RainfallSettings
     pet: PetSettings
     validation: ValidationSettings
+    monitoring: Monitoring = Monitoring()
     wards: dict[str, Ward]
     phenology: Phenology
     product: Product
@@ -594,6 +604,7 @@ def load_config(config_dir: str | Path = "config") -> Config:
         rainfall=raw["pilot.yaml"]["rainfall"],
         pet=raw["pilot.yaml"]["pet"],
         validation=raw["pilot.yaml"]["validation"],
+        monitoring=raw["pilot.yaml"].get("monitoring") or {},
         wards=wards,
         phenology=raw["phenology.yaml"],
         product=raw["product.yaml"],

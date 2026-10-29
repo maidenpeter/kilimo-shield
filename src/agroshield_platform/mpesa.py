@@ -82,6 +82,11 @@ class DarajaClient:
             raise MpesaError(f"STK push refused: {d.get('errorMessage') or d.get('ResponseDescription') or r.status_code}")
         return {"merchant_request_id": d["MerchantRequestID"], "checkout_request_id": d["CheckoutRequestID"]}
 
+    def b2c(self, phone_e164: str, amount: int, remarks: str) -> str:
+        """Payouts (B2C) need the insurer's disbursement shortcode, an initiator and a security credential."""
+        raise MpesaError("M-Pesa payouts (B2C) need the insurer's initiator name and security credential; "
+                         "not configured yet. Pay through the SACCO and record the reference instead.")
+
     def stk_query(self, checkout_request_id: str) -> dict:
         ts = datetime.now(NAIROBI).strftime("%Y%m%d%H%M%S")
         r = self.http.post(f"{self.base}/mpesa/stkpushquery/v1/query", headers=self._auth(),
@@ -105,6 +110,10 @@ class SimulatedDaraja:
 
     def stk_query(self, checkout_request_id: str) -> dict:
         return {"result_code": self.results.get(checkout_request_id), "result_desc": "simulated"}
+
+    def b2c(self, phone_e164: str, amount: int, remarks: str) -> str:
+        """Simulated payout to the farmer's M-Pesa: returns a receipt; no money moves."""
+        return "SIMB2C" + secrets.token_hex(4).upper()
 
     def simulate_callback(self, req: MpesaRequest, success: bool) -> dict:
         """The body Safaricom would POST to our callback URL."""

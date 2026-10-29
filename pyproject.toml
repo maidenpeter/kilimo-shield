@@ -22,7 +22,8 @@ dependencies = [
   "cryptography>=42",
   "itsdangerous>=2.1",      # signed session cookies
   "python-multipart>=0.0.9",  # form and file uploads
-  "httpx>=0.27",             # M-Pesa Daraja and Africa's Talking clients
+  "httpx>=0.27",
+  "pypdf>=4",               # text from KMD advisory PDFs for reviewers             # M-Pesa Daraja and Africa's Talking clients
 ]
 
 [project.optional-dependencies]

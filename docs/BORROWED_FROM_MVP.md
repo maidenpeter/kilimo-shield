@@ -6,7 +6,8 @@ records each idea we take, where it came from, how it changes to fit AgroShield'
 rules, and the milestone it is built in.
 
 Status (2026-10-29): items 5 and 7 are **built** (milestone 4); items 2, 3, 8 and the static part of 4 are
-**built** (milestone 5); item 1 is **built** (milestone 6). The rest wait for their milestones.
+**built** (milestone 5); item 1 is **built** (milestone 6); item 4 is now **live** (milestone 7: the Reports map is coloured by the daily ward
+check). The rest wait for their milestones.
 
 Line numbers refer to the demo as of 2026-10-28.
 

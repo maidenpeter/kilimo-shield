@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Bordereaux{% endblock %}
+{% block body %}
+<h1>Bordereaux</h1>
+<p class="muted">Monthly premium and payout bordereaux. Each download is a ZIP: <code>premium.csv</code> (policies written that month),
+  <code>payouts.csv</code> (payouts whose trigger was confirmed that month) and <code>manifest.json</code> with each file's SHA-256 and
+  row count. National IDs and phone numbers are masked. Every export is audited.</p>
+{% if manifests %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Month</th><th class="num">Premium rows</th><th>premium.csv sha256</th><th class="num">Payout rows</th><th>payouts.csv sha256</th><th></th></tr></thead>
+  <tbody>{% for m in manifests %}<tr><td>{{ m.month }}</td>
+    <td class="num">{{ m.files['premium.csv'].rows }}</td><td class="muted">{{ m.files['premium.csv'].sha256[:16] }}</td>
+    <td class="num">{{ m.files['payouts.csv'].rows }}</td><td class="muted">{{ m.files['payouts.csv'].sha256[:16] }}</td>
+    <td><a class="btn small" href="/uw/bordereaux/{{ m.month }}.zip">Download</a></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">No activity yet.</p>{% endif %}
+{% endblock %}

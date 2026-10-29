@@ -281,12 +281,14 @@ def test_ussd_menus(ctx, db):
 
 def test_ussd_screens_fit_and_languages_match():
     en, sw = L.strings("en"), L.strings("sw")
-    for section in ("ussd", "sms", "status", "season"):
+    for section in ("ussd", "sms", "status", "season", "ward"):
         assert set(en[section]) == set(sw[section]), section
     values = {"first_name": "Wanjikuuuuuuu", "cert": "AGS-NKR01-LR27-00001", "season": "long rains 2027",
               "acres": "12.5", "status": "not started (not fully paid)", "paid": "123,456", "due": "123,456",
               "closes": "14/02/2027", "refund": "123,456", "balance": "123,456", "min": 50, "amount": "123,456",
-              "sacco": "Example Farmers Cooperative SACCO", "ussd": "*384*12345#"}
+              "sacco": "Example Farmers Cooperative SACCO", "ussd": "*384*12345#", "ward": "Molo Highlands",
+              "code": "V-ABCDEF", "by": "11/09/2027", "on": "05/09/2027", "expires": "01/05/2027",
+              "ref": "MP-ABCDEF", "loan": "LN-0000107"}
     for lang in ("en", "sw"):
         values["season"] = max((L.season(lang, sc, 2027) for sc in ("LR", "SR")), key=len)   # longest label
         values["status"] = max(L.strings(lang)["status"].values(), key=len)
@@ -295,6 +297,10 @@ def test_ussd_screens_fit_and_languages_match():
             assert len("CON " + text) <= L.USSD_MAX, (lang, key, len(text))
         cover = L.t(lang, "ussd.cover", **values) + L.t(lang, "ussd.cover_due", **values) + L.t(lang, "ussd.cover_refund", **values)
         assert len("END " + cover) <= L.USSD_MAX, (lang, len(cover))
+        for key in L.strings(lang)["ward"]:                  # Payouts screen: heading, ward line, two payouts
+            screen = "\n".join([L.t(lang, "ussd.payouts_head", **values), L.t(lang, f"ward.{key}"),
+                                 L.t(lang, "ussd.payout_due", **values), L.t(lang, "ussd.voucher", **values)])
+            assert len("END " + screen) <= L.USSD_MAX, (lang, key, len(screen))
         for key in L.strings(lang)["sms"]:
             text = L.t(lang, f"sms.{key}", **values)
             assert len(text) <= L.SMS_MAX and L.is_gsm7(text), (lang, key, len(text))

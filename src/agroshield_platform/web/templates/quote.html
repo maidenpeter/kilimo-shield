@@ -14,7 +14,7 @@
     {% for wid in cfg.pilot.wards %}<option value="{{ wid }}" {% if form.get('ward_id') == wid %}selected{% endif %}>{{ ward_label(wid) }}</option>{% endfor %}
   </select>
   <label for="acreage">Acres of maize</label>
-  <input id="acreage" name="acreage" type="number" step="0.1" min="0.1" inputmode="decimal" value="{{ form.get('acreage', '') }}" required>
+  <input id="acreage" name="acreage" type="text" inputmode="decimal" autocomplete="off" value="{{ form.get('acreage', '') }}" required>
   <label>Bought certified seed last season?</label>
   <div class="choice">
     <label><input type="radio" name="res_certified_seed_verified" value="1" {% if form.get('res_certified_seed_verified') %}checked{% endif %}> Yes</label>

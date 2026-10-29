@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Money{% endblock %}
+{% block body %}
+<h1>Money</h1>
+{% set t = m.total %}
+<div class="tiles">
+  <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ t.gross_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Farmer premium received</div><div class="v">{{ t.farmer_kes|kes }}</div>
+    <div class="n">M-Pesa {{ t.mpesa_kes|kes }} &middot; SACCO deductions {{ t.sacco_deduction_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Farmer premium outstanding</div><div class="v">{{ t.due_kes|kes }}</div><div class="n">cover not yet in force</div></div>
+  <div class="tile"><div class="k">KAIP subsidy receivable</div><div class="v">{{ t.subsidy_kes|kes }}</div>
+    <div class="n"><span class="chip warn">not yet received</span></div></div>
+  <div class="tile"><div class="k">Refunds owed to farmers</div><div class="v">{{ t.refunds_kes|kes }}</div><div class="n">late or excess payments</div></div>
+  <div class="tile"><div class="k">Payouts paid</div><div class="v">{{ (m.payouts.paid + m.payouts.redeemed)|kes }}</div>
+    <div class="n">{{ m.payouts.approved|kes }} approved unpaid &middot; {{ (m.payouts.calculated + m.payouts.held)|kes }} awaiting decision</div></div>
+</div>
+<h2>By SACCO</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>SACCO</th><th class="num">Gross written</th><th class="num">Received (M-Pesa)</th><th class="num">Received (deduction)</th>
+    <th class="num">Outstanding</th><th class="num">KAIP receivable</th><th class="num">Refunds owed</th></tr></thead>
+  <tbody>{% for r in m.rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.mpesa_kes|kes }}</td>
+    <td class="num">{{ r.sacco_deduction_kes|kes }}</td><td class="num">{{ r.due_kes|kes }}</td><td class="num">{{ r.subsidy_kes|kes }}</td>
+    <td class="num">{{ r.refunds_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="muted">Received = farmer share collected (M-Pesa STK or SACCO deduction). The insurer receives the full gross: farmer share,
+  KAIP share (a receivable until KAIP pays) and the Resilience discount from its funder. Settlement of SACCO-collected
+  premium to the insurer is not yet tracked (to agree with the underwriter).</p>
+{% endblock %}

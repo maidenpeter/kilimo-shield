@@ -44,6 +44,15 @@
   <p class="muted">Sales closed on {{ p.sales_closes_on|day }}.</p>
   {% endif %}
 
+  {% set pp = payouts|selectattr('policy_id', 'equalto', p.id)|list %}
+  {% if pp %}
+  <h3>Payouts</h3>
+  <ul>{% for x in pp %}<li>{{ payout_kind(x.kind) }}: {{ x.amount_kes|kes }} &middot;
+    {% if x.status in ('calculated', 'held') %}waiting for the insurer's approval
+    {% elif x.kind == 'replant_voucher' %}voucher {{ x.voucher_code }} ({{ 'used' if x.status == 'redeemed' else 'not used yet' }})
+    {% elif x.status == 'paid' %}paid {{ x.paid_at.strftime('%d %b %Y') }}{% else %}to pay by {{ x.due_by|day }}{% endif %}</li>{% endfor %}</ul>
+  {% endif %}
+
   {% if p.payments %}
   <h3>Payments</h3>
   <div class="table-wrap"><table>
@@ -78,6 +87,24 @@
   </details>
 </div>
 {% else %}<p class="muted">No cover yet.</p>{% endfor %}
+
+<div class="card">
+  <h2 style="margin-top:0">Crop failed but the payout did not match?</h2>
+  <p class="muted">Record it here. It is reviewed and helps improve the cover; it does not change a payout.</p>
+  <form class="stack" method="post" action="/members/{{ f.id }}/missed">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="choice">
+      <label><input type="radio" name="category" value="failed_no_payout" checked> Crop failed, no payout</label>
+      <label><input type="radio" name="category" value="payout_too_small"> Payout too small</label>
+      <label><input type="radio" name="category" value="other"> Other</label>
+    </div>
+    <label for="mnote">What the farmer said <span class="muted">(optional; no ID or phone numbers)</span></label>
+    <input id="mnote" name="note" type="text" maxlength="500">
+    <p><button class="btn small" type="submit">Record report</button></p>
+  </form>
+  {% if missed %}<ul class="muted">{% for r in missed %}<li>{{ r.ref }}: {{ missed_kind(r.category) }}, {{ r.created_at.strftime('%d %b %Y') }}
+    ({{ 'reviewed' if r.status == 'reviewed' else 'open' }})</li>{% endfor %}</ul>{% endif %}
+</div>
 
 <details class="more"><summary>Details: M-Pesa requests, SMS and agreement record</summary>
 {% if mpesa_requests %}

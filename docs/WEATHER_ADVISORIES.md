@@ -3,7 +3,9 @@
 **Display only.** Nothing in this module is ever read by pricing, triggers or payouts.
 A test will assert that the pricing, trigger and payout packages do not import it.
 
-**Status:** planned, not built. It is scheduled below and waits for milestone 3 approval.
+**Status (2026-10-29): built in milestone 7** for KMD (fetcher, manual upload, review queue, portal panel). Tuko and
+KNA stay off. SMS of KMD content stays disabled until written permission is on file. The farmer app tab comes in
+milestone 8. Code: `src/agroshield_platform/weather.py`, config: `config/weather.yaml`, tests: `tests/test_m7.py`.
 
 ## Pre-build checks (2026-10-28)
 

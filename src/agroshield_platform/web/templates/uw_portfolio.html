@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+{% block body %}
+<h1>Portfolio: {{ pf.insurer.name }}</h1>
+<p class="muted">All policies written for {{ pf.insurer.code }} through its SACCOs. Illustrative pricing; placeholder wards.</p>
+<div class="tiles">
+  <div class="tile"><div class="k">Policies written</div><div class="v">{{ pf.policies|num }}</div><div class="n">{{ pf.active }} in force (fully paid)</div></div>
+  <div class="tile"><div class="k">Acres</div><div class="v">{{ pf.acres|num(1) }}</div></div>
+  <div class="tile"><div class="k">Sum insured written</div><div class="v">{{ pf.sum_insured_kes|kes }}</div>
+    <div class="n">{{ pf.in_force_sum_insured_kes|kes }} in force</div></div>
+  <div class="tile"><div class="k">Gross premium written</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
+  {% if pf.largest %}<div class="tile"><div class="k">Largest single-ward loss</div><div class="v">{{ pf.largest.max_loss_kes|kes }}</div>
+    <div class="n">{{ pf.largest.ward }}, {{ pf.largest.label }}, if the index fully triggers</div></div>{% endif %}
+</div>
+
+<h2>Exposure concentration by ward</h2>
+<p class="muted">Maximum loss = every in-force policy in the ward paying its full sum insured (WRSI at or below the exit).
+  Pending cover becomes exposure once fully paid by sales close.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Ward</th><th>Season</th><th class="num">In-force policies</th><th class="num">Max loss (in force)</th>
+    <th class="num">Share of season</th><th class="num">Pending sum insured</th></tr></thead>
+  <tbody>{% for e in pf.exposure %}<tr><td>{{ e.ward }} <span class="muted">({{ e.ward_id }})</span></td><td>{{ e.label }}</td>
+    <td class="num">{{ e.policies }}</td><td class="num">{{ e.max_loss_kes|kes }}</td>
+    <td class="num">{{ e.share_of_season|pct if e.share_of_season is not none else 'n/a' }}</td><td class="num">{{ e.pending_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+{% for title, rows in (("By SACCO", pf.by_sacco), ("By ward", pf.by_ward), ("By season", pf.by_season)) %}
+<h2>{{ title }}</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ title[3:]|capitalize }}</th><th class="num">Policies</th><th class="num">In force</th><th class="num">Acres</th>
+    <th class="num">Sum insured</th><th class="num">In-force sum insured</th><th class="num">Gross premium</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.policies }}</td><td class="num">{{ r.active }}</td>
+    <td class="num">{{ r.acres|num(1) }}</td><td class="num">{{ r.sum_insured_kes|kes }}</td>
+    <td class="num">{{ r.in_force_sum_insured_kes|kes }}</td><td class="num">{{ r.gross_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endfor %}
+{% endblock %}
