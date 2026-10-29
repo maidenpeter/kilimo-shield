@@ -97,12 +97,12 @@ def test_navigation_by_role(app):
     login(off)
     login(man, "manager")
     home = off.get("/dashboard").text
-    nav = re.search(r'<nav class="main".*?</nav>', home, re.S).group(0)
-    assert [x for x in re.findall(r">([^<>]+)</a>", nav)] == ["Home", "Enrol a farmer", "Members", "Payouts"]
+    nav = re.search(r'<nav class="primary full" aria-label="Main">.*?</nav>', home, re.S).group(0)
+    assert [x for x in re.findall(r">([^<>]+)</a>", nav)] == ["Home", "Enrol a farmer", "Members"]   # brief section 3
+    assert 'href="/payouts"' in home                                    # Payouts stays one tap away from Home
     assert 'href="/quote"' in home                                        # Quick price stays on Home
-    mnav = re.search(r'<nav class="main".*?</nav>', man.get("/dashboard").text, re.S).group(0)
-    assert re.findall(r">([^<>]+)</a>", mnav)[:7] == ["Home", "Enrol a farmer", "Members", "Payouts", "Reports",
-                                                     "Import", "Weather"]
+    mnav = re.search(r'<nav class="primary full" aria-label="Main">.*?</nav>', man.get("/dashboard").text, re.S).group(0)
+    assert re.findall(r">([^<>]+)</a>", mnav) == ["Home", "Enrol a farmer", "Members", "Reports", "Import", "Weather"]
     assert off.get("/reports").status_code == 403 and off.get("/import").status_code == 403
     assert man.get("/reports").status_code == 200 and "KAIP subsidy receivable" in man.get("/reports").text
     imp = man.get("/import").text
@@ -124,7 +124,8 @@ def test_developer_menu_only_in_development(settings, book):
     login(c, "devman")
     html = c.get("/dashboard").text
     assert "Developer" in html and 'href="/sms"' in html and 'href="/dev/mpesa"' in html
-    assert 'details class="menu"' in html                                  # single Menu button on phones
+    assert 'class="btn ghost small menu-btn"' in html and 'id="sheet"' in html   # single Menu button on phones
+    assert 'id="dev-menu"' in html
 
 
 def test_officer_home_tasks_and_reminder(app):
@@ -134,7 +135,7 @@ def test_officer_home_tasks_and_reminder(app):
     home = c.get("/dashboard").text
     assert re.search(r"1 farmer still owes KES 1,900\.\s+Sales close 14 Feb\.", visible(home))
     assert "Rongai West" in home and "no rainfall alerts" in home
-    assert "Gross premium" not in home and "KAIP" not in home and "<svg" not in home   # portfolio lives in Reports
+    assert "Gross premium" not in home and "KAIP" not in home and 'class="map"' not in home   # portfolio lives in Reports
     pid = re.search(r'action="/policies/([0-9a-f]{32})/remind"', home).group(1)
     r = c.post(f"/policies/{pid}/remind", data={"csrf_token": tok}, follow_redirects=True)
     assert "Reminder sent to Test Farmer" in r.text

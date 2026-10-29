@@ -5,12 +5,12 @@
 <form method="post" action="/members" class="actions">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <label for="q" class="muted">Find by member number or name</label>
-  <input id="q" name="q" type="text" value="{{ query }}" style="max-width:260px">
+  <input id="q" name="q" type="text" value="{{ query }}" class="w-sm">
   <button class="btn small" type="submit">Find</button>
   {% if query %}<a class="btn ghost small" href="/members">Clear</a>{% endif %}
 </form>
 {% if rows %}
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Farmer</th><th>ID</th><th>Phone</th><th>Ward</th><th>Cover</th></tr></thead>
   <tbody>{% for f in rows %}{% set p = (f.policies|sort(attribute='created_at')|list)[-1] if f.policies else none %}
     <tr><td><a href="/members/{{ f.id }}">{{ f.full_name }}</a><div class="muted">{{ f.member_no }}</div></td>

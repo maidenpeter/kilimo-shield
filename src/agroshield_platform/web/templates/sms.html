@@ -9,7 +9,7 @@
 <form method="post" action="/sms/send"><input type="hidden" name="csrf_token" value="{{ csrf }}">
   <button class="btn small" type="submit">Send queued messages now</button></form>
 {% if messages %}
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Queued</th><th>Member</th><th>Phone</th><th>Message</th><th>Lang</th><th>Status</th></tr></thead>
   <tbody>{% for m in messages %}<tr><td>{{ m.created_at.strftime('%d %b %H:%M') }}</td>
     <td><a href="/members/{{ m.farmer_id }}">{{ m.farmer.member_no }}</a></td><td>{{ m.farmer.phone_masked }}</td>

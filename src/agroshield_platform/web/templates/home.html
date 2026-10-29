@@ -2,10 +2,10 @@
 {% block title %}Home{% endblock %}
 {% block body %}
 {% set n = owe|length %}
-<p class="status-line">
+<h1 class="status-line">
   {% if n %}{{ n }} farmer{{ 's' if n != 1 }} still owe{{ 's' if n == 1 }} KES {{ '{:,.0f}'.format(owe_total) }}.{% else %}Everyone you enrolled has paid in full.{% endif %}
   {% if sales.closes %}Sales close {{ sales.closes|short_day }}.{% elif sales.next_opens %}Sales are closed; they open {{ sales.next_opens|short_day }}.{% endif %}
-</p>
+</h1>
 <div class="actions">
   <a class="btn big" href="/enrol">Enrol a farmer</a>
   <a class="btn ghost small" href="/quote">Quick price</a>
@@ -19,7 +19,7 @@
 {% endfor %}
 
 {% if n %}
-<h2 style="margin-top:16px">Still to pay</h2>
+<h2 class="mt-4">Still to pay</h2>
 <ul class="owe">
   {% for p in owe[:8] %}
   <li><div class="who-owes"><a href="/members/{{ p.farmer_id }}">{{ p.farmer.full_name }}</a>

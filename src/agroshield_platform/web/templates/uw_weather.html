@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Weather{% endblock %}
+{% block body %}
+<h1>Weather advisories</h1>
+<p class="muted">Display only: advisories never affect prices, triggers or payouts. Items appear here after a SACCO manager has
+  written and approved an English and Kiswahili summary. No weather content is sent by SMS without the source's written permission.</p>
+{% for w in items %}
+<div class="card">
+  <h2 class="mt-0">{{ w.title }}</h2>
+  <p>{{ w.summary_en }}</p>
+  <details class="more"><summary>Kiswahili</summary><p>{{ w.summary_sw }}</p></details>
+  <p class="muted">{{ w.source_label }}{% if w.valid_from and w.valid_to %} &middot; valid {{ w.valid_from|day }} to {{ w.valid_to|day }}{% endif %}
+    {% if w.url %}&middot; <a href="{{ w.url }}" rel="noopener" target="_blank">original</a>{% endif %}</p>
+</div>
+{% else %}
+<div class="empty">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.6 1.5A3.3 3.3 0 0 0 7 18z"/></svg>
+  <h2>No current advisories</h2>
+  <p>When a SACCO manager approves a KMD forecast summary, it appears here with its source and validity dates.</p>
+</div>
+{% endfor %}
+<h2>Sources</h2>
+<div class="table-wrap" tabindex="0" role="region"><table>
+  <thead><tr><th>Source</th><th>Status</th><th>SMS</th><th>Terms checked</th><th>Note</th></tr></thead>
+  <tbody>{% for s in sources.values() %}<tr><td>{{ s.name }}</td><td>{{ 'checked politely' if s.enabled else 'off' }}</td>
+    <td>{{ 'allowed' if s.sms_distribution_allowed else 'not allowed' }}</td><td>{{ s.terms_checked_on }}</td><td>{{ s.note }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

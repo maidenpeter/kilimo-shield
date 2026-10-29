@@ -15,7 +15,7 @@
     <div class="n">{{ m.payouts.approved|kes }} approved unpaid &middot; {{ (m.payouts.calculated + m.payouts.held)|kes }} awaiting decision</div></div>
 </div>
 <h2>By SACCO</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>SACCO</th><th class="num">Gross written</th><th class="num">Received (M-Pesa)</th><th class="num">Received (deduction)</th>
     <th class="num">Outstanding</th><th class="num">KAIP receivable</th><th class="num">Refunds owed</th></tr></thead>
   <tbody>{% for r in m.rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.mpesa_kes|kes }}</td>

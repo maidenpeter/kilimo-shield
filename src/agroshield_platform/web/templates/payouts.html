@@ -7,10 +7,10 @@
 
 {% for c in cards %}{% set st = c.st %}
 <div class="card">
-  <h2 style="margin-top:0">{{ ward_label(c.ward_id) }}, {{ season_label(c.season, c.year) }}
+  <h2 class="mt-0">{{ ward_label(c.ward_id) }}, {{ season_label(c.season, c.year) }}
     {% if st and st.mode == 'replay' %}<span class="chip warn">replay</span>{% endif %}</h2>
   {% if st %}
-  <p class="status-line" style="font-size:1.02rem">{{ ward_line(st) }}</p>
+  <p class="status-line sm">{{ ward_line(st) }}</p>
   <p class="muted">{% if st.data_through %}Rainfall measured up to {{ st.data_through|day }}.{% endif %}
     {% if st.result.rain_pct_of_normal is not none and st.result.phase != 'before_season' %}Rain since planting season opened:
     {{ st.result.rain_pct_of_normal }}% of normal.{% endif %}
@@ -18,8 +18,8 @@
   {% else %}<p>Not checked yet.</p>{% endif %}
 
   {% if c.payouts %}
-  <div class="table-wrap"><table>
-    <thead><tr><th>Farmer</th><th>What</th><th class="num">Amount</th><th>Status</th>{% if officer.role == 'manager' %}<th></th>{% endif %}</tr></thead>
+  <div class="table-wrap" tabindex="0" role="region"><table>
+    <thead><tr><th>Farmer</th><th>What</th><th class="num">Amount</th><th>Status</th>{% if officer.role == 'manager' %}<th><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
     <tbody>{% for p in c.payouts %}{% set late = overdue(p, st.as_of if st and st.mode == 'replay' else today) %}
       <tr><td><a href="/members/{{ p.policy.farmer_id }}">{{ p.policy.farmer.full_name }}</a></td>
         <td>{{ payout_kind(p.kind) }}</td><td class="num">{{ p.amount_kes|kes }}</td>
@@ -32,9 +32,9 @@
             {% elif late %}<span class="chip warn">late</span> was due {{ p.due_by|day }}
             {% else %}To pay by {{ p.due_by|day }}{{ ' (to SACCO loan ' ~ p.policy.loan_ref ~ ')' if p.method == 'sacco_loan' }}{% endif %}</td>
         {% if officer.role == 'manager' %}<td>{% if p.status in ('approved', 'issued') %}
-          <form method="post" action="/payouts/{{ p.id }}/pay" class="actions" style="margin:0">
+          <form method="post" action="/payouts/{{ p.id }}/pay" class="actions m-0">
             <input type="hidden" name="csrf_token" value="{{ csrf }}">
-            {% if p.method != 'mpesa' %}<input name="reference" type="text" placeholder="{{ 'Agro-dealer ref' if p.method == 'voucher' else 'SACCO ref' }}" style="max-width:150px">{% endif %}
+            {% if p.method != 'mpesa' %}<input name="reference" type="text" placeholder="{{ 'Agro-dealer ref' if p.method == 'voucher' else 'SACCO ref' }}" class="w-xs">{% endif %}
             <button class="btn small" type="submit">{{ 'Mark used' if p.method == 'voucher' else 'Pay now' }}</button>
           </form>{% endif %}</td>{% endif %}</tr>
     {% endfor %}</tbody>
@@ -65,7 +65,7 @@
 <p class="muted">Farmers who say their crop failed but the payout did not match. Each is reviewed and kept to improve the
   cover; a report does not change a payout. Farmers report by USSD (option 5) or through an officer on the member page.</p>
 {% if reports %}
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Ref</th><th>Farmer</th><th>What they said</th><th>Season</th><th>Reported</th><th>Status</th></tr></thead>
   <tbody>{% for r in reports %}
     <tr><td>{{ r.ref }}</td><td><a href="/members/{{ r.farmer_id }}">{{ r.farmer.full_name }}</a></td>
@@ -74,7 +74,7 @@
       <td>{{ r.created_at.strftime('%d %b %Y') }} ({{ r.channel }})</td>
       <td>{% if r.status == 'reviewed' %}Reviewed: {{ r.outcome|label }}{% if r.review_note %}<div class="muted">{{ r.review_note }}</div>{% endif %}
         {% elif officer.role == 'manager' %}
-        <form method="post" action="/missed/{{ r.id }}/review" class="stack" style="margin:0">
+        <form method="post" action="/missed/{{ r.id }}/review" class="stack m-0">
           <input type="hidden" name="csrf_token" value="{{ csrf }}">
           <select name="outcome" aria-label="Outcome">{% for o in outcomes %}<option value="{{ o }}">{{ o|label }}</option>{% endfor %}</select>
           <input name="note" type="text" placeholder="Review note" aria-label="Review note">

@@ -243,10 +243,37 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             language=form.get("language", "en"))
 
     # ------------------------------------------------------------------ public
-    @app.get("/", response_class=HTMLResponse)
-    def landing(request: Request):
+    # ------------------------------------------------------------------ public site
+    # Path -> template under templates/public/. A page whose template is not written yet shows a short
+    # "being written" page instead of a 404, so the navbar never leads nowhere.
+    PUBLIC_PAGES = {"/": "home.html", "/crops": "crops.html", "/livestock": "livestock.html",
+                    "/how-it-works": "how-it-works.html", "/insurers": "insurers.html", "/saccos": "saccos.html",
+                    "/learn": "learn.html", "/faq": "faq.html", "/credits": "credits.html", "/demo": "demo.html"}
+
+    def public_page(request: Request, name: str, status: int = 200, **kw):
         with transaction(factory) as s:
-            return render(request, "landing.html", officer_or_none(request, s))
+            off = officer_or_none(request, s)
+        tpl = f"public/{name}"
+        if not (HERE / "templates" / tpl).exists():
+            tpl = "public/_writing.html"
+        return render(request, tpl, off, status=status, **kw)
+
+    def _public_route(path: str, name: str):
+        def view(request: Request):
+            return public_page(request, name)
+        view.__name__ = "public_" + (name.split(".")[0].replace("-", "_") or "home")
+        app.get(path, response_class=HTMLResponse)(view)
+
+    for _path, _name in PUBLIC_PAGES.items():
+        _public_route(_path, _name)
+
+    @app.get("/learn/{slug}", response_class=HTMLResponse)
+    def learn_article(request: Request, slug: str):
+        from .. import content
+        art = content.article(slug)
+        if art is None:
+            raise HTTPException(404, "No such article.")
+        return public_page(request, "article.html", art=art, articles=content.ARTICLES)
 
     @app.get("/login", response_class=HTMLResponse)
     def login_form(request: Request):
@@ -960,6 +987,13 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             raise HTTPException(404)
         return FileResponse(f, media_type="text/html")
 
+    @app.get("/uw/weather", response_class=HTMLResponse)
+    def uw_weather(request: Request):
+        """Read-only for the insurer: approved advisories only, with their source labels (display only)."""
+        with transaction(factory) as s:
+            off = require(request, s, role="underwriter")
+            return render(request, "uw_weather.html", off, items=wx.visible_items(s, ctx().date()), sources=weather_sources)
+
     @app.get("/uw/reinsurer", response_class=HTMLResponse)
     def uw_reinsurer(request: Request):
         with transaction(factory) as s:
@@ -991,6 +1025,31 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             body = sv.export_policies_csv(s, off.sacco)
         return PlainTextResponse(body, media_type="text/csv",
                                  headers={"Content-Disposition": "attachment; filename=agroshield-policies.csv"})
+
+    # ------------------------------------------------------------------ friendly error pages (browsers only)
+    from fastapi.exception_handlers import http_exception_handler
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    def wants_html(request: Request) -> bool:
+        return "text/html" in request.headers.get("accept", "") and not request.url.path.startswith(("/ussd/", "/mpesa/"))
+
+    @app.exception_handler(StarletteHTTPException)
+    async def html_http_errors(request: Request, exc: StarletteHTTPException):
+        if exc.status_code < 400 or not wants_html(request):
+            return await http_exception_handler(request, exc)      # redirects, callbacks and API clients unchanged
+        with transaction(factory) as s:
+            off = officer_or_none(request, s)
+        return render(request, "error.html", off, status=exc.status_code, code=exc.status_code, message=exc.detail)
+
+    @app.exception_handler(Exception)
+    async def html_server_errors(request: Request, exc: Exception):
+        log.exception("unhandled error on %s", request.url.path)
+        if not wants_html(request):
+            return PlainTextResponse("Internal Server Error", status_code=500)
+        return templates.TemplateResponse(request, "error.html", {
+            "officer": None, "csrf": "", "cfg": cfg, "dev_keys": settings.dev_keys, "mpesa_env": state["mpesa"].env,
+            "sms_mode": settings.sms.mode, "dev_mode": settings.dev_keys, "flash": None, "code": 500,
+            "message": "Something went wrong on our side. It has been logged."}, status_code=500)
 
     app.state.factory = factory
     app.state.vault = vault

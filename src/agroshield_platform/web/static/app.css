@@ -67,7 +67,7 @@ nav.primary a:hover { background: var(--accent-soft); color: var(--accent); }
 nav.primary a[aria-current="page"] { color: var(--accent); background: var(--accent-soft);
   box-shadow: inset 0 -2px 0 var(--accent); }
 .bar-end { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; flex: none; }
-.menu-btn { display: none; }
+header.site .menu-btn { display: none; }
 /* The bar collapses to a Menu button before it could wrap. Each role sets its own breakpoint via data-collapse,
    and nav.js adds .collapsed whenever the links would not fit (fonts, zoom, long names). */
 @media (max-width: 719.98px) { header.site[data-collapse="sm"] .full { display: none !important; } header.site[data-collapse="sm"] .menu-btn { display: inline-flex; } }
@@ -341,3 +341,15 @@ footer.site .fine { margin-top: var(--sp-5); padding-top: var(--sp-4); border-to
   .btn.small, details.more > summary { min-height: var(--tap); }
 }
 @media print { header.site, footer.site, .devbar { display: none; } }
+
+.acct-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1279.98px) { .acct-name { display: none; } }
+.acct-btn { padding: 0 var(--sp-2); }
+/* utilities (all on the 4/8 scale) */
+.m-0 { margin: 0; } .mt-2 { margin-top: var(--sp-2); } .mt-3 { margin-top: var(--sp-3); } .mb-1 { margin-bottom: var(--sp-1); }
+.w-xs { max-width: 170px; }
+.status-line.sm { font-size: var(--fs-base); }
+.progress .bar span.p-1 { width: 20%; } .progress .bar span.p-2 { width: 40%; } .progress .bar span.p-3 { width: 60%; }
+.progress .bar span.p-4 { width: 80%; } .progress .bar span.p-5 { width: 100%; }
+h1.status-line { font-family: var(--font-body); font-size: var(--fs-md); line-height: var(--lh-snug); letter-spacing: 0; }
+.menu-item svg { width: 20px; height: 20px; flex: none; }

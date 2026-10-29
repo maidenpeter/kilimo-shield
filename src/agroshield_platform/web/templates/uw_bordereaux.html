@@ -6,8 +6,8 @@
   <code>payouts.csv</code> (payouts whose trigger was confirmed that month) and <code>manifest.json</code> with each file's SHA-256 and
   row count. National IDs and phone numbers are masked. Every export is audited.</p>
 {% if manifests %}
-<div class="table-wrap"><table>
-  <thead><tr><th>Month</th><th class="num">Premium rows</th><th>premium.csv sha256</th><th class="num">Payout rows</th><th>payouts.csv sha256</th><th></th></tr></thead>
+<div class="table-wrap" tabindex="0" role="region"><table>
+  <thead><tr><th>Month</th><th class="num">Premium rows</th><th>premium.csv sha256</th><th class="num">Payout rows</th><th>payouts.csv sha256</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>{% for m in manifests %}<tr><td>{{ m.month }}</td>
     <td class="num">{{ m.files['premium.csv'].rows }}</td><td class="muted">{{ m.files['premium.csv'].sha256[:16] }}</td>
     <td class="num">{{ m.files['payouts.csv'].rows }}</td><td class="muted">{{ m.files['payouts.csv'].sha256[:16] }}</td>

@@ -7,7 +7,7 @@
   Target: paid within {{ cfg.monitoring.payout_within_days }} days of confirmation.</p>
 
 <h2>Ward status</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Ward</th><th>Season</th><th>Mode</th><th>As of / data to</th><th>Phase</th><th>Level</th>
     <th class="num">WRSI</th><th class="num">Trigger / exit</th><th class="num">Payout share</th><th>Confirmed</th><th class="num">In force</th></tr></thead>
   <tbody>{% for r in tr.status %}{% set st = r.st %}<tr><td>{{ r.ward }} <span class="muted">({{ r.ward_id }})</span></td>
@@ -22,9 +22,9 @@
 
 <h2>Payout clock per event</h2>
 {% if tr.events %}
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Event</th><th>Confirmed</th><th>Due by</th><th class="num">Days left</th><th class="num">Payouts</th>
-    <th class="num">Amount</th><th>Status</th><th></th></tr></thead>
+    <th class="num">Amount</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>{% for e in tr.events %}<tr><td>{{ e.ward }}, {{ e.label }}{% if e.st.mode == 'replay' %} <span class="chip warn">replay</span>{% endif %}
       <div class="muted">run {{ e.st.id }}, index {{ e.st.index_version }}</div></td>
     <td>{{ e.confirmed_on|day }}</td><td>{{ e.due_by|day }}</td>
@@ -38,7 +38,7 @@
 
 <h2>Waiting for approval ({{ tr.pending|length }})</h2>
 {% if tr.pending %}
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Policy</th><th>SACCO / member</th><th>Kind</th><th class="num">Share</th><th class="num">Amount</th>
     <th>Method</th><th>Due by</th><th>Status</th><th>Decision</th></tr></thead>
   <tbody>{% for p in tr.pending %}<tr><td>{{ p.policy.policy_no }}<div class="muted">{{ p.policy.insurer_policy_number or 'no insurer number yet' }}</div></td>
@@ -46,23 +46,23 @@
     <td class="num">{{ p.share|pct(1) if p.share is not none else '-' }}</td><td class="num">{{ p.amount_kes|kes }}</td>
     <td>{{ p.method|label }}{% if p.method == 'sacco_loan' %} {{ p.policy.loan_ref }}{% endif %}</td><td>{{ p.due_by|day }}</td>
     <td>{{ p.status }}{% if p.hold_reason %}<div class="muted">{{ p.hold_reason }}</div>{% endif %}</td>
-    <td><div class="actions" style="margin:0">
+    <td><div class="actions m-0">
       <form method="post" action="/uw/payouts/{{ p.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf }}">
         <button class="btn small" type="submit">Approve</button></form>
-      <form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-        <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" style="max-width:170px" required>
+      <form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions m-0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" required class="w-xs">
         <button class="btn ghost small" type="submit">Hold</button></form></div></td></tr>{% endfor %}</tbody>
 </table></div>
 {% else %}<p class="muted">Nothing waiting.</p>{% endif %}
 
 {% if tr.approved %}
 <h2>Approved, waiting for the SACCO to pay ({{ tr.approved|length }})</h2>
-<div class="table-wrap"><table>
-  <thead><tr><th>Policy</th><th>Kind</th><th class="num">Amount</th><th>Method</th><th>Approved</th><th>Due by</th><th></th></tr></thead>
+<div class="table-wrap" tabindex="0" role="region"><table>
+  <thead><tr><th>Policy</th><th>Kind</th><th class="num">Amount</th><th>Method</th><th>Approved</th><th>Due by</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>{% for p in tr.approved %}<tr><td>{{ p.policy.policy_no }}</td><td>{{ p.kind }}</td><td class="num">{{ p.amount_kes|kes }}</td>
     <td>{{ p.method|label }}</td><td>{{ p.approved_by }} {{ p.approved_at.strftime('%d %b %Y') }}</td><td>{{ p.due_by|day }}</td>
-    <td><form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" style="max-width:170px" required>
+    <td><form method="post" action="/uw/payouts/{{ p.id }}/hold" class="actions m-0"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input name="reason" type="text" placeholder="Reason to hold" aria-label="Reason to hold" required class="w-xs">
       <button class="btn ghost small" type="submit">Hold</button></form></td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}

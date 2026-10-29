@@ -2,13 +2,13 @@
 {% block title %}Sign in{% endblock %}
 {% block body %}
 <h1>SACCO officer sign in</h1>
-<div class="card" style="max-width:460px">
+<div class="card w-md">
   {% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
   <form class="stack" method="post" action="/login">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <label for="username">Username</label><input id="username" name="username" type="text" autocomplete="username" required>
     <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
-    <p style="margin-top:16px"><button class="btn" type="submit">Sign in</button></p>
+    <p class="mt-4"><button class="btn" type="submit">Sign in</button></p>
   </form>
 </div>
 {% endblock %}

@@ -6,15 +6,15 @@
   sends our own callback handler the body Safaricom would send, so the payment, instalment and cover rules run exactly as
   they will with the Daraja sandbox.</div>
 {% if requests %}
-<div class="table-wrap"><table>
-  <thead><tr><th>Sent</th><th>Policy</th><th class="num">Amount</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+<div class="table-wrap" tabindex="0" role="region"><table>
+  <thead><tr><th>Sent</th><th>Policy</th><th class="num">Amount</th><th>Phone</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>{% for r in requests %}<tr><td>{{ r.created_at.strftime('%d %b %H:%M') }}</td><td>{{ r.policy.policy_no }}</td>
     <td class="num">KES {{ '{:,}'.format(r.amount_kes) }}</td><td>{{ r.phone_masked }}</td>
     <td><span class="chip {{ 'warn' if r.status != 'paid' }}">{{ r.status }}</span> {{ r.receipt or '' }}</td>
     <td>{% if r.status == 'pending' %}
-      <form method="post" action="/dev/mpesa/{{ r.id }}/success" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <form method="post" action="/dev/mpesa/{{ r.id }}/success" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
         <button class="btn small" type="submit">Farmer pays</button></form>
-      <form method="post" action="/dev/mpesa/{{ r.id }}/cancel" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <form method="post" action="/dev/mpesa/{{ r.id }}/cancel" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
         <button class="btn ghost small" type="submit">Farmer cancels</button></form>{% endif %}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% else %}<p class="muted">No M-Pesa requests yet. Send one from a member's page or by USSD.</p>{% endif %}

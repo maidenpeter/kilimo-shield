@@ -100,8 +100,8 @@
   {% if errors.get('member_no') %}<div class="alert crit">{{ errors.member_no }}</div>{% endif %}
 
   <label for="sum_insured_kes_per_acre">Cover per acre</label>
-  <div class="actions" style="margin:0">
-    <select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre" style="max-width:200px">
+  <div class="actions m-0">
+    <select id="sum_insured_kes_per_acre" name="sum_insured_kes_per_acre" class="w-xs">
       {% for o in cfg.product.sum_insured.options_kes_per_acre %}
       <option value="{{ o|int }}" {% if (d.get('sum_insured_kes_per_acre') or cfg.product.sum_insured.default_kes_per_acre)|float == o|float %}selected{% endif %}>KES {{ '{:,.0f}'.format(o) }}</option>
       {% endfor %}

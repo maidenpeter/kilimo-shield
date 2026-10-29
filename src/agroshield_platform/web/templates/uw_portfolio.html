@@ -16,7 +16,7 @@
 <h2>Exposure concentration by ward</h2>
 <p class="muted">Maximum loss = every in-force policy in the ward paying its full sum insured (WRSI at or below the exit).
   Pending cover becomes exposure once fully paid by sales close.</p>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>Ward</th><th>Season</th><th class="num">In-force policies</th><th class="num">Max loss (in force)</th>
     <th class="num">Share of season</th><th class="num">Pending sum insured</th></tr></thead>
   <tbody>{% for e in pf.exposure %}<tr><td>{{ e.ward }} <span class="muted">({{ e.ward_id }})</span></td><td>{{ e.label }}</td>
@@ -26,7 +26,7 @@
 
 {% for title, rows in (("By SACCO", pf.by_sacco), ("By ward", pf.by_ward), ("By season", pf.by_season)) %}
 <h2>{{ title }}</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0" role="region"><table>
   <thead><tr><th>{{ title[3:]|capitalize }}</th><th class="num">Policies</th><th class="num">In force</th><th class="num">Acres</th>
     <th class="num">Sum insured</th><th class="num">In-force sum insured</th><th class="num">Gross premium</th></tr></thead>
   <tbody>{% for r in rows %}<tr><td>{{ r.name }}</td><td class="num">{{ r.policies }}</td><td class="num">{{ r.active }}</td>

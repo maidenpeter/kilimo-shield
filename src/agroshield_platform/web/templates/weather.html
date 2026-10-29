@@ -26,7 +26,7 @@
 <h2>Items</h2>
 {% for i in items %}
 <div class="card">
-  <h3 style="margin-top:0">{{ i.title }} <span class="chip {{ 'warn' if i.status != 'approved' }}">{{ i.status }}</span></h3>
+  <h3 class="mt-0">{{ i.title }} <span class="chip {{ 'warn' if i.status != 'approved' }}">{{ i.status }}</span></h3>
   <p class="muted">{{ i.source_label }}{% if i.valid_from %} &middot; valid {{ i.valid_from|day }} to {{ i.valid_to|day }}{% endif %}
     &middot; {{ i.origin }} &middot; <a href="/weather/{{ i.id }}/pdf">PDF</a>{% if i.url %} &middot; <a href="{{ i.url }}" rel="noopener" target="_blank">original</a>{% endif %}
     &middot; sha256 {{ (i.pdf_sha256 or '')[:12] }}</p>
@@ -35,9 +35,9 @@
   <form class="stack" method="post" action="/weather/{{ i.id }}/approve">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <label for="en-{{ i.id }}">Summary in English (for officers)</label>
-    <textarea id="en-{{ i.id }}" name="summary_en" rows="3" maxlength="480" style="width:100%;max-width:560px">{{ i.summary_en or '' }}</textarea>
+    <textarea id="en-{{ i.id }}" name="summary_en" rows="3" maxlength="480" class="w-lg">{{ i.summary_en or '' }}</textarea>
     <label for="sw-{{ i.id }}">Summary in Kiswahili</label>
-    <textarea id="sw-{{ i.id }}" name="summary_sw" rows="3" maxlength="480" style="width:100%;max-width:560px">{{ i.summary_sw or '' }}</textarea>
+    <textarea id="sw-{{ i.id }}" name="summary_sw" rows="3" maxlength="480" class="w-lg">{{ i.summary_sw or '' }}</textarea>
     <div class="actions"><button class="btn small" type="submit">{{ 'Save and keep approved' if i.status == 'approved' else 'Approve' }}</button></div>
   </form>
   <div class="actions">
@@ -53,13 +53,13 @@
 {% else %}<p class="muted">No items yet. Check KMD now, or upload a PDF.</p>{% endfor %}
 
 <details class="more"><summary>Sources and recent requests</summary>
-  <div class="table-wrap"><table>
+  <div class="table-wrap" tabindex="0" role="region"><table>
     <thead><tr><th>Source</th><th>On</th><th>Shown</th><th>SMS</th><th>Terms checked</th><th>Note</th></tr></thead>
     <tbody>{% for s in sources.values() %}<tr><td>{{ s.name }}</td><td>{{ 'yes' if s.enabled else 'off' }}</td>
       <td>{{ 'yes' if s.display_allowed else 'no' }}</td><td>{{ 'allowed' if s.sms_distribution_allowed else 'no' }}</td>
       <td>{{ s.terms_checked_on }}</td><td>{{ s.note }}</td></tr>{% endfor %}</tbody>
   </table></div>
-  <div class="table-wrap"><table>
+  <div class="table-wrap" tabindex="0" role="region"><table>
     <thead><tr><th>When</th><th>Source</th><th>Result</th><th>URL</th></tr></thead>
     <tbody>{% for f in fetches %}<tr><td>{{ f.at.strftime('%d %b %H:%M') }}</td><td>{{ f.source }}</td><td>{{ f.status }} {{ f.detail or '' }}</td>
       <td class="muted">{{ f.url }}</td></tr>{% endfor %}</tbody>

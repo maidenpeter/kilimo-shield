@@ -84,10 +84,12 @@ def test_one_tap_signs_in_and_prices(server, phone):
         page.wait_for_selector(".price-answer", timeout=5000)
         assert lead in page.inner_text(".price-answer .lead")
     assert page.evaluate(SMALL) == []
-    page.tap("details.menu > summary")                 # an open menu closes on a tap outside it
-    assert page.evaluate("document.querySelector('details.menu').open") is True
-    page.touchscreen.tap(12, 420)                     # a spot outside the panel
-    assert page.evaluate("document.querySelector('details.menu').open") is False
+    page.tap(".menu-btn")                              # the Menu sheet closes on a tap outside it
+    assert page.is_visible("#sheet")
+    box = page.locator("#sheet").bounding_box()
+    page.touchscreen.tap(196, min(720, box["y"] + box["height"] + 40))   # on the backdrop, below the sheet
+    assert page.is_hidden("#sheet")
+    assert page.evaluate("document.activeElement.classList.contains('menu-btn')")   # focus returns to Menu
     page.locator("form.stack button[type=submit]").scroll_into_view_if_needed()
     assert page.evaluate(UNDER, "form.stack button[type=submit]")["covered"] is False
 
