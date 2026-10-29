@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Enrol a member{% endblock %}
+{% block body %}
+<h1>Enrol a member</h1>
+{{ m.steps(1) }}
+{% if errors %}<div class="alert crit" role="alert">Please fix the {{ errors|length }} problem{{ 's' if errors|length > 1 }} below.
+  For the farmer's protection, the national ID and phone number are not kept after an error, so type them again.</div>{% endif %}
+<form class="stack" method="post" action="/enrol/review" autocomplete="off">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <fieldset><legend>1. Member</legend>
+    <label for="member_no">SACCO member number</label>
+    <input id="member_no" name="member_no" type="text" value="{{ form.get('member_no', '') }}" required>{{ m.err(errors, 'member_no') }}
+    <label for="full_name">Full name</label>
+    <input id="full_name" name="full_name" type="text" value="{{ form.get('full_name', '') }}" required>{{ m.err(errors, 'full_name') }}
+    <label for="national_id">National ID number</label>
+    <input id="national_id" name="national_id" type="text" inputmode="numeric" required>{{ m.err(errors, 'national_id') }}
+    <label for="phone">Mobile number (M-Pesa)</label>
+    <input id="phone" name="phone" type="text" inputmode="tel" placeholder="0712 345 678" required>{{ m.err(errors, 'phone') }}
+    <label for="gender">Gender <span class="muted">(optional, for inclusion reporting only)</span></label>
+    <select id="gender" name="gender">
+      {% for g in ["undisclosed", "female", "male", "other"] %}
+      <option value="{{ g }}" {% if form.get('gender') == g %}selected{% endif %}>{{ g|capitalize }}</option>{% endfor %}
+    </select>
+    <p class="muted">The national ID and phone are encrypted as soon as they are saved and are only ever shown masked.</p>
+  </fieldset>
+  <fieldset><legend>2. Plot</legend>
+    <p class="muted">Cover pays on the ward index, so the ward matters most. A GPS point is optional and is used later for
+      photo checks and maps.</p>
+    <label for="lat">Latitude <span class="muted">(optional)</span></label>
+    <input id="lat" name="lat" type="number" step="any" value="{{ form.get('lat', '') }}">{{ m.err(errors, 'lat') }}
+    <label for="lon">Longitude <span class="muted">(optional)</span></label>
+    <input id="lon" name="lon" type="number" step="any" value="{{ form.get('lon', '') }}">
+  </fieldset>
+  <fieldset><legend>3. Cover</legend>
+    {{ m.cover_fields(cfg, form, errors) }}
+    <p class="muted">If KIAMIS shows certified seed bought, that point is added automatically.</p>
+  </fieldset>
+  <fieldset><legend>4. Consent</legend>
+    <p>Read each statement to the farmer in the language they choose. Each is recorded separately with wording version
+      {{ wording.version }}.{% if not wording.sw_reviewed %} <span class="chip warn">Kiswahili pending review</span>{% endif %}</p>
+    {% set p = wording.purposes %}
+    <label class="check"><input type="checkbox" name="consent_data_processing" value="1" {% if form.get('consent_data_processing') %}checked{% endif %}
+      aria-describedby="c-dp"><span><b>Data processing (required)</b></span></label>
+    <div class="consent" id="c-dp">{{ p.data_processing.en }}<div class="sw" lang="sw">{{ p.data_processing.sw }}</div></div>
+    {{ m.err(errors, 'consent_data_processing') }}
+    <label class="check"><input type="checkbox" name="consent_sms" value="1" {% if form.get('consent_sms') %}checked{% endif %}
+      aria-describedby="c-sms"><span><b>SMS updates (optional)</b></span></label>
+    <div class="consent" id="c-sms">{{ p.sms.en }}<div class="sw" lang="sw">{{ p.sms.sw }}</div></div>
+    <p class="muted">Paying a payout to a SACCO loan needs its own consent, asked on the next page.</p>
+  </fieldset>
+  <p><button class="btn" type="submit">Check and price</button></p>
+</form>
+{% endblock %}

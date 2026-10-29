@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block body %}
+<h1>{{ officer.sacco.name }}</h1>
+<p class="muted">Portfolio for the policies your SACCO has enrolled. Premiums are illustrative until the product is filed.</p>
+<div class="tiles">
+  <div class="tile"><div class="k">Members</div><div class="v">{{ pf.members|num }}</div></div>
+  <div class="tile"><div class="k">Policies</div><div class="v">{{ pf.policies|num }}</div>
+    <div class="n">{{ pf.by_status.pending_payment }} awaiting payment &middot; {{ pf.by_status.active }} active</div></div>
+  <div class="tile"><div class="k">Acres insured</div><div class="v">{{ pf.acres|num(1) }}</div></div>
+  <div class="tile"><div class="k">Sum insured</div><div class="v">{{ pf.sum_insured_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Gross premium</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
+  <div class="tile"><div class="k">Farmer premium due</div><div class="v">{{ pf.farmer_premium_due_kes|kes }}</div>
+    <div class="n">collected by SACCO deduction or M-Pesa (milestone 6)</div></div>
+  <div class="tile"><div class="k">KAIP subsidy receivable</div><div class="v">{{ pf.subsidy_receivable_kes|kes }}</div>
+    <div class="n"><span class="chip warn">not yet received</span></div></div>
+  <div class="tile"><div class="k">Loan-linked policies</div><div class="v">{{ pf.loan_linked|num }}</div>
+    <div class="n">{{ pf.with_layer_a }} with Layer A</div></div>
+</div>
+
+<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+  <div class="card">
+    <h2 style="margin-top:0">Pilot wards</h2>
+    <svg class="map" viewBox="0 0 {{ map.width }} {{ map.height }}" role="img"
+         aria-label="Placeholder map of the pilot wards with policy counts">
+      {% for w in map.wards %}
+      <rect class="ward" x="{{ w.x }}" y="{{ w.y }}" width="{{ w.w }}" height="{{ w.h }}" rx="4"><title>{{ w.name }}: {{ w.policies }} policies</title></rect>
+      <text x="{{ w.x + 8 }}" y="{{ w.y + 20 }}">{{ w.name.split('(')[0].replace('Illustrative ', '') }}</text>
+      <text x="{{ w.x + 8 }}" y="{{ w.y + 38 }}">{{ w.policies }} policies</text>
+      {% endfor %}
+    </svg>
+    <p class="muted">Placeholder ward boxes (the rainfall extraction areas), not real ward boundaries. Real boundaries and the
+      live trigger map come with monitoring in milestone 7.</p>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Trigger status</h2>
+    <table><tbody>
+      {% for wid, t in pf.trigger_status.items() %}
+      <tr><td>{{ cfg.ward(wid).name }}</td><td><span class="chip">{{ t.status }}</span></td></tr>
+      {% endfor %}
+    </tbody></table>
+    <p class="muted">{{ (pf.trigger_status.values()|first).note }}</p>
+  </div>
+</div>
+
+<h2>By ward</h2>
+{% if pf.by_ward %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Ward</th><th class="num">Policies</th><th class="num">Acres</th><th class="num">Sum insured</th>
+    <th class="num">Gross premium</th><th class="num">Loan-linked</th><th class="num">Loan-linked sum insured</th></tr></thead>
+  <tbody>{% for w in pf.by_ward %}
+    <tr><td>{{ w.name }}</td><td class="num">{{ w.policies }}</td><td class="num">{{ w.acres|num(1) }}</td>
+      <td class="num">{{ w.sum_insured_kes|kes }}</td><td class="num">{{ w.gross_kes|kes }}</td>
+      <td class="num">{{ w.loan_linked }}</td><td class="num">{{ w.loan_linked_sum_insured_kes|kes }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}
+<div class="card"><p>No policies yet. <a href="/enrol">Enrol a member</a> or <a href="/bulk">upload a CSV</a>.</p></div>
+{% endif %}
+
+{% if pf.gender %}
+<p class="muted">Members by gender (for inclusion reporting):
+  {% for g, n in pf.gender.items() %}{{ g }} {{ n }}{{ ', ' if not loop.last }}{% endfor %}.</p>
+{% endif %}
+
+<h2>Recent policies</h2>
+{% if recent %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Policy</th><th>Member</th><th>Ward</th><th>Layers</th><th class="num">Farmer pays</th><th>Status</th></tr></thead>
+  <tbody>{% for p in recent %}
+    <tr><td>{{ p.policy_no }}</td><td><a href="/members/{{ p.farmer_id }}">{{ p.farmer.member_no }}</a> {{ p.farmer.full_name }}</td>
+      <td>{{ p.ward_id }}</td><td>{{ p.layers }}</td><td class="num">{{ p.farmer_pays_kes|kes }}</td>
+      <td><span class="chip {{ 'warn' if p.status == 'pending_payment' }}">{{ p.status.replace('_', ' ') }}</span></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+<p><a class="btn ghost small" href="/export/policies.csv">Export policies (CSV, IDs and phones masked)</a></p>
+{% else %}<p class="muted">None yet.</p>{% endif %}
+{% endblock %}

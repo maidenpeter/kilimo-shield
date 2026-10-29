@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{# Structure and plain-language explanations adapted from the earlier demo's home page
+   (agroshield-kenya/public/index.html #tab-home; docs/BORROWED_FROM_MVP.md item 2).
+   Removed: county ESG pricing, the claims flow, payout-speed claims and unverified statistics. #}
+{% block title %}Crop cover for your season{% endblock %}
+{% block body %}
+<section class="hero">
+  <h1>One failed season shouldn't undo a lifetime of work.</h1>
+  <p>AgroShield protects the season before it fails, and rewards farmers who farm smarter. Maize cover for SACCO
+    members, priced on your ward's own rainfall history and paid on a measured index, not a farm visit.</p>
+  <p><a class="btn" href="#how">How it works</a> <a class="btn ghost" href="/login">SACCO officer sign in</a></p>
+</section>
+
+<h2>What is this cover?</h2>
+<p>A simple promise: you pay a small premium each season through your SACCO. If the rains in your ward fail badly
+  enough, measured the same way for everyone, you receive a payout so you can recover, replant and keep going.</p>
+<div class="grid3">
+  <div class="card"><h3>It protects your season</h3><p>Failed rains are the biggest threat to a maize crop. Cover turns an
+    unpredictable loss into a known cost you can plan for.</p></div>
+  <div class="card"><h3>It can help before you lose</h3><p>If the rains fail soon after you plant, cover pays for replanting
+    seed as a voucher, so the season can still be saved.</p></div>
+  <div class="card"><h3>It keeps families on the land</h3><p>A single drought can force a family to sell assets or take on debt.
+    A timely payout, or a payment straight to your SACCO loan if you choose, breaks that cycle.</p></div>
+</div>
+
+<h2 id="how">How it works</h2>
+<p>No paperwork after a loss and no assessor at your gate. Payouts follow rainfall data for your ward that anyone can check.</p>
+<div class="steps4">
+  <div class="card"><h3>Your season is measured</h3><p>Satellite rainfall for your ward is tracked from the first planting rain
+    to harvest, together with how much water a maize crop needs.</p></div>
+  <div class="card"><h3>The index is worked out</h3><p>The index compares the water the crop got with the water it needed. The
+    drier the season, the lower the score.</p></div>
+  <div class="card"><h3>The payout is calculated</h3><p>Below the agreed level, the payout grows as the season gets worse, up to
+    your full sum insured if the crop would have failed.</p></div>
+  <div class="card"><h3>Money reaches you</h3><p>You get an SMS and the payout goes to you or, if you agreed, first to your SACCO
+    loan. The system is built to pay within 10 days of the index confirming.</p></div>
+</div>
+<div class="alert warn"><b>Honest about the trade-off.</b> The cover pays on your ward's index, not a visit to your field. That keeps
+  premiums low and payouts quick, but a very local loss can fall outside the index. If your farm failed and no payout came,
+  tell your SACCO: every case is recorded and reviewed to improve the cover, although it does not change a payout.</div>
+
+<h2>Why SACCO members choose it</h2>
+<div class="grid3">
+  <div class="card"><h3>No assessor, no disputes</h3><p>The same public rainfall data decides every payout, so the rules are clear and fair.</p></div>
+  <div class="card"><h3>Often subsidised</h3><p>The government's KAIP programme can pay part of the premium for eligible farms of 0.5 to 20 acres.</p></div>
+  <div class="card"><h3>Rewards good farming</h3><p>Certified seed and good practices earn Resilience points that lower your share of next season's premium.</p></div>
+  <div class="card"><h3>Any phone works</h3><p>Enrol with your SACCO officer and check your cover by USSD on any phone, in English or Kiswahili.</p></div>
+  <div class="card"><h3>Priced on your ward</h3><p>Premiums come from your ward's own rainfall history since 1981, not a national average.</p></div>
+  <div class="card"><h3>Paid through your SACCO</h3><p>Pay by SACCO deduction or M-Pesa, and link payouts to your loan if you wish.</p></div>
+</div>
+
+<h2>For SACCOs, insurers and reinsurers</h2>
+<p>The pricing behind every quote is reproducible: rainfall inputs, index rules and loadings are versioned and every
+  pricing run is logged, so an underwriter can rebuild any premium from the raw data.</p>
+
+<h2 id="faq">Questions farmers ask</h2>
+<details class="faq"><summary>How much does it cost?</summary><p>It depends on your ward, acreage and the cover you choose. Your SACCO officer can
+  show you a quote in a few minutes, including any government subsidy and your Resilience discount.</p></details>
+<details class="faq"><summary>What if my farm fails but my ward's index does not pay?</summary><p>That is called basis risk. Because payouts follow the
+  ward index, a very local loss can fall outside it. Report it to your SACCO: it is recorded and reviewed to improve the cover,
+  but it does not change the payout.</p></details>
+<details class="faq"><summary>How quickly do I get paid?</summary><p>The system is built to calculate and pay within 10 days of the index confirming
+  a payout. You are told by SMS.</p></details>
+<details class="faq"><summary>Do I need a smartphone or a bank account?</summary><p>No. You enrol through your SACCO and can check your cover by
+  USSD on any phone. Payouts go to M-Pesa, your SACCO account or your SACCO loan.</p></details>
+<details class="faq"><summary>What happens if the rains fail right after I plant?</summary><p>If too little rain falls in the weeks after you plant,
+  the cover gives you a voucher for replanting seed, once a season, and the season is measured again from your next planting.</p></details>
+{% endblock %}

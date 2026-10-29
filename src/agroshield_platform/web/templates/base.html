@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}AgroShield{% endblock %} &middot; AgroShield</title>
+<link rel="stylesheet" href="/static/portal.css">
+</head>
+<body>
+{% if dev_keys %}<div class="devbar">Development mode: keys generated locally in var/dev-keys.json. Illustrative pricing; not a filed product.</div>{% endif %}
+<header class="top"><div class="wrap">
+  <a class="brand" href="/">AgroShield<span>KE</span></a>
+  {% if officer %}
+  <nav class="main" aria-label="Portal">
+    {% set here = request.url.path %}
+    <a href="/dashboard" {% if here == '/dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+    <a href="/enrol" {% if here.startswith('/enrol') %}aria-current="page"{% endif %}>Enrol</a>
+    <a href="/bulk" {% if here.startswith('/bulk') %}aria-current="page"{% endif %}>Bulk enrol</a>
+    <a href="/quote" {% if here == '/quote' %}aria-current="page"{% endif %}>Quote</a>
+    <a href="/members" {% if here.startswith('/members') %}aria-current="page"{% endif %}>Members</a>
+    {% if officer.role == 'manager' %}<a href="/kiamis" {% if here == '/kiamis' %}aria-current="page"{% endif %}>KIAMIS import</a>{% endif %}
+  </nav>
+  <div class="who">{{ officer.display_name }} &middot; {{ officer.sacco.name }}
+    <form method="post" action="/logout" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <button class="btn ghost small" type="submit">Sign out</button></form></div>
+  {% else %}
+  <nav class="main" aria-label="Site"><a href="/#how">How it works</a><a href="/#faq">Questions</a></nav>
+  <div class="who"><a class="btn small" href="/login">SACCO officer sign in</a></div>
+  {% endif %}
+</div></header>
+<main><div class="wrap">
+{% block body %}{% endblock %}
+</div></main>
+<footer><div class="wrap">AgroShield is the technology and pricing layer; cover is underwritten by a licensed Kenyan insurer
+  (to be named) and distributed through SACCOs. Illustrative pricing during development.</div></footer>
+</body>
+</html>

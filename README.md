@@ -6,7 +6,7 @@ not the risk carrier.
 
 > "AgroShield protects the season before it fails, and rewards farmers who farm smarter."
 
-**Status:** milestones 1-4 of 10 (quote API added in milestone 4) and research task 3b.
+**Status:** milestones 1-5 of 10 (quote API in 4; SACCO portal and data model in 5) and research task 3b.
 Layer B is a seasonal WRSI index (B-1.2.0) with failed-onset and germination dry-spell
 triggers; the superseded per-phase index (v0) is kept for comparison only. Layer A
 (anticipatory seed voucher, Ward A only) runs on a synthetic forecast at the skill
@@ -40,6 +40,9 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-price quote --ward ward-a --acres 2 --layers A,B --resilience certified_seed_verified` | Quote a farmer from the command line |
 | `agroshield-api` | Quote API on http://127.0.0.1:8770 (interactive docs at `/docs`) |
 | `agroshield-price validate` | Check the config without pricing |
+| `agroshield-portal demo` | Fictional demo SACCO, manager and four members (development keys only) |
+| `agroshield-portal serve` | SACCO officer portal on http://127.0.0.1:8780 |
+| `agroshield-portal add-sacco` / `add-officer` | Set up a SACCO and its officers (password prompted) |
 | `pytest` | Run the tests |
 
 ## Layer B v1: seasonal WRSI
@@ -108,6 +111,38 @@ irrigation only the highest item counts. Subsidy terms, the cap and the points a
 ILLUSTRATIVE pending KAIP and the underwriter. Layer A can be quoted only where it is
 offered (Ward A). `POST /v1/quotes` takes everything in the request body and logs each
 quote to `var/audit/quotes.jsonl`; quotes carry no personal data.
+
+## SACCO portal and data model (milestone 5)
+
+A server-rendered portal (FastAPI + Jinja, no JavaScript build, works on slow office
+connections) for SACCO officers:
+
+- **Enrolment wizard** in six steps: member, plot, cover, consent, price, payment and
+  confirm. Prices come from the same rate book as the quote API.
+- **Bulk enrolment** from CSV: a dry run reports every problem row; saving is then
+  all-or-nothing.
+- **Dashboard**: members, policies, acres, sum insured, premium due, KAIP subsidy
+  receivable ("not yet received"), loan-linked exposure, a by-ward table and a
+  placeholder ward map. Live trigger status arrives with monitoring in milestone 7.
+- **Members** (masked IDs and phones), each with its policies and consent record;
+  masked CSV export; **KIAMIS** CSV import for managers (manual fallback, IDs hashed).
+
+Data protection (Kenya Data Protection Act):
+
+- Consent is recorded per purpose (data processing, which is required, then SMS and
+  loan-linked payout), with the wording version and its SHA-256
+  (`config/consent.yaml`).
+- National IDs and phone numbers are stored only AES-256-GCM encrypted, with a keyed
+  HMAC for look-ups. They are masked in every page, export, audit event and log line.
+- Personal data never goes into a URL: search is POST, and wizard state stays on the
+  server under a random token.
+- Tests read the raw database file, rendered pages, links and audit rows for any clear
+  ID or phone.
+
+Storage is SQLite for development, with portable SQLAlchemy models. PostgreSQL and
+PostGIS come for deployment, via `DATABASE_URL`. Keys come from the environment
+(`.env.example`). Without them, development keys are generated into
+`var/dev-keys.json` and the portal shows a development banner.
 
 ## Research (task 3b: forecast skill)
 
@@ -194,6 +229,13 @@ src/agroshield_pricing/
   engine.py              prices one ward, v1 with v0 alongside
   report.py, svgcharts.py, templates/report.html   HTML report (inline SVG)
   audit.py, cli.py       run manifest, audit log, command line
+src/agroshield_platform/
+  settings.py, crypto.py keys from the environment; encryption, masking, log scrubbing, passwords
+  models.py, db.py       SACCO, officer, farmer, plot, consent, policy, KIAMIS, audit tables
+  services.py            enrolment, bulk CSV, portfolio, export
+  kiamis.py              KIAMIS adapter (not connected / CSV import)
+  web/                   portal routes, templates, CSS
+  cli.py                 agroshield-portal
 tests/                   payout functions, WRSI, onset, PET, burn cost, premium, config,
                          data integrity, validation, regression, end to end
 docs/                    BORROWED_FROM_MVP.md: ideas taken from the old demo, by milestone

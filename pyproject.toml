@@ -18,6 +18,10 @@ dependencies = [
   "fastapi>=0.115,<0.116",
   "starlette>=0.37.2,<0.39",   # the range fastapi 0.115 supports
   "uvicorn>=0.29",
+  "sqlalchemy>=2.0",
+  "cryptography>=42",
+  "itsdangerous>=2.1",      # signed session cookies
+  "python-multipart>=0.0.9",  # form and file uploads
 ]
 
 [project.optional-dependencies]
@@ -26,12 +30,14 @@ dev = ["pytest>=8", "httpx>=0.27"]
 [project.scripts]
 agroshield-price = "agroshield_pricing.cli:main"
 agroshield-api = "agroshield_pricing.api:main"
+agroshield-portal = "agroshield_platform.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
 agroshield_pricing = ["templates/*.html"]
+agroshield_platform = ["web/templates/*.html", "web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

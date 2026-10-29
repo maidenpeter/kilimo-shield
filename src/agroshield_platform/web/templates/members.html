@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Members{% endblock %}
+{% block body %}
+<h1>Members</h1>
+<form method="post" action="/members" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="q" class="muted">Search by member number or name</label>
+  <input id="q" name="q" type="text" value="{{ query }}" style="max-width:280px">
+  <button class="btn small" type="submit">Search</button>
+  {% if query %}<a class="btn ghost small" href="/members">Clear</a>{% endif %}
+</form>
+{% if rows %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Member</th><th>Name</th><th>National ID</th><th>Phone</th><th>Ward</th><th>KIAMIS</th><th class="num">Policies</th></tr></thead>
+  <tbody>{% for f in rows %}
+    <tr><td><a href="/members/{{ f.id }}">{{ f.member_no }}</a></td><td>{{ f.full_name }}</td><td>{{ f.national_id_masked }}</td>
+      <td>{{ f.phone_masked }}</td><td>{{ f.ward_id }}</td><td>{{ f.kiamis_status.replace('_', ' ') }}</td>
+      <td class="num">{{ f.policies|length }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}
+<div class="card"><p>{{ 'No members match.' if query else 'No members yet.' }} <a href="/enrol">Enrol a member</a>.</p></div>
+{% endif %}
+{% endblock %}

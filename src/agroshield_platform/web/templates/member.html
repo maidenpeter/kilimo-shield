@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ f.member_no }}{% endblock %}
+{% block body %}
+<h1>{{ f.full_name }}</h1>
+<p class="muted">Member {{ f.member_no }} &middot; {{ cfg.ward(f.ward_id).name }}</p>
+<div class="card"><div class="split">
+  <span>National ID</span><span>{{ f.national_id_masked }}</span>
+  <span>Phone</span><span>{{ f.phone_masked }}</span>
+  <span>Gender</span><span>{{ f.gender }}</span>
+  <span>KIAMIS</span><span>{{ f.kiamis_status.replace('_', ' ') }}</span>
+  <span>Enrolled</span><span>{{ f.created_at.strftime('%d %b %Y') }}</span>
+</div></div>
+
+<h2>Policies</h2>
+{% if policies %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Policy</th><th>Season</th><th>Layers</th><th class="num">Acres</th><th class="num">Gross</th>
+    <th class="num">Government share</th><th class="num">Farmer pays</th><th>Payment</th><th>Status</th></tr></thead>
+  <tbody>{% for p in policies %}
+    <tr><td>{{ p.policy_no }}</td><td>{{ p.season }} {{ p.year }}</td><td>{{ p.layers }}</td><td class="num">{{ p.acres|num(1) }}</td>
+      <td class="num">{{ p.gross_kes|kes }}</td><td class="num">{{ p.government_share_kes|kes }}
+        {% if p.subsidy_status == 'not yet received' %}<span class="chip warn">not yet received</span>{% endif %}</td>
+      <td class="num">{{ p.farmer_pays_kes|kes }}</td><td>{{ p.payment_route.replace('_', ' ') }}{% if p.loan_linked %}; payout to loan {{ p.loan_ref }}{% endif %}</td>
+      <td><span class="chip {{ 'warn' if p.status == 'pending_payment' }}">{{ p.status.replace('_', ' ') }}</span></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}<p class="muted">No policies.</p>{% endif %}
+
+<h2>Consent record</h2>
+<p class="muted">One record per purpose. Records are never edited; a change of mind is a new record.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Purpose</th><th>Given</th><th>Wording</th><th>Channel</th><th>Captured</th></tr></thead>
+  <tbody>{% for c in consents %}
+    <tr><td>{{ c.purpose.replace('_', ' ') }}</td><td>{{ 'yes' if c.granted else 'no' }}</td>
+      <td>{{ c.wording_version }} <span class="muted">sha256 {{ c.wording_sha256[:12] }}</span></td><td>{{ c.channel }}</td>
+      <td>{{ c.captured_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endblock %}

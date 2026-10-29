@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Quote{% endblock %}
+{% block body %}
+<h1>Quick quote</h1>
+<p class="muted">Price cover without enrolling anyone. Nothing personal is asked or stored.</p>
+{% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
+<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-items:start">
+  <form class="stack card" method="post" action="/quote">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    {{ m.cover_fields(cfg, form) }}
+    <p style="margin-top:16px"><button class="btn" type="submit">Get quote</button></p>
+  </form>
+  <div>{% if q %}{{ m.breakdown(q) }}
+    <p><a class="btn" href="/enrol">Enrol a member</a></p>{% endif %}</div>
+</div>
+{% endblock %}

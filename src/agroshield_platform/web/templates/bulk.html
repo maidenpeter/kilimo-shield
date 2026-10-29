@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Bulk enrolment{% endblock %}
+{% block body %}
+<h1>Bulk enrolment</h1>
+<p>Upload a CSV of members. The file is checked first and nothing is saved until you confirm. Then every row is saved
+  together or none are.</p>
+{% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
+{% if committed %}
+<div class="alert ok" role="status"><b>{{ committed|length }} policies saved.</b></div>
+<div class="table-wrap"><table>
+  <thead><tr><th>Policy</th><th>Member</th><th>Ward</th><th class="num">Farmer pays</th></tr></thead>
+  <tbody>{% for p in committed %}<tr><td>{{ p.policy_no }}</td><td>{{ p.farmer.member_no }}</td><td>{{ p.ward_id }}</td>
+    <td class="num">{{ p.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<form class="stack card" method="post" action="/bulk/check" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="file">CSV file</label><input id="file" name="file" type="file" accept=".csv,text/csv" required>
+  <p class="muted">Columns as in the <a href="/bulk/template.csv">template</a>. Consent columns must say yes for each purpose the
+    farmer agreed to, after the statements were read to them. Resilience items are separated by semicolons.</p>
+  <p><button class="btn" type="submit">Check file</button></p>
+</form>
+
+{% if report %}
+<h2>Check result: {{ report.rows }} rows</h2>
+{% if report.problems %}
+<div class="alert crit" role="alert">{{ report.problems|length }} row{{ 's' if report.problems|length > 1 }} need fixing. Nothing has been saved.</div>
+<div class="table-wrap"><table>
+  <thead><tr><th>Row</th><th>Member</th><th>Problem</th></tr></thead>
+  <tbody>{% for p in report.problems %}<tr><td>{{ p.row }}</td><td>{{ p.member_no or '' }}</td>
+    <td>{% for k, v in p.errors.items() %}<div><b>{{ k }}</b>: {{ v }}</div>{% endfor %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if report.valid %}
+<h3>{{ report.valid|length }} rows ready</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Row</th><th>Member</th><th>Ward</th><th class="num">Acres</th><th>Layers</th><th class="num">Gross</th><th class="num">Farmer pays</th></tr></thead>
+  <tbody>{% for r in report.valid %}<tr><td>{{ r.row }}</td><td>{{ r.member_no }}</td><td>{{ r.ward_id }}</td><td class="num">{{ r.acres|num(1) }}</td>
+    <td>{{ r.layers }}</td><td class="num">{{ r.gross_kes|kes }}</td><td class="num">{{ r.farmer_pays_kes|kes }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if report.ok %}
+<form method="post" action="/bulk/commit">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="token" value="{{ token }}">
+  <p><button class="btn" type="submit">Save all {{ report.valid|length }} enrolments</button>
+    <span class="muted">File sha256 {{ report.sha256[:12] }}</span></p>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

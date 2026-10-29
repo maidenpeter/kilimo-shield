@@ -1,0 +1,37 @@
+# Consent wording, one entry per purpose (Kenya Data Protection Act: specific,
+# informed, purpose-limited). Each consent record stores this version and the
+# SHA-256 of the wording, so what the farmer agreed to can always be shown.
+# Changing any text requires a new version.
+#
+# ILLUSTRATIVE pending legal review. The Kiswahili text needs native-speaker
+# review before use with farmers (see docs/BORROWED_FROM_MVP.md, item 1).
+version: "C-2026-10-29"
+sw_reviewed: false
+
+purposes:
+  data_processing:
+    required: true
+    en: >-
+      I agree that my SACCO and AgroShield may record my name, phone number,
+      national ID, ward and farm details to provide and administer my crop
+      insurance, and share them with the insurer for that purpose only. My
+      national ID and phone number are stored encrypted.
+    sw: >-
+      Ninakubali SACCO yangu na AgroShield kuhifadhi jina langu, nambari ya
+      simu, nambari ya kitambulisho, wadi na maelezo ya shamba ili kutoa na
+      kusimamia bima ya mazao yangu, na kuyashiriki na kampuni ya bima kwa
+      madhumuni hayo pekee. Kitambulisho na simu yangu vimehifadhiwa kwa usimbaji.
+  sms:
+    required: false
+    en: >-
+      I agree to receive SMS about my cover, rainfall in my ward and payouts.
+    sw: >-
+      Ninakubali kupokea SMS kuhusu bima yangu, mvua katika wadi yangu na malipo.
+  loan_linked_payout:
+    required: false
+    en: >-
+      I agree that any payout from this cover is first paid to my outstanding
+      SACCO loan, and any balance is paid to me.
+    sw: >-
+      Ninakubali kwamba malipo yoyote ya bima hii yalipe kwanza mkopo wangu wa
+      SACCO, na salio lolote nilipwe mimi.

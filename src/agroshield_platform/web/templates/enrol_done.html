@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Enrolled{% endblock %}
+{% block body %}
+<div class="alert ok" role="status"><b>Enrolled.</b> Policy {{ pol.policy_no }} is saved and awaiting payment.</div>
+<div class="card">
+  <div class="split">
+    <span>Policy</span><span>{{ pol.policy_no }}</span>
+    <span>Member</span><span>{{ farmer.member_no }} {{ farmer.full_name }}</span>
+    <span>National ID</span><span>{{ farmer.national_id_masked }}</span>
+    <span>Phone</span><span>{{ farmer.phone_masked }}</span>
+    <span>Ward and season</span><span>{{ cfg.ward(pol.ward_id).name }}, {{ pol.season }} {{ pol.year }}</span>
+    <span>Layers</span><span>{{ pol.layers }}</span>
+    <span>Gross premium</span><span>{{ pol.gross_kes|kes }}</span>
+    <span>Government share</span><span>{{ pol.government_share_kes|kes }} ({{ pol.subsidy_status }})</span>
+    <span>Resilience discount</span><span>{{ pol.discount_kes|kes }}</span>
+    <span class="tot">Farmer pays</span><span class="tot">{{ pol.farmer_pays_kes|kes }} by {{ pol.payment_route.replace('_', ' ') }}</span>
+    {% if pol.loan_linked %}<span>Payout</span><span>to loan {{ pol.loan_ref }} first</span>{% endif %}
+  </div>
+</div>
+<p class="muted">Cover starts once the farmer's share is paid. Payment requests and the farmer's confirmation SMS arrive in milestone 6.</p>
+<p><a class="btn" href="/enrol">Enrol another member</a> <a class="btn ghost" href="/members/{{ farmer.id }}">View member</a></p>
+{% endblock %}
