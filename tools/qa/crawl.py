@@ -179,6 +179,11 @@ def crawl(label: str, widths: list[int], schemes: list[str], roles: list[str], s
                                   sample: v.nodes.slice(0, 3).map(n => n.target.join(' '))})); }""")
                             name = f"{role}__{slug(path)}__{width}__{scheme}.jpg"
                             if shots:
+                                # load lazy images first, so a full-page screenshot shows them
+                                page.evaluate("""async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) {
+                                    window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60)); }
+                                    await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+                                    window.scrollTo(0, 0); }""")
                                 page.screenshot(path=out_dir / name, full_page=True, type="jpeg", quality=70)
                             checks.pop("links", None)
                             results.append({"role": role, "path": path, "width": width, "scheme": scheme, "status": status,

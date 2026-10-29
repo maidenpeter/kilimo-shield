@@ -17,7 +17,7 @@ fails to load. Photos were resized and compressed; nothing else was changed. CC 
 | `maize-mount-kenya` | [Maize on a Mount Kenya farm.jpg](https://commons.wikimedia.org/wiki/File:Maize_on_a_Mount_Kenya_farm.jpg) | CIAT | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0) | Mount Kenya region, Kenya | Home hero |
 | `maize-kuria` | [Maize Farming in Kuria East,Kenya.jpg](https://commons.wikimedia.org/wiki/File:Maize_Farming_in_Kuria_East,Kenya.jpg) | Elite Jac | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Kuria East, Kenya | Crops hero |
 | `maize-siaya` | [Maize growing in local areas in Siaya county.jpg](https://commons.wikimedia.org/wiki/File:Maize_growing_in_local_areas_in_Siaya_county.jpg) | VickyOmondi | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Siaya County, Kenya | How it works |
-| `farmer-shamba` | [Josephine Odiambo tested an improved maize variety in a corner of her shamba in Western Kenya (7603945196).jpg](https://commons.wikimedia.org/wiki/File:Josephine_Odiambo_tested_an_improved_maize_variety_in_a_corner_of_her_shamba_in_Western_Kenya_(7603945196).jpg) | USAID in Africa | [Public domain]() | Siranga, Western Kenya | Crops, replanting |
+| `women-farmers` | [African women farmers in Kenya.jpg](https://commons.wikimedia.org/wiki/File:African_women_farmers_in_Kenya.jpg) | Anthony mbuthia | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Kenya (per title and categories; no specific place given) | Home, Crops |
 | `village-maize` | [CSIRO ScienceImage 4316 Equatorial rainforest is the backdrop to a village surrounded by a maize crop in Kenya Africa 1981.jpg](https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_4316_Equatorial_rainforest_is_the_backdrop_to_a_village_surrounded_by_a_maize_crop_in_Kenya_Africa_1981.jpg) | Willem van Aken, CSIRO | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) | Kenya (no more specific place given) | For insurers |
 | `tea-kericho` | [Tea carpet plantation of Kericho highlands, in Kenya.jpg](https://commons.wikimedia.org/wiki/File:Tea_carpet_plantation_of_Kericho_highlands,_in_Kenya.jpg) | Carter.Maina | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | Kericho highlands, Kenya | Home, highland farms |
 | `kericho-farms` | [Kericho, Kenya (4201348827).jpg](https://commons.wikimedia.org/wiki/File:Kericho,_Kenya_(4201348827).jpg) | edskoch | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | Kericho County, Kenya | Learn hub |
@@ -35,7 +35,6 @@ fails to load. Photos were resized and compressed; nothing else was changed. CC 
 
 Licence confirmed, kept as spares:
 
-- [African women farmers in Kenya.jpg](https://commons.wikimedia.org/wiki/File:African_women_farmers_in_Kenya.jpg): Anthony mbuthia, CC BY-SA 4.0
 - [Flood river full of erosion in Daraja Mbili Kisii County Kenya East Africa.jpg](https://commons.wikimedia.org/wiki/File:Flood_river_full_of_erosion_in_Daraja_Mbili_Kisii_County_Kenya_East_Africa.jpg): Osoro Osindi, CC BY-SA 4.0
 - [Low volume, Nyamindi River, Kirinyaga County, Kenya.jpg](https://commons.wikimedia.org/wiki/File:Low_volume,_Nyamindi_River,_Kirinyaga_County,_Kenya.jpg): John Nguru Kamau, CC BY-SA 4.0
 - [Kenya-Tealand-Near-Kericho-2012.JPG](https://commons.wikimedia.org/wiki/File:Kenya-Tealand-Near-Kericho-2012.JPG): Bjørn Christian Tørrissen, CC BY-SA 3.0
@@ -50,6 +49,8 @@ Licence confirmed, kept as spares:
 - [Maasai Mara landscape beneath clouds and sunbeams.jpg](https://commons.wikimedia.org/wiki/File:Maasai_Mara_landscape_beneath_clouds_and_sunbeams.jpg): Daniel Case, CC BY-SA 4.0
 
 ## Skipped
+
+- Josephine Odiambo tested an improved maize variety in a corner of her shamba in Western Kenya (7603945196).jpg (USAID, public domain): used at first, removed on 30 Oct 2026 because the photo shows a donor's logo sign and its title names a private person. Replaced by African women farmers in Kenya.jpg.
 
 - Small-cropping-kenya (52428136678).jpg (for maize-highland): The API record says Public domain (PD USDA), and the author, URL and size match. But Commons also lists the file under 'United States Department of Agriculture images (review needed)', so the public domain status has not been reviewed yet. There is no licence URL. Under the default-to-false rule it is not confirmed until that review is done.
 

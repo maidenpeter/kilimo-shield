@@ -447,7 +447,7 @@ svg.chart text { font-size: var(--fs-sm); }
 /* ---------- QA pass 1: tap targets (Phase F) ---------- */
 .skip-link { min-height: var(--tap); display: inline-flex; align-items: center; }
 .breadcrumbs a, .feature .more-link, .alert a, .ward-alert a, .article-aside li a { display: inline-flex; align-items: center; min-height: var(--tap); }
-.article-card h3 a { display: block; padding-block: var(--sp-2); }
+.article-card h3 a { display: block; padding-block: var(--sp-3); }
 .check input, .choice input { width: var(--sp-5); height: var(--sp-5); }
 .hp > * { overflow: hidden; }
 .split-2 > *, .grid-2 > *, .grid-cards > *, .article-layout > * { min-width: 0; }
@@ -455,3 +455,4 @@ svg.chart text { font-size: var(--fs-sm); }
 fieldset.choice-group { border: 0; padding: 0; margin: var(--sp-3) 0 0; background: none; min-width: 0; }
 fieldset.choice-group > legend { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--ink-1); padding: 0; margin-bottom: var(--sp-1); }
 [aria-invalid="true"] { border-color: var(--crit); }
+.figure.pos-top .media img { object-position: 50% 0%; }

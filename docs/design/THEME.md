@@ -30,3 +30,12 @@ those variables only.
 
 Edit `tokens.css` only. To try pure NuruOps gold as the accent, set `--accent` to `#B8760A` (light) / `#E8960C` (dark)
 and `--accent-ink` to white / `#0F1117`.
+
+## Added during the overnight QA and review
+
+- `--overlay-strong`: the darker teal-black wash over hero photos. On screens under 900 px the whole photo gets it, so
+  white text never sits on a bright part of an image; on wide screens it covers the text side of the gradient.
+- `--input-border`: form control edges, at least 3:1 against the card and input surfaces in both themes
+  (WCAG 1.4.11 non-text contrast). `--border-strong` stays for decorative lines.
+- Charts in the underwriter workspace are inline SVG using `--chart-1` to `--chart-3`, drawn at their natural size
+  (never stretched), each with a visually hidden data table for screen readers.

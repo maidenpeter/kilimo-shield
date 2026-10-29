@@ -72,28 +72,23 @@
   "ratio": 0.75
  },
  {
-  "key": "farmer-shamba",
-  "title": "Josephine Odiambo tested an improved maize variety in a corner of her shamba in Western Kenya (7603945196).jpg",
-  "file_page": "https://commons.wikimedia.org/wiki/File:Josephine_Odiambo_tested_an_improved_maize_variety_in_a_corner_of_her_shamba_in_Western_Kenya_(7603945196).jpg",
-  "author": "USAID in Africa",
-  "license": "Public domain",
-  "license_url": "",
-  "alt": "A woman farmer stands among improved maize plants in her shamba in Siranga, Western Kenya",
-  "location": "Siranga, Western Kenya",
-  "used_on": "Crops, replanting",
+  "key": "women-farmers",
+  "title": "African women farmers in Kenya.jpg",
+  "file_page": "https://commons.wikimedia.org/wiki/File:African_women_farmers_in_Kenya.jpg",
+  "author": "Anthony mbuthia",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "alt": "Women farmers at work in Kenya",
+  "location": "Kenya (per title and categories; no specific place given)",
+  "used_on": "Home, Crops",
   "sizes": [
    {
     "width": 800,
-    "height": 533,
+    "height": 1066,
     "w": 800
-   },
-   {
-    "width": 1600,
-    "height": 1067,
-    "w": 1600
    }
   ],
-  "ratio": 0.6667
+  "ratio": 1.3321
  },
  {
   "key": "village-maize",
