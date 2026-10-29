@@ -28,3 +28,9 @@ data/raw/research/chirps_monthly_eastern_kenya.npz
 .idea/
 .DS_Store
 Thumbs.db
+
+# Overnight QA artefacts: screenshots stay local (large); summaries and JSON are committed
+docs/overnight/before/
+docs/overnight/after/
+docs/overnight/*/
+tools/qa/node_modules/
