@@ -234,8 +234,11 @@ PostGIS come for deployment, via `DATABASE_URL`. Keys come from the environment
   - The Kiswahili text is pending native-speaker review.
   - Weather advisories are not sent: there is no KMD permission.
 
-Development database: the schema changed in this milestone. Delete `var/agroshield.db`
-and run `agroshield-portal demo` again. Migrations (Alembic) come before any real data.
+Database schema: managed by Alembic migrations (`src/agroshield_platform/migrations`). Every start brings the
+database to the newest revision in place, after copying a SQLite file to `<name>.pre-<revision>.bak`; nothing is
+reset. A database from before migrations (30 October 2026) is recognised and upgraded. `agroshield-portal db-status`
+shows the revision; `alembic.ini` is there for hand work. A model change needs a new revision
+(`alembic revision --autogenerate -m "..."`): `tests/test_migrations.py` fails until the two match.
 
 ### API keys
 

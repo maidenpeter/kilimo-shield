@@ -21,3 +21,13 @@ checklist of the run's report. "Pending owner confirmation" means the default is
 | 1.10 | Weather approval scope | A SACCO manager uploads, approves and withdraws advisories for their own SACCO only. Advisories shown to every SACCO (KMD fetches and operations uploads) are approved or withdrawn only by the new role `ops` (AgroShield operations), which has no SACCO and no insurer and sees only `/weather`. "Check KMD now" moved to operations, because fetched items are shown to every SACCO. | Built (brief) |
 | 1.11 | HTTPS cookies | `AGROSHIELD_HTTPS=true` marks the session cookie Secure. HttpOnly and SameSite=Lax were already on. Default stays false so local development over http still works. | Built (brief) |
 | 1.12 | KIAMIS records | Still shared by every SACCO (the review grouped them with weather). Left unchanged, because the brief scoped only weather advisories. | Needs approval (listed in the report) |
+
+### Phase 2: database migrations
+
+| # | Decision | Default used | Status |
+|---|---|---|---|
+| 2.1 | When migrations run | On every start (`init_db`, so the portal, the CLI and tests), not as a separate deploy step, so nobody can run new code on an old schema. A SQLite file is copied to `<name>.pre-<revision>.bak` before any change. For PostgreSQL, take a database backup before deploying. | Built |
+| 2.2 | Baseline | Revision 0001 is the schema of 30 October 2026 (commit b35d99f). Revision 0002 is Phase 1. Databases made before migrations are recognised by their exact tables and columns and stamped, never guessed: one that matches no revision is refused and left untouched. | Built |
+| 2.3 | New empty database | Created from the models and stamped at the newest revision (fast). A test proves the revisions build exactly the same schema, so the two cannot drift. | Built |
+| 2.4 | Pending M-Pesa requests at upgrade | Revision 0002 queues them for a status check at once, so none is left without a re-check. | Built |
+| 2.5 | Existing weather advisories | Become "every SACCO" items (managed by operations), because until now every advisory was shown to every SACCO. | Built |

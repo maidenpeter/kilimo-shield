@@ -16,6 +16,7 @@
     agroshield-portal send-sms      # send queued SMS now
     agroshield-portal enquiries     # demo requests and livestock interest from the public site (masked)
     agroshield-portal enquiries --delete AB12CD34   # delete one on request (audited)
+    agroshield-portal db-status     # the database's schema revision (every command upgrades it first)
 
 Passwords are read from AGROSHIELD_OFFICER_PASSWORD or prompted for; never passed as arguments.
 """
@@ -78,6 +79,7 @@ def _context(settings):
 
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("alembic").setLevel(logging.WARNING)          # schema upgrades log only when they change something
     for h in logging.getLogger().handlers:
         h.addFilter(ScrubFilter())
     ap = argparse.ArgumentParser(prog="agroshield-portal")
@@ -100,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     pb.add_argument("--insurer", required=True)
     pb.add_argument("--paybill", required=True, help='e.g. "Paybill 123456, account AGROSHIELD" or bank details')
     sub.add_parser("mpesa-recheck", help="status-check M-Pesa payments still waiting for an answer")
+    sub.add_parser("db-status", help="show the database schema revision")
     sub.add_parser("demo", help="create a fictional demo SACCO, a demo officer and manager, and fictional members")
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
@@ -125,7 +128,11 @@ def main(argv: list[str] | None = None) -> int:
             sys.exit(f"no insurer with code {code}")
         return ins
 
-    if args.cmd == "add-insurer":
+    if args.cmd == "db-status":
+        from .migrate import status
+        st = status(factory.kw["bind"])
+        print(f"schema revision {st['current']} (newest {st['head']}): {'up to date' if st['up_to_date'] else 'NOT up to date'}")
+    elif args.cmd == "add-insurer":
         with transaction(factory) as s:
             s.add(Insurer(code=args.code.upper(), name=args.name))
             audit(s, "cli", "insurer.created", "insurer", args.code.upper())

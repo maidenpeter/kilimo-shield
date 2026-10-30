@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
 from .crypto import scrub
-from .models import AuditEvent, Base
+from .models import AuditEvent
 
 
 def make_engine(url: str):
@@ -22,7 +22,9 @@ def make_engine(url: str):
 
 
 def init_db(engine) -> sessionmaker:
-    Base.metadata.create_all(engine)
+    """Bring the database to the newest schema revision (Alembic, see migrate.py), then hand out sessions."""
+    from .migrate import upgrade
+    upgrade(engine)
     return sessionmaker(engine, expire_on_commit=False)
 
 

@@ -19,6 +19,7 @@ dependencies = [
   "starlette>=0.37.2,<0.39",   # the range fastapi 0.115 supports
   "uvicorn>=0.29",
   "sqlalchemy>=2.0",
+  "alembic>=1.13",           # database migrations (src/agroshield_platform/migrations)
   "cryptography>=42",
   "itsdangerous>=2.1",      # signed session cookies
   "python-multipart>=0.0.9",  # form and file uploads
@@ -40,7 +41,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 agroshield_pricing = ["templates/*.html"]
 agroshield_platform = ["articles.json", "web/templates/*.html", "web/templates/public/*.html", "web/static/*",
-                       "web/static/*/*"]
+                       "web/static/*/*", "migrations/*.py", "migrations/script.py.mako", "migrations/versions/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
