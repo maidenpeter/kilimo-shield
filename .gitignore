@@ -34,3 +34,6 @@ docs/overnight/before/
 docs/overnight/after/
 docs/overnight/*/
 tools/qa/node_modules/
+
+# Personal Claude Code settings
+.claude/settings.local.json
