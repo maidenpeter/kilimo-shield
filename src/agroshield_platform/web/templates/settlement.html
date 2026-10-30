@@ -5,6 +5,8 @@
 <h1>Premium sent to the insurer</h1>
 <p class="muted">What {{ officer.sacco.name }} collected from members and what you have sent on to {{ officer.sacco.insurer.name if officer.sacco.insurer else 'the insurer' }}.
   This is a record only: it does not move money.</p>
+<p class="pay-to"><b>Send premium to:</b> {{ st.paybill }}. Send the full amount collected. Your SACCO's fee is settled
+  separately, and refunds to farmers are not taken off what you send.</p>
 {% if st.rows %}{% set r = st.rows[0] %}
 <div class="kpi-strip tiles">
   <div class="tile"><div class="k">Collected from members</div><div class="v">{{ r.collected_kes|kes }}</div>
@@ -15,7 +17,11 @@
     <div class="n">{% if r.credit_kes %}{{ r.credit_kes|kes }} sent more than collected{% else %}collected minus sent{% endif %}</div></div>
   <div class="tile"><div class="k">Queried by the insurer</div><div class="v">{{ r.queried }}</div>
     <div class="n">{{ 'check the note below' if r.queried else 'none' }}</div></div>
+  <div class="tile"><div class="k">Refunds still to pay farmers</div><div class="v">{{ r.refunds_outstanding_kes|kes }}</div>
+    <div class="n">{{ r.refunds_owed_kes|kes }} owed, {{ r.refunds_paid_kes|kes }} paid back so far</div></div>
 </div>
+<p class="hint">Refunds are owed when a member pays more than due or pays after sales close. Record each refund paid on the
+  member's page.</p>
 {% endif %}
 
 {% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}

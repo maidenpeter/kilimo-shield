@@ -16,7 +16,31 @@
   {% elif p.status == 'lapsed_unpaid' %}
   <p>Not fully paid by {{ p.sales_closes_on|day }}, so the cover did not start.</p>
   {% endif %}
-  {% if p.refund_due_kes %}<p><span class="chip warn">Refund KES {{ '{:,.0f}'.format(p.refund_due_kes) }} to the farmer</span></p>{% endif %}
+  {% if p.refund_due_kes %}
+  {% set left = refund_left[p.id] %}
+  <p>{% if left %}<span class="chip warn">Refund KES {{ '{:,.0f}'.format(left) }} to the farmer</span>
+    {% else %}<span class="chip ok">Refund paid in full</span>{% endif %}
+    <span class="muted">Owed KES {{ '{:,.0f}'.format(p.refund_due_kes) }}, paid back KES {{ '{:,.0f}'.format(p.refund_due_kes - left) }}.</span></p>
+  {% set rr = refunds|selectattr('policy_id', 'equalto', p.id)|list %}
+  {% if rr %}<ul class="muted">{% for x in rr %}<li>{{ x.ref }}: KES {{ '{:,.0f}'.format(x.amount_kes) }} paid {{ x.paid_on|day }},
+    {{ refund_methods[x.method] }} {{ x.reference }}</li>{% endfor %}</ul>{% endif %}
+  {% if left and officer.role == 'manager' %}
+  <details class="more"><summary>Record a refund paid</summary>
+    <form class="stack" method="post" action="/policies/{{ p.id }}/refund">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="rf-amt-{{ p.id }}">Amount paid back (KES)</label>
+      <input id="rf-amt-{{ p.id }}" name="amount" type="text" inputmode="decimal" required value="{{ left|round|int }}" class="w-sm">
+      <label for="rf-on-{{ p.id }}">Date paid</label>
+      <input id="rf-on-{{ p.id }}" name="paid_on" type="date" required value="{{ today.isoformat() }}" class="w-sm">
+      <label for="rf-m-{{ p.id }}">How it was paid</label>
+      <select id="rf-m-{{ p.id }}" name="method" class="w-sm">{% for k, v in refund_methods.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      <label for="rf-ref-{{ p.id }}">M-Pesa, bank or SACCO reference</label>
+      <input id="rf-ref-{{ p.id }}" name="reference" type="text" required maxlength="40" class="w-sm">
+      <p><button class="btn small" type="submit">Save refund</button></p>
+    </form>
+  </details>
+  {% endif %}
+  {% endif %}
   {% if p.loan_linked %}<p class="muted">Any payout goes to loan {{ p.loan_ref }} first.</p>{% endif %}
 
   {% if p.status == 'pending_payment' and today <= p.sales_closes_on %}
@@ -114,7 +138,8 @@
   <thead><tr><th>Sent</th><th class="num">Amount</th><th>Phone</th><th>Status</th><th>Receipt</th><th>By</th></tr></thead>
   <tbody>{% for r in mpesa_requests %}<tr><td>{{ r.created_at.strftime('%d %b %Y %H:%M') }}</td>
     <td class="num">KES {{ '{:,}'.format(r.amount_kes) }}</td><td>{{ r.phone_masked }}</td>
-    <td><span class="chip {{ 'warn' if r.status != 'paid' }}">{{ r.status }}</span> {{ r.result_desc or '' }}</td>
+    <td><span class="chip {{ 'crit' if r.status == 'unconfirmed' else 'warn' if r.status != 'paid' }}">{{ 'not confirmed' if r.status == 'unconfirmed' else r.status }}</span>
+      {{ r.result_desc or '' }}{% if r.resolution %} <span class="muted">(decided by {{ r.resolved_by }})</span>{% endif %}</td>
     <td>{{ r.receipt or '' }}</td><td>{{ r.requested_by }} ({{ r.environment }})</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endif %}

@@ -1,0 +1,19 @@
+{
+  "command": "agroshield-price run --all --offline",
+  "reference": "docs\\overnight\\pricing_reference.json",
+  "wards": {
+    "ward-a": {
+      "run_id": "20261030T054537Z_ward-a_df63b3",
+      "results_sha256": "76436465366497deb69a8c2747798ad78b7de83a9a7846c0722d047a0f96e873",
+      "matches_reference": true,
+      "config_matches": true
+    },
+    "ward-b": {
+      "run_id": "20261030T054538Z_ward-b_4ca749",
+      "results_sha256": "a9ad3062d46964dfc78111f9b69254cbd975c6f5ba29e74fa6d71d573697a291",
+      "matches_reference": true,
+      "config_matches": true
+    }
+  },
+  "all_match": true
+}

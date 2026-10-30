@@ -12,13 +12,15 @@
   <div class="tile"><div class="k">Sum insured</div><div class="v">{{ pf.sum_insured_kes|kes }}</div></div>
   <div class="tile"><div class="k">Gross premium</div><div class="v">{{ pf.gross_kes|kes }}</div></div>
   <div class="tile"><div class="k">Farmer premium collected</div><div class="v">{{ pf.premium_collected_kes|kes }}</div>
-    <div class="n">{{ pf.farmer_premium_due_kes|kes }} still due{% if pf.refunds_due_kes %} &middot; {{ pf.refunds_due_kes|kes }} to refund{% endif %}</div></div>
+    <div class="n">{{ pf.farmer_premium_due_kes|kes }} still due{% if pf.refunds_due_kes %} &middot; {{ pf.refunds_due_kes|kes }} owed back,
+      {{ pf.refunds_paid_kes|kes }} paid back{% endif %}</div></div>
   <div class="tile"><div class="k">KAIP subsidy receivable</div><div class="v">{{ pf.subsidy_receivable_kes|kes }}</div>
     <div class="n"><span class="chip warn">not yet received</span></div></div>
   <div class="tile"><div class="k">Loan-linked policies</div><div class="v">{{ pf.loan_linked|num }}</div>
     <div class="n">{{ pf.with_layer_a }} with Layer A</div></div>
 </div>
 
+{% include "_unconfirmed.html" %}
 <div class="card"><h2 class="mt-0">Premium sent to the insurer</h2>
   <p class="m-0">Record what you send on to the insurer and see what is still to send. <a href="/reports/premium">Open premium settlement</a></p></div>
 <div class="card"><b>Sales windows (long rains)</b>

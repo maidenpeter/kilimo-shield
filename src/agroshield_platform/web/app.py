@@ -10,7 +10,8 @@ Pages
   /reports             managers: portfolio, sales windows, subsidy receivable, ward map, export
   /import              managers: bulk enrolment from CSV (check, then all-or-nothing) and KIAMIS import
   /payouts             Payout Tracker: ward rainfall status, payouts, missed-payout reports
-  /weather             managers: KMD advisories, review and approve summaries (display only)
+  /weather             managers: their SACCO's advisories; AgroShield operations (role ops): the KMD advisories
+                       shown to every SACCO. Review and approve summaries (display only)
   /sms, /dev/mpesa     Developer menu (development mode only): SMS log, M-Pesa simulator
   /uw/...              Underwriter workspace (role underwriter only; its own insurer's book only): portfolio,
                        triggers and payout approval, money, bordereaux, pricing runs and audit, reinsurer summary
@@ -66,7 +67,8 @@ from .. import ussd as ussdmod
 from ..crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_national_id, normalise_phone, verify_password
 from ..db import audit, init_db, make_engine, transaction
 from ..kiamis import CsvKiamis
-from ..models import Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, Sacco, SmsMessage, WeatherItem
+from ..models import (Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, Refund, Sacco, SmsMessage,
+                      WeatherItem)
 from ..settings import Settings, load_settings
 
 HERE = Path(__file__).parent
@@ -158,8 +160,9 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             smsmod.send_pending(s, state["sms"], vault)
 
     app = FastAPI(title="AgroShield SACCO portal", docs_url=None, redoc_url=None)
+    # HttpOnly always (Starlette sets it); Secure whenever the deployment runs over HTTPS (AGROSHIELD_HTTPS=true).
     app.add_middleware(SessionMiddleware, secret_key=settings.session_secret, same_site="lax",
-                       https_only=False, max_age=8 * 3600)
+                       https_only=settings.https, max_age=8 * 3600)
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     def missing(v) -> bool:                     # None, or a key a result dict does not have
@@ -230,15 +233,19 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             "dev_mode": settings.dev_keys,
             "flash": request.session.pop("flash", None), **kw}, status_code=status)
 
-    def require(request: Request, s, role: str | None = None) -> Officer:
+    HOME = {"underwriter": "/uw", "ops": "/weather"}
+
+    def require(request: Request, s, role: str | tuple | None = None) -> Officer:
         off = officer_or_none(request, s)
         if off is None or not off.active:
             raise HTTPException(303, headers={"Location": "/login"})
-        if off.role == "underwriter" and role != "underwriter":
-            raise HTTPException(303, headers={"Location": "/uw"})     # SACCO pages are not for the insurer
-        if role and off.role != role:
-            raise HTTPException(403, "Only the insurer's underwriters can see this." if role == "underwriter"
-                                else "Only a SACCO manager can do this.")
+        roles = (role,) if isinstance(role, str) else tuple(role or ())
+        if off.role in HOME and off.role not in roles:
+            raise HTTPException(303, headers={"Location": HOME[off.role]})   # SACCO pages are not for them
+        if roles and off.role not in roles:
+            raise HTTPException(403, "Only the insurer's underwriters can see this." if roles == ("underwriter",)
+                                else "Only a SACCO manager can do this." if roles == ("manager",)
+                                else "Only a SACCO manager or AgroShield operations can do this.")
         return off
 
     def get_or_404(s, model, key):
@@ -344,7 +351,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             request.session.clear()
             request.session["officer_id"] = off.id
             audit(s, off.username, "login", "officer", str(off.id))
-            home = "/uw" if off.role == "underwriter" else "/dashboard"
+            home = HOME.get(off.role, "/dashboard")
         return RedirectResponse(home, status_code=303)
 
     @app.post("/logout")
@@ -380,7 +387,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             members = s.scalar(select(func.count()).select_from(Farmer).where(Farmer.sacco_id == off.sacco_id))
             return render(request, "home.html", off, owe=owe, owe_total=sum(p.balance_kes for p in owe), members=members,
                           sales=sales_summary(c), wards=wards, today=c.date(), alerts=mon.alerts_for(s, off.sacco_id),
-                          weather=wx.visible_items(s, c.date())[:2])
+                          weather=wx.visible_items(s, c.date(), [off.sacco_id])[:2],
+                          unconfirmed=mp.unconfirmed(s, off.sacco_id), checks=len(mp.RECHECK_MINUTES))
 
     @app.post("/policies/{policy_id}/remind")
     def policy_remind(request: Request, background: BackgroundTasks, policy_id: str, csrf_token: str = Form("")):
@@ -419,7 +427,26 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             wards = [cfg.ward(w) for w in cfg.pilot.wards]
             return render(request, "reports.html", off, pf=pf, recent=recent, wards=wards,
                           map=ward_map(wards, {w["ward_id"]: w["policies"] for w in pf["by_ward"]}),
-                          levels=ward_levels(s, off.sacco_id))
+                          levels=ward_levels(s, off.sacco_id), unconfirmed=mp.unconfirmed(s, off.sacco_id),
+                          checks=len(mp.RECHECK_MINUTES), resolve_forms=True)
+
+    @app.post("/mpesa/{request_id}/resolve")
+    def mpesa_resolve(request: Request, request_id: int, outcome: str = Form(""), receipt: str = Form(""),
+                      note: str = Form(""), csrf_token: str = Form("")):
+        """A manager settles a payment M-Pesa never confirmed, after checking with the farmer."""
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            req = s.get(MpesaRequest, request_id)
+            if req is None or req.policy.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            try:
+                mp.resolve(ctx(), s, req, off.username, outcome, receipt, note)
+                flash(request, "ok", f"Policy {req.policy.policy_no}: recorded as "
+                                     f"{'paid' if outcome == 'paid' else 'not paid'}.")
+            except mp.ResolveError as e:
+                flash(request, "crit", str(e))
+        return RedirectResponse(request.headers.get("referer") or "/reports", status_code=303)
 
     # ------------------------------------------------------------------ premium settlement (SACCO side)
     def csv_response(data: bytes, name: str):
@@ -428,6 +455,7 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                         headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})
 
     def settlement_csv(st: dict) -> bytes:
+        """Ledger, then one row per SACCO. Collected is gross; refunds are separate columns, never netted."""
         import csv
         import io
         buf = io.StringIO()
@@ -440,10 +468,11 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                         f"{e.amount_kes:.2f}", e.status, e.recorded_by, e.reviewed_by or "",
                         e.reviewed_at.isoformat() if e.reviewed_at else "", e.review_note or ""])
         w.writerow([])
-        w.writerow(["sacco", "collected_kes", "remitted_kes", "confirmed_kes", "outstanding_kes", "credit_kes"])
+        cols = ("collected_kes", "remitted_kes", "confirmed_kes", "outstanding_kes", "credit_kes", "refunds_owed_kes",
+                "refunds_paid_kes", "refunds_outstanding_kes")
+        w.writerow(["sacco", *cols])
         for r in st["rows"]:
-            w.writerow([r["sacco"].code] + [f"{r[k]:.2f}" for k in ("collected_kes", "remitted_kes", "confirmed_kes",
-                                                                    "outstanding_kes", "credit_kes")])
+            w.writerow([r["sacco"].code] + [f"{r[k]:.2f}" for k in cols])
         return buf.getvalue().encode("utf-8")
 
     def settlement_page(request: Request, s, off, status: int = 200, **kw):
@@ -649,9 +678,26 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             pays = s.scalars(select(Payout).join(Policy).where(Policy.farmer_id == f.id).order_by(Payout.id)).all()
             missed = s.scalars(select(MissedPayoutReport).where(MissedPayoutReport.farmer_id == f.id)
                                .order_by(MissedPayoutReport.created_at.desc())).all()
+            refunds = s.scalars(select(Refund).join(Policy).where(Policy.farmer_id == f.id).order_by(Refund.paid_on)).all()
             return render(request, "member.html", off, f=f, consents=consents, policies=f.policies, mpesa_requests=reqs,
                           messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES, payouts=pays,
-                          missed=missed)
+                          missed=missed, refunds=refunds, refund_left={p.id: sv.refund_outstanding(s, p) for p in f.policies},
+                          refund_methods=stl.REFUND_METHODS)
+
+    @app.post("/policies/{policy_id}/refund")
+    def policy_refund(request: Request, policy_id: str, amount: str = Form(""), paid_on: str = Form(""),
+                      method: str = Form(""), reference: str = Form(""), note: str = Form(""), csrf_token: str = Form("")):
+        """A manager records a refund paid back to the farmer (owed and paid are tracked separately)."""
+        check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = require(request, s, role="manager")
+            pol = own_policy(s, off, policy_id)
+            try:
+                r = stl.record_refund(s, off, pol, amount, paid_on, method, reference, note, today=ctx().date())
+                flash(request, "ok", f"Refund {r.ref} of KES {r.amount_kes:,.0f} on policy {pol.policy_no} recorded.")
+            except stl.SettlementError as e:
+                flash(request, "crit", str(e))
+            return RedirectResponse(f"/members/{pol.farmer_id}", status_code=303)
 
     @app.post("/policies/{policy_id}/stk")
     def policy_stk(request: Request, policy_id: str, amount: str = Form(""), csrf_token: str = Form("")):
@@ -905,21 +951,37 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         return RedirectResponse("/payouts#reports", status_code=303)
 
     # ------------------------------------------------------------------ weather (display only)
+    WEATHER_ROLES = ("manager", "ops")
+
+    def weather_item(s, off: Officer, item_id: int) -> WeatherItem:
+        """An advisory this person may change: their own SACCO's (manager) or the every-SACCO ones (ops)."""
+        item = s.get(WeatherItem, item_id)
+        if item is None or not wx.can_see(off, item):
+            raise HTTPException(404)
+        if not wx.can_manage(off, item):
+            raise HTTPException(403, "Advisories shown to every SACCO are approved by AgroShield operations."
+                                if item.sacco_id is None else "Only that SACCO's manager can change this advisory.")
+        return item
+
     @app.get("/weather", response_class=HTMLResponse)
     def weather(request: Request):
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
-            items = s.scalars(select(WeatherItem).order_by(WeatherItem.created_at.desc()).limit(50)).all()
+            off = require(request, s, role=WEATHER_ROLES)
+            scope = WeatherItem.sacco_id.is_(None) if off.role == "ops" else \
+                (WeatherItem.sacco_id.is_(None) | (WeatherItem.sacco_id == off.sacco_id))
+            items = [i for i in s.scalars(select(WeatherItem).where(scope).order_by(WeatherItem.created_at.desc()).limit(80))
+                     if wx.can_see(off, i)][:50]
             from ..models import WeatherFetch
             fetches = s.scalars(select(WeatherFetch).order_by(WeatherFetch.at.desc()).limit(15)).all()
             return render(request, "weather.html", off, items=items, fetches=fetches, sources=weather_sources,
-                          sms_blocked=lambda i: wx.sms_blocked(i, weather_sources))
+                          sms_blocked=lambda i: wx.sms_blocked(i, weather_sources),
+                          can_manage=lambda i: wx.can_manage(off, i))
 
     @app.post("/weather/fetch")
     def weather_fetch(request: Request, csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
+            off = require(request, s, role="ops")      # fetched KMD items are shown to every SACCO
             res = wx.fetch(s, settings.config_dir, Path(cfg.root).parent)
             audit(s, off.username, "weather.fetch_requested", "weather", None, **res)
         flash(request, "ok", "Checked sources: " + ", ".join(f"{k} {v}" for k, v in res.items()))
@@ -931,13 +993,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         check_csrf(request, csrf_token)
         data = await read_upload(file, 20)
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
+            off = require(request, s, role=WEATHER_ROLES)
             from datetime import date as _d
             try:
+                # A manager's upload is for their SACCO only; an operations upload is shown to every SACCO.
                 item = wx.store_pdf(s, Path(cfg.root).parent / weather_raw["store_dir"], weather_sources["kmd_nakuru"],
                                     data, title.strip() or file.filename, None, "uploaded",
                                     _d.fromisoformat(valid_from) if valid_from else None,
-                                    _d.fromisoformat(valid_to) if valid_to else None)
+                                    _d.fromisoformat(valid_to) if valid_to else None,
+                                    sacco_id=off.sacco_id if off.role == "manager" else None)
                 flash(request, "ok" if item else "warn", "Uploaded. Write and approve a summary before it shows."
                       if item else "That document is already here.")
             except (wx.WeatherError, ValueError) as e:
@@ -949,11 +1013,12 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                         csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
-            item = get_or_404(s, WeatherItem, item_id)
+            off = require(request, s, role=WEATHER_ROLES)
+            item = weather_item(s, off, item_id)
             try:
                 wx.approve(s, item, summary_en, summary_sw, off.username)
-                flash(request, "ok", "Approved. It now shows on Home for officers.")
+                flash(request, "ok", "Approved. It now shows on Home for officers"
+                      + (" in every SACCO." if item.sacco_id is None else " in your SACCO."))
             except wx.WeatherError as e:
                 flash(request, "crit", str(e))
         return RedirectResponse("/weather", status_code=303)
@@ -962,8 +1027,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     def weather_withdraw(request: Request, item_id: int, csrf_token: str = Form("")):
         check_csrf(request, csrf_token)
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
-            item = get_or_404(s, WeatherItem, item_id)
+            off = require(request, s, role=WEATHER_ROLES)
+            item = weather_item(s, off, item_id)
             item.status = "withdrawn"
             audit(s, off.username, "weather.withdrawn", "weather_item", str(item.id))
         return RedirectResponse("/weather", status_code=303)
@@ -973,8 +1038,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         """There is no automatic send. Even this manual one refuses until written permission is on file."""
         check_csrf(request, csrf_token)
         with transaction(factory) as s:
-            off = require(request, s, role="manager")
-            item = get_or_404(s, WeatherItem, item_id)
+            off = require(request, s, role=WEATHER_ROLES)
+            item = weather_item(s, off, item_id)
             reason = wx.sms_blocked(item, weather_sources)
             audit(s, off.username, "weather.sms_refused" if reason else "weather.sms_requested", "weather_item", str(item.id))
         flash(request, "warn", reason or "SMS of weather content is not built yet.")
@@ -984,9 +1049,14 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     def weather_pdf(request: Request, item_id: int):
         from fastapi.responses import FileResponse
         with transaction(factory) as s:
-            require(request, s)
+            off = require(request, s, role=("officer", "manager", "underwriter", "ops"))
             item = s.get(WeatherItem, item_id)
-            if item is None or not item.pdf_path or not Path(item.pdf_path).exists():
+            if off.role == "underwriter":
+                ok = item is not None and item.status == "approved" and (
+                    item.sacco_id is None or s.get(Sacco, item.sacco_id).insurer_id == off.insurer_id)
+            else:
+                ok = item is not None and wx.can_see(off, item)
+            if not ok or not item.pdf_path or not Path(item.pdf_path).exists():
                 raise HTTPException(404)
             return FileResponse(item.pdf_path, media_type="application/pdf")
 
@@ -1168,7 +1238,9 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
         """Read-only for the insurer: approved advisories only, with their source labels (display only)."""
         with transaction(factory) as s:
             off = require(request, s, role="underwriter")
-            return render(request, "uw_weather.html", off, items=wx.visible_items(s, ctx().date()), sources=weather_sources)
+            mine = [x.id for x in s.scalars(select(Sacco).where(Sacco.insurer_id == off.insurer_id))]
+            return render(request, "uw_weather.html", off, items=wx.visible_items(s, ctx().date(), mine),
+                          sources=weather_sources)
 
     @app.get("/uw/reinsurer", response_class=HTMLResponse)
     def uw_reinsurer(request: Request):

@@ -35,6 +35,9 @@ class Insurer(Base):
     code: Mapped[str] = mapped_column(String(16), unique=True)
     name: Mapped[str] = mapped_column(String(120))
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Where SACCOs send premium (M-Pesa paybill or bank account). Set by platform staff (agroshield-portal
+    # set-paybill), never from a web form; None shows "the insurer's paybill (to be configured)".
+    premium_paybill: Mapped[str | None] = mapped_column(String(60))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
@@ -55,13 +58,14 @@ class Sacco(Base):
 class Officer(Base):
     __tablename__ = "officer"
     id: Mapped[int] = mapped_column(primary_key=True)
-    # SACCO users (officer, manager) have a SACCO; underwriters have an insurer and no SACCO.
+    # SACCO users (officer, manager) have a SACCO; underwriters have an insurer and no SACCO; AgroShield
+    # operations staff (ops) have neither and look after what every SACCO sees (platform-wide weather advisories).
     sacco_id: Mapped[int | None] = mapped_column(ForeignKey("sacco.id"))
     insurer_id: Mapped[int | None] = mapped_column(ForeignKey("insurer.id"))
     username: Mapped[str] = mapped_column(String(60), unique=True)
     display_name: Mapped[str] = mapped_column(String(120))
     password_hash: Mapped[str] = mapped_column(String(200))
-    role: Mapped[str] = mapped_column(String(20), default="officer")      # officer | manager | underwriter
+    role: Mapped[str] = mapped_column(String(20), default="officer")      # officer | manager | underwriter | ops
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     sacco: Mapped[Sacco | None] = relationship()
@@ -197,13 +201,28 @@ class MpesaRequest(Base):
     merchant_request_id: Mapped[str] = mapped_column(String(60))
     checkout_request_id: Mapped[str] = mapped_column(String(60), unique=True)
     environment: Mapped[str] = mapped_column(String(12))            # simulated | sandbox | production
-    status: Mapped[str] = mapped_column(String(12), default="pending")   # pending | paid | failed
+    # pending (waiting for Safaricom) | paid | failed | unconfirmed (still unknown after the last status check:
+    # shown to officers and managers as "Payment not confirmed: check with the farmer" until a manager resolves it)
+    status: Mapped[str] = mapped_column(String(12), default="pending")
     result_code: Mapped[int | None] = mapped_column(Integer)
     result_desc: Mapped[str | None] = mapped_column(String(200))
     receipt: Mapped[str | None] = mapped_column(String(30))
     requested_by: Mapped[str] = mapped_column(String(60))           # officer username or "ussd"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Status re-checks (mpesa.recheck): how many STK queries so far and when the next one is due.
+    query_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_query_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    last_query_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_query_result: Mapped[str | None] = mapped_column(String(200))
+    # A success callback that the status query has not confirmed yet: kept so a later confirmation credits it.
+    callback_amount_kes: Mapped[float | None] = mapped_column(Float)
+    callback_receipt: Mapped[str | None] = mapped_column(String(30))
+    callback_txn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A manager's decision on an unconfirmed payment: paid (with the receipt the farmer shows) or not_paid.
+    resolution: Mapped[str | None] = mapped_column(String(12))
+    resolved_by: Mapped[str | None] = mapped_column(String(60))
+    resolution_note: Mapped[str | None] = mapped_column(String(300))
     policy: Mapped[Policy] = relationship()
 
 
@@ -352,6 +371,9 @@ class WeatherItem(Base):
     summary_en: Mapped[str | None] = mapped_column(String(480))
     summary_sw: Mapped[str | None] = mapped_column(String(480))
     status: Mapped[str] = mapped_column(String(12), default="draft")   # draft | approved | withdrawn
+    # Who sees it: one SACCO (uploaded by that SACCO's manager, who approves it) or, when None, every SACCO
+    # (fetched from KMD or uploaded by AgroShield operations, who alone approve or withdraw it).
+    sacco_id: Mapped[int | None] = mapped_column(ForeignKey("sacco.id"), index=True)
     approved_by: Mapped[str | None] = mapped_column(String(60))
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
@@ -398,3 +420,20 @@ class PremiumRemittance(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     review_note: Mapped[str | None] = mapped_column(String(300))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class Refund(Base):
+    """Money paid back to a farmer (an overpayment, or premium paid after the sales close). Owed amounts stay on
+    the policy (refund_due_kes); each refund actually paid is one row here. Never edited or deleted."""
+    __tablename__ = "refund"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    policy_id: Mapped[str] = mapped_column(ForeignKey("policy.id"), index=True)
+    amount_kes: Mapped[float] = mapped_column(Float)
+    paid_on: Mapped[date] = mapped_column(Date)
+    method: Mapped[str] = mapped_column(String(16))                # mpesa | sacco_account | bank_transfer | other
+    reference: Mapped[str] = mapped_column(String(40))             # M-Pesa, bank or SACCO ledger reference
+    note: Mapped[str | None] = mapped_column(String(300))
+    recorded_by: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    policy: Mapped[Policy] = relationship()

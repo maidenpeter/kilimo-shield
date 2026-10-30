@@ -158,7 +158,9 @@ class Fetcher:
 
 
 def store_pdf(s: Session, store: Path, src: Source, data: bytes, title: str, url: str | None, origin: str,
-              valid_from: date | None = None, valid_to: date | None = None) -> WeatherItem | None:
+              valid_from: date | None = None, valid_to: date | None = None,
+              sacco_id: int | None = None) -> WeatherItem | None:
+    """Keep a PDF advisory as a draft. sacco_id: shown to that SACCO only; None: shown to every SACCO."""
     if not data.startswith(b"%PDF"):
         raise WeatherError("not a PDF file")
     sha = hashlib.sha256(data).hexdigest()
@@ -170,10 +172,11 @@ def store_pdf(s: Session, store: Path, src: Source, data: bytes, title: str, url
     v0, v1 = validity(title + " " + (url or ""))
     item = WeatherItem(source=src.id, source_label=src.label, title=title[:300], url=url, pdf_sha256=sha,
                        pdf_path=str(path), text_excerpt=pdf_text(data), valid_from=valid_from or v0,
-                       valid_to=valid_to or v1, origin=origin)
+                       valid_to=valid_to or v1, origin=origin, sacco_id=sacco_id)
     s.add(item)
     s.flush()
-    audit(s, "weather", f"weather.{origin}", "weather_item", str(item.id), source=src.id, file_sha256=sha)
+    audit(s, "weather", f"weather.{origin}", "weather_item", str(item.id), source=src.id, file_sha256=sha,
+          scope=f"sacco {sacco_id}" if sacco_id else "every SACCO")
     return item
 
 
@@ -205,10 +208,29 @@ def approve(s: Session, item: WeatherItem, summary_en: str, summary_sw: str, act
     return item
 
 
-def visible_items(s: Session, today: date) -> list[WeatherItem]:
-    """Approved items still valid today (an item with no end date is shown for 7 days)."""
+def can_manage(off, item: WeatherItem) -> bool:
+    """Who may approve, withdraw or send an advisory: a SACCO manager for their own SACCO's advisories only;
+    AgroShield operations (role ops) for the advisories shown to every SACCO."""
+    if item.sacco_id is None:
+        return off.role == "ops"
+    return off.role == "manager" and off.sacco_id == item.sacco_id
+
+
+def can_see(off, item: WeatherItem) -> bool:
+    """Drafts and withdrawn items are seen only by those who manage them; others see approved items only."""
+    if can_manage(off, item):
+        return True
+    return item.status == "approved" and (item.sacco_id is None or item.sacco_id == getattr(off, "sacco_id", None))
+
+
+def visible_items(s: Session, today: date, sacco_ids=()) -> list[WeatherItem]:
+    """Approved items still valid today (an item with no end date is shown for 7 days): those shown to every
+    SACCO, plus those for the given SACCOs."""
     out = []
-    for i in s.scalars(select(WeatherItem).where(WeatherItem.status == "approved").order_by(WeatherItem.created_at.desc())):
+    ids = [i for i in sacco_ids if i is not None]
+    scope = WeatherItem.sacco_id.is_(None) | WeatherItem.sacco_id.in_(ids or [-1])
+    for i in s.scalars(select(WeatherItem).where(WeatherItem.status == "approved", scope)
+                       .order_by(WeatherItem.created_at.desc())):
         end = i.valid_to or ((i.approved_at or i.created_at).date() + timedelta(days=7))
         if end >= today:
             out.append(i)

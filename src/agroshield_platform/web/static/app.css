@@ -456,3 +456,7 @@ fieldset.choice-group { border: 0; padding: 0; margin: var(--sp-3) 0 0; backgrou
 fieldset.choice-group > legend { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--ink-1); padding: 0; margin-bottom: var(--sp-1); }
 [aria-invalid="true"] { border-color: var(--crit); }
 .figure.pos-top .media img { object-position: 50% 0%; }
+
+/* M-Pesa payments with no answer after every status check (Home, Reports) */
+.card.unconfirmed { border-left: 4px solid var(--crit); }
+.card.unconfirmed .inline-form { margin-top: var(--sp-2); }

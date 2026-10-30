@@ -32,7 +32,7 @@ from .crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_nat
 from .db import audit
 from .kiamis import KiamisAdapter, NotConnected
 from .locale import LANGUAGES
-from .models import Consent, Farmer, Officer, Payment, Plot, Policy, Sacco
+from .models import Consent, Farmer, MpesaRequest, Officer, Payment, Plot, Policy, Refund, Sacco
 
 PAYMENT_ROUTES = ("sacco_deduction", "mpesa")
 PAYMENT_METHODS = ("mpesa", "sacco_deduction")
@@ -298,9 +298,12 @@ def existing_policy(s: Session, farmer: Farmer | None, ward_id: str, season: str
 
 # ------------------------------------------------------------------ payments
 def record_payment(ctx: Context, s: Session, pol: Policy, amount: float, method: str, reference: str, actor: str,
-                   received_at: datetime | None = None) -> Payment:
+                   received_at: datetime | None = None, window_at: datetime | None = None) -> Payment:
     """Record one instalment. Cover becomes active only once the farmer share is fully paid by the close date;
-    money received after the close date, or above the amount due, is owed back to the farmer."""
+    money received after the close date, or above the amount due, is owed back to the farmer.
+
+    window_at: when the payment was started, if earlier than received_at (an M-Pesa push sent before the close
+    date and confirmed after it). The sales window is judged by that time."""
     if method not in PAYMENT_METHODS:
         raise PaymentError(f"method must be one of {', '.join(PAYMENT_METHODS)}")
     reference = (reference or "").strip()
@@ -313,7 +316,7 @@ def record_payment(ctx: Context, s: Session, pol: Policy, amount: float, method:
     if pol.status == "cancelled":
         raise PaymentError("this policy is cancelled")
     at = received_at or ctx.now()
-    within = at.astimezone(NAIROBI).date() <= pol.sales_closes_on
+    within = (window_at or at).astimezone(NAIROBI).date() <= pol.sales_closes_on
     pay = Payment(policy_id=pol.id, amount_kes=float(amount), method=method, reference=reference, received_at=at,
                   within_window=within, recorded_by=actor)
     s.add(pay)
@@ -342,13 +345,28 @@ def record_payment(ctx: Context, s: Session, pol: Policy, amount: float, method:
     return pay
 
 
+def _awaiting_mpesa(s: Session, pol: Policy) -> bool:
+    """An M-Pesa push started on or before the close date that has no final answer yet (still being re-checked,
+    or flagged for a manager). Lapsing now could refund money that should start cover, so the lapse waits."""
+    for r in s.scalars(select(MpesaRequest).where(MpesaRequest.policy_id == pol.id,
+                                                  MpesaRequest.status.in_(("pending", "unconfirmed")))):
+        started = r.created_at if r.created_at.tzinfo else r.created_at.replace(tzinfo=timezone.utc)
+        if started.astimezone(NAIROBI).date() <= pol.sales_closes_on:
+            return True
+    return False
+
+
 def close_sales_windows(ctx: Context, s: Session) -> dict:
-    """Daily job: lapse cover not fully paid after the close date, and remind farmers before it."""
+    """Daily job: lapse cover not fully paid after the close date, and remind farmers before it.
+    A policy with an M-Pesa payment started before the close and not yet confirmed or failed is not lapsed
+    until that payment is settled (mpesa.recheck or a manager's decision)."""
     today = ctx.date()
-    lapsed = reminded = 0
+    lapsed = reminded = deferred = 0
     for pol in s.scalars(select(Policy).where(Policy.status == "pending_payment")):
         days_left = (pol.sales_closes_on - today).days
-        if days_left < 0:
+        if days_left < 0 and _awaiting_mpesa(s, pol):
+            deferred += 1
+        elif days_left < 0:
             pol.status, pol.refund_due_kes = "lapsed_unpaid", round(pol.paid_kes, 2)
             audit(s, "system", "policy.lapsed_unpaid", "policy", pol.id, policy_no=pol.policy_no, paid_kes=pol.paid_kes)
             sms.queue(s, pol.farmer, "lapsed", pol, dedupe_key=f"lapsed:{pol.id}")
@@ -356,7 +374,7 @@ def close_sales_windows(ctx: Context, s: Session) -> dict:
         elif days_left in REMINDER_DAYS and sms.queue(s, pol.farmer, "reminder", pol, ussd_code=ctx.ussd_code,
                                                       dedupe_key=f"reminder:{pol.id}:{days_left}"):
             reminded += 1
-    return {"date": str(today), "lapsed": lapsed, "reminders": reminded}
+    return {"date": str(today), "lapsed": lapsed, "reminders": reminded, "lapse_deferred": deferred}
 
 
 def owing(s: Session, sacco: Sacco) -> list[Policy]:
@@ -496,6 +514,7 @@ def portfolio(ctx: Context, s: Session, sacco: Sacco) -> dict:
         "farmer_premium_due_kes": sum(p.balance_kes for p in pols if p.status == "pending_payment"),
         "premium_collected_kes": sum(p.paid_kes for p in pols),
         "refunds_due_kes": sum(p.refund_due_kes for p in pols),
+        "refunds_paid_kes": refunds_paid(s, [p.id for p in pols]),
         "subsidy_receivable_kes": sum(p.government_share_kes for p in pols
                                       if p.subsidy_status == "not yet received" and p.status != "lapsed_unpaid"),
         "discount_by_funder": {f: sum(p.discount_kes for p in pols if p.discount_funder == f)
@@ -507,6 +526,19 @@ def portfolio(ctx: Context, s: Session, sacco: Sacco) -> dict:
         "sales": {w: sales_status(ctx, w, "LR") for w in ctx.cfg.pilot.wards},
         # Trigger status per ward comes from the daily monitoring runs (monitoring.py, Reports and Payouts).
     }
+
+
+def refunds_paid(s: Session, policy_ids: list[str]) -> float:
+    """Refunds actually paid back to farmers on these policies (settlement.record_refund)."""
+    if not policy_ids:
+        return 0.0
+    return round(s.scalar(select(func.coalesce(func.sum(Refund.amount_kes), 0.0))
+                          .where(Refund.policy_id.in_(policy_ids))) or 0.0, 2)
+
+
+def refund_outstanding(s: Session, pol: Policy) -> float:
+    """What is still owed back to the farmer on this policy: owed minus refunds already paid."""
+    return max(0.0, round(pol.refund_due_kes - refunds_paid(s, [pol.id]), 2))
 
 
 def export_policies_csv(s: Session, sacco: Sacco) -> str:

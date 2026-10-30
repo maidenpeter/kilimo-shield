@@ -4,9 +4,12 @@
     agroshield-portal add-sacco --code NKR01 --name "Example SACCO" --insurer UW01
     agroshield-portal add-officer --sacco NKR01 --username jane --name "Jane W." --role manager
     agroshield-portal add-officer --insurer UW01 --username amina --name "Amina K." --role underwriter
+    agroshield-portal add-officer --username ops1 --name "Ops One" --role ops   # AgroShield operations
+    agroshield-portal set-paybill --insurer UW01 --paybill "Paybill 123456, account AGROSHIELD"
     agroshield-portal demo          # fictional demo SACCO, manager and members (development keys only)
     agroshield-portal serve --port 8780
-    agroshield-portal daily         # sales close and reminders, ward monitoring, KMD check, send SMS
+    agroshield-portal daily         # M-Pesa re-check, sales close and reminders, ward monitoring, KMD check, send SMS
+    agroshield-portal mpesa-recheck # status check of M-Pesa payments without a final answer (run every 5 minutes)
     agroshield-portal monitor [--as-of 2027-05-20] [--download]   # ward rainfall status and payouts
     agroshield-portal monitor --replay-year 2008 --as-of 2008-09-01  # replay a past season (labelled)
     agroshield-portal weather-fetch # polite KMD check (at most once per page every 6 hours)
@@ -92,7 +95,11 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("--insurer", help="insurer code (underwriters)")
     o.add_argument("--username", required=True)
     o.add_argument("--name", required=True)
-    o.add_argument("--role", choices=["officer", "manager", "underwriter"], default="officer")
+    o.add_argument("--role", choices=["officer", "manager", "underwriter", "ops"], default="officer")
+    pb = sub.add_parser("set-paybill", help="where SACCOs send premium for an insurer (shown on the remittance screen)")
+    pb.add_argument("--insurer", required=True)
+    pb.add_argument("--paybill", required=True, help='e.g. "Paybill 123456, account AGROSHIELD" or bank details')
+    sub.add_parser("mpesa-recheck", help="status-check M-Pesa payments still waiting for an answer")
     sub.add_parser("demo", help="create a fictional demo SACCO, a demo officer and manager, and fictional members")
     sv = sub.add_parser("serve")
     sv.add_argument("--host", default="127.0.0.1")
@@ -132,20 +139,42 @@ def main(argv: list[str] | None = None) -> int:
         print(f"SACCO {args.code.upper()} added")
     elif args.cmd == "add-officer":
         with transaction(factory) as s:
-            if args.role == "underwriter":
+            if args.role == "ops":
+                if args.insurer or args.sacco:
+                    sys.exit("AgroShield operations staff belong to neither a SACCO nor an insurer")
+                org = "AgroShield operations"
+                s.add(Officer(username=args.username, display_name=args.name,
+                              password_hash=hash_password(_password()), role="ops"))
+            elif args.role == "underwriter":
                 if not args.insurer or args.sacco:
                     sys.exit("an underwriter belongs to an insurer (--insurer), not a SACCO")
                 where = insurer(args.insurer)
+                org = where.code
                 s.add(Officer(insurer_id=where.id, username=args.username, display_name=args.name,
                               password_hash=hash_password(_password()), role="underwriter"))
             else:
                 where = s.scalar(select(Sacco).where(Sacco.code == (args.sacco or "").upper()))
                 if where is None:
                     sys.exit(f"no SACCO with code {args.sacco}")
+                org = where.code
                 s.add(Officer(sacco_id=where.id, username=args.username, display_name=args.name,
                               password_hash=hash_password(_password()), role=args.role))
             audit(s, "cli", "officer.created", "officer", args.username, role=args.role)
-        print(f"{args.role} {args.username} added to {where.code}")
+        print(f"{args.role} {args.username} added to {org}")
+    elif args.cmd == "set-paybill":
+        paybill = " ".join(args.paybill.split())[:60]
+        if len(paybill) < 4:
+            sys.exit("give the paybill or bank details")
+        with transaction(factory) as s:
+            ins = insurer(args.insurer)
+            old, ins.premium_paybill = ins.premium_paybill, paybill
+            audit(s, "cli", "insurer.paybill_set", "insurer", ins.code, old=old or "", new=paybill)
+        print(f"premium paybill for {ins.code} set")
+    elif args.cmd == "mpesa-recheck":
+        from . import mpesa
+        ctx = _context(settings)
+        with transaction(factory) as s:
+            print("mpesa:", mpesa.recheck(ctx, s))
     elif args.cmd == "demo":
         return _demo(settings, factory)
     elif args.cmd == "serve":
@@ -153,6 +182,8 @@ def main(argv: list[str] | None = None) -> int:
         from .web.app import create_app
         if settings.dev_keys:
             logging.getLogger("agroshield").warning("running with development keys; do not use with real farmer data")
+        if settings.mpesa_recheck_seconds > 0:
+            _start_recheck(settings, factory)
         uvicorn.run(create_app(settings), host=args.host, port=args.port, log_config=_uvicorn_log_config())
     elif args.cmd == "monitor":
         from . import monitoring
@@ -187,6 +218,8 @@ def main(argv: list[str] | None = None) -> int:
         ctx = _context(settings)
         with transaction(factory) as s:
             if args.cmd == "daily":
+                from . import mpesa
+                print("mpesa:", mpesa.recheck(ctx, s))          # before the lapse, so confirmed payments count
                 print(services.close_sales_windows(ctx, s))
                 for st in monitoring.run_monitoring(ctx, s, allow_download=args.download):
                     print(f"{st.ward_id} {st.season} {st.year}: {st.phase} / {st.level}")
@@ -199,6 +232,28 @@ def main(argv: list[str] | None = None) -> int:
         with transaction(factory) as s:
             print("sms:", sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault) or "nothing queued")
     return 0
+
+
+def _start_recheck(settings, factory) -> None:
+    """While the portal runs, re-check unconfirmed M-Pesa payments every MPESA_RECHECK_SECONDS (a daemon thread;
+    each round is its own transaction, and an error in one round never stops the next)."""
+    import threading
+
+    from . import mpesa
+    log = logging.getLogger("agroshield.mpesa")
+
+    def loop():
+        ctx = _context(settings)
+        while not stop.wait(settings.mpesa_recheck_seconds):
+            try:
+                with transaction(factory) as s:
+                    res = mpesa.recheck(ctx, s)
+                if res["checked"]:
+                    log.info("M-Pesa re-check: %s", res)
+            except Exception:
+                log.exception("M-Pesa re-check failed; will try again")
+    stop = threading.Event()
+    threading.Thread(target=loop, name="mpesa-recheck", daemon=True).start()
 
 
 def _uvicorn_log_config() -> dict:

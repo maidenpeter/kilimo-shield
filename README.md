@@ -46,7 +46,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-portal enquiries [--delete REF]` | Public-site demo requests and livestock interest, contact details masked; delete one on request |
 | `agroshield-portal serve` | SACCO officer portal on http://127.0.0.1:8780 |
 | `agroshield-portal add-sacco` / `add-officer` | Set up a SACCO and its officers (password prompted) |
-| `agroshield-portal daily` | Lapse cover not fully paid at sales close, SMS reminders, send queued SMS |
+| `agroshield-portal daily` | M-Pesa re-check, lapse cover not fully paid at sales close, SMS reminders, send queued SMS |
+| `agroshield-portal mpesa-recheck` | Status-check M-Pesa payments that have no final answer yet (every 5 minutes) |
 | `agroshield-portal send-sms` | Send queued SMS now |
 | `pytest` | Run the tests |
 
@@ -212,6 +213,12 @@ PostGIS come for deployment, via `DATABASE_URL`. Keys come from the environment
   - it matches a push we sent, and its amount equals the amount requested;
   - each receipt is credited once;
   - outside simulated mode, an STK query confirms it first.
+- **M-Pesa re-check** (`agroshield-portal mpesa-recheck`; also inside `serve` every `MPESA_RECHECK_SECONDS`, and in
+  `daily`): every push with no final answer is queried again 2, 5, 15, 60, 240 and 1,440 minutes after it was sent.
+  Confirmed: credited. Refused: failed. Still unknown after the last check: shown on the officer's Home and the
+  manager's Reports as "Payment not confirmed: check with the farmer" until a manager records paid (with the
+  receipt from the farmer's SMS) or not paid. A payment started before the sales close counts toward cover even if
+  it is confirmed after it, and the daily job does not lapse a policy while such a payment is unresolved.
 - **M-Pesa modes:** `MPESA_ENV=simulated` (the default) needs no keys and no network. Requests
   are completed from the portal's *M-Pesa simulator* page. `sandbox` uses the Daraja sandbox
   and needs your Daraja app keys and a public https callback URL.
@@ -304,10 +311,22 @@ approved payouts. Set up with `agroshield-portal add-insurer`, `add-sacco --insu
   emailed; list or delete them with `agroshield-portal enquiries`.
 - **Premium settlement**: a SACCO manager records premium sent to the insurer at `/reports/premium`; the underwriter
   confirms or queries it on `/uw/money`. A ledger only, audited, never edited (a correction is a negative entry).
+  "Collected" is gross premium received. Refunds owed to farmers and refunds paid (recorded by a manager on the member
+  page) are tracked separately and never netted. SACCOs remit gross, with no fee deducted first, to the insurer's
+  premium paybill: `agroshield-portal set-paybill --insurer CODE --paybill "..."` (audited; until set, screens say
+  "the insurer's paybill (to be configured)"). These three rules are pending owner confirmation
+  (`docs/DECISIONS_LOG.md`).
+- **Weather advisories by scope**: a SACCO manager uploads and approves advisories for their own SACCO only. Advisories
+  shown to every SACCO (KMD fetches, and uploads by operations) belong to AgroShield operations staff:
+  `agroshield-portal add-officer --username ops1 --name "..." --role ops`. Operations staff see only `/weather`.
+- **HTTPS**: set `AGROSHIELD_HTTPS=true` when the portal runs over HTTPS (directly or behind a TLS proxy such as nginx
+  or Caddy); session cookies are then Secure as well as HttpOnly and SameSite=Lax.
 - **Design system**: `static/tokens.css` (light and dark), `static/app.css`, `static/nav.js`; see `docs/design/THEME.md`.
 - **Running in production**: schedule `agroshield-portal daily` once a day (for example 06:00 Africa/Nairobi, by cron or
-  Task Scheduler). It closes sales windows and lapses unpaid cover, sends reminders, runs ward monitoring (which creates
-  payouts once a trigger is confirmed) and sends queued SMS. Without it, cover never lapses and no payout is calculated.
+  Task Scheduler). It re-checks M-Pesa payments, closes sales windows and lapses unpaid cover, sends reminders, runs ward
+  monitoring (which creates payouts once a trigger is confirmed) and sends queued SMS. Without it, cover never lapses
+  and no payout is calculated. If `serve` runs with `MPESA_RECHECK_SECONDS=0`, schedule `agroshield-portal
+  mpesa-recheck` every 5 minutes instead.
 - Overnight QA, review and morning report: `docs/overnight/`.
 
 ## Research (task 3b: forecast skill)

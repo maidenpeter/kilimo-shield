@@ -24,6 +24,8 @@
 </div>
 {% endif %}
 
+{% include "_unconfirmed.html" %}
+
 {# A rainfall alert for one of your wards goes above the payments list; with none, the quiet line sits at the bottom. #}
 {% for st in alerts %}
 <div class="alert {{ 'crit' if st.level == 'alert' else 'warn' }} ward-alert-top" role="alert">

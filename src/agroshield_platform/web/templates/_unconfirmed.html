@@ -1,0 +1,25 @@
+{# M-Pesa payments with no answer after every status check (mpesa.recheck). Included on officer Home and manager Reports. #}
+{% if unconfirmed %}
+<section class="card unconfirmed" aria-labelledby="unconf-h">
+  <h2 id="unconf-h" class="mt-0">Payment not confirmed: check with the farmer</h2>
+  <p class="muted">M-Pesa gave no answer for {{ 'this payment' if unconfirmed|length == 1 else 'these payments' }} after {{ checks }} checks.
+    Ask the farmer for the M-Pesa message with the receipt number.
+    {% if officer.role == 'manager' %}Then record what you found.{% else %}Then tell your manager, who records it.{% endif %}
+    The cover stays open until this is settled.</p>
+  <ul class="owe">
+    {% for r in unconfirmed %}
+    <li><div class="who-owes"><a href="/members/{{ r.policy.farmer_id }}">{{ r.policy.farmer.full_name }}</a>
+        <div class="sub">KES {{ '{:,}'.format(r.amount_kes) }} asked {{ r.created_at|day }} &middot; policy {{ r.policy.policy_no }}</div></div>
+      {% if officer.role == 'manager' and resolve_forms %}
+      <form method="post" action="/mpesa/{{ r.id }}/resolve" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label class="visually-hidden" for="rc-{{ r.id }}">M-Pesa receipt for policy {{ r.policy.policy_no }}</label>
+        <input id="rc-{{ r.id }}" name="receipt" type="text" maxlength="12" autocomplete="off" placeholder="Receipt, if paid" class="w-xs">
+        <button class="btn small" name="outcome" value="paid" type="submit">Paid</button>
+        <button class="btn ghost small" name="outcome" value="not_paid" type="submit">Not paid</button>
+      </form>
+      {% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

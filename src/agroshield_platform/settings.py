@@ -9,6 +9,12 @@ Integrations default to safe local modes, so nothing reaches a real phone or
 M-Pesa account unless it is configured:
   MPESA_ENV  simulated (default: no network, completed from the dev page) | sandbox | production
   SMS_MODE   log (default: recorded in the outbox, not sent) | sandbox | live
+
+Deployment:
+  AGROSHIELD_HTTPS=true   the portal is served over HTTPS (directly or behind a TLS proxy): session cookies
+                          are then marked Secure as well as HttpOnly and SameSite=Lax
+  MPESA_RECHECK_SECONDS   how often `serve` re-checks unconfirmed M-Pesa payments (default 300; 0 turns it off,
+                          for example when `agroshield-portal mpesa-recheck` runs from cron instead)
 """
 from __future__ import annotations
 
@@ -62,6 +68,8 @@ class Settings:
     ussd_code: str = "*384*000#"
     mpesa: Mpesa = field(default_factory=Mpesa)
     sms: Sms = field(default_factory=Sms)
+    https: bool = False                  # cookies marked Secure (AGROSHIELD_HTTPS=true)
+    mpesa_recheck_seconds: int = 300
 
 
 def load_dotenv(path: Path = REPO / ".env") -> None:
@@ -119,4 +127,6 @@ def load_settings() -> Settings:
                     session_secret=env["SESSION_SECRET"],
                     config_dir=Path(e("AGROSHIELD_CONFIG", REPO / "config")),
                     dev_keys=dev, callback_token=env["CALLBACK_TOKEN"],
-                    ussd_code=e("USSD_SERVICE_CODE", "*384*000#"), mpesa=mpesa, sms=sms)
+                    ussd_code=e("USSD_SERVICE_CODE", "*384*000#"), mpesa=mpesa, sms=sms,
+                    https=e("AGROSHIELD_HTTPS", "false").strip().lower() in ("1", "true", "yes"),
+                    mpesa_recheck_seconds=int(e("MPESA_RECHECK_SECONDS", "300") or 0))
