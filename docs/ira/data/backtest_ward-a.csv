@@ -1,0 +1,47 @@
+# DRAFT / ILLUSTRATIVE. AgroShield IRA documentation pack. Not submitted to or approved by the Insurance Regulatory Authority. Source: pricing engine run 20261101T151342Z_ward-a_2a26a6 (results.json SHA-256 76436465366497deb69a8c2747798ad78b7de83a9a7846c0722d047a0f96e873)
+year,start_of_season,start_rule,planting_window_rain_mm,failed_onset,germination_dry_spell,wrsi,season_rain_mm,water_requirement_mm,payout_share_of_sum_insured,payout_kes_per_acre_at_10000,v0_payout_share
+1981,Mar d2 1981,planting rain,346.8,False,False,100.0,640.3,386.4,0.0,0.0,0.0
+1982,Apr d2 1982,planting rain,160.9,False,False,95.78,608.0,383.7,0.0,0.0,0.0
+1983,Apr d3 1983,planting rain,134.5,False,False,100.0,522.6,392.5,0.0,0.0,0.129743
+1984,Apr d1 1984,planting rain,118.6,False,False,55.56,298.4,441.8,0.814667,8146.67,0.093208
+1985,Mar d3 1985,planting rain,368.2,False,False,100.0,681.4,387.3,0.0,0.0,0.0
+1986,Apr d1 1986,planting rain,205.9,False,False,100.0,527.4,389.0,0.0,0.0,0.0
+1987,Mar d2 1987,planting rain,148.3,False,False,100.0,455.3,399.3,0.0,0.0,0.0
+1988,Mar d3 1988,planting rain,306.3,False,False,98.03,716.5,394.9,0.0,0.0,0.0
+1989,Mar d2 1989,planting rain,240.9,False,False,91.73,505.5,409.7,0.0,0.0,0.0
+1990,Mar d1 1990,planting rain,354.5,False,False,88.35,508.9,393.5,0.0,0.0,0.4
+1991,Mar d3 1991,planting rain,210.0,False,False,100.0,503.3,403.5,0.0,0.0,0.0
+1992,Mar d2 1992,planting rain,145.6,False,False,84.6,415.0,421.1,0.0,0.0,0.0
+1993,Apr d3 1993,planting rain,87.7,False,False,83.43,386.8,396.5,0.0,0.0,0.0
+1994,Apr d3 1994,replanting rain after germination dry spell,215.4,False,True,100.0,668.0,390.4,0.25,2500.0,0.100181
+1995,Mar d1 1995,planting rain,230.5,False,False,93.77,474.0,432.4,0.0,0.0,0.035804
+1996,Mar d3 1996,planting rain,157.8,False,False,100.0,543.2,406.1,0.0,0.0,0.0
+1997,Mar d3 1997,planting rain,348.4,False,False,96.13,645.8,400.1,0.0,0.0,0.0
+1998,Apr d1 1998,planting rain,141.0,False,False,99.09,431.5,378.2,0.0,0.0,0.0
+1999,Mar d2 1999,planting rain,195.3,False,False,68.96,305.3,432.4,0.368,3680.0,0.012674
+2000,Apr d2 2000,planting rain,84.6,False,False,72.99,382.7,435.2,0.233667,2336.67,0.034455
+2001,Mar d1 2001,planting rain,313.3,False,False,88.63,484.7,437.3,0.0,0.0,0.0
+2002,Apr d2 2002,replanting rain after germination dry spell,277.6,False,True,69.75,449.7,421.2,0.591667,5916.670000000001,0.186407
+2003,Mar d3 2003,planting rain,227.5,False,False,95.98,637.3,399.9,0.0,0.0,0.2
+2004,Mar d3 2004,planting rain,326.7,False,False,65.66,528.6,424.4,0.478,4780.0,0.055067
+2005,Mar d2 2005,planting rain,174.5,False,False,97.19,438.1,434.2,0.0,0.0,0.0
+2006,Mar d1 2006,planting rain,243.8,False,False,91.94,438.9,432.8,0.0,0.0,0.4
+2007,Apr d2 2007,replanting rain after germination dry spell,182.5,False,True,100.0,644.7,371.7,0.25,2500.0,0.1
+2008,Mar d3 2008,planting rain,151.8,False,False,67.58,306.8,406.8,0.414,4140.0,0.053599
+2009,Mar d3 2009,planting rain,127.5,False,False,76.29,370.3,429.1,0.12366700000000001,1236.67,0.013148
+2010,Mar d1 2010,planting rain,365.9,False,False,100.0,646.4,399.7,0.0,0.0,0.0
+2011,Mar d2 2011,planting rain,171.3,False,False,97.71,446.3,410.7,0.0,0.0,0.295158
+2012,Apr d1 2012,planting rain,310.8,False,False,100.0,804.6,371.4,0.0,0.0,0.0
+2013,Mar d2 2013,planting rain,403.5,False,False,99.39,749.0,391.0,0.0,0.0,0.0
+2014,Mar d2 2014,planting rain,139.9,False,False,78.2,310.3,417.9,0.06,600.0,0.0
+2015,Apr d1 2015,planting rain,213.0,False,False,92.26,523.9,388.8,0.0,0.0,0.006628
+2016,Apr d1 2016,replanting rain after germination dry spell,257.3,False,True,99.16,696.3,378.6,0.25,2500.0,0.113808
+2017,Mar d3 2017,planting rain,123.0,False,False,87.55,577.4,412.9,0.0,0.0,0.03988
+2018,Mar d1 2018,planting rain,541.6,False,False,100.0,1104.2,364.9,0.0,0.0,0.0
+2019,Apr d3 2019,planting rain,142.0,False,False,100.0,629.4,385.6,0.0,0.0,0.3
+2020,Mar d1 2020,planting rain,457.7,False,False,100.0,813.2,381.7,0.0,0.0,0.0
+2021,Mar d3 2021,planting rain,159.5,False,False,99.71,546.8,384.5,0.0,0.0,0.0
+2022,Apr d2 2022,planting rain,181.1,False,False,78.83,541.4,397.2,0.039,390.0,0.151396
+2023,Mar d2 2023,planting rain,308.6,False,False,92.89,545.0,405.5,0.0,0.0,0.0
+2024,Mar d3 2024,planting rain,288.3,False,False,98.07,765.3,382.2,0.0,0.0,0.0
+2025,Mar d1 2025,planting rain,314.2,False,False,99.01,619.3,394.4,0.0,0.0,0.0

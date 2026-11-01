@@ -1,0 +1,1851 @@
+{
+  "label": "SIMULATION / REPLAY",
+  "fictional": true,
+  "year": 2008,
+  "season": "LR",
+  "ward": {
+    "id": "ward-a",
+    "display_name": "Rongai West",
+    "config_name": "Illustrative Ward A (lowland, near Rongai)",
+    "illustrative": true
+  },
+  "generated_at": "2026-11-01T15:13:32+00:00",
+  "index_version": "B-1.2.0",
+  "config_sha256": {
+    "pilot.yaml": "622f69d948a92660063adc2f519993bdb2025602f599c0c4e671d7c767263966",
+    "wards.yaml": "5d53a22fa76e715ea75dbd7341a4e6214c7fce1880d130828845a2d94f7be73f",
+    "phenology.yaml": "5d36f0cdf5f2d3de7d471de242f3060bb3daf55945c6dc352fe9bdd0ca65f37b",
+    "product.yaml": "9d83169771bf8496f5486eda074b638b2f35a07fb586bc644542185646520c6e"
+  },
+  "rainfall": {
+    "source": "CHIRPS v2.0 daily (committed record)",
+    "file": "data/raw/chirps/ward-a.csv",
+    "sha256": "264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2"
+  },
+  "sales_window": [
+    "2007-09-15",
+    "2008-02-14"
+  ],
+  "payout_within_days": 10,
+  "insurer": "Partner insurer (to be named) (simulation)",
+  "sacco": "Simulation SACCO (fictional)",
+  "members": 6,
+  "payout_total_kes": 48645.0,
+  "steps": {
+    "enrolment": {
+      "date": "2007-10-15",
+      "end": "2007-10-20",
+      "events": [
+        {
+          "date": "2007-10-15 10:00",
+          "member_no": "SIM-001",
+          "name": "Njeri Wambui (fictional)",
+          "phone": "+254 7** *** 001",
+          "national_id": "*****001",
+          "language": "sw",
+          "policy_no": "AGS-SIM-LR08-00001",
+          "acres": 2.0,
+          "sum_insured_kes": 20000.0,
+          "gross_kes": 3768.1,
+          "government_share_kes": 1884.05,
+          "discount_kes": 94.2,
+          "farmer_pays_kes": 1790,
+          "route": "mpesa",
+          "loan_linked": false,
+          "sms_consent": true,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        },
+        {
+          "date": "2007-10-16 10:00",
+          "member_no": "SIM-002",
+          "name": "Kibet Cheruiyot (fictional)",
+          "phone": "+254 7** *** 002",
+          "national_id": "*****002",
+          "language": "en",
+          "policy_no": "AGS-SIM-LR08-00002",
+          "acres": 3.0,
+          "sum_insured_kes": 30000.0,
+          "gross_kes": 5652.15,
+          "government_share_kes": 2826.08,
+          "discount_kes": 0.0,
+          "farmer_pays_kes": 2827,
+          "route": "mpesa",
+          "loan_linked": false,
+          "sms_consent": true,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        },
+        {
+          "date": "2007-10-17 10:00",
+          "member_no": "SIM-003",
+          "name": "Atieno Achieng (fictional)",
+          "phone": "+254 7** *** 003",
+          "national_id": "*****003",
+          "language": "sw",
+          "policy_no": "AGS-SIM-LR08-00003",
+          "acres": 1.5,
+          "sum_insured_kes": 22500.0,
+          "gross_kes": 3929.04,
+          "government_share_kes": 1964.52,
+          "discount_kes": 39.29,
+          "farmer_pays_kes": 1926,
+          "route": "sacco_deduction",
+          "loan_linked": true,
+          "sms_consent": true,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        },
+        {
+          "date": "2007-10-18 10:00",
+          "member_no": "SIM-004",
+          "name": "Mutua Kioko (fictional)",
+          "phone": "+254 7** *** 004",
+          "national_id": "*****004",
+          "language": "en",
+          "policy_no": "AGS-SIM-LR08-00004",
+          "acres": 4.0,
+          "sum_insured_kes": 40000.0,
+          "gross_kes": 7536.2,
+          "government_share_kes": 3768.1,
+          "discount_kes": 113.04,
+          "farmer_pays_kes": 3656,
+          "route": "sacco_deduction",
+          "loan_linked": false,
+          "sms_consent": false,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        },
+        {
+          "date": "2007-10-19 10:00",
+          "member_no": "SIM-005",
+          "name": "Wairimu Ndungu (fictional)",
+          "phone": "+254 7** *** 005",
+          "national_id": "*****005",
+          "language": "en",
+          "policy_no": "AGS-SIM-LR08-00005",
+          "acres": 1.0,
+          "sum_insured_kes": 5000.0,
+          "gross_kes": 1173.17,
+          "government_share_kes": 586.59,
+          "discount_kes": 0.0,
+          "farmer_pays_kes": 587,
+          "route": "mpesa",
+          "loan_linked": false,
+          "sms_consent": true,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        },
+        {
+          "date": "2007-10-20 10:00",
+          "member_no": "SIM-006",
+          "name": "Barasa Wafula (fictional)",
+          "phone": "+254 7** *** 006",
+          "national_id": "*****006",
+          "language": "sw",
+          "policy_no": "AGS-SIM-LR08-00006",
+          "acres": 2.5,
+          "sum_insured_kes": 25000.0,
+          "gross_kes": 4710.13,
+          "government_share_kes": 2355.07,
+          "discount_kes": 0.0,
+          "farmer_pays_kes": 2356,
+          "route": "mpesa",
+          "loan_linked": false,
+          "sms_consent": true,
+          "sales_closes_on": "2008-02-14",
+          "subsidy_status": "not yet received",
+          "index_version": "B-1.2.0"
+        }
+      ]
+    },
+    "premium": {
+      "date": "2007-11-02",
+      "end": "2008-01-25",
+      "events": [
+        {
+          "date": "2007-11-02 11:00",
+          "member_no": "SIM-001",
+          "policy_no": "AGS-SIM-LR08-00001",
+          "instalment": 1,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 1790,
+          "phone": "+254 7** *** 001",
+          "pushed_at": "2007-11-02 11:00",
+          "callback_at": "2007-11-02 11:01",
+          "callback": "paid",
+          "request_status": "paid",
+          "receipt": "SIME2994242",
+          "paid_kes": 1790.0,
+          "balance_kes": 0.0,
+          "status": "active"
+        },
+        {
+          "date": "2007-11-05 11:00",
+          "member_no": "SIM-005",
+          "policy_no": "AGS-SIM-LR08-00005",
+          "instalment": 1,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 587,
+          "phone": "+254 7** *** 005",
+          "pushed_at": "2007-11-05 11:00",
+          "callback_at": "2007-11-05 11:01",
+          "callback": "failed",
+          "request_status": "failed",
+          "receipt": null,
+          "paid_kes": 0.0,
+          "balance_kes": 587.0,
+          "status": "pending_payment"
+        },
+        {
+          "date": "2007-11-06 11:00",
+          "member_no": "SIM-005",
+          "policy_no": "AGS-SIM-LR08-00005",
+          "instalment": 2,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 587,
+          "phone": "+254 7** *** 005",
+          "pushed_at": "2007-11-06 11:00",
+          "callback_at": "2007-11-06 11:01",
+          "callback": "paid",
+          "request_status": "paid",
+          "receipt": "SIM7BA0962B",
+          "paid_kes": 587.0,
+          "balance_kes": 0.0,
+          "status": "active"
+        },
+        {
+          "date": "2007-11-20 11:00",
+          "member_no": "SIM-002",
+          "policy_no": "AGS-SIM-LR08-00002",
+          "instalment": 1,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 1413,
+          "phone": "+254 7** *** 002",
+          "pushed_at": "2007-11-20 11:00",
+          "callback_at": "2007-11-20 11:01",
+          "callback": "paid",
+          "request_status": "paid",
+          "receipt": "SIMBA93E76C",
+          "paid_kes": 1413.0,
+          "balance_kes": 1414.0,
+          "status": "pending_payment"
+        },
+        {
+          "date": "2007-11-30 11:00",
+          "member_no": "SIM-003",
+          "policy_no": "AGS-SIM-LR08-00003",
+          "instalment": 1,
+          "channel": "SACCO deduction",
+          "amount_kes": 963,
+          "callback": "recorded",
+          "receipt": "SIM-DED-0001",
+          "paid_kes": 963.0,
+          "balance_kes": 963.0,
+          "status": "pending_payment"
+        },
+        {
+          "date": "2007-12-10 11:00",
+          "member_no": "SIM-006",
+          "policy_no": "AGS-SIM-LR08-00006",
+          "instalment": 1,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 1178,
+          "phone": "+254 7** *** 006",
+          "pushed_at": "2007-12-10 11:00",
+          "callback_at": "2007-12-10 11:01",
+          "callback": "paid",
+          "request_status": "paid",
+          "receipt": "SIM704D298A",
+          "paid_kes": 1178.0,
+          "balance_kes": 1178.0,
+          "status": "pending_payment"
+        },
+        {
+          "date": "2007-12-31 11:00",
+          "member_no": "SIM-003",
+          "policy_no": "AGS-SIM-LR08-00003",
+          "instalment": 2,
+          "channel": "SACCO deduction",
+          "amount_kes": 963,
+          "callback": "recorded",
+          "receipt": "SIM-DED-0002",
+          "paid_kes": 1926.0,
+          "balance_kes": 0.0,
+          "status": "active"
+        },
+        {
+          "date": "2007-12-31 11:00",
+          "member_no": "SIM-004",
+          "policy_no": "AGS-SIM-LR08-00004",
+          "instalment": 1,
+          "channel": "SACCO deduction",
+          "amount_kes": 3656,
+          "callback": "recorded",
+          "receipt": "SIM-DED-0003",
+          "paid_kes": 3656.0,
+          "balance_kes": 0.0,
+          "status": "active"
+        },
+        {
+          "date": "2008-01-25 11:00",
+          "member_no": "SIM-002",
+          "policy_no": "AGS-SIM-LR08-00002",
+          "instalment": 2,
+          "channel": "M-Pesa STK push (simulated)",
+          "amount_kes": 1414,
+          "phone": "+254 7** *** 002",
+          "pushed_at": "2008-01-25 11:00",
+          "callback_at": "2008-01-25 11:01",
+          "callback": "paid",
+          "request_status": "paid",
+          "receipt": "SIM7D4C2592",
+          "paid_kes": 2827.0,
+          "balance_kes": 0.0,
+          "status": "active"
+        }
+      ]
+    },
+    "settlement": {
+      "date": "2008-01-31",
+      "end": "2008-02-04",
+      "remitted": {
+        "date": "2008-01-31 15:00",
+        "ref": "RM-A20179",
+        "amount_kes": 11964.0,
+        "by": "sim-manager",
+        "method": "bank_transfer",
+        "reference": "SIM-BANK-0001",
+        "collected_before_kes": 11964.0,
+        "paybill": "Simulation only: no money moves"
+      },
+      "confirmed": {
+        "date": "2008-02-04 10:30",
+        "by": "sim-underwriter",
+        "status": "confirmed",
+        "summary": {
+          "collected_kes": 11964.0,
+          "remitted_kes": 11964.0,
+          "confirmed_kes": 11964.0,
+          "outstanding_kes": 0.0
+        }
+      },
+      "underwriter_money": {
+        "farmer_premium_kes": 11964.0,
+        "mpesa_kes": 6382.0,
+        "sacco_deduction_kes": 5582.0,
+        "outstanding_kes": 1178.0,
+        "kaip_receivable_kes": 13384.41,
+        "gross_kes": 26768.790000000005
+      }
+    },
+    "sales_close": {
+      "date": "2008-02-15",
+      "closes": "2008-02-14",
+      "events": [
+        {
+          "date": "2008-02-07",
+          "lapsed": 0,
+          "reminders": 1,
+          "lapse_deferred": 0
+        },
+        {
+          "date": "2008-02-13",
+          "lapsed": 0,
+          "reminders": 1,
+          "lapse_deferred": 0
+        },
+        {
+          "date": "2008-02-15",
+          "lapsed": 1,
+          "reminders": 0,
+          "lapse_deferred": 0
+        },
+        {
+          "date": "2008-02-20 12:00",
+          "refund": "RF-A41139",
+          "member_no": "SIM-006",
+          "amount_kes": 1178.0,
+          "method": "sacco_account"
+        }
+      ],
+      "status": {
+        "SIM-001": {
+          "status": "active",
+          "paid_kes": 1790.0,
+          "refund_due_kes": 0.0,
+          "cover_active_from": "2007-11-02 11:01"
+        },
+        "SIM-002": {
+          "status": "active",
+          "paid_kes": 2827.0,
+          "refund_due_kes": 0.0,
+          "cover_active_from": "2008-01-25 11:01"
+        },
+        "SIM-003": {
+          "status": "active",
+          "paid_kes": 1926.0,
+          "refund_due_kes": 0.0,
+          "cover_active_from": "2007-12-31 11:00"
+        },
+        "SIM-004": {
+          "status": "active",
+          "paid_kes": 3656.0,
+          "refund_due_kes": 0.0,
+          "cover_active_from": "2007-12-31 11:00"
+        },
+        "SIM-005": {
+          "status": "active",
+          "paid_kes": 587.0,
+          "refund_due_kes": 0.0,
+          "cover_active_from": "2007-11-06 11:01"
+        },
+        "SIM-006": {
+          "status": "lapsed_unpaid",
+          "paid_kes": 1178.0,
+          "refund_due_kes": 1178.0,
+          "cover_active_from": null
+        }
+      }
+    },
+    "monitoring": {
+      "date": "2008-02-29",
+      "end": "2008-08-13",
+      "runs": 167,
+      "mode": "replay",
+      "transitions": [
+        {
+          "date": "2008-02-29",
+          "phase": "before_season",
+          "level": "none",
+          "projected_wrsi": null,
+          "data_through": "2008-02-28",
+          "rain_pct_of_normal": null,
+          "confirmed": [],
+          "says": "Season not started yet."
+        },
+        {
+          "date": "2008-03-02",
+          "phase": "waiting_for_rains",
+          "level": "none",
+          "projected_wrsi": 100.0,
+          "data_through": "2008-03-01",
+          "rain_pct_of_normal": 0,
+          "confirmed": [],
+          "says": "Waiting for the planting rains."
+        },
+        {
+          "date": "2008-04-01",
+          "phase": "in_season",
+          "level": "normal",
+          "projected_wrsi": 100.0,
+          "data_through": "2008-03-31",
+          "rain_pct_of_normal": 112,
+          "confirmed": [],
+          "says": "Rains are on track. No payout so far."
+        },
+        {
+          "date": "2008-05-03",
+          "phase": "in_season",
+          "level": "watch",
+          "projected_wrsi": 100.0,
+          "data_through": "2008-05-02",
+          "rain_pct_of_normal": 59,
+          "confirmed": [],
+          "says": "Rains are below normal. A payout is possible if it stays dry."
+        },
+        {
+          "date": "2008-06-05",
+          "phase": "in_season",
+          "level": "normal",
+          "projected_wrsi": 90.16,
+          "data_through": "2008-06-04",
+          "rain_pct_of_normal": 62,
+          "confirmed": [],
+          "says": "Rains are on track. No payout so far."
+        },
+        {
+          "date": "2008-06-09",
+          "phase": "in_season",
+          "level": "watch",
+          "projected_wrsi": 87.5,
+          "data_through": "2008-06-08",
+          "rain_pct_of_normal": 60,
+          "confirmed": [],
+          "says": "Rains are below normal. A payout is possible if it stays dry."
+        },
+        {
+          "date": "2008-06-12",
+          "phase": "in_season",
+          "level": "normal",
+          "projected_wrsi": 87.03,
+          "data_through": "2008-06-11",
+          "rain_pct_of_normal": 60,
+          "confirmed": [],
+          "says": "Rains are on track. No payout so far."
+        },
+        {
+          "date": "2008-06-13",
+          "phase": "in_season",
+          "level": "watch",
+          "projected_wrsi": 86.24,
+          "data_through": "2008-06-12",
+          "rain_pct_of_normal": 60,
+          "confirmed": [],
+          "says": "Rains are below normal. A payout is possible if it stays dry."
+        },
+        {
+          "date": "2008-06-21",
+          "phase": "in_season",
+          "level": "alert",
+          "projected_wrsi": 79.98,
+          "data_through": "2008-06-20",
+          "rain_pct_of_normal": 56,
+          "confirmed": [],
+          "says": "Dry season so far. A payout is likely if it stays dry."
+        },
+        {
+          "date": "2008-08-01",
+          "phase": "complete",
+          "level": "payout",
+          "projected_wrsi": 67.58,
+          "data_through": "2008-07-31",
+          "rain_pct_of_normal": 58,
+          "confirmed": [
+            "wrsi_final"
+          ],
+          "says": "Dry season confirmed: payouts are due."
+        }
+      ],
+      "series": [
+        [
+          "2008-03-02",
+          100.0
+        ],
+        [
+          "2008-03-03",
+          100.0
+        ],
+        [
+          "2008-03-04",
+          100.0
+        ],
+        [
+          "2008-03-05",
+          100.0
+        ],
+        [
+          "2008-03-06",
+          100.0
+        ],
+        [
+          "2008-03-07",
+          100.0
+        ],
+        [
+          "2008-03-08",
+          100.0
+        ],
+        [
+          "2008-03-09",
+          100.0
+        ],
+        [
+          "2008-03-10",
+          100.0
+        ],
+        [
+          "2008-03-11",
+          100.0
+        ],
+        [
+          "2008-03-12",
+          100.0
+        ],
+        [
+          "2008-03-13",
+          100.0
+        ],
+        [
+          "2008-03-14",
+          100.0
+        ],
+        [
+          "2008-03-15",
+          100.0
+        ],
+        [
+          "2008-03-16",
+          100.0
+        ],
+        [
+          "2008-03-17",
+          100.0
+        ],
+        [
+          "2008-03-18",
+          100.0
+        ],
+        [
+          "2008-03-19",
+          99.99
+        ],
+        [
+          "2008-03-20",
+          99.89
+        ],
+        [
+          "2008-03-21",
+          100.0
+        ],
+        [
+          "2008-03-22",
+          100.0
+        ],
+        [
+          "2008-03-23",
+          100.0
+        ],
+        [
+          "2008-03-24",
+          100.0
+        ],
+        [
+          "2008-03-25",
+          100.0
+        ],
+        [
+          "2008-03-26",
+          100.0
+        ],
+        [
+          "2008-03-27",
+          100.0
+        ],
+        [
+          "2008-03-28",
+          100.0
+        ],
+        [
+          "2008-03-29",
+          100.0
+        ],
+        [
+          "2008-03-30",
+          100.0
+        ],
+        [
+          "2008-03-31",
+          100.0
+        ],
+        [
+          "2008-04-01",
+          100.0
+        ],
+        [
+          "2008-04-02",
+          100.0
+        ],
+        [
+          "2008-04-03",
+          100.0
+        ],
+        [
+          "2008-04-04",
+          100.0
+        ],
+        [
+          "2008-04-05",
+          100.0
+        ],
+        [
+          "2008-04-06",
+          100.0
+        ],
+        [
+          "2008-04-07",
+          100.0
+        ],
+        [
+          "2008-04-08",
+          100.0
+        ],
+        [
+          "2008-04-09",
+          100.0
+        ],
+        [
+          "2008-04-10",
+          100.0
+        ],
+        [
+          "2008-04-11",
+          100.0
+        ],
+        [
+          "2008-04-12",
+          100.0
+        ],
+        [
+          "2008-04-13",
+          100.0
+        ],
+        [
+          "2008-04-14",
+          100.0
+        ],
+        [
+          "2008-04-15",
+          100.0
+        ],
+        [
+          "2008-04-16",
+          100.0
+        ],
+        [
+          "2008-04-17",
+          100.0
+        ],
+        [
+          "2008-04-18",
+          100.0
+        ],
+        [
+          "2008-04-19",
+          100.0
+        ],
+        [
+          "2008-04-20",
+          100.0
+        ],
+        [
+          "2008-04-21",
+          100.0
+        ],
+        [
+          "2008-04-22",
+          100.0
+        ],
+        [
+          "2008-04-23",
+          100.0
+        ],
+        [
+          "2008-04-24",
+          100.0
+        ],
+        [
+          "2008-04-25",
+          100.0
+        ],
+        [
+          "2008-04-26",
+          100.0
+        ],
+        [
+          "2008-04-27",
+          100.0
+        ],
+        [
+          "2008-04-28",
+          100.0
+        ],
+        [
+          "2008-04-29",
+          100.0
+        ],
+        [
+          "2008-04-30",
+          100.0
+        ],
+        [
+          "2008-05-01",
+          100.0
+        ],
+        [
+          "2008-05-02",
+          100.0
+        ],
+        [
+          "2008-05-03",
+          100.0
+        ],
+        [
+          "2008-05-04",
+          98.8
+        ],
+        [
+          "2008-05-05",
+          97.42
+        ],
+        [
+          "2008-05-06",
+          95.49
+        ],
+        [
+          "2008-05-07",
+          94.69
+        ],
+        [
+          "2008-05-08",
+          92.54
+        ],
+        [
+          "2008-05-09",
+          91.44
+        ],
+        [
+          "2008-05-10",
+          89.76
+        ],
+        [
+          "2008-05-11",
+          88.03
+        ],
+        [
+          "2008-05-12",
+          86.93
+        ],
+        [
+          "2008-05-13",
+          86.06
+        ],
+        [
+          "2008-05-14",
+          85.07
+        ],
+        [
+          "2008-05-15",
+          84.0
+        ],
+        [
+          "2008-05-16",
+          82.08
+        ],
+        [
+          "2008-05-17",
+          81.26
+        ],
+        [
+          "2008-05-18",
+          81.06
+        ],
+        [
+          "2008-05-19",
+          86.54
+        ],
+        [
+          "2008-05-20",
+          87.37
+        ],
+        [
+          "2008-05-21",
+          86.82
+        ],
+        [
+          "2008-05-22",
+          86.24
+        ],
+        [
+          "2008-05-23",
+          85.55
+        ],
+        [
+          "2008-05-24",
+          85.18
+        ],
+        [
+          "2008-05-25",
+          85.24
+        ],
+        [
+          "2008-05-26",
+          84.29
+        ],
+        [
+          "2008-05-27",
+          83.25
+        ],
+        [
+          "2008-05-28",
+          83.01
+        ],
+        [
+          "2008-05-29",
+          82.83
+        ],
+        [
+          "2008-05-30",
+          83.55
+        ],
+        [
+          "2008-05-31",
+          83.08
+        ],
+        [
+          "2008-06-01",
+          82.97
+        ],
+        [
+          "2008-06-02",
+          82.4
+        ],
+        [
+          "2008-06-03",
+          82.35
+        ],
+        [
+          "2008-06-04",
+          82.79
+        ],
+        [
+          "2008-06-05",
+          90.16
+        ],
+        [
+          "2008-06-06",
+          89.73
+        ],
+        [
+          "2008-06-07",
+          88.97
+        ],
+        [
+          "2008-06-08",
+          88.39
+        ],
+        [
+          "2008-06-09",
+          87.5
+        ],
+        [
+          "2008-06-10",
+          86.2
+        ],
+        [
+          "2008-06-11",
+          85.6
+        ],
+        [
+          "2008-06-12",
+          87.03
+        ],
+        [
+          "2008-06-13",
+          86.24
+        ],
+        [
+          "2008-06-14",
+          85.59
+        ],
+        [
+          "2008-06-15",
+          84.91
+        ],
+        [
+          "2008-06-16",
+          84.12
+        ],
+        [
+          "2008-06-17",
+          82.91
+        ],
+        [
+          "2008-06-18",
+          82.13
+        ],
+        [
+          "2008-06-19",
+          81.34
+        ],
+        [
+          "2008-06-20",
+          80.92
+        ],
+        [
+          "2008-06-21",
+          79.98
+        ],
+        [
+          "2008-06-22",
+          79.62
+        ],
+        [
+          "2008-06-23",
+          79.24
+        ],
+        [
+          "2008-06-24",
+          78.69
+        ],
+        [
+          "2008-06-25",
+          78.44
+        ],
+        [
+          "2008-06-26",
+          77.73
+        ],
+        [
+          "2008-06-27",
+          76.71
+        ],
+        [
+          "2008-06-28",
+          75.58
+        ],
+        [
+          "2008-06-29",
+          74.4
+        ],
+        [
+          "2008-06-30",
+          73.61
+        ],
+        [
+          "2008-07-01",
+          72.83
+        ],
+        [
+          "2008-07-02",
+          71.91
+        ],
+        [
+          "2008-07-03",
+          71.37
+        ],
+        [
+          "2008-07-04",
+          71.02
+        ],
+        [
+          "2008-07-05",
+          70.61
+        ],
+        [
+          "2008-07-06",
+          70.07
+        ],
+        [
+          "2008-07-07",
+          69.53
+        ],
+        [
+          "2008-07-08",
+          69.12
+        ],
+        [
+          "2008-07-09",
+          68.65
+        ],
+        [
+          "2008-07-10",
+          67.95
+        ],
+        [
+          "2008-07-11",
+          67.36
+        ],
+        [
+          "2008-07-12",
+          66.81
+        ],
+        [
+          "2008-07-13",
+          67.46
+        ],
+        [
+          "2008-07-14",
+          67.71
+        ],
+        [
+          "2008-07-15",
+          67.68
+        ],
+        [
+          "2008-07-16",
+          67.68
+        ],
+        [
+          "2008-07-17",
+          67.69
+        ],
+        [
+          "2008-07-18",
+          67.7
+        ],
+        [
+          "2008-07-19",
+          67.71
+        ],
+        [
+          "2008-07-20",
+          67.7
+        ],
+        [
+          "2008-07-21",
+          67.7
+        ],
+        [
+          "2008-07-22",
+          67.69
+        ],
+        [
+          "2008-07-23",
+          67.71
+        ],
+        [
+          "2008-07-24",
+          67.68
+        ],
+        [
+          "2008-07-25",
+          67.66
+        ],
+        [
+          "2008-07-26",
+          67.66
+        ],
+        [
+          "2008-07-27",
+          67.64
+        ],
+        [
+          "2008-07-28",
+          67.63
+        ],
+        [
+          "2008-07-29",
+          67.63
+        ],
+        [
+          "2008-07-30",
+          67.62
+        ],
+        [
+          "2008-07-31",
+          67.58
+        ],
+        [
+          "2008-08-01",
+          67.58
+        ],
+        [
+          "2008-08-02",
+          67.58
+        ],
+        [
+          "2008-08-03",
+          67.58
+        ],
+        [
+          "2008-08-04",
+          67.58
+        ],
+        [
+          "2008-08-05",
+          67.58
+        ],
+        [
+          "2008-08-06",
+          67.58
+        ],
+        [
+          "2008-08-07",
+          67.58
+        ],
+        [
+          "2008-08-08",
+          67.58
+        ],
+        [
+          "2008-08-09",
+          67.58
+        ],
+        [
+          "2008-08-10",
+          67.58
+        ],
+        [
+          "2008-08-11",
+          67.58
+        ],
+        [
+          "2008-08-12",
+          67.58
+        ],
+        [
+          "2008-08-13",
+          67.58
+        ]
+      ],
+      "complete_on": "2008-08-01",
+      "audited": 167
+    },
+    "trigger": {
+      "date": "2008-08-01",
+      "dates": [
+        "2008-08-01"
+      ],
+      "ward_status_id": 155,
+      "as_of": "2008-08-01",
+      "data_through": "2008-07-31",
+      "phase": "complete",
+      "level": "payout",
+      "confirmed": [
+        "wrsi_final"
+      ],
+      "events": {
+        "wrsi_final": {
+          "wrsi": 67.58,
+          "share": 0.414
+        }
+      },
+      "final_wrsi": 67.58,
+      "share": 0.414,
+      "trigger_wrsi": 80.0,
+      "exit_wrsi": 50.0,
+      "index_version": "B-1.2.0",
+      "inputs_sha256": "187ca01513db90c8b545e1145315eeab604076e4778f46194718ff4abb174148",
+      "sos": "Mar d3 2008",
+      "season_end": "2008-07-31",
+      "config_sha256": "9d83169771bf8496f5486eda074b638b2f35a07fb586bc644542185646520c6e",
+      "payouts": [
+        {
+          "member_no": "SIM-001",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 8280.0,
+          "method": "mpesa",
+          "due_by": "2008-08-11",
+          "policy_status": "active"
+        },
+        {
+          "member_no": "SIM-002",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 12420.0,
+          "method": "mpesa",
+          "due_by": "2008-08-11",
+          "policy_status": "active"
+        },
+        {
+          "member_no": "SIM-003",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 9315.0,
+          "method": "sacco_loan",
+          "due_by": "2008-08-11",
+          "policy_status": "active"
+        },
+        {
+          "member_no": "SIM-004",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 16560.0,
+          "method": "mpesa",
+          "due_by": "2008-08-11",
+          "policy_status": "active"
+        },
+        {
+          "member_no": "SIM-005",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 2070.0,
+          "method": "mpesa",
+          "due_by": "2008-08-11",
+          "policy_status": "active"
+        }
+      ],
+      "no_payout_for": [
+        "SIM-006"
+      ]
+    },
+    "approval": {
+      "date": "2008-08-02",
+      "events": [
+        {
+          "date": "2008-08-02 09:30",
+          "payout_id": 1,
+          "member_no": "SIM-001",
+          "kind": "wrsi",
+          "amount_kes": 8280.0,
+          "status": "approved",
+          "by": "sim-underwriter",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "days_left": 9
+        },
+        {
+          "date": "2008-08-02 09:30",
+          "payout_id": 2,
+          "member_no": "SIM-002",
+          "kind": "wrsi",
+          "amount_kes": 12420.0,
+          "status": "approved",
+          "by": "sim-underwriter",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "days_left": 9
+        },
+        {
+          "date": "2008-08-02 09:30",
+          "payout_id": 3,
+          "member_no": "SIM-003",
+          "kind": "wrsi",
+          "amount_kes": 9315.0,
+          "status": "approved",
+          "by": "sim-underwriter",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "days_left": 9
+        },
+        {
+          "date": "2008-08-02 09:30",
+          "payout_id": 4,
+          "member_no": "SIM-004",
+          "kind": "wrsi",
+          "amount_kes": 16560.0,
+          "status": "approved",
+          "by": "sim-underwriter",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "days_left": 9
+        },
+        {
+          "date": "2008-08-02 09:30",
+          "payout_id": 5,
+          "member_no": "SIM-005",
+          "kind": "wrsi",
+          "amount_kes": 2070.0,
+          "status": "approved",
+          "by": "sim-underwriter",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "days_left": 9
+        }
+      ]
+    },
+    "payout": {
+      "date": "2008-08-04",
+      "end": "2008-08-04",
+      "within_days": 10,
+      "events": [
+        {
+          "date": "2008-08-04 14:00",
+          "payout_id": 1,
+          "member_no": "SIM-001",
+          "name": "Njeri Wambui (fictional)",
+          "policy_no": "AGS-SIM-LR08-00001",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 8280.0,
+          "method": "mpesa",
+          "reference": "SIMB2C029DA97D",
+          "status": "paid",
+          "by": "sim-manager",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "paid_on": "2008-08-04",
+          "days_after_confirmation": 3,
+          "within_window": true
+        },
+        {
+          "date": "2008-08-04 14:00",
+          "payout_id": 2,
+          "member_no": "SIM-002",
+          "name": "Kibet Cheruiyot (fictional)",
+          "policy_no": "AGS-SIM-LR08-00002",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 12420.0,
+          "method": "mpesa",
+          "reference": "SIMB2CA4E26E72",
+          "status": "paid",
+          "by": "sim-manager",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "paid_on": "2008-08-04",
+          "days_after_confirmation": 3,
+          "within_window": true
+        },
+        {
+          "date": "2008-08-04 14:00",
+          "payout_id": 3,
+          "member_no": "SIM-003",
+          "name": "Atieno Achieng (fictional)",
+          "policy_no": "AGS-SIM-LR08-00003",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 9315.0,
+          "method": "sacco_loan",
+          "reference": "SIM-LOAN-CR-SIM-003",
+          "status": "paid",
+          "by": "sim-manager",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "paid_on": "2008-08-04",
+          "days_after_confirmation": 3,
+          "within_window": true
+        },
+        {
+          "date": "2008-08-04 14:00",
+          "payout_id": 4,
+          "member_no": "SIM-004",
+          "name": "Mutua Kioko (fictional)",
+          "policy_no": "AGS-SIM-LR08-00004",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 16560.0,
+          "method": "mpesa",
+          "reference": "SIMB2CCEF8BC7C",
+          "status": "paid",
+          "by": "sim-manager",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "paid_on": "2008-08-04",
+          "days_after_confirmation": 3,
+          "within_window": true
+        },
+        {
+          "date": "2008-08-04 14:00",
+          "payout_id": 5,
+          "member_no": "SIM-005",
+          "name": "Wairimu Ndungu (fictional)",
+          "policy_no": "AGS-SIM-LR08-00005",
+          "kind": "wrsi",
+          "share": 0.414,
+          "amount_kes": 2070.0,
+          "method": "mpesa",
+          "reference": "SIMB2CFB7809D0",
+          "status": "paid",
+          "by": "sim-manager",
+          "confirmed_on": "2008-08-01",
+          "due_by": "2008-08-11",
+          "paid_on": "2008-08-04",
+          "days_after_confirmation": 3,
+          "within_window": true
+        }
+      ]
+    },
+    "sms": {
+      "date": "2008-08-04",
+      "sender": "log",
+      "count": 23,
+      "statuses": [
+        "logged"
+      ],
+      "messages": [
+        {
+          "queued": "2007-10-15 10:00",
+          "sent": "2007-10-15 18:00",
+          "status": "logged",
+          "member_no": "SIM-001",
+          "phone": "+254 7** *** 001",
+          "language": "sw",
+          "template": "enrolled",
+          "body": "AgroShield: Njeri, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00001. Lipa KES 1,790 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#."
+        },
+        {
+          "queued": "2007-10-16 10:00",
+          "sent": "2007-10-16 18:00",
+          "status": "logged",
+          "member_no": "SIM-002",
+          "phone": "+254 7** *** 002",
+          "language": "en",
+          "template": "enrolled",
+          "body": "AgroShield: Kibet, enrolled for long rains 2008 maize cover AGS-SIM-LR08-00002. Pay KES 2,827 by 14/02/2008 (M-Pesa or SACCO). Dial *384*000#."
+        },
+        {
+          "queued": "2007-10-17 10:00",
+          "sent": "2007-10-17 18:00",
+          "status": "logged",
+          "member_no": "SIM-003",
+          "phone": "+254 7** *** 003",
+          "language": "sw",
+          "template": "enrolled",
+          "body": "AgroShield: Atieno, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00003. Lipa KES 1,926 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#."
+        },
+        {
+          "queued": "2007-10-19 10:00",
+          "sent": "2007-10-19 18:00",
+          "status": "logged",
+          "member_no": "SIM-005",
+          "phone": "+254 7** *** 005",
+          "language": "en",
+          "template": "enrolled",
+          "body": "AgroShield: Wairimu, enrolled for long rains 2008 maize cover AGS-SIM-LR08-00005. Pay KES 587 by 14/02/2008 (M-Pesa or SACCO). Dial *384*000#."
+        },
+        {
+          "queued": "2007-10-20 10:00",
+          "sent": "2007-10-20 18:00",
+          "status": "logged",
+          "member_no": "SIM-006",
+          "phone": "+254 7** *** 006",
+          "language": "sw",
+          "template": "enrolled",
+          "body": "AgroShield: Barasa, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00006. Lipa KES 2,356 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#."
+        },
+        {
+          "queued": "2007-11-02 11:01",
+          "sent": "2007-11-02 18:00",
+          "status": "logged",
+          "member_no": "SIM-001",
+          "phone": "+254 7** *** 001",
+          "language": "sw",
+          "template": "cover_active",
+          "body": "AgroShield: ada imelipwa yote. Bima yako ya mahindi masika 2008 AGS-SIM-LR08-00001 sasa inatumika. Malipo hufuata kipimo cha mvua cha wadi yako."
+        },
+        {
+          "queued": "2007-11-06 11:01",
+          "sent": "2007-11-06 18:00",
+          "status": "logged",
+          "member_no": "SIM-005",
+          "phone": "+254 7** *** 005",
+          "language": "en",
+          "template": "cover_active",
+          "body": "AgroShield: premium paid in full. Your long rains 2008 maize cover AGS-SIM-LR08-00005 is now active. Payouts follow your ward rainfall index."
+        },
+        {
+          "queued": "2007-11-20 11:01",
+          "sent": "2007-11-20 18:00",
+          "status": "logged",
+          "member_no": "SIM-002",
+          "phone": "+254 7** *** 002",
+          "language": "en",
+          "template": "payment_received",
+          "body": "AgroShield: received KES 1,413 for AGS-SIM-LR08-00002. Paid KES 1,413 of 2,827. Balance KES 1,414, pay by 14/02/2008."
+        },
+        {
+          "queued": "2007-11-30 11:00",
+          "sent": "2007-11-30 18:00",
+          "status": "logged",
+          "member_no": "SIM-003",
+          "phone": "+254 7** *** 003",
+          "language": "sw",
+          "template": "payment_received",
+          "body": "AgroShield: tumepokea KES 963 kwa AGS-SIM-LR08-00003. Umelipa KES 963 kati ya 1,926. Salio KES 963, lipa kabla ya 14/02/2008."
+        },
+        {
+          "queued": "2007-12-10 11:01",
+          "sent": "2007-12-10 18:00",
+          "status": "logged",
+          "member_no": "SIM-006",
+          "phone": "+254 7** *** 006",
+          "language": "sw",
+          "template": "payment_received",
+          "body": "AgroShield: tumepokea KES 1,178 kwa AGS-SIM-LR08-00006. Umelipa KES 1,178 kati ya 2,356. Salio KES 1,178, lipa kabla ya 14/02/2008."
+        },
+        {
+          "queued": "2007-12-31 11:00",
+          "sent": "2007-12-31 18:00",
+          "status": "logged",
+          "member_no": "SIM-003",
+          "phone": "+254 7** *** 003",
+          "language": "sw",
+          "template": "cover_active",
+          "body": "AgroShield: ada imelipwa yote. Bima yako ya mahindi masika 2008 AGS-SIM-LR08-00003 sasa inatumika. Malipo hufuata kipimo cha mvua cha wadi yako."
+        },
+        {
+          "queued": "2008-01-25 11:01",
+          "sent": "2008-01-25 18:00",
+          "status": "logged",
+          "member_no": "SIM-002",
+          "phone": "+254 7** *** 002",
+          "language": "en",
+          "template": "cover_active",
+          "body": "AgroShield: premium paid in full. Your long rains 2008 maize cover AGS-SIM-LR08-00002 is now active. Payouts follow your ward rainfall index."
+        },
+        {
+          "queued": "2008-02-07 06:00",
+          "sent": "2008-02-07 18:00",
+          "status": "logged",
+          "member_no": "SIM-006",
+          "phone": "+254 7** *** 006",
+          "language": "sw",
+          "template": "reminder",
+          "body": "AgroShield: KES 1,178 bado inadaiwa kwa AGS-SIM-LR08-00006. Lipa kabla ya 14/02/2008 la sivyo bima haitaanza. Piga *384*000# kulipa."
+        },
+        {
+          "queued": "2008-02-13 06:00",
+          "sent": "2008-02-13 18:00",
+          "status": "logged",
+          "member_no": "SIM-006",
+          "phone": "+254 7** *** 006",
+          "language": "sw",
+          "template": "reminder",
+          "body": "AgroShield: KES 1,178 bado inadaiwa kwa AGS-SIM-LR08-00006. Lipa kabla ya 14/02/2008 la sivyo bima haitaanza. Piga *384*000# kulipa."
+        },
+        {
+          "queued": "2008-02-15 06:00",
+          "sent": "2008-02-15 18:00",
+          "status": "logged",
+          "member_no": "SIM-006",
+          "phone": "+254 7** *** 006",
+          "language": "sw",
+          "template": "lapsed",
+          "body": "AgroShield: AGS-SIM-LR08-00006 haikulipwa yote kufikia 14/02/2008, kwa hivyo bima haikuanza. KES 1,178 utarudishiwa kupitia SACCO yako."
+        },
+        {
+          "queued": "2008-08-02 09:30",
+          "sent": "2008-08-02 18:00",
+          "status": "logged",
+          "member_no": "SIM-001",
+          "phone": "+254 7** *** 001",
+          "language": "sw",
+          "template": "payout_calculated",
+          "body": "AgroShield: ukame umethibitishwa katika wadi yako. Malipo KES 8,280 kwa AGS-SIM-LR08-00001 yatalipwa kufikia 11/08/2008."
+        },
+        {
+          "queued": "2008-08-02 09:30",
+          "sent": "2008-08-02 18:00",
+          "status": "logged",
+          "member_no": "SIM-002",
+          "phone": "+254 7** *** 002",
+          "language": "en",
+          "template": "payout_calculated",
+          "body": "AgroShield: dry season confirmed in your ward. Payout KES 12,420 for AGS-SIM-LR08-00002 will be paid by 11/08/2008."
+        },
+        {
+          "queued": "2008-08-02 09:30",
+          "sent": "2008-08-02 18:00",
+          "status": "logged",
+          "member_no": "SIM-003",
+          "phone": "+254 7** *** 003",
+          "language": "sw",
+          "template": "payout_calculated",
+          "body": "AgroShield: ukame umethibitishwa katika wadi yako. Malipo KES 9,315 kwa AGS-SIM-LR08-00003 yatalipwa kufikia 11/08/2008."
+        },
+        {
+          "queued": "2008-08-02 09:30",
+          "sent": "2008-08-02 18:00",
+          "status": "logged",
+          "member_no": "SIM-005",
+          "phone": "+254 7** *** 005",
+          "language": "en",
+          "template": "payout_calculated",
+          "body": "AgroShield: dry season confirmed in your ward. Payout KES 2,070 for AGS-SIM-LR08-00005 will be paid by 11/08/2008."
+        },
+        {
+          "queued": "2008-08-04 14:00",
+          "sent": "2008-08-04 18:00",
+          "status": "logged",
+          "member_no": "SIM-001",
+          "phone": "+254 7** *** 001",
+          "language": "sw",
+          "template": "payout_paid",
+          "body": "AgroShield: malipo KES 8,280 kwa AGS-SIM-LR08-00001 yametumwa kwa M-Pesa yako, nambari SIMB2C029DA97D."
+        },
+        {
+          "queued": "2008-08-04 14:00",
+          "sent": "2008-08-04 18:00",
+          "status": "logged",
+          "member_no": "SIM-002",
+          "phone": "+254 7** *** 002",
+          "language": "en",
+          "template": "payout_paid",
+          "body": "AgroShield: payout KES 12,420 for AGS-SIM-LR08-00002 sent to your M-Pesa, ref SIMB2CA4E26E72."
+        },
+        {
+          "queued": "2008-08-04 14:00",
+          "sent": "2008-08-04 18:00",
+          "status": "logged",
+          "member_no": "SIM-003",
+          "phone": "+254 7** *** 003",
+          "language": "sw",
+          "template": "payout_paid_loan",
+          "body": "AgroShield: malipo KES 9,315 kwa AGS-SIM-LR08-00003 yamelipa mkopo wako wa SACCO LN-SIM-0003. SACCO itakulipa salio lolote."
+        },
+        {
+          "queued": "2008-08-04 14:00",
+          "sent": "2008-08-04 18:00",
+          "status": "logged",
+          "member_no": "SIM-005",
+          "phone": "+254 7** *** 005",
+          "language": "en",
+          "template": "payout_paid",
+          "body": "AgroShield: payout KES 2,070 for AGS-SIM-LR08-00005 sent to your M-Pesa, ref SIMB2CFB7809D0."
+        }
+      ],
+      "no_consent": [
+        "SIM-004"
+      ]
+    },
+    "missed_payout": {
+      "date": "2008-08-06",
+      "report": {
+        "date": "2008-08-06 08:15",
+        "ref": "MP-5G2528",
+        "member_no": "SIM-002",
+        "category": "payout_too_small",
+        "channel": "ussd",
+        "snapshot": {
+          "as_of": "2008-08-06",
+          "level": "payout",
+          "phase": "complete",
+          "projected_wrsi": 67.58,
+          "index_version": "B-1.2.0"
+        }
+      },
+      "review": {
+        "date": "2008-08-12 16:00",
+        "outcome": "basis_risk_recorded",
+        "note": "Simulated field visit: the loss on this farm looks worse than the ward index shows. Recorded for the index review. The payout does not change.",
+        "by": "sim-manager",
+        "payouts_unchanged": true
+      }
+    },
+    "bordereaux": {
+      "date": "2008-08-31",
+      "files": [
+        {
+          "month": "2007-10",
+          "file": "bordereaux/bordereaux-SIMUW-2007-10.zip",
+          "sha256": "0189e3d7238585f9e44cfa8f06dbce7664aca59dda60fc9c588e7c8476b22b93",
+          "premium_rows": 6,
+          "payout_rows": 0,
+          "manifest": {
+            "insurer": "SIMUW",
+            "month": "2007-10",
+            "generated_at": "2008-08-31T14:00:00+00:00",
+            "files": {
+              "premium.csv": {
+                "sha256": "735ee581107e92f391bb9b00c5678dd231a5bd5428b7a6ca77330625a13dd7ab",
+                "rows": 6
+              },
+              "payouts.csv": {
+                "sha256": "c0c11bbb6a7313fa519305b036953b05c3d35088009b8855c0685f71e901134d",
+                "rows": 0
+              }
+            },
+            "basis": {
+              "premium": "policies written (enrolled) in the month",
+              "payouts": "payouts whose trigger was confirmed in the month"
+            },
+            "masking": "national IDs and phone numbers are masked; no personal data in clear",
+            "config_sha256": {
+              "pilot.yaml": "622f69d948a92660063adc2f519993bdb2025602f599c0c4e671d7c767263966",
+              "wards.yaml": "5d53a22fa76e715ea75dbd7341a4e6214c7fce1880d130828845a2d94f7be73f",
+              "phenology.yaml": "5d36f0cdf5f2d3de7d471de242f3060bb3daf55945c6dc352fe9bdd0ca65f37b",
+              "product.yaml": "9d83169771bf8496f5486eda074b638b2f35a07fb586bc644542185646520c6e"
+            },
+            "illustrative": true
+          }
+        },
+        {
+          "month": "2008-08",
+          "file": "bordereaux/bordereaux-SIMUW-2008-08.zip",
+          "sha256": "3888dfc9e7b4387c3e3585b54bb9f973dc1c3b62a389c2589a2da8cea7e517b9",
+          "premium_rows": 0,
+          "payout_rows": 5,
+          "manifest": {
+            "insurer": "SIMUW",
+            "month": "2008-08",
+            "generated_at": "2008-08-31T14:00:00+00:00",
+            "files": {
+              "premium.csv": {
+                "sha256": "5413a583a27be1ca0d80f3b51845b71ddecb77f5546da61dbb7094da7b64e287",
+                "rows": 0
+              },
+              "payouts.csv": {
+                "sha256": "01994b7717475f0570cc7e9c780a7926a82ca6bda8192fc54375e52c59b762b2",
+                "rows": 5
+              }
+            },
+            "basis": {
+              "premium": "policies written (enrolled) in the month",
+              "payouts": "payouts whose trigger was confirmed in the month"
+            },
+            "masking": "national IDs and phone numbers are masked; no personal data in clear",
+            "config_sha256": {
+              "pilot.yaml": "622f69d948a92660063adc2f519993bdb2025602f599c0c4e671d7c767263966",
+              "wards.yaml": "5d53a22fa76e715ea75dbd7341a4e6214c7fce1880d130828845a2d94f7be73f",
+              "phenology.yaml": "5d36f0cdf5f2d3de7d471de242f3060bb3daf55945c6dc352fe9bdd0ca65f37b",
+              "product.yaml": "9d83169771bf8496f5486eda074b638b2f35a07fb586bc644542185646520c6e"
+            },
+            "illustrative": true
+          }
+        }
+      ]
+    },
+    "reinsurer": {
+      "date": "2008-08-31",
+      "portfolio": {
+        "policies": 6,
+        "active": 5,
+        "acres": 14.0,
+        "sum_insured_kes": 142500.0,
+        "in_force_sum_insured_kes": 117500.0,
+        "gross_kes": 26768.79,
+        "exposure": [
+          {
+            "ward": "Rongai West",
+            "label": "long rains 2008",
+            "max_loss_kes": 117500.0,
+            "policies": 5
+          }
+        ]
+      },
+      "as_if": {
+        "label": "long rains 2008",
+        "sum_insured_kes": 117500.0,
+        "seasons": 45,
+        "years": [
+          1981,
+          2025
+        ],
+        "expected_loss_kes": 10111.966444444444,
+        "loss_1_in_10_kes": 37694.00000000002,
+        "loss_1_in_20_kes": 54660.99999999998,
+        "max_kes": 95723.3725,
+        "worst_years": [
+          {
+            "year": 1984,
+            "loss_kes": 95723.3725
+          },
+          {
+            "year": 2002,
+            "loss_kes": 69520.87250000001
+          },
+          {
+            "year": 2004,
+            "loss_kes": 56165.0
+          }
+        ],
+        "gross_premium_kes": 22058.66
+      },
+      "esg": {
+        "farmers": 6,
+        "women_share": 0.5,
+        "payouts_paid": 5,
+        "paid_to_farmers_kes": 48645.0,
+        "replay_excluded": 5,
+        "target_days": 10,
+        "missed_reports": 1
+      },
+      "payouts_by_status": {
+        "calculated": 0,
+        "held": 0,
+        "approved": 0,
+        "issued": 0,
+        "paid": 48645.0,
+        "redeemed": 0
+      }
+    }
+  },
+  "checks": {
+    "all_steps_present": true,
+    "in_order": true,
+    "payouts": 5,
+    "max_days_to_pay": 3,
+    "all_within_window": true,
+    "window_days": 10,
+    "sms_log_only": true,
+    "missed_report_reviewed_without_changing_payouts": true
+  }
+}

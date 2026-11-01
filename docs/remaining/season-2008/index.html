@@ -1,0 +1,786 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIMULATION / REPLAY: Rongai West, long rains 2008</title>
+<style>/* AgroShield design tokens: the ONE place for colour, type, spacing, radius, shadow and motion.
+   Theme: NuruOps (surfaces, typography, faceted mark) with AgroShield teal as the signature accent
+   and NuruOps gold as the secondary highlight. Sources: docs/design/THEME.md.
+   Light by default, dark follows the system, and a toggle (html[data-theme]) overrides both.
+   Swapping the theme = editing this file only; components read these variables and nothing else. */
+
+:root {
+  color-scheme: light;
+  /* ---- colour: light (NuruOps warm paper, teal accent) ---- */
+  --bg: #F6F3EC;            /* page */
+  --bg-band: #EFEAE0;       /* alternating public sections */
+  --surface: #FFFFFF;       /* cards, header */
+  --surface-2: #F3EFE6;     /* inputs, subtle fills */
+  --border: #E2DBCC;
+  --border-strong: #CFC6B3;
+  --input-border: #857B69;  /* form controls: 3.6:1 on surface-2, 4.2:1 on white (WCAG 1.4.11) */
+  --ink-1: #1B1710;         /* text */
+  --ink-2: #403A2F;         /* secondary text */
+  --ink-3: #5E574B;         /* muted text (AA on bg and surface) */
+  --accent: #00695C;        /* teal: links, primary buttons */
+  --accent-strong: #004D40;
+  --accent-ink: #FFFFFF;    /* text on accent */
+  --accent-soft: rgba(0, 105, 92, 0.10);
+  --accent-line: rgba(0, 105, 92, 0.35);
+  --gold: #8A5600;          /* NuruOps gold, for text and small highlights */
+  --gold-fill: #E8960C;     /* decorative only (never small text) */
+  --gold-soft: rgba(184, 118, 10, 0.14);
+  --ok: #0B6E4F;  --ok-soft: #E1F1E9;
+  --warn: #7A4E00; --warn-soft: #FBEFD5;
+  --crit: #A82424; --crit-soft: #FBE3E1;
+  --info: #0B5E8A; --info-soft: #E1EEF6;
+  --focus: #0B7A6D;
+  --hero-from: #013A31; --hero-mid: #015D52; --hero-to: #0F1117;
+  --hero-ink: #F2FBF9; --hero-sub: #D5EEEA;
+  --overlay: rgba(15, 17, 23, 0.55); --overlay-strong: rgba(1, 40, 34, 0.86);
+  --map-bg: #E6EFEC;
+  --chart-1: #00695C; --chart-2: #B8760A; --chart-3: #0B5E8A; --chart-4: #7A4E9E;
+  --grid: #E7E1D5;
+
+  /* ---- type ---- */
+  --font-display: "EB Garamond", Garamond, Georgia, "Times New Roman", serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --fs-2xs: 0.75rem;   /* 12 */
+  --fs-xs: 0.8125rem;  /* 13 */
+  --fs-sm: 0.875rem;   /* 14 */
+  --fs-base: 1rem;     /* 16 */
+  --fs-md: 1.125rem;   /* 18 */
+  --fs-lg: 1.375rem;   /* 22 */
+  --fs-xl: 1.75rem;    /* 28 */
+  --fs-2xl: 2.25rem;   /* 36 */
+  --fs-hero: clamp(2.25rem, 1.4rem + 3.6vw, 3.75rem);
+  --lh-tight: 1.15; --lh-snug: 1.3; --lh-body: 1.6;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
+  /* ---- spacing: 4 / 8 px scale ---- */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+  --gutter: 16px;
+  --section-y: clamp(48px, 6vw, 96px);
+
+  /* ---- layout ---- */
+  --maxw-public: 1200px;
+  --maxw-app: 1240px;
+  --maxw-prose: 68ch;
+  --nav-h: 64px;
+  --tap: 44px;               /* minimum tap target */
+
+  /* ---- radius ---- */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-pill: 999px;
+
+  /* ---- shadow ---- */
+  --sh-1: 0 1px 2px rgba(27, 23, 16, 0.06), 0 1px 1px rgba(27, 23, 16, 0.04);
+  --sh-2: 0 6px 20px rgba(27, 23, 16, 0.08), 0 2px 6px rgba(27, 23, 16, 0.05);
+  --sh-nav: 0 2px 12px rgba(27, 23, 16, 0.10);
+  --sh-pop: 0 14px 40px rgba(27, 23, 16, 0.18);
+
+  /* ---- motion ---- */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms;
+}
+
+/* ---- colour: dark (NuruOps midnight, teal accent) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1117; --bg-band: #0B0D13; --surface: #1A1D26; --surface-2: #20232E;
+    --border: #2A2D36; --border-strong: #3A3E4A; --input-border: #737889;
+    --ink-1: #FAFAFA; --ink-2: #D4D7E0; --ink-3: #A3A6AE;
+    --accent: #2DD4BF; --accent-strong: #5EEAD4; --accent-ink: #04201C;
+    --accent-soft: rgba(45, 212, 191, 0.12); --accent-line: rgba(45, 212, 191, 0.40);
+    --gold: #F5B547; --gold-fill: #E8960C; --gold-soft: rgba(232, 150, 12, 0.16);
+    --ok: #6EE7B7; --ok-soft: #0F3328; --warn: #FCD34D; --warn-soft: #3A2E0E;
+    --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
+    --focus: #5EEAD4;
+    --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
+    --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
+    --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
+    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+    --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1117; --bg-band: #0B0D13; --surface: #1A1D26; --surface-2: #20232E;
+  --border: #2A2D36; --border-strong: #3A3E4A; --input-border: #737889;
+  --ink-1: #FAFAFA; --ink-2: #D4D7E0; --ink-3: #A3A6AE;
+  --accent: #2DD4BF; --accent-strong: #5EEAD4; --accent-ink: #04201C;
+  --accent-soft: rgba(45, 212, 191, 0.12); --accent-line: rgba(45, 212, 191, 0.40);
+  --gold: #F5B547; --gold-fill: #E8960C; --gold-soft: rgba(232, 150, 12, 0.16);
+  --ok: #6EE7B7; --ok-soft: #0F3328; --warn: #FCD34D; --warn-soft: #3A2E0E;
+  --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
+  --focus: #5EEAD4;
+  --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
+  --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
+  --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink-1); font-family: var(--font-body); font-size: var(--fs-base);
+       line-height: var(--lh-body); }
+main { max-width: 980px; margin: 0 auto; padding: var(--sp-5) var(--gutter) var(--sp-8); }
+h1, h2, h3 { font-family: var(--font-display); line-height: var(--lh-tight); color: var(--ink-1); }
+h1 { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+h2 { font-size: var(--fs-xl); margin: var(--sp-7) 0 var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+h3 { font-size: var(--fs-lg); margin: var(--sp-5) 0 var(--sp-2); }
+p, li { max-width: var(--maxw-prose); }
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.muted { color: var(--ink-3); font-size: var(--fs-sm); }
+.lead { font-size: var(--fs-md); color: var(--ink-2); }
+.banner { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; margin: 0 0 var(--sp-4);
+          padding: var(--sp-3) var(--sp-4); border: 1px solid var(--gold); border-radius: var(--r-md);
+          background: var(--gold-soft); color: var(--ink-1); font-size: var(--fs-sm); }
+.banner b { color: var(--gold); letter-spacing: .04em; }
+.chip { display: inline-block; padding: 1px var(--sp-2); border-radius: var(--r-pill); font-size: var(--fs-2xs);
+        font-weight: var(--fw-semibold); letter-spacing: .03em; border: 1px solid var(--border-strong);
+        background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.chip.crit { background: var(--crit-soft); color: var(--crit); border-color: var(--crit); }
+.chip.info { background: var(--info-soft); color: var(--info); border-color: var(--info); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4) var(--sp-5);
+        margin: var(--sp-3) 0; box-shadow: var(--sh-1); break-inside: avoid; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-3); }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+.kpi .v { font-size: var(--fs-lg); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.kpi .k { color: var(--ink-3); font-size: var(--fs-xs); }
+.table-wrap { overflow-x: auto; margin: var(--sp-2) 0 var(--sp-3); }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); background: var(--surface); }
+th, td { text-align: left; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--surface-2); color: var(--ink-2); font-weight: var(--fw-semibold); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr { break-inside: avoid; }
+.step { position: relative; }
+.step .when { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--accent-strong); font-weight: var(--fw-semibold); }
+.step h3 { margin-top: var(--sp-1); }
+.ok-text { color: var(--ok); font-weight: var(--fw-semibold); }
+.crit-text { color: var(--crit); font-weight: var(--fw-semibold); }
+.clock { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; margin: var(--sp-3) 0; }
+.clock div { min-height: 64px; padding: var(--sp-1); border-radius: var(--r-sm); background: var(--surface-2);
+             border: 1px solid var(--border); font-size: var(--fs-2xs); color: var(--ink-3); }
+.clock div.hit { background: var(--accent-soft); border-color: var(--accent); color: var(--ink-1); }
+.clock div.due { border-color: var(--crit); }
+.clock b { display: block; color: var(--ink-1); font-size: var(--fs-xs); }
+svg text { fill: var(--ink-2); font-family: var(--font-body); font-size: 12px; }
+svg .line { fill: none; stroke: var(--chart-1); stroke-width: 2; }
+svg .trig { stroke: var(--warn); stroke-dasharray: 5 4; }
+svg .exit { stroke: var(--crit); stroke-dasharray: 2 4; }
+svg .grid { stroke: var(--grid); }
+svg .mark { fill: var(--chart-2); }
+.toc ol { columns: 2; column-gap: var(--sp-6); }
+.page-break { break-before: page; }
+@media (max-width: 640px) { .toc ol { columns: 1; } h1 { font-size: var(--fs-xl); } .clock { grid-template-columns: repeat(6, 1fr); } }
+@media print {
+  @page { size: A4; margin: 18mm 14mm 20mm; }
+  :root { color-scheme: light; }
+  body { background: #fff; font-size: 10.5pt; }
+  main { max-width: none; padding: 0; }
+  h2 { break-after: avoid; }
+  .card, .kpi { box-shadow: none; }
+  a { color: inherit; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<div class="banner" role="note"><b>SIMULATION / REPLAY</b> Fictional SACCO, officers and members. Real 2008 rainfall
+  (CHIRPS). Prices, triggers and sums insured are ILLUSTRATIVE. No money moved and no SMS was sent.</div>
+
+<h1>Simulated season: Rongai West, long rains 2008</h1>
+<p class="lead">One whole season replayed day by day on the real AgroShield services, in a throwaway database that was
+  deleted afterwards. Rongai West is the display name of the placeholder pilot ward ward-a
+  (Illustrative Ward A (lowland, near Rongai)). The 2008 long rains were a real drought in the committed rainfall record.</p>
+
+<div class="grid">
+  <div class="kpi"><div class="v">6</div><div class="k">fictional members enrolled</div></div>
+  <div class="kpi"><div class="v">5</div>
+    <div class="k">with cover active at sales close</div></div>
+  
+  <div class="kpi"><div class="v">67.58</div><div class="k">final index (WRSI), trigger 80</div></div>
+  <div class="kpi"><div class="v">KES 48,645</div><div class="k">paid to 5 members</div></div>
+  <div class="kpi"><div class="v">3 of 10 days</div>
+    <div class="k">slowest payout after the trigger confirmed</div></div>
+  
+</div>
+
+<nav class="toc card" aria-label="Steps"><b>Steps, in order</b>
+<ol>
+  <li><a href="#enrolment">Enrolment</a> (Mon 15 Oct 2007)</li>
+  <li><a href="#premium">Premium payments</a> (Fri 02 Nov 2007)</li>
+  <li><a href="#settlement">Premium sent to the insurer</a> (Thu 31 Jan 2008)</li>
+  <li><a href="#sales_close">Sales close</a> (Fri 15 Feb 2008)</li>
+  <li><a href="#monitoring">Daily rainfall monitoring</a> (Fri 29 Feb 2008)</li>
+  <li><a href="#trigger">Trigger confirmed</a> (Fri 01 Aug 2008)</li>
+  <li><a href="#approval">Underwriter approval</a> (Sat 02 Aug 2008)</li>
+  <li><a href="#payout">Payout</a> (Mon 04 Aug 2008)</li>
+  <li><a href="#sms">SMS log</a> (Mon 04 Aug 2008)</li>
+  <li><a href="#missed_payout">Missed-payout report</a> (Wed 06 Aug 2008)</li>
+  <li><a href="#bordereaux">Bordereaux</a> (Sun 31 Aug 2008)</li>
+  <li><a href="#reinsurer">Reinsurer summary</a> (Sun 31 Aug 2008)</li>
+</ol></nav>
+
+
+<section class="step" id="enrolment">
+<h2>1. Enrolment</h2>
+<p class="when">Mon 15 Oct 2007 to Sat 20 Oct 2007</p>
+<p>The SACCO officer enrols each member with the same rules as the enrolment screens: the sales window must be open
+  (it ran from Sat 15 Sep 2007 to Thu 14 Feb 2008), the member agrees to data processing, and the
+  price comes from the pricing engine's rate book. The government (KAIP) share is shown as "not yet received".</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Member</th><th>Phone</th><th>ID</th><th class="num">Acres</th><th class="num">Sum insured</th>
+  <th class="num">Gross premium</th><th class="num">Government share</th><th class="num">Farmer pays</th><th>Pays by</th></tr></thead>
+<tbody>
+<tr><td>2007-10-15 10:00</td><td><b>SIM-001</b> Njeri Wambui (fictional)
+  </td>
+  <td class="mono">+254 7** *** 001</td><td class="mono">*****001</td><td class="num">2.0</td>
+  <td class="num">KES 20,000</td><td class="num">KES 3,768.10</td>
+  <td class="num">KES 1,884.05</td><td class="num">KES 1,790</td>
+  <td>M-Pesa</td></tr>
+
+<tr><td>2007-10-16 10:00</td><td><b>SIM-002</b> Kibet Cheruiyot (fictional)
+  </td>
+  <td class="mono">+254 7** *** 002</td><td class="mono">*****002</td><td class="num">3.0</td>
+  <td class="num">KES 30,000</td><td class="num">KES 5,652.15</td>
+  <td class="num">KES 2,826.08</td><td class="num">KES 2,827</td>
+  <td>M-Pesa</td></tr>
+
+<tr><td>2007-10-17 10:00</td><td><b>SIM-003</b> Atieno Achieng (fictional) <span class="chip info">loan-linked</span>
+  </td>
+  <td class="mono">+254 7** *** 003</td><td class="mono">*****003</td><td class="num">1.5</td>
+  <td class="num">KES 22,500</td><td class="num">KES 3,929.04</td>
+  <td class="num">KES 1,964.52</td><td class="num">KES 1,926</td>
+  <td>SACCO deduction</td></tr>
+
+<tr><td>2007-10-18 10:00</td><td><b>SIM-004</b> Mutua Kioko (fictional)
+   <span class="chip">no SMS</span></td>
+  <td class="mono">+254 7** *** 004</td><td class="mono">*****004</td><td class="num">4.0</td>
+  <td class="num">KES 40,000</td><td class="num">KES 7,536.20</td>
+  <td class="num">KES 3,768.10</td><td class="num">KES 3,656</td>
+  <td>SACCO deduction</td></tr>
+
+<tr><td>2007-10-19 10:00</td><td><b>SIM-005</b> Wairimu Ndungu (fictional)
+  </td>
+  <td class="mono">+254 7** *** 005</td><td class="mono">*****005</td><td class="num">1.0</td>
+  <td class="num">KES 5,000</td><td class="num">KES 1,173.17</td>
+  <td class="num">KES 586.59</td><td class="num">KES 587</td>
+  <td>M-Pesa</td></tr>
+
+<tr><td>2007-10-20 10:00</td><td><b>SIM-006</b> Barasa Wafula (fictional)
+  </td>
+  <td class="mono">+254 7** *** 006</td><td class="mono">*****006</td><td class="num">2.5</td>
+  <td class="num">KES 25,000</td><td class="num">KES 4,710.13</td>
+  <td class="num">KES 2,355.07</td><td class="num">KES 2,356</td>
+  <td>M-Pesa</td></tr>
+</tbody></table></div>
+<p class="muted">Index version B-1.2.0. National IDs and phone numbers are stored
+  encrypted and shown masked, as on every AgroShield screen.</p>
+</section>
+
+
+<section class="step" id="premium">
+<h2>2. Premium payments</h2>
+<p class="when">Fri 02 Nov 2007 to Fri 25 Jan 2008</p>
+<p>M-Pesa payments are an STK push to the member's phone and Safaricom's answer (both simulated, no network). SACCO
+  deductions are recorded by the SACCO. Members may pay in instalments; cover starts only once the farmer's share is
+  fully paid by the sales close.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>Member</th><th>How</th><th class="num">Amount</th><th>Answer</th><th class="num">Paid so far</th><th>Cover</th></tr></thead>
+<tbody>
+<tr><td>2007-11-02 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-001</b> (payment 1)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 1,790</td>
+  <td><span class="chip ok">paid</span>
+      
+      <div class="mono muted">SIME2994242</div></td>
+  <td class="num">KES 1,790</td>
+  <td><span class="chip ok">active</span></td></tr>
+
+<tr><td>2007-11-05 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-005</b> (payment 1)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 587</td>
+  <td><span class="chip warn">failed</span> cancelled on the phone
+      </td>
+  <td class="num">KES 0</td>
+  <td>pending payment</td></tr>
+
+<tr><td>2007-11-06 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-005</b> (payment 2)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 587</td>
+  <td><span class="chip ok">paid</span>
+      
+      <div class="mono muted">SIM7BA0962B</div></td>
+  <td class="num">KES 587</td>
+  <td><span class="chip ok">active</span></td></tr>
+
+<tr><td>2007-11-20 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-002</b> (payment 1)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 1,413</td>
+  <td><span class="chip ok">paid</span>
+      
+      <div class="mono muted">SIMBA93E76C</div></td>
+  <td class="num">KES 1,413</td>
+  <td>pending payment</td></tr>
+
+<tr><td>2007-11-30 11:00</td>
+  <td><b>SIM-003</b> (payment 1)</td><td>SACCO deduction</td><td class="num">KES 963</td>
+  <td><span class="chip ok">recorded</span>
+      
+      <div class="mono muted">SIM-DED-0001</div></td>
+  <td class="num">KES 963</td>
+  <td>pending payment</td></tr>
+
+<tr><td>2007-12-10 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-006</b> (payment 1)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 1,178</td>
+  <td><span class="chip ok">paid</span>
+      
+      <div class="mono muted">SIM704D298A</div></td>
+  <td class="num">KES 1,178</td>
+  <td>pending payment</td></tr>
+
+<tr><td>2007-12-31 11:00</td>
+  <td><b>SIM-003</b> (payment 2)</td><td>SACCO deduction</td><td class="num">KES 963</td>
+  <td><span class="chip ok">recorded</span>
+      
+      <div class="mono muted">SIM-DED-0002</div></td>
+  <td class="num">KES 1,926</td>
+  <td><span class="chip ok">active</span></td></tr>
+
+<tr><td>2007-12-31 11:00</td>
+  <td><b>SIM-004</b> (payment 1)</td><td>SACCO deduction</td><td class="num">KES 3,656</td>
+  <td><span class="chip ok">recorded</span>
+      
+      <div class="mono muted">SIM-DED-0003</div></td>
+  <td class="num">KES 3,656</td>
+  <td><span class="chip ok">active</span></td></tr>
+
+<tr><td>2008-01-25 11:00<div class="muted">answer 11:01</div></td>
+  <td><b>SIM-002</b> (payment 2)</td><td>M-Pesa STK push (simulated)</td><td class="num">KES 1,414</td>
+  <td><span class="chip ok">paid</span>
+      
+      <div class="mono muted">SIM7D4C2592</div></td>
+  <td class="num">KES 2,827</td>
+  <td><span class="chip ok">active</span></td></tr>
+</tbody></table></div>
+</section>
+
+
+<section class="step" id="settlement">
+<h2>3. Premium sent to the insurer</h2>
+<p class="when">Thu 31 Jan 2008 to Mon 04 Feb 2008</p>
+
+<p>On 2008-01-31 15:00 the SACCO manager recorded sending KES 11,964 (all premium collected so far, gross,
+  with no fee taken off) by bank transfer, reference SIM-BANK-0001. On 2008-02-04 10:30 the
+  underwriter confirmed it arrived. The settlement record is a ledger only: it moves no money.</p>
+<div class="grid">
+  <div class="kpi"><div class="v">KES 11,964</div><div class="k">collected from members</div></div>
+  <div class="kpi"><div class="v">KES 11,964</div><div class="k">remitted and confirmed</div></div>
+  <div class="kpi"><div class="v">KES 0</div><div class="k">still to remit</div></div>
+  <div class="kpi"><div class="v">KES 13,384.41</div><div class="k">government share, not yet received</div></div>
+</div>
+</section>
+
+
+<section class="step" id="sales_close">
+<h2>4. Sales close</h2>
+<p class="when">Sales closed Thu 14 Feb 2008; the daily job acted on Fri 15 Feb 2008</p>
+<p>The daily job sends reminders 7 days and 1 day before the close to members who still owe, and the day after the
+  close it marks cover that was not fully paid as not started. What they paid is owed back and the refund is recorded
+  when the SACCO pays it.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>2008-02-07</td><td>1 reminder queued. </td></tr>
+
+<tr><td>2008-02-13</td><td>1 reminder queued. </td></tr>
+
+<tr><td>2008-02-15</td><td>1 cover not started (not fully paid).</td></tr>
+
+<tr><td>2008-02-20 12:00</td><td>Refund RF-A41139 of KES 1,178 paid to SIM-006 (sacco account)
+  </td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Member</th><th>Cover</th><th class="num">Paid</th><th class="num">Owed back</th><th>Active from</th></tr></thead>
+<tbody>
+<tr><td><b>SIM-001</b></td><td><span class="chip ok">active</span></td>
+  <td class="num">KES 1,790</td><td class="num">KES 0</td><td>2007-11-02 11:01</td></tr>
+
+<tr><td><b>SIM-002</b></td><td><span class="chip ok">active</span></td>
+  <td class="num">KES 2,827</td><td class="num">KES 0</td><td>2008-01-25 11:01</td></tr>
+
+<tr><td><b>SIM-003</b></td><td><span class="chip ok">active</span></td>
+  <td class="num">KES 1,926</td><td class="num">KES 0</td><td>2007-12-31 11:00</td></tr>
+
+<tr><td><b>SIM-004</b></td><td><span class="chip ok">active</span></td>
+  <td class="num">KES 3,656</td><td class="num">KES 0</td><td>2007-12-31 11:00</td></tr>
+
+<tr><td><b>SIM-005</b></td><td><span class="chip ok">active</span></td>
+  <td class="num">KES 587</td><td class="num">KES 0</td><td>2007-11-06 11:01</td></tr>
+
+<tr><td><b>SIM-006</b></td><td><span class="chip warn">did not start</span></td>
+  <td class="num">KES 1,178</td><td class="num">KES 1,178</td><td></td></tr>
+</tbody></table></div>
+</section>
+
+
+<section class="step" id="monitoring">
+<h2>5. Daily rainfall monitoring</h2>
+<p class="when">Fri 29 Feb 2008 to Wed 13 Aug 2008: 167 daily runs</p>
+<p>Every morning the daily job works out where the season stands for the ward, with the same index the price comes
+  from: the rain observed so far, and a normal season for the days still to come. Each run is stored and audited
+  with the index version, the settings fingerprint and a fingerprint of the rainfall it used. In this replay the run
+  for a day sees the record up to the day before, and never later rain.</p>
+
+<figure class="card" aria-label="Projected index by day">
+<svg viewBox="0 0 900 260" width="100%" role="img" aria-label="Projected end-of-season index (WRSI) by day, falling below the trigger">
+  <line class="grid" x1="44" x2="884" y1="14.0" y2="14.0"/>
+  <text x="36" y="18.0" text-anchor="end">100</text><line class="grid" x1="44" x2="884" y1="86.0" y2="86.0"/>
+  <text x="36" y="90.0" text-anchor="end">80</text><line class="grid" x1="44" x2="884" y1="158.0" y2="158.0"/>
+  <text x="36" y="162.0" text-anchor="end">60</text><line class="grid" x1="44" x2="884" y1="230.0" y2="230.0"/>
+  <text x="36" y="234.0" text-anchor="end">40</text>
+  <text x="197.7" y="250" text-anchor="middle">Apr</text><text x="351.3" y="250" text-anchor="middle">May</text><text x="510.1" y="250" text-anchor="middle">Jun</text><text x="663.8" y="250" text-anchor="middle">Jul</text><text x="822.5" y="250" text-anchor="middle">Aug</text>
+  <line class="trig" x1="44" x2="884" y1="86.0" y2="86.0"/>
+  <text x="884" y="80.0" text-anchor="end">trigger 80: payouts start below</text>
+  <line class="exit" x1="44" x2="884" y1="194.0" y2="194.0"/>
+  <text x="884" y="188.0" text-anchor="end">exit 50: full payout</text>
+  <polyline class="line" points="44.0,14.0 49.1,14.0 54.2,14.0 59.4,14.0 64.5,14.0 69.6,14.0 74.7,14.0 79.9,14.0 85.0,14.0 90.1,14.0 95.2,14.0 100.3,14.0 105.5,14.0 110.6,14.0 115.7,14.0 120.8,14.0 126.0,14.0 131.1,14.0 136.2,14.4 141.3,14.0 146.4,14.0 151.6,14.0 156.7,14.0 161.8,14.0 166.9,14.0 172.0,14.0 177.2,14.0 182.3,14.0 187.4,14.0 192.5,14.0 197.7,14.0 202.8,14.0 207.9,14.0 213.0,14.0 218.1,14.0 223.3,14.0 228.4,14.0 233.5,14.0 238.6,14.0 243.8,14.0 248.9,14.0 254.0,14.0 259.1,14.0 264.2,14.0 269.4,14.0 274.5,14.0 279.6,14.0 284.7,14.0 289.9,14.0 295.0,14.0 300.1,14.0 305.2,14.0 310.3,14.0 315.5,14.0 320.6,14.0 325.7,14.0 330.8,14.0 336.0,14.0 341.1,14.0 346.2,14.0 351.3,14.0 356.4,14.0 361.6,14.0 366.7,18.3 371.8,23.3 376.9,30.2 382.0,33.1 387.2,40.9 392.3,44.8 397.4,50.9 402.5,57.1 407.7,61.1 412.8,64.2 417.9,67.7 423.0,71.6 428.1,78.5 433.3,81.5 438.4,82.2 443.5,62.5 448.6,59.5 453.8,61.4 458.9,63.5 464.0,66.0 469.1,67.4 474.2,67.1 479.4,70.6 484.5,74.3 489.6,75.2 494.7,75.8 499.9,73.2 505.0,74.9 510.1,75.3 515.2,77.4 520.3,77.5 525.5,76.0 530.6,49.4 535.7,51.0 540.8,53.7 546.0,55.8 551.1,59.0 556.2,63.7 561.3,65.8 566.4,60.7 571.6,63.5 576.7,65.9 581.8,68.3 586.9,71.2 592.0,75.5 597.2,78.3 602.3,81.2 607.4,82.7 612.5,86.1 617.7,87.4 622.8,88.7 627.9,90.7 633.0,91.6 638.1,94.2 643.3,97.8 648.4,101.9 653.5,106.2 658.6,109.0 663.8,111.8 668.9,115.1 674.0,117.1 679.1,118.3 684.2,119.8 689.4,121.7 694.5,123.7 699.6,125.2 704.7,126.9 709.9,129.4 715.0,131.5 720.1,133.5 725.2,131.1 730.3,130.2 735.5,130.4 740.6,130.4 745.7,130.3 750.8,130.3 756.0,130.2 761.1,130.3 766.2,130.3 771.3,130.3 776.4,130.2 781.6,130.4 786.7,130.4 791.8,130.4 796.9,130.5 802.0,130.5 807.2,130.5 812.3,130.6 817.4,130.7 822.5,130.7 827.7,130.7 832.8,130.7 837.9,130.7 843.0,130.7 848.1,130.7 853.3,130.7 858.4,130.7 863.5,130.7 868.6,130.7 873.8,130.7 878.9,130.7 884.0,130.7"/>
+  <circle class="mark" cx="884.0" cy="130.7" r="5"/>
+  <text x="876.0" y="148.7" text-anchor="end">final 67.58</text>
+</svg>
+<figcaption class="muted">Projected end-of-season index (WRSI, 100 = all the water the crop needed) on each day of the
+  replay. Until the season ends this is a projection that assumes normal rain from then on.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+<thead><tr><th>From</th><th>Status</th><th>What officers and farmers see</th><th class="num">Projected index</th><th class="num">Rain, % of normal</th></tr></thead>
+<tbody>
+<tr><td>Fri 29 Feb 2008</td><td>before season / <span class="chip ">none</span></td>
+  <td>Season not started yet.</td><td class="num"></td>
+  <td class="num"></td></tr>
+
+<tr><td>Sun 02 Mar 2008</td><td>waiting for rains / <span class="chip ">none</span></td>
+  <td>Waiting for the planting rains.</td><td class="num">100.0</td>
+  <td class="num">0</td></tr>
+
+<tr><td>Tue 01 Apr 2008</td><td>in season / <span class="chip ">normal</span></td>
+  <td>Rains are on track. No payout so far.</td><td class="num">100.0</td>
+  <td class="num">112</td></tr>
+
+<tr><td>Sat 03 May 2008</td><td>in season / <span class="chip warn">watch</span></td>
+  <td>Rains are below normal. A payout is possible if it stays dry.</td><td class="num">100.0</td>
+  <td class="num">59</td></tr>
+
+<tr><td>Thu 05 Jun 2008</td><td>in season / <span class="chip ">normal</span></td>
+  <td>Rains are on track. No payout so far.</td><td class="num">90.16</td>
+  <td class="num">62</td></tr>
+
+<tr><td>Mon 09 Jun 2008</td><td>in season / <span class="chip warn">watch</span></td>
+  <td>Rains are below normal. A payout is possible if it stays dry.</td><td class="num">87.5</td>
+  <td class="num">60</td></tr>
+
+<tr><td>Thu 12 Jun 2008</td><td>in season / <span class="chip ">normal</span></td>
+  <td>Rains are on track. No payout so far.</td><td class="num">87.03</td>
+  <td class="num">60</td></tr>
+
+<tr><td>Fri 13 Jun 2008</td><td>in season / <span class="chip warn">watch</span></td>
+  <td>Rains are below normal. A payout is possible if it stays dry.</td><td class="num">86.24</td>
+  <td class="num">60</td></tr>
+
+<tr><td>Sat 21 Jun 2008</td><td>in season / <span class="chip crit">alert</span></td>
+  <td>Dry season so far. A payout is likely if it stays dry.</td><td class="num">79.98</td>
+  <td class="num">56</td></tr>
+
+<tr><td>Fri 01 Aug 2008</td><td>complete / <span class="chip crit">payout</span></td>
+  <td>Dry season confirmed: payouts are due.</td><td class="num">67.58</td>
+  <td class="num">58</td></tr>
+</tbody></table></div>
+<p class="muted">Runs continued every day after the trigger confirmed, as the daily job does; they created no further
+  payouts.</p>
+</section>
+
+
+<section class="step" id="trigger">
+<h2>6. Trigger confirmed</h2>
+<p class="when">Fri 01 Aug 2008</p>
+
+<p>The growing season (planting rain Mar d3 2008) ended on Thu 31 Jul 2008. The next morning,
+  with rainfall in to Thu 31 Jul 2008, the index was final: <b>WRSI 67.58</b>,
+  below the trigger of 80. That pays 41% of the sum insured
+  (41.4%), on a straight line from 0 at the trigger to 100% at 50.
+  Payouts were calculated the same morning for every member whose cover was active, and the 10-day clock started.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Member</th><th>Payout</th><th class="num">Share of sum insured</th><th class="num">Amount</th><th>Paid to</th><th>Due by</th></tr></thead>
+<tbody>
+<tr><td><b>SIM-001</b></td><td>Drought (index below the trigger)</td><td class="num">41%</td><td class="num">KES 8,280</td>
+  <td>M-Pesa</td><td>Mon 11 Aug 2008</td></tr>
+
+<tr><td><b>SIM-002</b></td><td>Drought (index below the trigger)</td><td class="num">41%</td><td class="num">KES 12,420</td>
+  <td>M-Pesa</td><td>Mon 11 Aug 2008</td></tr>
+
+<tr><td><b>SIM-003</b></td><td>Drought (index below the trigger)</td><td class="num">41%</td><td class="num">KES 9,315</td>
+  <td>SACCO loan</td><td>Mon 11 Aug 2008</td></tr>
+
+<tr><td><b>SIM-004</b></td><td>Drought (index below the trigger)</td><td class="num">41%</td><td class="num">KES 16,560</td>
+  <td>M-Pesa</td><td>Mon 11 Aug 2008</td></tr>
+
+<tr><td><b>SIM-005</b></td><td>Drought (index below the trigger)</td><td class="num">41%</td><td class="num">KES 2,070</td>
+  <td>M-Pesa</td><td>Mon 11 Aug 2008</td></tr>
+</tbody></table></div>
+<p class="muted">No payout for SIM-006: cover did not start. Index
+  B-1.2.0; rainfall fingerprint <span class="mono">187ca01513db90c8</span>;
+  product settings fingerprint <span class="mono">9d83169771bf8496</span>.
+  Live, final CHIRPS rainfall arrives about three weeks after each month ends, so a live confirmation comes later than
+  in this replay; the clock starts at confirmation either way.</p>
+
+</section>
+
+
+<section class="step" id="approval">
+<h2>7. Underwriter approval</h2>
+
+<p class="when">Sat 02 Aug 2008</p>
+<p>The underwriter approves each calculated payout (or holds it with a reason). Members are told about a payout only
+  once it is approved.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>Member</th><th class="num">Amount</th><th>By</th><th class="num">Days left on the clock</th></tr></thead>
+<tbody>
+<tr><td>2008-08-02 09:30</td><td><b>SIM-001</b></td><td class="num">KES 8,280</td><td>sim-underwriter</td><td class="num">9</td></tr>
+
+<tr><td>2008-08-02 09:30</td><td><b>SIM-002</b></td><td class="num">KES 12,420</td><td>sim-underwriter</td><td class="num">9</td></tr>
+
+<tr><td>2008-08-02 09:30</td><td><b>SIM-003</b></td><td class="num">KES 9,315</td><td>sim-underwriter</td><td class="num">9</td></tr>
+
+<tr><td>2008-08-02 09:30</td><td><b>SIM-004</b></td><td class="num">KES 16,560</td><td>sim-underwriter</td><td class="num">9</td></tr>
+
+<tr><td>2008-08-02 09:30</td><td><b>SIM-005</b></td><td class="num">KES 2,070</td><td>sim-underwriter</td><td class="num">9</td></tr>
+</tbody></table></div>
+
+</section>
+
+
+<section class="step" id="payout">
+<h2>8. Payout</h2>
+
+<p class="when">Mon 04 Aug 2008</p>
+<p>The SACCO manager pays each approved payout: to the member's M-Pesa (simulated: no money moved) or, for a
+  loan-linked member who agreed to it, as a credit to the SACCO loan.</p>
+<h3>The 10-day clock</h3>
+<div class="clock" role="list">
+  <div role="listitem" class="hit "><b>Day 0</b>01 Aug<br>Trigger confirmed</div>
+
+  <div role="listitem" class="hit "><b>Day 1</b>02 Aug<br>Underwriter approved</div>
+
+  <div role="listitem" class=" "><b>Day 2</b>03 Aug</div>
+
+  <div role="listitem" class="hit "><b>Day 3</b>04 Aug<br>Paid</div>
+
+  <div role="listitem" class=" "><b>Day 4</b>05 Aug</div>
+
+  <div role="listitem" class=" "><b>Day 5</b>06 Aug</div>
+
+  <div role="listitem" class=" "><b>Day 6</b>07 Aug</div>
+
+  <div role="listitem" class=" "><b>Day 7</b>08 Aug</div>
+
+  <div role="listitem" class=" "><b>Day 8</b>09 Aug</div>
+
+  <div role="listitem" class=" "><b>Day 9</b>10 Aug</div>
+
+  <div role="listitem" class=" due"><b>Day 10</b>11 Aug<br>Deadline</div>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Paid</th><th>Member</th><th class="num">Amount</th><th>To</th><th>Reference</th><th class="num">Days after confirmation</th><th>Within 10 days</th></tr></thead>
+<tbody>
+<tr><td>2008-08-04 14:00</td><td><b>SIM-001</b> Njeri Wambui (fictional)</td><td class="num">KES 8,280</td>
+  <td>M-Pesa</td>
+  <td class="mono">SIMB2C029DA97D</td><td class="num">3</td>
+  <td><span class="chip ok">yes, due 2008-08-11</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td><b>SIM-002</b> Kibet Cheruiyot (fictional)</td><td class="num">KES 12,420</td>
+  <td>M-Pesa</td>
+  <td class="mono">SIMB2CA4E26E72</td><td class="num">3</td>
+  <td><span class="chip ok">yes, due 2008-08-11</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td><b>SIM-003</b> Atieno Achieng (fictional)</td><td class="num">KES 9,315</td>
+  <td>SACCO loan</td>
+  <td class="mono">SIM-LOAN-CR-SIM-003</td><td class="num">3</td>
+  <td><span class="chip ok">yes, due 2008-08-11</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td><b>SIM-004</b> Mutua Kioko (fictional)</td><td class="num">KES 16,560</td>
+  <td>M-Pesa</td>
+  <td class="mono">SIMB2CCEF8BC7C</td><td class="num">3</td>
+  <td><span class="chip ok">yes, due 2008-08-11</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td><b>SIM-005</b> Wairimu Ndungu (fictional)</td><td class="num">KES 2,070</td>
+  <td>M-Pesa</td>
+  <td class="mono">SIMB2CFB7809D0</td><td class="num">3</td>
+  <td><span class="chip ok">yes, due 2008-08-11</span></td></tr>
+</tbody></table></div>
+<p class="ok-text">Checked: every payout was paid within 10 days of the trigger confirming
+  (slowest: 3 days).</p>
+
+</section>
+
+
+<section class="step" id="sms">
+<h2>9. SMS log</h2>
+<p class="when">The whole season; last message Mon 04 Aug 2008</p>
+<p>23 messages, in each member's language, recorded in the outbox and <b>not sent</b> (log-only
+  sender). Members without SMS consent get none: SIM-004. The Kiswahili text is
+  pending native-speaker review.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Queued</th><th>Member</th><th>Phone</th><th>Lang.</th><th>Message</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>2007-10-15 10:00</td><td>SIM-001</td><td class="mono">+254 7** *** 001</td><td>sw</td><td>AgroShield: Njeri, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00001. Lipa KES 1,790 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-10-16 10:00</td><td>SIM-002</td><td class="mono">+254 7** *** 002</td><td>en</td><td>AgroShield: Kibet, enrolled for long rains 2008 maize cover AGS-SIM-LR08-00002. Pay KES 2,827 by 14/02/2008 (M-Pesa or SACCO). Dial *384*000#.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-10-17 10:00</td><td>SIM-003</td><td class="mono">+254 7** *** 003</td><td>sw</td><td>AgroShield: Atieno, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00003. Lipa KES 1,926 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-10-19 10:00</td><td>SIM-005</td><td class="mono">+254 7** *** 005</td><td>en</td><td>AgroShield: Wairimu, enrolled for long rains 2008 maize cover AGS-SIM-LR08-00005. Pay KES 587 by 14/02/2008 (M-Pesa or SACCO). Dial *384*000#.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-10-20 10:00</td><td>SIM-006</td><td class="mono">+254 7** *** 006</td><td>sw</td><td>AgroShield: Barasa, umesajiliwa bima ya mahindi masika 2008, AGS-SIM-LR08-00006. Lipa KES 2,356 kufikia 14/02/2008 (M-Pesa/SACCO). Piga *384*000#.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-11-02 11:01</td><td>SIM-001</td><td class="mono">+254 7** *** 001</td><td>sw</td><td>AgroShield: ada imelipwa yote. Bima yako ya mahindi masika 2008 AGS-SIM-LR08-00001 sasa inatumika. Malipo hufuata kipimo cha mvua cha wadi yako.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-11-06 11:01</td><td>SIM-005</td><td class="mono">+254 7** *** 005</td><td>en</td><td>AgroShield: premium paid in full. Your long rains 2008 maize cover AGS-SIM-LR08-00005 is now active. Payouts follow your ward rainfall index.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-11-20 11:01</td><td>SIM-002</td><td class="mono">+254 7** *** 002</td><td>en</td><td>AgroShield: received KES 1,413 for AGS-SIM-LR08-00002. Paid KES 1,413 of 2,827. Balance KES 1,414, pay by 14/02/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-11-30 11:00</td><td>SIM-003</td><td class="mono">+254 7** *** 003</td><td>sw</td><td>AgroShield: tumepokea KES 963 kwa AGS-SIM-LR08-00003. Umelipa KES 963 kati ya 1,926. Salio KES 963, lipa kabla ya 14/02/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-12-10 11:01</td><td>SIM-006</td><td class="mono">+254 7** *** 006</td><td>sw</td><td>AgroShield: tumepokea KES 1,178 kwa AGS-SIM-LR08-00006. Umelipa KES 1,178 kati ya 2,356. Salio KES 1,178, lipa kabla ya 14/02/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2007-12-31 11:00</td><td>SIM-003</td><td class="mono">+254 7** *** 003</td><td>sw</td><td>AgroShield: ada imelipwa yote. Bima yako ya mahindi masika 2008 AGS-SIM-LR08-00003 sasa inatumika. Malipo hufuata kipimo cha mvua cha wadi yako.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-01-25 11:01</td><td>SIM-002</td><td class="mono">+254 7** *** 002</td><td>en</td><td>AgroShield: premium paid in full. Your long rains 2008 maize cover AGS-SIM-LR08-00002 is now active. Payouts follow your ward rainfall index.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-02-07 06:00</td><td>SIM-006</td><td class="mono">+254 7** *** 006</td><td>sw</td><td>AgroShield: KES 1,178 bado inadaiwa kwa AGS-SIM-LR08-00006. Lipa kabla ya 14/02/2008 la sivyo bima haitaanza. Piga *384*000# kulipa.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-02-13 06:00</td><td>SIM-006</td><td class="mono">+254 7** *** 006</td><td>sw</td><td>AgroShield: KES 1,178 bado inadaiwa kwa AGS-SIM-LR08-00006. Lipa kabla ya 14/02/2008 la sivyo bima haitaanza. Piga *384*000# kulipa.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-02-15 06:00</td><td>SIM-006</td><td class="mono">+254 7** *** 006</td><td>sw</td><td>AgroShield: AGS-SIM-LR08-00006 haikulipwa yote kufikia 14/02/2008, kwa hivyo bima haikuanza. KES 1,178 utarudishiwa kupitia SACCO yako.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-02 09:30</td><td>SIM-001</td><td class="mono">+254 7** *** 001</td><td>sw</td><td>AgroShield: ukame umethibitishwa katika wadi yako. Malipo KES 8,280 kwa AGS-SIM-LR08-00001 yatalipwa kufikia 11/08/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-02 09:30</td><td>SIM-002</td><td class="mono">+254 7** *** 002</td><td>en</td><td>AgroShield: dry season confirmed in your ward. Payout KES 12,420 for AGS-SIM-LR08-00002 will be paid by 11/08/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-02 09:30</td><td>SIM-003</td><td class="mono">+254 7** *** 003</td><td>sw</td><td>AgroShield: ukame umethibitishwa katika wadi yako. Malipo KES 9,315 kwa AGS-SIM-LR08-00003 yatalipwa kufikia 11/08/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-02 09:30</td><td>SIM-005</td><td class="mono">+254 7** *** 005</td><td>en</td><td>AgroShield: dry season confirmed in your ward. Payout KES 2,070 for AGS-SIM-LR08-00005 will be paid by 11/08/2008.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td>SIM-001</td><td class="mono">+254 7** *** 001</td><td>sw</td><td>AgroShield: malipo KES 8,280 kwa AGS-SIM-LR08-00001 yametumwa kwa M-Pesa yako, nambari SIMB2C029DA97D.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td>SIM-002</td><td class="mono">+254 7** *** 002</td><td>en</td><td>AgroShield: payout KES 12,420 for AGS-SIM-LR08-00002 sent to your M-Pesa, ref SIMB2CA4E26E72.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td>SIM-003</td><td class="mono">+254 7** *** 003</td><td>sw</td><td>AgroShield: malipo KES 9,315 kwa AGS-SIM-LR08-00003 yamelipa mkopo wako wa SACCO LN-SIM-0003. SACCO itakulipa salio lolote.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+
+<tr><td>2008-08-04 14:00</td><td>SIM-005</td><td class="mono">+254 7** *** 005</td><td>en</td><td>AgroShield: payout KES 2,070 for AGS-SIM-LR08-00005 sent to your M-Pesa, ref SIMB2CFB7809D0.</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+</tbody></table></div>
+</section>
+
+
+<section class="step" id="missed_payout">
+<h2>10. Missed-payout report</h2>
+
+<p class="when">Reported 2008-08-06 08:15; reviewed 2008-08-12 16:00</p>
+<p>Member SIM-002 used USSD option "Report crop loss" to say the payout was
+  too small for the loss on the farm (reference MP-5G2528).
+  The report keeps a snapshot of the ward status at that moment (index 67.58,
+  payout). The SACCO manager reviewed it: <b>basis risk recorded</b>. "Simulated field visit: the loss on this farm looks worse than the ward index shows. Recorded for the index review. The payout does not change."</p>
+<p class="ok-text">Checked: the report did leave
+  every payout unchanged. Reports like this are how basis risk is recorded until ward yield data exists.</p>
+</section>
+
+
+<section class="step" id="bordereaux">
+<h2>11. Bordereaux</h2>
+<p class="when">Sun 31 Aug 2008</p>
+<p>The underwriter's monthly files: premium (policies written in the month) and payouts (triggers confirmed in the
+  month). IDs and phone numbers are masked. Each ZIP holds the two CSV files and a manifest with their SHA-256.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Month</th><th class="num">Premium rows</th><th class="num">Payout rows</th><th>File</th><th>SHA-256 of the ZIP</th></tr></thead>
+<tbody>
+<tr><td>2007-10</td><td class="num">6</td><td class="num">0</td>
+  <td><a href="bordereaux/bordereaux-SIMUW-2007-10.zip">bordereaux/bordereaux-SIMUW-2007-10.zip</a></td><td class="mono">0189e3d7238585f9e44cfa8f06dbce7664aca59dda60fc9c588e7c8476b22b93</td></tr>
+
+<tr><td>2008-08</td><td class="num">0</td><td class="num">5</td>
+  <td><a href="bordereaux/bordereaux-SIMUW-2008-08.zip">bordereaux/bordereaux-SIMUW-2008-08.zip</a></td><td class="mono">3888dfc9e7b4387c3e3585b54bb9f973dc1c3b62a389c2589a2da8cea7e517b9</td></tr>
+</tbody></table></div>
+</section>
+
+
+<section class="step" id="reinsurer">
+<h2>12. Reinsurer summary</h2>
+<p class="when">Sun 31 Aug 2008</p>
+
+<p>The underwriter's one-page summary after the season. The as-if figures run this season's book through every
+  season the engine prices (1981 to 2025, 45 seasons), so they describe the
+  risk of this tiny fictional book, not a forecast.</p>
+<div class="grid">
+  <div class="kpi"><div class="v">5 of 6</div><div class="k">policies in force</div></div>
+  <div class="kpi"><div class="v">KES 117,500</div><div class="k">sum insured in force</div></div>
+  <div class="kpi"><div class="v">KES 26,768.79</div><div class="k">gross premium written</div></div>
+  <div class="kpi"><div class="v">KES 10,111.97</div><div class="k">expected loss (as-if)</div></div>
+  <div class="kpi"><div class="v">KES 37,694</div><div class="k">1-in-10 season loss</div></div>
+  <div class="kpi"><div class="v">KES 54,661.00</div><div class="k">1-in-20 season loss</div></div>
+  <div class="kpi"><div class="v">KES 48,645</div><div class="k">paid to 5 members</div></div>
+</div>
+<p>Worst seasons for this book: 1984 (KES 95,723.37), 2002 (KES 69,520.87), 2004 (KES 56,165).</p>
+<p class="muted">The workspace's "median days to pay" leaves out replayed seasons (5 payouts here),
+  because a replay's timing is not real; the 10-day clock for this replay is shown in step 8.</p>
+</section>
+
+<h2>How this was made</h2>
+<ul>
+  <li>Command: <code>python -m agroshield_platform.simulate --year 2008</code> (or <code>python tools/sim/season.py</code>).
+    Generated 2026-11-01T15:13:32+00:00 (UTC).</li>
+  <li>Each step calls the platform's own services (enrolment, M-Pesa, settlement, the daily job, monitoring,
+    approval, payment, SMS outbox, missed-payout reports, bordereaux, reinsurer summary). Prices, triggers and
+    payouts are not re-calculated here.</li>
+  <li>A simulated clock stands in for the time of day inside the platform while the replay runs, so every record
+    carries the replayed date. M-Pesa is the built-in simulator and SMS is log-only, whatever the settings say.</li>
+  <li>Rainfall: CHIRPS v2.0 daily (committed record), <span class="mono">data/raw/chirps/ward-a.csv</span>, SHA-256
+    <span class="mono">264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2</span>. Index B-1.2.0.</li>
+  <li>Settings fingerprints: pilot.yaml <span class="mono">622f69d948a9</span>, wards.yaml <span class="mono">5d53a22fa76e</span>, phenology.yaml <span class="mono">5d36f0cdf5f2</span>, product.yaml <span class="mono">9d83169771bf</span>.</li>
+  <li>Everything in the season is in <a href="season.json">season.json</a>.</li>
+</ul>
+<p class="banner"><b>SIMULATION / REPLAY</b> Fictional people. ILLUSTRATIVE terms. Not a record of real cover or payments.</p>
+</main>
+</body>
+</html>

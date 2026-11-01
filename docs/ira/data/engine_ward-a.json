@@ -1,0 +1,1843 @@
+{
+  "marking": "DRAFT / ILLUSTRATIVE",
+  "note": "The pricing engine's own output, unchanged, wrapped with its run manifest.",
+  "results_sha256": "76436465366497deb69a8c2747798ad78b7de83a9a7846c0722d047a0f96e873",
+  "manifest": {
+    "run_id": "20261101T151342Z_ward-a_2a26a6",
+    "created_at": "2026-11-01T15:13:42+00:00",
+    "command": "agroshield-price run --all --offline --out var/ira-engine-run",
+    "package_version": "0.1.0",
+    "git": {
+      "commit": "9fef985ace39",
+      "dirty": false
+    },
+    "python": "3.12.10",
+    "libraries": {
+      "numpy": "2.1.1",
+      "pandas": "2.2.3",
+      "scipy": "1.18.1"
+    },
+    "ward_id": "ward-a",
+    "rainfall_source": "chirps",
+    "pet_source": "hargreaves_nasapower",
+    "rainfall": {
+      "label": "REAL",
+      "source": "CHIRPS v2.0 daily via SERVIR ClimateSERV",
+      "cache_file": "data/raw/chirps/ward-a.csv",
+      "sha256": "264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2",
+      "retrieved_at": "2026-10-27T18:07:17+00:00",
+      "geometry": "box of 0.10 deg around the ward centroid",
+      "caveat": "CHIRPS daily values are disaggregated from pentad totals and are unreliable day by day; the index only uses multi-week phase totals."
+    },
+    "pet": {
+      "label": "REAL",
+      "source": "Hargreaves PET from NASA POWER temperature (FALLBACK)",
+      "cache_file": "data/raw/nasapower/ward-a.csv",
+      "sha256": "88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5",
+      "retrieved_at": "2026-10-28T11:51:19+00:00",
+      "lapse_shift_c": 2.6,
+      "note": "FALLBACK: FEWS NET Penman-Monteith PET was unreachable (USGS server 503) and only covers 2001 onward. Hargreaves can overstate PET in humid conditions.",
+      "calibration": {
+        "available": false,
+        "reason": "Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and then refused connections; retried through 2026-10-28."
+      }
+    },
+    "index_version": "B-1.2.0",
+    "index_v0_version": "B-0.1.0",
+    "pilot": {
+      "county": "Nakuru",
+      "crop": "maize",
+      "default_ward": "ward-a",
+      "wards": [
+        "ward-a",
+        "ward-b"
+      ],
+      "sacco": "TBD",
+      "underwriter": "TBD"
+    },
+    "history": {
+      "start_year": 1981,
+      "end_year": 2025
+    },
+    "config_sha256": {
+      "pilot.yaml": "622f69d948a92660063adc2f519993bdb2025602f599c0c4e671d7c767263966",
+      "wards.yaml": "5d53a22fa76e715ea75dbd7341a4e6214c7fce1880d130828845a2d94f7be73f",
+      "phenology.yaml": "5d36f0cdf5f2d3de7d471de242f3060bb3daf55945c6dc352fe9bdd0ca65f37b",
+      "product.yaml": "9d83169771bf8496f5486eda074b638b2f35a07fb586bc644542185646520c6e"
+    },
+    "results_sha256": "76436465366497deb69a8c2747798ad78b7de83a9a7846c0722d047a0f96e873"
+  },
+  "results": {
+    "ward": {
+      "id": "ward-a",
+      "name": "Illustrative Ward A (lowland, near Rongai)",
+      "display_name": "Rongai West",
+      "illustrative": true,
+      "centroid": {
+        "lat": -0.17,
+        "lon": 35.86
+      },
+      "extraction_box_deg": 0.1,
+      "elevation_m": 1900.0,
+      "soil_whc_mm": 100.0,
+      "soil_illustrative": true,
+      "seasons": [
+        "LR"
+      ],
+      "notes": "Stand-in for a drier, drought-exposed maize ward."
+    },
+    "rainfall_provenance": {
+      "label": "REAL",
+      "source": "CHIRPS v2.0 daily via SERVIR ClimateSERV",
+      "cache_file": "data/raw/chirps/ward-a.csv",
+      "sha256": "264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2",
+      "retrieved_at": "2026-10-27T18:07:17+00:00",
+      "geometry": "box of 0.10 deg around the ward centroid",
+      "caveat": "CHIRPS daily values are disaggregated from pentad totals and are unreliable day by day; the index only uses multi-week phase totals."
+    },
+    "pet_provenance": {
+      "label": "REAL",
+      "source": "Hargreaves PET from NASA POWER temperature (FALLBACK)",
+      "cache_file": "data/raw/nasapower/ward-a.csv",
+      "sha256": "88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5",
+      "retrieved_at": "2026-10-28T11:51:19+00:00",
+      "lapse_shift_c": 2.6,
+      "note": "FALLBACK: FEWS NET Penman-Monteith PET was unreachable (USGS server 503) and only covers 2001 onward. Hargreaves can overstate PET in humid conditions.",
+      "calibration": {
+        "available": false,
+        "reason": "Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and then refused connections; retried through 2026-10-28."
+      }
+    },
+    "pet_calibration": {
+      "available": false,
+      "reason": "Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and then refused connections; retried through 2026-10-28."
+    },
+    "rainfall_annual_mean_mm": 1056.1977377777778,
+    "pet_annual_mean_mm": 1483.9267132482953,
+    "index_version": "B-1.2.0",
+    "seasons": {
+      "LR": {
+        "season": "LR",
+        "season_label": "Long rains",
+        "years": [
+          1981,
+          1982,
+          1983,
+          1984,
+          1985,
+          1986,
+          1987,
+          1988,
+          1989,
+          1990,
+          1991,
+          1992,
+          1993,
+          1994,
+          1995,
+          1996,
+          1997,
+          1998,
+          1999,
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005,
+          2006,
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "calendar": {
+          "planting_window": {
+            "start": "03-01",
+            "end": "04-30"
+          },
+          "planting_rain_from": "03-01",
+          "variety": "medium-maturity hybrid",
+          "lgp_days": 130,
+          "lgp_dekads": 13
+        },
+        "terms": {
+          "trigger_wrsi": 80.0,
+          "exit_wrsi": 50.0,
+          "failed_onset_payout": 0.25,
+          "version": "B-1.2.0",
+          "soil_whc_mm": 100.0,
+          "depletion_fraction": 0.55,
+          "spinup_dekads": 3,
+          "planting_rain_mm": 25.0,
+          "failed_onset": {
+            "window_rain_below_mm": 80.0,
+            "payout": 0.25
+          },
+          "germination_dry_spell": {
+            "days_after_planting": 20,
+            "rain_below_mm": 20.0,
+            "replant_cost_kes_per_acre": 2500.0,
+            "restart_search_extra_dekads": 3
+          },
+          "kc": {
+            "points_pct": [
+              0.0,
+              16.0,
+              44.0,
+              76.0,
+              100.0
+            ],
+            "values": [
+              0.3,
+              0.3,
+              1.2,
+              1.2,
+              0.35
+            ]
+          }
+        },
+        "onset_stats": {
+          "failed_onsets": 0,
+          "germination_failures": 4,
+          "lowest_window_rain": [
+            {
+              "year": 2000,
+              "mm": 84.6
+            },
+            {
+              "year": 1993,
+              "mm": 87.7
+            },
+            {
+              "year": 1984,
+              "mm": 118.6
+            }
+          ],
+          "earliest": "1 Mar (1990)",
+          "latest": "21 Apr (1983)"
+        },
+        "early_season_triggers": [
+          {
+            "year": 1994,
+            "trigger": "Germination dry spell",
+            "payout_kes": 2500.0,
+            "cause": "planting rain Mar d2 1994, then 11 mm from 1994-03-21 to 1994-04-09, below 20 mm; season restarted Apr d3 1994"
+          },
+          {
+            "year": 2002,
+            "trigger": "Germination dry spell",
+            "payout_kes": 2500.0,
+            "cause": "planting rain Mar d1 2002, then 17 mm from 2002-03-11 to 2002-03-30, below 20 mm; season restarted Apr d2 2002"
+          },
+          {
+            "year": 2007,
+            "trigger": "Germination dry spell",
+            "payout_kes": 2500.0,
+            "cause": "planting rain Mar d2 2007, then 0 mm from 2007-03-21 to 2007-04-09, below 20 mm; season restarted Apr d2 2007"
+          },
+          {
+            "year": 2016,
+            "trigger": "Germination dry spell",
+            "payout_kes": 2500.0,
+            "cause": "planting rain Mar d1 2016, then 0 mm from 2016-03-11 to 2016-03-30, below 20 mm; season restarted Apr d1 2016"
+          }
+        ],
+        "wrsi_stats": {
+          "median": 97.19,
+          "min": 55.56,
+          "below_trigger": 9,
+          "at_or_below_exit": 0
+        },
+        "burn_cost": {
+          "seasons": 45,
+          "first_year": 1981,
+          "last_year": 2025,
+          "payout_seasons": 12,
+          "payout_frequency": 0.26666666666666666,
+          "meaningful_payout_frequency": 0.24444444444444444,
+          "expected_loss": 0.0860592888888889,
+          "std_dev": 0.18329632611586555,
+          "loss_1_in_10": 0.32080000000000014,
+          "loss_1_in_20": 0.4651999999999998,
+          "max_loss": 0.814667,
+          "worst_seasons": [
+            {
+              "year": 1984,
+              "payout_frac": 0.814667
+            },
+            {
+              "year": 2002,
+              "payout_frac": 0.591667
+            },
+            {
+              "year": 2004,
+              "payout_frac": 0.478
+            },
+            {
+              "year": 2008,
+              "payout_frac": 0.414
+            },
+            {
+              "year": 1999,
+              "payout_frac": 0.368
+            }
+          ]
+        },
+        "exceedance": [
+          {
+            "loss": 0.814667,
+            "exceedance": 0.021739130434782608
+          },
+          {
+            "loss": 0.591667,
+            "exceedance": 0.043478260869565216
+          },
+          {
+            "loss": 0.478,
+            "exceedance": 0.06521739130434782
+          },
+          {
+            "loss": 0.414,
+            "exceedance": 0.08695652173913043
+          },
+          {
+            "loss": 0.368,
+            "exceedance": 0.10869565217391304
+          },
+          {
+            "loss": 0.25,
+            "exceedance": 0.13043478260869565
+          },
+          {
+            "loss": 0.25,
+            "exceedance": 0.15217391304347827
+          },
+          {
+            "loss": 0.25,
+            "exceedance": 0.17391304347826086
+          },
+          {
+            "loss": 0.233667,
+            "exceedance": 0.1956521739130435
+          },
+          {
+            "loss": 0.12366700000000001,
+            "exceedance": 0.21739130434782608
+          },
+          {
+            "loss": 0.06,
+            "exceedance": 0.2391304347826087
+          },
+          {
+            "loss": 0.039,
+            "exceedance": 0.2608695652173913
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.2826086956521739
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.30434782608695654
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.32608695652173914
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.34782608695652173
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.3695652173913043
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.391304347826087
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.41304347826086957
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.43478260869565216
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.45652173913043476
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.4782608695652174
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.5
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.5217391304347826
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.5434782608695652
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.5652173913043478
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.5869565217391305
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.6086956521739131
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.6304347826086957
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.6521739130434783
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.6739130434782609
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.6956521739130435
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.717391304347826
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.7391304347826086
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.7608695652173914
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.782608695652174
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.8043478260869565
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.8260869565217391
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.8478260869565217
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.8695652173913043
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.8913043478260869
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.9130434782608695
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.9347826086956522
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.9565217391304348
+          },
+          {
+            "loss": 0.0,
+            "exceedance": 0.9782608695652174
+          }
+        ],
+        "premium": {
+          "expected_loss_rate": 0.0860592888888889,
+          "risk_margin_rate": 0.04582408152896639,
+          "risk_margin_method": {
+            "method": "std_dev",
+            "factor": 0.25
+          },
+          "pure_premium_rate": 0.1318833704178553,
+          "loadings_share_of_gross": {
+            "expense": 0.12,
+            "intermediary": 0.05,
+            "platform": 0.06,
+            "underwriter_margin": 0.07
+          },
+          "loadings_rate": {
+            "expense": 0.022608577785918054,
+            "intermediary": 0.009420240744132523,
+            "platform": 0.011304288892959027,
+            "underwriter_margin": 0.013188337041785533
+          },
+          "gross_rate": 0.18840481488265046,
+          "loss_ratio_at_gross": 0.45677860697186357,
+          "per_acre": [
+            {
+              "sum_insured_kes_per_acre": 5000.0,
+              "expected_loss_kes": 541.41,
+              "risk_margin_kes": 279.81,
+              "loadings_kes": {
+                "expense": 140.78,
+                "intermediary": 58.66,
+                "platform": 70.39,
+                "underwriter_margin": 82.12
+              },
+              "gross_premium_kes": 1173.17,
+              "gross_rate": 0.23463423648855344
+            },
+            {
+              "sum_insured_kes_per_acre": 10000.0,
+              "expected_loss_kes": 860.59,
+              "risk_margin_kes": 458.24,
+              "loadings_kes": {
+                "expense": 226.09,
+                "intermediary": 94.2,
+                "platform": 113.04,
+                "underwriter_margin": 131.88
+              },
+              "gross_premium_kes": 1884.05,
+              "gross_rate": 0.18840481488265046
+            },
+            {
+              "sum_insured_kes_per_acre": 15000.0,
+              "expected_loss_kes": 1179.78,
+              "risk_margin_kes": 653.78,
+              "loadings_kes": {
+                "expense": 314.32,
+                "intermediary": 130.97,
+                "platform": 157.16,
+                "underwriter_margin": 183.36
+              },
+              "gross_premium_kes": 2619.36,
+              "gross_rate": 0.17462428092640692
+            }
+          ],
+          "default_sum_insured_kes_per_acre": 10000.0
+        },
+        "components": [
+          {
+            "component": "WRSI",
+            "seasons_paying": 9,
+            "payout_frequency": 0.2,
+            "expected_loss_kes": 638.3706666666667,
+            "gross_kes_alone": 1503.56,
+            "in_product": true
+          },
+          {
+            "component": "Failed onset (catastrophe only)",
+            "seasons_paying": 0,
+            "payout_frequency": 0.0,
+            "expected_loss_kes": 0.0,
+            "gross_kes_alone": 0.0,
+            "in_product": true
+          },
+          {
+            "component": "Germination replanting (seed voucher)",
+            "seasons_paying": 4,
+            "payout_frequency": 0.08888888888888889,
+            "expected_loss_kes": 222.22222222222223,
+            "gross_kes_alone": 574.42,
+            "in_product": true
+          }
+        ],
+        "target": {
+          "main": {
+            "label": "WRSI and failed onset",
+            "return_period_years": [
+              5.0,
+              7.0
+            ],
+            "frequency_band": [
+              0.14285714285714285,
+              0.2
+            ],
+            "frequency": 0.2,
+            "in_band": true,
+            "triggers_in_band": [
+              80.0
+            ]
+          },
+          "combined": {
+            "label": "Any payout (for farmer communication)",
+            "frequency": 0.26666666666666666,
+            "about_one_in": 3.75
+          },
+          "replanting": {
+            "label": "Replanting seed voucher",
+            "return_period_years": [
+              8.0,
+              12.0
+            ],
+            "frequency_band": [
+              0.08333333333333333,
+              0.125
+            ],
+            "frequency": 0.08888888888888889,
+            "in_band": true
+          }
+        },
+        "trigger_sensitivity": [
+          {
+            "trigger_wrsi": 65.0,
+            "main_frequency": 0.022222222222222223,
+            "payout_frequency": 0.1111111111111111,
+            "return_period_years": 45.0,
+            "expected_loss": 0.0362074,
+            "loss_1_in_10": 0.15000000000000036,
+            "gross_rate": 0.09297819909807926,
+            "in_target_band": false,
+            "is_current": false
+          },
+          {
+            "trigger_wrsi": 70.0,
+            "main_frequency": 0.1111111111111111,
+            "payout_frequency": 0.17777777777777778,
+            "return_period_years": 9.0,
+            "expected_loss": 0.047211111111111106,
+            "loss_1_in_10": 0.23680000000000004,
+            "gross_rate": 0.11381754581268563,
+            "in_target_band": false,
+            "is_current": false
+          },
+          {
+            "trigger_wrsi": 75.0,
+            "main_frequency": 0.13333333333333333,
+            "payout_frequency": 0.2,
+            "return_period_years": 7.5,
+            "expected_loss": 0.06622222222222222,
+            "loss_1_in_10": 0.25,
+            "gross_rate": 0.15104472789827117,
+            "in_target_band": false,
+            "is_current": false
+          },
+          {
+            "trigger_wrsi": 80.0,
+            "main_frequency": 0.2,
+            "payout_frequency": 0.26666666666666666,
+            "return_period_years": 5.0,
+            "expected_loss": 0.0860592888888889,
+            "loss_1_in_10": 0.32080000000000014,
+            "gross_rate": 0.18840481488265046,
+            "in_target_band": true,
+            "is_current": true
+          },
+          {
+            "trigger_wrsi": 85.0,
+            "main_frequency": 0.24444444444444444,
+            "payout_frequency": 0.3111111111111111,
+            "return_period_years": 4.090909090909091,
+            "expected_loss": 0.10676191111111112,
+            "loss_1_in_10": 0.4122288000000002,
+            "gross_rate": 0.22606578413285527,
+            "in_target_band": false,
+            "is_current": false
+          },
+          {
+            "trigger_wrsi": 90.0,
+            "main_frequency": 0.3111111111111111,
+            "payout_frequency": 0.37777777777777777,
+            "return_period_years": 3.2142857142857144,
+            "expected_loss": 0.12978888888888887,
+            "loss_1_in_10": 0.4857000000000002,
+            "gross_rate": 0.26561567994631774,
+            "in_target_band": false,
+            "is_current": false
+          }
+        ],
+        "whc_sensitivity": [
+          {
+            "whc_mm": 60.0,
+            "is_current": false,
+            "median_wrsi": 87.97,
+            "payout_frequency": 0.3333333333333333,
+            "expected_loss": 0.12667406666666667,
+            "gross_rate": 0.26537820395894696,
+            "event_payouts": {
+              "1984": 0.825
+            }
+          },
+          {
+            "whc_mm": 100.0,
+            "is_current": true,
+            "median_wrsi": 97.19,
+            "payout_frequency": 0.26666666666666666,
+            "expected_loss": 0.0860592888888889,
+            "gross_rate": 0.18840481488265046,
+            "event_payouts": {
+              "1984": 0.814667
+            }
+          },
+          {
+            "whc_mm": 140.0,
+            "is_current": false,
+            "median_wrsi": 98.58,
+            "payout_frequency": 0.2222222222222222,
+            "expected_loss": 0.07277037777777778,
+            "gross_rate": 0.16357206362144738,
+            "event_payouts": {
+              "1984": 0.841
+            }
+          },
+          {
+            "whc_mm": 180.0,
+            "is_current": false,
+            "median_wrsi": 98.26,
+            "payout_frequency": 0.2222222222222222,
+            "expected_loss": 0.07106666666666667,
+            "gross_rate": 0.16277403318863534,
+            "event_payouts": {
+              "1984": 0.872667
+            }
+          }
+        ],
+        "flowering": null,
+        "event_tests": [
+          {
+            "year": 1984,
+            "note": "1984 drought, the worst season on record in Kenya",
+            "min_payout": 0.5,
+            "required": true,
+            "wrsi": 55.56,
+            "failed_onset": false,
+            "sos": "Apr d1 1984",
+            "payout": 0.814667,
+            "passed": true,
+            "v0_payout": 0.093208
+          }
+        ],
+        "worst_seasons": [
+          {
+            "rank": 1,
+            "year": 1984,
+            "sos": "Apr d1 1984",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 55.56,
+            "payout": 0.814667,
+            "v0_payout": 0.093208
+          },
+          {
+            "rank": 2,
+            "year": 2004,
+            "sos": "Mar d3 2004",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 65.66,
+            "payout": 0.478,
+            "v0_payout": 0.055067
+          },
+          {
+            "rank": 3,
+            "year": 2008,
+            "sos": "Mar d3 2008",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 67.58,
+            "payout": 0.414,
+            "v0_payout": 0.053599
+          },
+          {
+            "rank": 4,
+            "year": 1999,
+            "sos": "Mar d2 1999",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 68.96,
+            "payout": 0.368,
+            "v0_payout": 0.012674
+          },
+          {
+            "rank": 5,
+            "year": 2002,
+            "sos": "Apr d2 2002",
+            "failed_onset": false,
+            "germination_failed": true,
+            "wrsi": 69.75,
+            "payout": 0.591667,
+            "v0_payout": 0.186407
+          },
+          {
+            "rank": 6,
+            "year": 2000,
+            "sos": "Apr d2 2000",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 72.99,
+            "payout": 0.233667,
+            "v0_payout": 0.034455
+          },
+          {
+            "rank": 7,
+            "year": 2009,
+            "sos": "Mar d3 2009",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 76.29,
+            "payout": 0.12366700000000001,
+            "v0_payout": 0.013148
+          },
+          {
+            "rank": 8,
+            "year": 2014,
+            "sos": "Mar d2 2014",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 78.2,
+            "payout": 0.06,
+            "v0_payout": 0.0
+          },
+          {
+            "rank": 9,
+            "year": 2022,
+            "sos": "Apr d2 2022",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 78.83,
+            "payout": 0.039,
+            "v0_payout": 0.151396
+          },
+          {
+            "rank": 10,
+            "year": 1993,
+            "sos": "Apr d3 1993",
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 83.43,
+            "payout": 0.0,
+            "v0_payout": 0.0
+          }
+        ],
+        "fewsnet_validation": {
+          "available": false,
+          "reason": "Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28."
+        },
+        "basis_risk": {
+          "available": false,
+          "reason": "Not measurable until real ward yields are available. Rainfall-derived synthetic yields were dropped because they agree with a rainfall index by construction."
+        },
+        "layer_a": {
+          "available": false,
+          "offered": false,
+          "dropped": true,
+          "reason": "Dropped from the product (2026-10-29): measured C3S March-May forecast skill caught 2 of 11 Layer B payout seasons with a 67% false alarm ratio."
+        },
+        "combined_gross_per_acre": {
+          "sum_insured_kes_per_acre": 10000.0,
+          "layer_b_gross_kes": 1884.05,
+          "layer_a_gross_kes": null,
+          "total_gross_kes": 1884.05
+        },
+        "v0": {
+          "version": "B-0.1.0",
+          "terms": {
+            "germination": {
+              "phase": "germination",
+              "weight": 0.3,
+              "trigger_mm": 32.1,
+              "exit_mm": 3.7,
+              "trigger_basis": "P10 of 1981-2025",
+              "exit_basis": "P2 of 1981-2025"
+            },
+            "vegetative": {
+              "phase": "vegetative",
+              "weight": 0.1,
+              "trigger_mm": 85.2,
+              "exit_mm": 53.1,
+              "trigger_basis": "P10 of 1981-2025",
+              "exit_basis": "P2 of 1981-2025"
+            },
+            "flowering": {
+              "phase": "flowering",
+              "weight": 0.4,
+              "trigger_mm": 21.0,
+              "exit_mm": 0.0,
+              "trigger_basis": "P10 of 1981-2025",
+              "exit_basis": "P2 of 1981-2025"
+            },
+            "grain_fill": {
+              "phase": "grain_fill",
+              "weight": 0.2,
+              "trigger_mm": 57.0,
+              "exit_mm": 30.2,
+              "trigger_basis": "P10 of 1981-2025",
+              "exit_basis": "P2 of 1981-2025"
+            }
+          },
+          "payout_frequency": 0.4444444444444444,
+          "expected_loss": 0.060470133333333335,
+          "loss_1_in_10": 0.19456280000000004,
+          "loss_1_in_20": 0.29903159999999995,
+          "gross_rate": 0.1244227818370369,
+          "event_payouts": {
+            "1984": 0.093208
+          }
+        },
+        "v1_metrics": {
+          "payout_frequency": 0.26666666666666666,
+          "expected_loss": 0.0860592888888889,
+          "loss_1_in_10": 0.32080000000000014,
+          "loss_1_in_20": 0.4651999999999998,
+          "gross_rate": 0.18840481488265046,
+          "event_payouts": {
+            "1984": 0.814667
+          }
+        },
+        "comparison": {
+          "seasons": 45,
+          "spearman_payouts": 0.4674061450870998,
+          "both_pay": 11,
+          "only_v1_pays": 1,
+          "only_v0_pays": 9
+        },
+        "history": [
+          {
+            "year": 1981,
+            "sos": "Mar d2 1981",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 346.8,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 640.3,
+            "water_requirement_mm": 386.4,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 9,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1982,
+            "sos": "Apr d2 1982",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 160.9,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 95.78,
+            "season_rain_mm": 608.0,
+            "water_requirement_mm": 383.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 9,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1983,
+            "sos": "Apr d3 1983",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 134.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 522.6,
+            "water_requirement_mm": 392.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 22,
+            "flowering_share": 0.230769,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.129743
+          },
+          {
+            "year": 1984,
+            "sos": "Apr d1 1984",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 118.6,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 55.56,
+            "season_rain_mm": 298.4,
+            "water_requirement_mm": 441.8,
+            "wrsi_share": 0.814667,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 18,
+            "flowering_share": 0.138462,
+            "payout": 0.814667,
+            "payout_kes": 8146.67,
+            "v0_payout": 0.093208
+          },
+          {
+            "year": 1985,
+            "sos": "Mar d3 1985",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 368.2,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 681.4,
+            "water_requirement_mm": 387.3,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 22,
+            "flowering_share": 0.230769,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1986,
+            "sos": "Apr d1 1986",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 205.9,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 527.4,
+            "water_requirement_mm": 389.0,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 8,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1987,
+            "sos": "Mar d2 1987",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 148.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 455.3,
+            "water_requirement_mm": 399.3,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 4,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1988,
+            "sos": "Mar d3 1988",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 306.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 98.03,
+            "season_rain_mm": 716.5,
+            "water_requirement_mm": 394.9,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 20,
+            "flowering_share": 0.184615,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1989,
+            "sos": "Mar d2 1989",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 240.9,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 91.73,
+            "season_rain_mm": 505.5,
+            "water_requirement_mm": 409.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 13,
+            "flowering_share": 0.023077,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1990,
+            "sos": "Mar d1 1990",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 354.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 88.35,
+            "season_rain_mm": 508.9,
+            "water_requirement_mm": 393.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.4
+          },
+          {
+            "year": 1991,
+            "sos": "Mar d3 1991",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 210.0,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 503.3,
+            "water_requirement_mm": 403.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 13,
+            "flowering_share": 0.023077,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1992,
+            "sos": "Mar d2 1992",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 145.6,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 84.6,
+            "season_rain_mm": 415.0,
+            "water_requirement_mm": 421.1,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 22,
+            "flowering_share": 0.230769,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1993,
+            "sos": "Apr d3 1993",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 87.7,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 83.43,
+            "season_rain_mm": 386.8,
+            "water_requirement_mm": 396.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 26,
+            "flowering_share": 0.3,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1994,
+            "sos": "Apr d3 1994",
+            "sos_rule": "replanting rain after germination dry spell",
+            "window_rain_mm": 215.4,
+            "failed_onset": false,
+            "germination_failed": true,
+            "wrsi": 100.0,
+            "season_rain_mm": 668.0,
+            "water_requirement_mm": 390.4,
+            "wrsi_share": 0.0,
+            "replant_kes": 2500.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.25,
+            "payout_kes": 2500.0,
+            "v0_payout": 0.100181
+          },
+          {
+            "year": 1995,
+            "sos": "Mar d1 1995",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 230.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 93.77,
+            "season_rain_mm": 474.0,
+            "water_requirement_mm": 432.4,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 12,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.035804
+          },
+          {
+            "year": 1996,
+            "sos": "Mar d3 1996",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 157.8,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 543.2,
+            "water_requirement_mm": 406.1,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 19,
+            "flowering_share": 0.161538,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1997,
+            "sos": "Mar d3 1997",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 348.4,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 96.13,
+            "season_rain_mm": 645.8,
+            "water_requirement_mm": 400.1,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 17,
+            "flowering_share": 0.115385,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1998,
+            "sos": "Apr d1 1998",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 141.0,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 99.09,
+            "season_rain_mm": 431.5,
+            "water_requirement_mm": 378.2,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 1999,
+            "sos": "Mar d2 1999",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 195.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 68.96,
+            "season_rain_mm": 305.3,
+            "water_requirement_mm": 432.4,
+            "wrsi_share": 0.368,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 26,
+            "flowering_share": 0.3,
+            "payout": 0.368,
+            "payout_kes": 3680.0,
+            "v0_payout": 0.012674
+          },
+          {
+            "year": 2000,
+            "sos": "Apr d2 2000",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 84.6,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 72.99,
+            "season_rain_mm": 382.7,
+            "water_requirement_mm": 435.2,
+            "wrsi_share": 0.233667,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.233667,
+            "payout_kes": 2336.67,
+            "v0_payout": 0.034455
+          },
+          {
+            "year": 2001,
+            "sos": "Mar d1 2001",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 313.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 88.63,
+            "season_rain_mm": 484.7,
+            "water_requirement_mm": 437.3,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 17,
+            "flowering_share": 0.115385,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2002,
+            "sos": "Apr d2 2002",
+            "sos_rule": "replanting rain after germination dry spell",
+            "window_rain_mm": 277.6,
+            "failed_onset": false,
+            "germination_failed": true,
+            "wrsi": 69.75,
+            "season_rain_mm": 449.7,
+            "water_requirement_mm": 421.2,
+            "wrsi_share": 0.341667,
+            "replant_kes": 2500.0,
+            "flowering_dry_spell_days": 15,
+            "flowering_share": 0.069231,
+            "payout": 0.591667,
+            "payout_kes": 5916.670000000001,
+            "v0_payout": 0.186407
+          },
+          {
+            "year": 2003,
+            "sos": "Mar d3 2003",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 227.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 95.98,
+            "season_rain_mm": 637.3,
+            "water_requirement_mm": 399.9,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.2
+          },
+          {
+            "year": 2004,
+            "sos": "Mar d3 2004",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 326.7,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 65.66,
+            "season_rain_mm": 528.6,
+            "water_requirement_mm": 424.4,
+            "wrsi_share": 0.478,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 26,
+            "flowering_share": 0.3,
+            "payout": 0.478,
+            "payout_kes": 4780.0,
+            "v0_payout": 0.055067
+          },
+          {
+            "year": 2005,
+            "sos": "Mar d2 2005",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 174.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 97.19,
+            "season_rain_mm": 438.1,
+            "water_requirement_mm": 434.2,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 5,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2006,
+            "sos": "Mar d1 2006",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 243.8,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 91.94,
+            "season_rain_mm": 438.9,
+            "water_requirement_mm": 432.8,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 8,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.4
+          },
+          {
+            "year": 2007,
+            "sos": "Apr d2 2007",
+            "sos_rule": "replanting rain after germination dry spell",
+            "window_rain_mm": 182.5,
+            "failed_onset": false,
+            "germination_failed": true,
+            "wrsi": 100.0,
+            "season_rain_mm": 644.7,
+            "water_requirement_mm": 371.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 2500.0,
+            "flowering_dry_spell_days": 5,
+            "flowering_share": 0.0,
+            "payout": 0.25,
+            "payout_kes": 2500.0,
+            "v0_payout": 0.1
+          },
+          {
+            "year": 2008,
+            "sos": "Mar d3 2008",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 151.8,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 67.58,
+            "season_rain_mm": 306.8,
+            "water_requirement_mm": 406.8,
+            "wrsi_share": 0.414,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 6,
+            "flowering_share": 0.0,
+            "payout": 0.414,
+            "payout_kes": 4140.0,
+            "v0_payout": 0.053599
+          },
+          {
+            "year": 2009,
+            "sos": "Mar d3 2009",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 127.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 76.29,
+            "season_rain_mm": 370.3,
+            "water_requirement_mm": 429.1,
+            "wrsi_share": 0.123667,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 17,
+            "flowering_share": 0.115385,
+            "payout": 0.12366700000000001,
+            "payout_kes": 1236.67,
+            "v0_payout": 0.013148
+          },
+          {
+            "year": 2010,
+            "sos": "Mar d1 2010",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 365.9,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 646.4,
+            "water_requirement_mm": 399.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 6,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2011,
+            "sos": "Mar d2 2011",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 171.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 97.71,
+            "season_rain_mm": 446.3,
+            "water_requirement_mm": 410.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 11,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.295158
+          },
+          {
+            "year": 2012,
+            "sos": "Apr d1 2012",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 310.8,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 804.6,
+            "water_requirement_mm": 371.4,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 13,
+            "flowering_share": 0.023077,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2013,
+            "sos": "Mar d2 2013",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 403.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 99.39,
+            "season_rain_mm": 749.0,
+            "water_requirement_mm": 391.0,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 16,
+            "flowering_share": 0.092308,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2014,
+            "sos": "Mar d2 2014",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 139.9,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 78.2,
+            "season_rain_mm": 310.3,
+            "water_requirement_mm": 417.9,
+            "wrsi_share": 0.06,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 20,
+            "flowering_share": 0.184615,
+            "payout": 0.06,
+            "payout_kes": 600.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2015,
+            "sos": "Apr d1 2015",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 213.0,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 92.26,
+            "season_rain_mm": 523.9,
+            "water_requirement_mm": 388.8,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 10,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.006628
+          },
+          {
+            "year": 2016,
+            "sos": "Apr d1 2016",
+            "sos_rule": "replanting rain after germination dry spell",
+            "window_rain_mm": 257.3,
+            "failed_onset": false,
+            "germination_failed": true,
+            "wrsi": 99.16,
+            "season_rain_mm": 696.3,
+            "water_requirement_mm": 378.6,
+            "wrsi_share": 0.0,
+            "replant_kes": 2500.0,
+            "flowering_dry_spell_days": 21,
+            "flowering_share": 0.207692,
+            "payout": 0.25,
+            "payout_kes": 2500.0,
+            "v0_payout": 0.113808
+          },
+          {
+            "year": 2017,
+            "sos": "Mar d3 2017",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 123.0,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 87.55,
+            "season_rain_mm": 577.4,
+            "water_requirement_mm": 412.9,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 13,
+            "flowering_share": 0.023077,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.03988
+          },
+          {
+            "year": 2018,
+            "sos": "Mar d1 2018",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 541.6,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 1104.2,
+            "water_requirement_mm": 364.9,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 8,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2019,
+            "sos": "Apr d3 2019",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 142.0,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 629.4,
+            "water_requirement_mm": 385.6,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 13,
+            "flowering_share": 0.023077,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.3
+          },
+          {
+            "year": 2020,
+            "sos": "Mar d1 2020",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 457.7,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 100.0,
+            "season_rain_mm": 813.2,
+            "water_requirement_mm": 381.7,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 9,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2021,
+            "sos": "Mar d3 2021",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 159.5,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 99.71,
+            "season_rain_mm": 546.8,
+            "water_requirement_mm": 384.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 12,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2022,
+            "sos": "Apr d2 2022",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 181.1,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 78.83,
+            "season_rain_mm": 541.4,
+            "water_requirement_mm": 397.2,
+            "wrsi_share": 0.039,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 10,
+            "flowering_share": 0.0,
+            "payout": 0.039,
+            "payout_kes": 390.0,
+            "v0_payout": 0.151396
+          },
+          {
+            "year": 2023,
+            "sos": "Mar d2 2023",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 308.6,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 92.89,
+            "season_rain_mm": 545.0,
+            "water_requirement_mm": 405.5,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 17,
+            "flowering_share": 0.115385,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2024,
+            "sos": "Mar d3 2024",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 288.3,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 98.07,
+            "season_rain_mm": 765.3,
+            "water_requirement_mm": 382.2,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 18,
+            "flowering_share": 0.138462,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          },
+          {
+            "year": 2025,
+            "sos": "Mar d1 2025",
+            "sos_rule": "planting rain",
+            "window_rain_mm": 314.2,
+            "failed_onset": false,
+            "germination_failed": false,
+            "wrsi": 99.01,
+            "season_rain_mm": 619.3,
+            "water_requirement_mm": 394.4,
+            "wrsi_share": 0.0,
+            "replant_kes": 0.0,
+            "flowering_dry_spell_days": 4,
+            "flowering_share": 0.0,
+            "payout": 0.0,
+            "payout_kes": 0.0,
+            "v0_payout": 0.0
+          }
+        ]
+      }
+    },
+    "provenance": [
+      {
+        "input": "Rainfall",
+        "label": "REAL",
+        "source": "CHIRPS v2.0 daily via SERVIR ClimateSERV",
+        "cache_file": "data/raw/chirps/ward-a.csv",
+        "sha256": "264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2",
+        "retrieved_at": "2026-10-27T18:07:17+00:00",
+        "geometry": "box of 0.10 deg around the ward centroid",
+        "caveat": "CHIRPS daily values are disaggregated from pentad totals and are unreliable day by day; the index only uses multi-week phase totals."
+      },
+      {
+        "input": "PET",
+        "label": "REAL",
+        "source": "Hargreaves PET from NASA POWER temperature (FALLBACK)",
+        "cache_file": "data/raw/nasapower/ward-a.csv",
+        "sha256": "88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5",
+        "retrieved_at": "2026-10-28T11:51:19+00:00",
+        "lapse_shift_c": 2.6,
+        "note": "FALLBACK: FEWS NET Penman-Monteith PET was unreachable (USGS server 503) and only covers 2001 onward. Hargreaves can overstate PET in humid conditions.",
+        "calibration": {
+          "available": false,
+          "reason": "Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and then refused connections; retried through 2026-10-28."
+        }
+      },
+      {
+        "input": "Ward location",
+        "label": "ILLUSTRATIVE",
+        "source": "config/wards.yaml",
+        "note": "Placeholder location, not a real ward boundary."
+      },
+      {
+        "input": "Soil water holding capacity",
+        "label": "ILLUSTRATIVE",
+        "source": "config/wards.yaml",
+        "note": "100 mm placeholder until ward soil data."
+      },
+      {
+        "input": "Crop calendar and LGP",
+        "label": "ILLUSTRATIVE",
+        "source": "config/phenology.yaml",
+        "note": "Planting window and growing period pending agronomist sign-off."
+      },
+      {
+        "input": "WRSI trigger and exit",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "Placeholders, not filed terms."
+      },
+      {
+        "input": "Failed-onset and germination triggers",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "Rain thresholds and replanting cost are placeholders."
+      },
+      {
+        "input": "Flowering component",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "EXPERIMENTAL; off, shown for comparison only."
+      },
+      {
+        "input": "Seasonal forecast (Layer A)",
+        "label": "SYNTHETIC",
+        "source": "agroshield synthetic tercile forecast",
+        "note": "Generated from observed rainfall at the skill measured from C3S SEAS5.1 hindcasts (research 3b)."
+      },
+      {
+        "input": "Layer A trigger and voucher value",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "Probability threshold and voucher KES per acre are placeholders."
+      },
+      {
+        "input": "Target payout frequency",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "1 season in 5-7; underwriter to confirm."
+      },
+      {
+        "input": "Loadings and margins",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "Pending underwriter agreement."
+      },
+      {
+        "input": "Sum insured options",
+        "label": "ILLUSTRATIVE",
+        "source": "config/product.yaml",
+        "note": "Pending SACCO input-cost data."
+      },
+      {
+        "input": "FEWS NET WRSI (validation)",
+        "label": "PENDING",
+        "source": "USGS FEWS NET CHIRPS Croplands WRSI",
+        "note": "Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28."
+      },
+      {
+        "input": "Yields (basis risk)",
+        "label": "PENDING",
+        "source": "ward yield history",
+        "note": "No real ward yields; basis risk not measurable."
+      }
+    ]
+  }
+}

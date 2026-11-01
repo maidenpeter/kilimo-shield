@@ -1,0 +1,1359 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroShield IRA documentation pack (DRAFT, ILLUSTRATIVE)</title>
+<style>/* AgroShield design tokens: the ONE place for colour, type, spacing, radius, shadow and motion.
+   Theme: NuruOps (surfaces, typography, faceted mark) with AgroShield teal as the signature accent
+   and NuruOps gold as the secondary highlight. Sources: docs/design/THEME.md.
+   Light by default, dark follows the system, and a toggle (html[data-theme]) overrides both.
+   Swapping the theme = editing this file only; components read these variables and nothing else. */
+
+:root {
+  color-scheme: light;
+  /* ---- colour: light (NuruOps warm paper, teal accent) ---- */
+  --bg: #F6F3EC;            /* page */
+  --bg-band: #EFEAE0;       /* alternating public sections */
+  --surface: #FFFFFF;       /* cards, header */
+  --surface-2: #F3EFE6;     /* inputs, subtle fills */
+  --border: #E2DBCC;
+  --border-strong: #CFC6B3;
+  --input-border: #857B69;  /* form controls: 3.6:1 on surface-2, 4.2:1 on white (WCAG 1.4.11) */
+  --ink-1: #1B1710;         /* text */
+  --ink-2: #403A2F;         /* secondary text */
+  --ink-3: #5E574B;         /* muted text (AA on bg and surface) */
+  --accent: #00695C;        /* teal: links, primary buttons */
+  --accent-strong: #004D40;
+  --accent-ink: #FFFFFF;    /* text on accent */
+  --accent-soft: rgba(0, 105, 92, 0.10);
+  --accent-line: rgba(0, 105, 92, 0.35);
+  --gold: #8A5600;          /* NuruOps gold, for text and small highlights */
+  --gold-fill: #E8960C;     /* decorative only (never small text) */
+  --gold-soft: rgba(184, 118, 10, 0.14);
+  --ok: #0B6E4F;  --ok-soft: #E1F1E9;
+  --warn: #7A4E00; --warn-soft: #FBEFD5;
+  --crit: #A82424; --crit-soft: #FBE3E1;
+  --info: #0B5E8A; --info-soft: #E1EEF6;
+  --focus: #0B7A6D;
+  --hero-from: #013A31; --hero-mid: #015D52; --hero-to: #0F1117;
+  --hero-ink: #F2FBF9; --hero-sub: #D5EEEA;
+  --overlay: rgba(15, 17, 23, 0.55); --overlay-strong: rgba(1, 40, 34, 0.86);
+  --map-bg: #E6EFEC;
+  --chart-1: #00695C; --chart-2: #B8760A; --chart-3: #0B5E8A; --chart-4: #7A4E9E;
+  --grid: #E7E1D5;
+
+  /* ---- type ---- */
+  --font-display: "EB Garamond", Garamond, Georgia, "Times New Roman", serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --fs-2xs: 0.75rem;   /* 12 */
+  --fs-xs: 0.8125rem;  /* 13 */
+  --fs-sm: 0.875rem;   /* 14 */
+  --fs-base: 1rem;     /* 16 */
+  --fs-md: 1.125rem;   /* 18 */
+  --fs-lg: 1.375rem;   /* 22 */
+  --fs-xl: 1.75rem;    /* 28 */
+  --fs-2xl: 2.25rem;   /* 36 */
+  --fs-hero: clamp(2.25rem, 1.4rem + 3.6vw, 3.75rem);
+  --lh-tight: 1.15; --lh-snug: 1.3; --lh-body: 1.6;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+
+  /* ---- spacing: 4 / 8 px scale ---- */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+  --gutter: 16px;
+  --section-y: clamp(48px, 6vw, 96px);
+
+  /* ---- layout ---- */
+  --maxw-public: 1200px;
+  --maxw-app: 1240px;
+  --maxw-prose: 68ch;
+  --nav-h: 64px;
+  --tap: 44px;               /* minimum tap target */
+
+  /* ---- radius ---- */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-pill: 999px;
+
+  /* ---- shadow ---- */
+  --sh-1: 0 1px 2px rgba(27, 23, 16, 0.06), 0 1px 1px rgba(27, 23, 16, 0.04);
+  --sh-2: 0 6px 20px rgba(27, 23, 16, 0.08), 0 2px 6px rgba(27, 23, 16, 0.05);
+  --sh-nav: 0 2px 12px rgba(27, 23, 16, 0.10);
+  --sh-pop: 0 14px 40px rgba(27, 23, 16, 0.18);
+
+  /* ---- motion ---- */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms;
+}
+
+/* ---- colour: dark (NuruOps midnight, teal accent) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1117; --bg-band: #0B0D13; --surface: #1A1D26; --surface-2: #20232E;
+    --border: #2A2D36; --border-strong: #3A3E4A; --input-border: #737889;
+    --ink-1: #FAFAFA; --ink-2: #D4D7E0; --ink-3: #A3A6AE;
+    --accent: #2DD4BF; --accent-strong: #5EEAD4; --accent-ink: #04201C;
+    --accent-soft: rgba(45, 212, 191, 0.12); --accent-line: rgba(45, 212, 191, 0.40);
+    --gold: #F5B547; --gold-fill: #E8960C; --gold-soft: rgba(232, 150, 12, 0.16);
+    --ok: #6EE7B7; --ok-soft: #0F3328; --warn: #FCD34D; --warn-soft: #3A2E0E;
+    --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
+    --focus: #5EEAD4;
+    --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
+    --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
+    --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
+    --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+    --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1117; --bg-band: #0B0D13; --surface: #1A1D26; --surface-2: #20232E;
+  --border: #2A2D36; --border-strong: #3A3E4A; --input-border: #737889;
+  --ink-1: #FAFAFA; --ink-2: #D4D7E0; --ink-3: #A3A6AE;
+  --accent: #2DD4BF; --accent-strong: #5EEAD4; --accent-ink: #04201C;
+  --accent-soft: rgba(45, 212, 191, 0.12); --accent-line: rgba(45, 212, 191, 0.40);
+  --gold: #F5B547; --gold-fill: #E8960C; --gold-soft: rgba(232, 150, 12, 0.16);
+  --ok: #6EE7B7; --ok-soft: #0F3328; --warn: #FCD34D; --warn-soft: #3A2E0E;
+  --crit: #FCA5A5; --crit-soft: #4A1C1C; --info: #7DD3FC; --info-soft: #0C2A3D;
+  --focus: #5EEAD4;
+  --hero-from: #003C34; --hero-mid: #00524A; --hero-to: #0B0D13; --hero-ink: #F2FBF9; --hero-sub: #CDE7E3;
+  --overlay: rgba(11, 13, 19, 0.62); --overlay-strong: rgba(0, 30, 26, 0.88); --map-bg: #111922;
+  --chart-1: #2DD4BF; --chart-2: #F5B547; --chart-3: #7DD3FC; --chart-4: #C4A1F0; --grid: #262A34;
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.4); --sh-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --sh-nav: 0 2px 14px rgba(0, 0, 0, 0.5); --sh-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink-1); font-family: var(--font-body); font-size: var(--fs-base);
+       line-height: var(--lh-body); }
+main { max-width: 980px; margin: 0 auto; padding: var(--sp-5) var(--gutter) var(--sp-8); }
+h1, h2, h3 { font-family: var(--font-display); line-height: var(--lh-tight); color: var(--ink-1); }
+h1 { font-size: var(--fs-2xl); margin: var(--sp-4) 0 var(--sp-2); }
+h2 { font-size: var(--fs-xl); margin: var(--sp-7) 0 var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+h3 { font-size: var(--fs-lg); margin: var(--sp-5) 0 var(--sp-2); }
+p, li { max-width: var(--maxw-prose); }
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.muted { color: var(--ink-3); font-size: var(--fs-sm); }
+.lead { font-size: var(--fs-md); color: var(--ink-2); }
+.banner { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; margin: 0 0 var(--sp-4);
+          padding: var(--sp-3) var(--sp-4); border: 1px solid var(--gold); border-radius: var(--r-md);
+          background: var(--gold-soft); color: var(--ink-1); font-size: var(--fs-sm); }
+.banner b { color: var(--gold); letter-spacing: .04em; }
+.chip { display: inline-block; padding: 1px var(--sp-2); border-radius: var(--r-pill); font-size: var(--fs-2xs);
+        font-weight: var(--fw-semibold); letter-spacing: .03em; border: 1px solid var(--border-strong);
+        background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.chip.crit { background: var(--crit-soft); color: var(--crit); border-color: var(--crit); }
+.chip.info { background: var(--info-soft); color: var(--info); border-color: var(--info); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-4) var(--sp-5);
+        margin: var(--sp-3) 0; box-shadow: var(--sh-1); break-inside: avoid; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-3); }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+.kpi .v { font-size: var(--fs-lg); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.kpi .k { color: var(--ink-3); font-size: var(--fs-xs); }
+.table-wrap { overflow-x: auto; margin: var(--sp-2) 0 var(--sp-3); }
+table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); background: var(--surface); }
+th, td { text-align: left; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--surface-2); color: var(--ink-2); font-weight: var(--fw-semibold); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr { break-inside: avoid; }
+.step { position: relative; }
+.step .when { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--accent-strong); font-weight: var(--fw-semibold); }
+.step h3 { margin-top: var(--sp-1); }
+.ok-text { color: var(--ok); font-weight: var(--fw-semibold); }
+.crit-text { color: var(--crit); font-weight: var(--fw-semibold); }
+.clock { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; margin: var(--sp-3) 0; }
+.clock div { min-height: 64px; padding: var(--sp-1); border-radius: var(--r-sm); background: var(--surface-2);
+             border: 1px solid var(--border); font-size: var(--fs-2xs); color: var(--ink-3); }
+.clock div.hit { background: var(--accent-soft); border-color: var(--accent); color: var(--ink-1); }
+.clock div.due { border-color: var(--crit); }
+.clock b { display: block; color: var(--ink-1); font-size: var(--fs-xs); }
+svg text { fill: var(--ink-2); font-family: var(--font-body); font-size: 12px; }
+svg .line { fill: none; stroke: var(--chart-1); stroke-width: 2; }
+svg .trig { stroke: var(--warn); stroke-dasharray: 5 4; }
+svg .exit { stroke: var(--crit); stroke-dasharray: 2 4; }
+svg .grid { stroke: var(--grid); }
+svg .mark { fill: var(--chart-2); }
+.toc ol { columns: 2; column-gap: var(--sp-6); }
+.page-break { break-before: page; }
+@media (max-width: 640px) { .toc ol { columns: 1; } h1 { font-size: var(--fs-xl); } .clock { grid-template-columns: repeat(6, 1fr); } }
+@media print {
+  @page { size: A4; margin: 18mm 14mm 20mm; }
+  :root { color-scheme: light; }
+  body { background: #fff; font-size: 10.5pt; }
+  main { max-width: none; padding: 0; }
+  h2 { break-after: avoid; }
+  .card, .kpi { box-shadow: none; }
+  a { color: inherit; text-decoration: none; }
+}
+
+.placeholder { border: 2px dashed var(--crit); background: var(--crit-soft); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+.small td, .small th { padding: 3px 6px; font-size: var(--fs-2xs); }
+.cover h1 { font-size: 2.4rem; margin-top: var(--sp-6); }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-1) var(--sp-4); }
+dl.facts dt { color: var(--ink-3); } dl.facts dd { margin: 0; }
+td.path { word-break: break-all; font-family: var(--font-mono); font-size: 9px; line-height: 1.35; }
+article.card { break-inside: auto; }
+h3, h4 { break-after: avoid; }
+</style>
+</head>
+<body>
+
+
+
+<main>
+<section class="cover">
+<div class="banner" role="note"><b>DRAFT</b> <b>ILLUSTRATIVE</b> Not submitted to, reviewed or approved by the
+  Insurance Regulatory Authority (IRA). Pilot wards, soils, crop calendars, triggers, loadings and sums insured are
+  placeholders. Only the rainfall and temperature records are real.</div>
+<h1>AgroShield parametric maize cover: documentation pack for the Insurance Regulatory Authority of Kenya</h1>
+<p class="lead">Index-based drought cover for smallholder maize in the long rains, sold through SACCOs and
+  underwritten by a licensed insurer. AgroShield is the technology and pricing layer, not the risk carrier.</p>
+<dl class="facts card">
+  <dt>Status</dt><dd><b>DRAFT</b>, every figure <b>ILLUSTRATIVE</b>. For discussion with the partner insurer before any filing.</dd>
+  <dt>Insurer</dt><dd>Partner insurer (to be named)</dd>
+  <dt>Distribution</dt><dd>SACCOs (pilot SACCO not yet chosen)</dd>
+  <dt>Pilot scope</dt><dd>Maize, long rains, two placeholder wards in Nakuru County:
+    Rongai West (ward-a), Molo Highlands (ward-b)</dd>
+  <dt>Index</dt><dd>Layer B, version B-1.2.0: seasonal Water Requirement Satisfaction Index (WRSI) on CHIRPS rainfall</dd>
+  <dt>Generated</dt><dd>2026-11-01T15:13:47+00:00 (UTC), code 9fef985ace39</dd>
+  <dt>Pricing runs</dt><dd>20261101T151342Z_ward-a_2a26a6, 20261101T151344Z_ward-b_eb8839
+    (command <code>agroshield-price run --all --offline --out var/ira-engine-run</code>)</dd>
+</dl>
+<p class="muted">The IRA logo is not used and nothing here implies IRA review or approval. No partner names are given
+  because none is agreed.</p>
+<nav class="toc card" aria-label="Contents"><b>Contents</b>
+<ol>
+  <li><a href="#wording">Policy wording (placeholder)</a></li>
+  <li><a href="#pricing">Pricing methodology</a></li>
+  <li><a href="#index">Index development</a></li>
+  <li><a href="#data">Data sources and provenance</a></li>
+  <li><a href="#backtest">Backtest results</a></li>
+  <li><a href="#basis">Basis risk statement</a></li>
+  <li><a href="#timeline">Payout timeline</a></li>
+  <li><a href="#disclosure">Consumer disclosure (English and Kiswahili)</a></li>
+  <li><a href="#privacy">Data protection summary</a></li>
+  <li><a href="#annex">Reproducing this pack</a></li>
+</ol></nav>
+</section>
+
+
+<section id="wording" class="page-break">
+<h2>1. Policy wording (placeholder)</h2>
+<div class="placeholder"><b>PLACEHOLDER.</b> The policy wording will be written with the Partner insurer (to be named) and its legal
+  advisers. Nothing in this section is policy wording. It lists what the wording must cover and the index terms that
+  the engine uses today.</div>
+<h3>What the wording will cover</h3>
+<ol>
+  <li>Parties: the insured member, the Partner insurer (to be named) (risk carrier), the SACCO (distributor and premium collector),
+    AgroShield (index calculation and administration). [To be written]</li>
+  <li>Insured interest and unit of cover: maize planted in the long rains on the declared acres, in one insured ward.
+    [To be written]</li>
+  <li>The index, the triggers and the payout formula (schedule below), and that payouts follow the ward index, not a
+    loss assessment on the farm. [To be written]</li>
+  <li>Sum insured options, premium, the government subsidy share and the Resilience discount. [To be written]</li>
+  <li>Cover start: only once the member's share is fully paid by the sales close date; refunds otherwise.
+    [To be written]</li>
+  <li>Payment of claims: within 10 days of the index being confirmed, by M-Pesa
+    or to the SACCO loan with the member's consent; seed vouchers valid 30 days.
+    [To be written]</li>
+  <li>Basis risk, exclusions and what the index cannot see. [To be written]</li>
+  <li>Data protection and consent; complaints and disputes. [To be written]</li>
+</ol>
+<h3>Schedule of index terms (from config/product.yaml and config/phenology.yaml)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Term</th><th>Value used by the engine</th></tr></thead>
+<tbody>
+<tr><td>Index version</td><td>B-1.2.0</td></tr>
+<tr><td>WRSI trigger and exit</td><td>No payout at or above 80; straight line to the full sum insured at or below 50</td></tr>
+<tr><td>Failed onset</td><td>Less than 80 mm over the whole planting window: 25% of sum insured, and no WRSI season</td></tr>
+<tr><td>Germination dry spell</td><td>Less than 20 mm in the 20 days after the planting rain: seed voucher of KES 2,500 per acre, at most once a season; the season restarts at the next planting rain</td></tr>
+<tr><td>Planting rain</td><td>First dekad (10-day period) with at least 25 mm, searched within the planting window</td></tr>
+<tr><td>Sum insured options</td><td>KES 5,000, KES 10,000, KES 15,000 per acre (default KES 10,000)</td></tr>
+<tr><td>Cap</td><td>All payouts in a season together never exceed the sum insured</td></tr>
+
+<tr><td>Rongai West (ward-a)</td><td>Planting window 03-01 to 04-30 (month-day);
+  growing period 130 days (medium-maturity hybrid); sales window 09-15 to 02-14;
+  soil water capacity 100 mm (placeholder)</td></tr>
+
+<tr><td>Molo Highlands (ward-b)</td><td>Planting window 03-01 to 04-30 (month-day);
+  growing period 180 days (late-maturity highland hybrid); sales window 12-01 to 02-14;
+  soil water capacity 140 mm (placeholder)</td></tr>
+
+</tbody></table></div>
+</section>
+
+
+<section id="pricing" class="page-break">
+<h2>2. Pricing methodology</h2>
+<p>The price comes from the AgroShield pricing engine (<code>src/agroshield_pricing</code>). It applies today's index
+  terms to every long-rains season from 1981 to 2025 at each ward
+  (a burn-cost analysis), turns the payouts into an expected loss, adds a risk margin and loadings, and prices each
+  sum-insured option in shillings. Every setting is in <code>config/</code>; changing a term is a settings change,
+  not a code change, and every run records the SHA-256 of every settings file and input.</p>
+
+<h3>2.1 The index: seasonal WRSI</h3>
+<p>The Water Requirement Satisfaction Index (WRSI) is the FAO and FEWS NET measure of how much of the water a crop
+  needed it actually got over the season. The engine computes it on a 10-day (dekad) water balance:</p>
+<ol>
+  <li>Daily CHIRPS v2.0 rainfall and daily potential evapotranspiration (PET) are summed to dekads.</li>
+  <li>Failed onset: if the whole planting window gets less than 80 mm, the
+    season never started and the failed-onset payout applies instead of WRSI.</li>
+  <li>Start of season: the first dekad in the window with at least 25 mm. If the
+    20 days after it bring less than
+    20 mm, the replanting voucher applies and the season restarts at the next
+    planting rain.</li>
+  <li>For each dekad of the growing period: the crop's water requirement is its crop coefficient (FEWS NET maize curve:
+    0.3, 0.3, 1.2, 1.2, 0.35 at
+    0, 16, 44, 76, 100% of the season) times PET. A soil
+    bucket holds the ward's water capacity; the crop is stressed once the soil is drier than
+    45% of capacity (depletion fraction 0.55).
+    3 dekads of bare-soil balance before the start put pre-season rain in the soil.</li>
+  <li>WRSI = 100 x total water the crop used / total water it needed, at the end of the season.</li>
+  <li>Payout share: 0 at or above 80, rising in a straight line to 100% at or below
+    50 (crop failure).</li>
+</ol>
+<p class="muted">Source: <code>src/agroshield_pricing/wrsi.py</code> and README.md. PET is FAO-56 Hargreaves from NASA
+  POWER temperature, shifted to ward elevation (6.5 C per km), flagged as a FALLBACK: Not yet downloaded: the USGS FEWS NET servers returned 503 on 2026-10-28 and then refused connections; retried through 2026-10-28.</p>
+
+<h3>2.2 Payout per acre in a season</h3>
+<p>Failed onset: 25% of sum insured, and nothing else. Otherwise: the WRSI share of sum
+  insured, plus the replanting voucher (a fixed KES amount per acre) if the germination dry spell fired. Capped at the
+  sum insured. Because the voucher is a fixed amount, the engine prices each sum-insured option separately.</p>
+
+<h3>2.3 From payouts to premium</h3>
+
+<ul>
+  <li><b>Burn cost.</b> The payout of every season, as a share of sum insured. Expected loss is the mean; the 1-in-10
+    and 1-in-20 losses are the 90th and 95th percentiles of the seasons.</li>
+  <li><b>Risk margin.</b> Method <code>std_dev</code>: 0.25 x the standard
+    deviation of the season losses.</li>
+  <li><b>Pure premium</b> = expected loss + risk margin.</li>
+  <li><b>Gross premium</b> = pure premium / (1 - sum of loadings), with loadings as shares of gross:
+    expense 12%, intermediary 5%, platform 6%, underwriter margin 7%
+    (total 30%). The intermediary loading is the SACCO's distribution fee; the platform
+    loading is AgroShield's fee.</li>
+</ul>
+<h3>2.4 Who pays</h3>
+
+<p>The insurer always receives the full gross premium. The government (KAIP, Kenya Agricultural
+  Insurance Programme) pays 50% of gross for farms of 0.5 to
+  20 acres, recorded as "not yet received" until it arrives (no subsidy outside that band).
+  The member pays the rest, less a Resilience discount of 1% per verified good-practice
+  point, capped at 15% of the member's share, funded by the <b>platform</b>, never by
+  the insurer. The discount does not change the risk price: payouts follow the ward index whatever the farmer does.
+  Subsidy terms, the cap and the points are ILLUSTRATIVE pending KAIP and the insurer.</p>
+<h3>2.5 Not in the product</h3>
+<ul>
+  <li><b>Layer A (pre-season seed voucher):</b> dropped. Dropped from the product (2026-10-29): measured C3S March-May forecast skill caught 2 of 11 Layer B payout seasons with a 67% false alarm ratio.</li>
+  <li><b>Flowering dry-spell component:</b> off. CHIRPS daily values are spread out from 5-day totals, so dry-spell
+    lengths are unreliable; it needs station rainfall first.</li>
+  <li><b>Early advance on Layer B:</b> EXPERIMENTAL (experimental), not included in quotes
+    (<code>included_in_quotes: false</code>).</li>
+</ul>
+<h3>2.6 Result: gross premium per acre</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Sum insured</th><th class="num">Expected loss</th><th class="num">Risk margin</th>
+  <th class="num">Loadings</th><th class="num">Gross premium</th><th class="num">Gross rate</th></tr></thead>
+<tbody>
+<tr><td>Rongai West</td><td class="num">KES 5,000</td><td class="num">KES 541.41</td>
+  <td class="num">KES 279.81</td><td class="num">KES 351.95</td>
+  <td class="num"><b>KES 1,173.17</b></td><td class="num">23.46%</td></tr>
+
+<tr><td>Rongai West</td><td class="num">KES 10,000</td><td class="num">KES 860.59</td>
+  <td class="num">KES 458.24</td><td class="num">KES 565.21</td>
+  <td class="num"><b>KES 1,884.05</b></td><td class="num">18.84%</td></tr>
+
+<tr><td>Rongai West</td><td class="num">KES 15,000</td><td class="num">KES 1,179.78</td>
+  <td class="num">KES 653.78</td><td class="num">KES 785.81</td>
+  <td class="num"><b>KES 2,619.36</b></td><td class="num">17.46%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">KES 5,000</td><td class="num">KES 297.07</td>
+  <td class="num">KES 199.55</td><td class="num">KES 212.84</td>
+  <td class="num"><b>KES 709.46</b></td><td class="num">14.19%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">KES 10,000</td><td class="num">KES 316.37</td>
+  <td class="num">KES 205.61</td><td class="num">KES 223.70</td>
+  <td class="num"><b>KES 745.69</b></td><td class="num">7.46%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">KES 15,000</td><td class="num">KES 335.67</td>
+  <td class="num">KES 216.39</td><td class="num">KES 236.60</td>
+  <td class="num"><b>KES 788.66</b></td><td class="num">5.26%</td></tr>
+</tbody></table></div>
+<p class="muted">From the engine runs 20261101T151342Z_ward-a_2a26a6, 20261101T151344Z_ward-b_eb8839
+  (data/pricing_summary.csv). The gross rate differs slightly between options because the replanting voucher is a fixed amount.</p>
+</section>
+
+
+<section id="index" class="page-break">
+<h2>3. Index development</h2>
+<p>How the index reached its current form, from the project's version history:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Version</th><th>What changed and why</th></tr></thead>
+<tbody>
+<tr><td>27 Oct 2026</td><td>B-0.1.0 (v0)</td><td>First index: rainfall deficit in fixed crop phases (germination,
+  vegetative, flowering, grain fill), each with a trigger and exit set at historical percentiles. Burn cost, premium
+  build-up and backtest report. (commit 14128b3)</td></tr>
+<tr><td>28 Oct 2026</td><td>B-1.x (v1)</td><td>Replaced by a seasonal WRSI on a dekadal water balance with a dynamic
+  start of season, because a fixed planting date does not follow the real season. v0 is kept for comparison only.
+  Rainfall-derived synthetic yields were removed, so basis risk is reported as not measurable until real yields exist.
+  Short rains dropped from the pilot. (commit 9e9d7a6)</td></tr>
+<tr><td>28 Oct 2026</td><td>B-1.2.0</td><td>Replanting voucher given its own payout-frequency target; planting-rain
+  start date per ward; failed onset kept at 80 mm as catastrophe-only cover;
+  flowering component dropped (needs station data). (commit 4aaa47d)</td></tr>
+<tr><td>29 Oct 2026</td><td>B-1.2.0</td><td>Layer A dropped from the product for lack of forecast skill
+  (see 2.5). (config/product.yaml)</td></tr>
+</tbody></table></div>
+
+<h3>3.1 v1 (WRSI) against v0 (per-phase), same rainfall</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Seasons</th><th class="num">Both pay</th><th class="num">Only v1 pays</th><th class="num">Only v0 pays</th>
+  <th class="num">Rank correlation of payouts</th><th class="num">v1 / v0 payout frequency</th><th class="num">v1 / v0 gross rate</th></tr></thead>
+<tbody>
+<tr><td>Rongai West</td><td class="num">45</td><td class="num">11</td><td class="num">1</td>
+  <td class="num">9</td><td class="num">0.47</td>
+  <td class="num">27% / 44%</td>
+  <td class="num">18.8% / 12.4%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">45</td><td class="num">2</td><td class="num">4</td>
+  <td class="num">14</td><td class="num">0.01</td>
+  <td class="num">13% / 36%</td>
+  <td class="num">7.5% / 13.7%</td></tr>
+</tbody></table></div>
+
+<h3>3.2 Known-event test</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th>Event</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">v0 payout</th><th>Test</th></tr></thead>
+<tbody>
+<tr><td>Rongai West</td><td>1984: 1984 drought, the worst season on record in Kenya</td><td class="num">55.56</td><td class="num">81%</td>
+  <td class="num">9%</td><td>PASS (needs at least 50%)</td></tr>
+
+<tr><td>Molo Highlands</td><td>1984: 1984 drought, the worst season on record in Kenya</td><td class="num">83.26</td><td class="num">0%</td>
+  <td class="num">27%</td><td>reported only</td></tr>
+</tbody></table></div>
+
+<h3>3.3 Sensitivity: trigger level</h3>
+<p class="muted">Each row re-prices the whole history with a different WRSI trigger (exit unchanged).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Trigger</th><th class="num">WRSI payout frequency</th><th class="num">Any payout</th><th class="num">Expected loss</th><th class="num">Gross rate</th><th>In target band</th></tr></thead>
+<tbody>
+<tr><td>Rongai West</td><td class="num">65</td><td class="num">2%</td>
+  <td class="num">11%</td><td class="num">3.6%</td><td class="num">9.3%</td><td>no</td></tr>
+
+<tr><td>Rongai West</td><td class="num">70</td><td class="num">11%</td>
+  <td class="num">18%</td><td class="num">4.7%</td><td class="num">11.4%</td><td>no</td></tr>
+
+<tr><td>Rongai West</td><td class="num">75</td><td class="num">13%</td>
+  <td class="num">20%</td><td class="num">6.6%</td><td class="num">15.1%</td><td>no</td></tr>
+
+<tr><td>Rongai West</td><td class="num">80 (current)</td><td class="num">20%</td>
+  <td class="num">27%</td><td class="num">8.6%</td><td class="num">18.8%</td><td>yes</td></tr>
+
+<tr><td>Rongai West</td><td class="num">85</td><td class="num">24%</td>
+  <td class="num">31%</td><td class="num">10.7%</td><td class="num">22.6%</td><td>no</td></tr>
+
+<tr><td>Rongai West</td><td class="num">90</td><td class="num">31%</td>
+  <td class="num">38%</td><td class="num">13.0%</td><td class="num">26.6%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">65</td><td class="num">0%</td>
+  <td class="num">11%</td><td class="num">2.8%</td><td class="num">6.8%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">70</td><td class="num">0%</td>
+  <td class="num">11%</td><td class="num">2.8%</td><td class="num">6.8%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">75</td><td class="num">2%</td>
+  <td class="num">13%</td><td class="num">2.8%</td><td class="num">6.8%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">80 (current)</td><td class="num">2%</td>
+  <td class="num">13%</td><td class="num">3.2%</td><td class="num">7.5%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">85</td><td class="num">7%</td>
+  <td class="num">18%</td><td class="num">3.7%</td><td class="num">8.4%</td><td>no</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">90</td><td class="num">9%</td>
+  <td class="num">18%</td><td class="num">4.5%</td><td class="num">10.1%</td><td>yes</td></tr>
+</tbody></table></div>
+<h3>3.4 Sensitivity: soil water capacity (a placeholder input)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Soil capacity</th><th class="num">Median WRSI</th><th class="num">Payout frequency</th><th class="num">Expected loss</th><th class="num">Gross rate</th></tr></thead>
+<tbody>
+<tr><td>Rongai West</td><td class="num">60 mm</td><td class="num">87.97</td>
+  <td class="num">33%</td><td class="num">12.7%</td><td class="num">26.5%</td></tr>
+
+<tr><td>Rongai West</td><td class="num">100 mm (current)</td><td class="num">97.19</td>
+  <td class="num">27%</td><td class="num">8.6%</td><td class="num">18.8%</td></tr>
+
+<tr><td>Rongai West</td><td class="num">140 mm</td><td class="num">98.58</td>
+  <td class="num">22%</td><td class="num">7.3%</td><td class="num">16.4%</td></tr>
+
+<tr><td>Rongai West</td><td class="num">180 mm</td><td class="num">98.26</td>
+  <td class="num">22%</td><td class="num">7.1%</td><td class="num">16.3%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">60 mm</td><td class="num">96.24</td>
+  <td class="num">16%</td><td class="num">4.9%</td><td class="num">11.5%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">100 mm</td><td class="num">99.37</td>
+  <td class="num">16%</td><td class="num">3.7%</td><td class="num">8.6%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">140 mm (current)</td><td class="num">99.57</td>
+  <td class="num">13%</td><td class="num">3.2%</td><td class="num">7.5%</td></tr>
+
+<tr><td>Molo Highlands</td><td class="num">180 mm</td><td class="num">99.47</td>
+  <td class="num">13%</td><td class="num">2.8%</td><td class="num">6.8%</td></tr>
+</tbody></table></div>
+<h3>3.5 Validation against FEWS NET</h3>
+<p>Rongai West: PENDING. Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28. Molo Highlands: PENDING. Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28.</p>
+</section>
+
+
+<section id="data" class="page-break">
+<h2>4. Data sources and provenance</h2>
+<p>Every input file is committed with a metadata file recording the exact request, the retrieval time and its
+  SHA-256. The engine refuses a file whose checksum no longer matches. The checksums below were recomputed when this
+  pack was built.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>File</th><th>Used for</th><th>Dataset and provider</th><th>Retrieved (UTC)</th><th>SHA-256 (recorded)</th><th>Check</th></tr></thead>
+<tbody>
+<tr><td class="path">data/raw/chirps/ward-a.csv</td><td>pricing and monitoring (rainfall)</td><td>UCSB CHIRPS v2.0 daily, 0.05 deg, polygon mean (SERVIR ClimateSERV)</td>
+  <td>2026-10-27 18:07:17</td><td class="path">264b15782ccb9200f65f8981e5812921e0c39e08de47939865910b7a3da5ddf2</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/chirps/ward-b.csv</td><td>pricing and monitoring (rainfall)</td><td>UCSB CHIRPS v2.0 daily, 0.05 deg, polygon mean (SERVIR ClimateSERV)</td>
+  <td>2026-10-27 18:13:40</td><td class="path">8a37253486d373b89c7c3f1352cf0fde8dac48b837cc4837e922be4c64bdd854</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/nasapower/ward-a.csv</td><td>pricing and monitoring (PET)</td><td>NASA POWER daily T2M_MAX / T2M_MIN (MERRA-2), community AG (NASA Langley POWER)</td>
+  <td>2026-10-28 11:51:19</td><td class="path">88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/nasapower/ward-b.csv</td><td>pricing and monitoring (PET)</td><td>NASA POWER daily T2M_MAX / T2M_MIN (MERRA-2), community AG (NASA Langley POWER)</td>
+  <td>2026-10-28 11:51:29</td><td class="path">88f851576fac4d1a32dda67b37ae0b45b43822eff0a9c8b9d0b0560b51f7d2d5</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/ndvi/laisamis.csv</td><td>research only (livestock feasibility)</td><td>MOD13Q1 (MODIS Terra vegetation indices, 16-day, 250 m) (NASA ORNL DAAC MODIS/VIIRS subset web service)</td>
+  <td>2026-10-29 22:33:46</td><td class="path">b772cf3f16379d48f37a5def7fa22cfa0344dd8db3ffb78b008c3fdf9f0f68e1</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/ndvi/merti.csv</td><td>research only (livestock feasibility)</td><td>MOD13Q1 (MODIS Terra vegetation indices, 16-day, 250 m) (NASA ORNL DAAC MODIS/VIIRS subset web service)</td>
+  <td>2026-10-29 22:54:44</td><td class="path">435b301d73d08554ebc2e914fbbca881baf205355c1a77c900dfb49b2ff37735</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_35E_0N.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-28 18:39:16</td><td class="path">98083fd0cd892a96f7cd07760b75c998237defd2240a1fb1bbad579dcbe4f276</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_36E_0N.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-28 18:34:05</td><td class="path">a2f4f49527a26c82979447c7f69b2413fc28e1a46b91d4938b39e15dc617c6f1</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_36E_1N.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-28 18:49:47</td><td class="path">05ba80ea3aaa6a8f1fe0baa9acc87dda1bcb688e631fbe50225bc17dc274dae2</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_36E_1S.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-28 18:46:48</td><td class="path">f141d0035b54ac1a285704525a5ac14ffdb27250b58de009c86f70429529b75e</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_37E_0N.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-28 18:42:31</td><td class="path">58fb4ea243d165ed9dd4e9f29958b491a8fce9ceccd1b27fee8d4776325db654</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_38E_1S.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-29 17:07:35</td><td class="path">2d8308d6ecf7592cea69802ff05067ab5da5ecbe98db3a9a3eb5fb407aef0d8d</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/c3s_seas51_hindcast_38E_2S.csv</td><td>research only (forecast skill)</td><td>C3S ECMWF SEAS5.1 hindcast, total precipitation, 25 members, via IRI Data Library (iridl.ldeo.columbia.edu)</td>
+  <td>2026-10-29 17:04:36</td><td class="path">d963abe8cfcb94a75eda51a06d06110e3f72577ade9726d325d4d512849fa7fa</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/chirps_monthly_eastern_kenya.npz</td><td>research only (forecast skill)</td><td>CHIRPS v2.0 monthly (mm/month), CHC Africa BIL files, multi-range reads (data.chc.ucsb.edu)</td>
+  <td>2026-10-28 19:15:33</td><td class="path">aaa600537c4151b647f103b8adb39ef772a6c3c79fbe9f6cd2f589b52dc18f21</td>
+  <td>not committed (re-fetchable)</td></tr>
+
+<tr><td class="path">data/raw/research/ghacof_layers.json</td><td>research only (forecast skill)</td><td>ghacof_layers.json (geoportal.icpac.net)</td>
+  <td>2026-10-28 18:39:45</td><td class="path">28a38d0120407e106dc03a15ca427efb5b5ea197bc1f5d58ae1c4cf01fe3480c</td>
+  <td><span class="chip ok">matches</span></td></tr>
+
+<tr><td class="path">data/raw/research/ghacof_ward_probabilities.json</td><td>research only (forecast skill)</td><td>ghacof_ward_probabilities.json (geoportal.icpac.net)</td>
+  <td>2026-10-28 18:42:10</td><td class="path">f1275a33677449556309f69cbc9de752f135f90c8908a8939ddd9886d8390083</td>
+  <td><span class="chip ok">matches</span></td></tr>
+</tbody></table></div>
+<h3>Labels on every input</h3>
+<p>Each input of a pricing run carries a label: REAL (observed, named source), SYNTHETIC (generated here),
+  ILLUSTRATIVE (placeholder awaiting a decision) or PENDING (not available; dependent results not computed).
+  Rongai West:</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Input</th><th>Label</th><th>Source</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Rainfall</td><td><span class="chip ok">REAL</span></td>
+  <td>CHIRPS v2.0 daily via SERVIR ClimateSERV</td><td>CHIRPS daily values are disaggregated from pentad totals and are unreliable day by day; the index only uses multi-week phase totals.</td></tr>
+
+<tr><td>PET</td><td><span class="chip ok">REAL</span></td>
+  <td>Hargreaves PET from NASA POWER temperature (FALLBACK)</td><td>FALLBACK: FEWS NET Penman-Monteith PET was unreachable (USGS server 503) and only covers 2001 onward. Hargreaves can overstate PET in humid conditions.</td></tr>
+
+<tr><td>Ward location</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/wards.yaml</td><td>Placeholder location, not a real ward boundary.</td></tr>
+
+<tr><td>Soil water holding capacity</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/wards.yaml</td><td>100 mm placeholder until ward soil data.</td></tr>
+
+<tr><td>Crop calendar and LGP</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/phenology.yaml</td><td>Planting window and growing period pending agronomist sign-off.</td></tr>
+
+<tr><td>WRSI trigger and exit</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>Placeholders, not filed terms.</td></tr>
+
+<tr><td>Failed-onset and germination triggers</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>Rain thresholds and replanting cost are placeholders.</td></tr>
+
+<tr><td>Flowering component</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>EXPERIMENTAL; off, shown for comparison only.</td></tr>
+
+<tr><td>Seasonal forecast (Layer A)</td><td><span class="chip warn">SYNTHETIC</span></td>
+  <td>agroshield synthetic tercile forecast</td><td>Generated from observed rainfall at the skill measured from C3S SEAS5.1 hindcasts (research 3b).</td></tr>
+
+<tr><td>Layer A trigger and voucher value</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>Probability threshold and voucher KES per acre are placeholders.</td></tr>
+
+<tr><td>Target payout frequency</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>1 season in 5-7; underwriter to confirm.</td></tr>
+
+<tr><td>Loadings and margins</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>Pending underwriter agreement.</td></tr>
+
+<tr><td>Sum insured options</td><td><span class="chip warn">ILLUSTRATIVE</span></td>
+  <td>config/product.yaml</td><td>Pending SACCO input-cost data.</td></tr>
+
+<tr><td>FEWS NET WRSI (validation)</td><td><span class="chip crit">PENDING</span></td>
+  <td>USGS FEWS NET CHIRPS Croplands WRSI</td><td>Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28.</td></tr>
+
+<tr><td>Yields (basis risk)</td><td><span class="chip crit">PENDING</span></td>
+  <td>ward yield history</td><td>No real ward yields; basis risk not measurable.</td></tr>
+</tbody></table></div>
+<p class="muted">The same labels apply at every ward (data/engine_ward-*.json).</p>
+</section>
+
+
+<section id="backtest" class="page-break">
+<h2>5. Backtest results</h2>
+<p>Today's terms applied to every long-rains season in the record. Numbers are the engine's own output (runs listed
+  on the cover); the season-by-season tables are in <code>data/backtest_*.csv</code>.</p>
+
+<h3>Rongai West (ward-a): 1981 to 2025, 45 seasons</h3>
+<div class="grid">
+  <div class="kpi"><div class="v">12 of 45</div><div class="k">seasons with any payout (27%, about 1 in 3.8)</div></div>
+  <div class="kpi"><div class="v">8.6%</div><div class="k">expected loss, share of sum insured</div></div>
+  <div class="kpi"><div class="v">32.1% / 46.5%</div><div class="k">1-in-10 / 1-in-20 season loss</div></div>
+  <div class="kpi"><div class="v">81.5%</div><div class="k">worst season (1984)</div></div>
+  <div class="kpi"><div class="v">18.84%</div><div class="k">gross rate at the default sum insured</div></div>
+</div>
+<p>Target payout frequency: WRSI and failed onset 20% against a target of 1 season in
+  5 to 7 (inside the band);
+  replanting vouchers 9% against 1 in 8 to
+  12 (inside the band). Targets are placeholders for the insurer to confirm.
+  Median WRSI 97.19, lowest 55.56; failed onsets 0; germination dry spells 4.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Frequency</th><th class="num">Expected cost per acre</th><th class="num">Gross per acre alone</th></tr></thead>
+<tbody>
+<tr><td>WRSI</td><td class="num">9</td><td class="num">20%</td><td class="num">KES 638.37</td><td class="num">KES 1,503.56</td></tr>
+
+<tr><td>Failed onset (catastrophe only)</td><td class="num">0</td><td class="num">0%</td><td class="num">KES 0</td><td class="num">KES 0</td></tr>
+
+<tr><td>Germination replanting (seed voucher)</td><td class="num">4</td><td class="num">9%</td><td class="num">KES 222.22</td><td class="num">KES 574.42</td></tr>
+</tbody></table></div>
+<p class="muted">Per acre at the default sum insured of KES 10,000.</p>
+<h4>Worst seasons</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Rank</th><th class="num">Year</th><th>Start of season</th><th class="num">WRSI</th><th>Early trigger</th><th class="num">Payout share</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td class="num">1984</td><td>Apr d1 1984</td><td class="num">55.56</td>
+  <td></td><td class="num">81.5%</td></tr>
+
+<tr><td class="num">2</td><td class="num">2004</td><td>Mar d3 2004</td><td class="num">65.66</td>
+  <td></td><td class="num">47.8%</td></tr>
+
+<tr><td class="num">3</td><td class="num">2008</td><td>Mar d3 2008</td><td class="num">67.58</td>
+  <td></td><td class="num">41.4%</td></tr>
+
+<tr><td class="num">4</td><td class="num">1999</td><td>Mar d2 1999</td><td class="num">68.96</td>
+  <td></td><td class="num">36.8%</td></tr>
+
+<tr><td class="num">5</td><td class="num">2002</td><td>Apr d2 2002</td><td class="num">69.75</td>
+  <td>germination dry spell</td><td class="num">59.2%</td></tr>
+
+<tr><td class="num">6</td><td class="num">2000</td><td>Apr d2 2000</td><td class="num">72.99</td>
+  <td></td><td class="num">23.4%</td></tr>
+
+<tr><td class="num">7</td><td class="num">2009</td><td>Mar d3 2009</td><td class="num">76.29</td>
+  <td></td><td class="num">12.4%</td></tr>
+
+<tr><td class="num">8</td><td class="num">2014</td><td>Mar d2 2014</td><td class="num">78.2</td>
+  <td></td><td class="num">6.0%</td></tr>
+
+<tr><td class="num">9</td><td class="num">2022</td><td>Apr d2 2022</td><td class="num">78.83</td>
+  <td></td><td class="num">3.9%</td></tr>
+
+<tr><td class="num">10</td><td class="num">1993</td><td>Apr d3 1993</td><td class="num">83.43</td>
+  <td></td><td class="num">0.0%</td></tr>
+</tbody></table></div>
+<h4>Early-season triggers</h4>
+<ul class="small"><li>1994, Germination dry spell: KES 2,500 per acre (planting rain Mar d2 1994, then 11 mm from 1994-03-21 to 1994-04-09, below 20 mm; season restarted Apr d3 1994)</li><li>2002, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 2002, then 17 mm from 2002-03-11 to 2002-03-30, below 20 mm; season restarted Apr d2 2002)</li><li>2007, Germination dry spell: KES 2,500 per acre (planting rain Mar d2 2007, then 0 mm from 2007-03-21 to 2007-04-09, below 20 mm; season restarted Apr d2 2007)</li><li>2016, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 2016, then 0 mm from 2016-03-11 to 2016-03-30, below 20 mm; season restarted Apr d1 2016)</li></ul>
+<h4>Every season</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Year</th><th>Start</th><th class="num">Window rain (mm)</th><th class="num">WRSI</th><th class="num">Payout share</th><th class="num">Per acre</th></tr></thead>
+<tbody>
+<tr><td class="num">1981</td><td>Mar d2 1981</td>
+  <td class="num">346.8</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1982</td><td>Apr d2 1982</td>
+  <td class="num">160.9</td><td class="num">95.78</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1983</td><td>Apr d3 1983</td>
+  <td class="num">134.5</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1984</td><td>Apr d1 1984</td>
+  <td class="num">118.6</td><td class="num">55.56</td>
+  <td class="num">81.5%</td><td class="num">KES 8,146.67</td></tr>
+
+<tr><td class="num">1985</td><td>Mar d3 1985</td>
+  <td class="num">368.2</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1986</td><td>Apr d1 1986</td>
+  <td class="num">205.9</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1987</td><td>Mar d2 1987</td>
+  <td class="num">148.3</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1988</td><td>Mar d3 1988</td>
+  <td class="num">306.3</td><td class="num">98.03</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1989</td><td>Mar d2 1989</td>
+  <td class="num">240.9</td><td class="num">91.73</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1990</td><td>Mar d1 1990</td>
+  <td class="num">354.5</td><td class="num">88.35</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1991</td><td>Mar d3 1991</td>
+  <td class="num">210.0</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1992</td><td>Mar d2 1992</td>
+  <td class="num">145.6</td><td class="num">84.6</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1993</td><td>Apr d3 1993</td>
+  <td class="num">87.7</td><td class="num">83.43</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1994</td><td>Apr d3 1994 (replant)</td>
+  <td class="num">215.4</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">1995</td><td>Mar d1 1995</td>
+  <td class="num">230.5</td><td class="num">93.77</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1996</td><td>Mar d3 1996</td>
+  <td class="num">157.8</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1997</td><td>Mar d3 1997</td>
+  <td class="num">348.4</td><td class="num">96.13</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1998</td><td>Apr d1 1998</td>
+  <td class="num">141.0</td><td class="num">99.09</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1999</td><td>Mar d2 1999</td>
+  <td class="num">195.3</td><td class="num">68.96</td>
+  <td class="num">36.8%</td><td class="num">KES 3,680</td></tr>
+
+<tr><td class="num">2000</td><td>Apr d2 2000</td>
+  <td class="num">84.6</td><td class="num">72.99</td>
+  <td class="num">23.4%</td><td class="num">KES 2,336.67</td></tr>
+
+<tr><td class="num">2001</td><td>Mar d1 2001</td>
+  <td class="num">313.3</td><td class="num">88.63</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2002</td><td>Apr d2 2002 (replant)</td>
+  <td class="num">277.6</td><td class="num">69.75</td>
+  <td class="num">59.2%</td><td class="num">KES 5,916.67</td></tr>
+
+<tr><td class="num">2003</td><td>Mar d3 2003</td>
+  <td class="num">227.5</td><td class="num">95.98</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2004</td><td>Mar d3 2004</td>
+  <td class="num">326.7</td><td class="num">65.66</td>
+  <td class="num">47.8%</td><td class="num">KES 4,780</td></tr>
+
+<tr><td class="num">2005</td><td>Mar d2 2005</td>
+  <td class="num">174.5</td><td class="num">97.19</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2006</td><td>Mar d1 2006</td>
+  <td class="num">243.8</td><td class="num">91.94</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2007</td><td>Apr d2 2007 (replant)</td>
+  <td class="num">182.5</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2008</td><td>Mar d3 2008</td>
+  <td class="num">151.8</td><td class="num">67.58</td>
+  <td class="num">41.4%</td><td class="num">KES 4,140</td></tr>
+
+<tr><td class="num">2009</td><td>Mar d3 2009</td>
+  <td class="num">127.5</td><td class="num">76.29</td>
+  <td class="num">12.4%</td><td class="num">KES 1,236.67</td></tr>
+
+<tr><td class="num">2010</td><td>Mar d1 2010</td>
+  <td class="num">365.9</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2011</td><td>Mar d2 2011</td>
+  <td class="num">171.3</td><td class="num">97.71</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2012</td><td>Apr d1 2012</td>
+  <td class="num">310.8</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2013</td><td>Mar d2 2013</td>
+  <td class="num">403.5</td><td class="num">99.39</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2014</td><td>Mar d2 2014</td>
+  <td class="num">139.9</td><td class="num">78.2</td>
+  <td class="num">6.0%</td><td class="num">KES 600</td></tr>
+
+<tr><td class="num">2015</td><td>Apr d1 2015</td>
+  <td class="num">213.0</td><td class="num">92.26</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2016</td><td>Apr d1 2016 (replant)</td>
+  <td class="num">257.3</td><td class="num">99.16</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2017</td><td>Mar d3 2017</td>
+  <td class="num">123.0</td><td class="num">87.55</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2018</td><td>Mar d1 2018</td>
+  <td class="num">541.6</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2019</td><td>Apr d3 2019</td>
+  <td class="num">142.0</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2020</td><td>Mar d1 2020</td>
+  <td class="num">457.7</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2021</td><td>Mar d3 2021</td>
+  <td class="num">159.5</td><td class="num">99.71</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2022</td><td>Apr d2 2022</td>
+  <td class="num">181.1</td><td class="num">78.83</td>
+  <td class="num">3.9%</td><td class="num">KES 390</td></tr>
+
+<tr><td class="num">2023</td><td>Mar d2 2023</td>
+  <td class="num">308.6</td><td class="num">92.89</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2024</td><td>Mar d3 2024</td>
+  <td class="num">288.3</td><td class="num">98.07</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2025</td><td>Mar d1 2025</td>
+  <td class="num">314.2</td><td class="num">99.01</td>
+  <td class="num"></td><td class="num"></td></tr>
+</tbody></table></div>
+
+<h3>Molo Highlands (ward-b): 1981 to 2025, 45 seasons</h3>
+<div class="grid">
+  <div class="kpi"><div class="v">6 of 45</div><div class="k">seasons with any payout (13%, about 1 in 7.5)</div></div>
+  <div class="kpi"><div class="v">3.2%</div><div class="k">expected loss, share of sum insured</div></div>
+  <div class="kpi"><div class="v">21.9% / 25.0%</div><div class="k">1-in-10 / 1-in-20 season loss</div></div>
+  <div class="kpi"><div class="v">25.0%</div><div class="k">worst season (1986)</div></div>
+  <div class="kpi"><div class="v">7.46%</div><div class="k">gross rate at the default sum insured</div></div>
+</div>
+<p>Target payout frequency: WRSI and failed onset 2% against a target of 1 season in
+  8 to 12 (OUTSIDE the band);
+  replanting vouchers 11% against 1 in 8 to
+  12 (inside the band). Targets are placeholders for the insurer to confirm.
+  Median WRSI 99.57, lowest 74.79; failed onsets 0; germination dry spells 5.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Frequency</th><th class="num">Expected cost per acre</th><th class="num">Gross per acre alone</th></tr></thead>
+<tbody>
+<tr><td>WRSI</td><td class="num">1</td><td class="num">2%</td><td class="num">KES 38.59</td><td class="num">KES 147.59</td></tr>
+
+<tr><td>Failed onset (catastrophe only)</td><td class="num">0</td><td class="num">0%</td><td class="num">KES 0</td><td class="num">KES 0</td></tr>
+
+<tr><td>Germination replanting (seed voucher)</td><td class="num">5</td><td class="num">11%</td><td class="num">KES 277.78</td><td class="num">KES 680.59</td></tr>
+</tbody></table></div>
+<p class="muted">Per acre at the default sum insured of KES 10,000.</p>
+<h4>Worst seasons</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Rank</th><th class="num">Year</th><th>Start of season</th><th class="num">WRSI</th><th>Early trigger</th><th class="num">Payout share</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td class="num">2009</td><td>Mar d3 2009</td><td class="num">74.79</td>
+  <td></td><td class="num">17.4%</td></tr>
+
+<tr><td class="num">2</td><td class="num">2004</td><td>Mar d2 2004</td><td class="num">82.74</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">3</td><td class="num">1984</td><td>Apr d1 1984</td><td class="num">83.26</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">4</td><td class="num">2002</td><td>Apr d2 2002</td><td class="num">87.6</td>
+  <td>germination dry spell</td><td class="num">25.0%</td></tr>
+
+<tr><td class="num">5</td><td class="num">2000</td><td>Mar d3 2000</td><td class="num">92.21</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">6</td><td class="num">1993</td><td>Apr d2 1993</td><td class="num">93.17</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">7</td><td class="num">1999</td><td>Mar d1 1999</td><td class="num">93.92</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">8</td><td class="num">1983</td><td>Mar d3 1983</td><td class="num">96.65</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">9</td><td class="num">2017</td><td>Mar d3 2017</td><td class="num">96.84</td>
+  <td></td><td class="num">0.0%</td></tr>
+
+<tr><td class="num">10</td><td class="num">1992</td><td>Mar d2 1992</td><td class="num">97.16</td>
+  <td></td><td class="num">0.0%</td></tr>
+</tbody></table></div>
+<h4>Early-season triggers</h4>
+<ul class="small"><li>1986, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 1986, then 0 mm from 1986-03-11 to 1986-03-30, below 20 mm; season restarted Apr d1 1986)</li><li>2002, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 2002, then 6 mm from 2002-03-11 to 2002-03-30, below 20 mm; season restarted Apr d2 2002)</li><li>2007, Germination dry spell: KES 2,500 per acre (planting rain Mar d2 2007, then 0 mm from 2007-03-21 to 2007-04-09, below 20 mm; season restarted Apr d2 2007)</li><li>2012, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 2012, then 0 mm from 2012-03-11 to 2012-03-30, below 20 mm; season restarted Apr d1 2012)</li><li>2016, Germination dry spell: KES 2,500 per acre (planting rain Mar d1 2016, then 0 mm from 2016-03-11 to 2016-03-30, below 20 mm; season restarted Apr d1 2016)</li></ul>
+<h4>Every season</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Year</th><th>Start</th><th class="num">Window rain (mm)</th><th class="num">WRSI</th><th class="num">Payout share</th><th class="num">Per acre</th></tr></thead>
+<tbody>
+<tr><td class="num">1981</td><td>Mar d2 1981</td>
+  <td class="num">412.7</td><td class="num">99.62</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1982</td><td>Apr d1 1982</td>
+  <td class="num">225.4</td><td class="num">99.38</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1983</td><td>Mar d3 1983</td>
+  <td class="num">201.5</td><td class="num">96.65</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1984</td><td>Apr d1 1984</td>
+  <td class="num">127.5</td><td class="num">83.26</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1985</td><td>Mar d3 1985</td>
+  <td class="num">449.0</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1986</td><td>Apr d1 1986 (replant)</td>
+  <td class="num">307.1</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">1987</td><td>Mar d2 1987</td>
+  <td class="num">191.1</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1988</td><td>Mar d3 1988</td>
+  <td class="num">407.1</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1989</td><td>Mar d2 1989</td>
+  <td class="num">264.3</td><td class="num">99.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1990</td><td>Mar d1 1990</td>
+  <td class="num">421.7</td><td class="num">99.41</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1991</td><td>Mar d2 1991</td>
+  <td class="num">253.1</td><td class="num">98.59</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1992</td><td>Mar d2 1992</td>
+  <td class="num">198.8</td><td class="num">97.16</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1993</td><td>Apr d2 1993</td>
+  <td class="num">130.6</td><td class="num">93.17</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1994</td><td>Mar d1 1994</td>
+  <td class="num">270.2</td><td class="num">99.44</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1995</td><td>Mar d1 1995</td>
+  <td class="num">242.2</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1996</td><td>Mar d3 1996</td>
+  <td class="num">173.6</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1997</td><td>Mar d3 1997</td>
+  <td class="num">367.3</td><td class="num">99.57</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1998</td><td>Apr d2 1998</td>
+  <td class="num">148.1</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">1999</td><td>Mar d1 1999</td>
+  <td class="num">245.0</td><td class="num">93.92</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2000</td><td>Mar d3 2000</td>
+  <td class="num">116.6</td><td class="num">92.21</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2001</td><td>Mar d1 2001</td>
+  <td class="num">285.1</td><td class="num">98.05</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2002</td><td>Apr d2 2002 (replant)</td>
+  <td class="num">292.8</td><td class="num">87.6</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2003</td><td>Mar d3 2003</td>
+  <td class="num">266.9</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2004</td><td>Mar d2 2004</td>
+  <td class="num">387.1</td><td class="num">82.74</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2005</td><td>Mar d2 2005</td>
+  <td class="num">204.5</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2006</td><td>Mar d1 2006</td>
+  <td class="num">280.7</td><td class="num">99.33</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2007</td><td>Apr d2 2007 (replant)</td>
+  <td class="num">199.4</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2008</td><td>Mar d3 2008</td>
+  <td class="num">168.8</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2009</td><td>Mar d3 2009</td>
+  <td class="num">139.0</td><td class="num">74.79</td>
+  <td class="num">17.4%</td><td class="num">KES 1,736.67</td></tr>
+
+<tr><td class="num">2010</td><td>Mar d1 2010</td>
+  <td class="num">382.2</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2011</td><td>Mar d2 2011</td>
+  <td class="num">205.4</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2012</td><td>Apr d1 2012 (replant)</td>
+  <td class="num">365.4</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2013</td><td>Mar d2 2013</td>
+  <td class="num">415.5</td><td class="num">99.31</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2014</td><td>Mar d2 2014</td>
+  <td class="num">172.2</td><td class="num">99.34</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2015</td><td>Mar d3 2015</td>
+  <td class="num">256.7</td><td class="num">97.92</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2016</td><td>Apr d1 2016 (replant)</td>
+  <td class="num">326.8</td><td class="num">100.0</td>
+  <td class="num">25.0%</td><td class="num">KES 2,500</td></tr>
+
+<tr><td class="num">2017</td><td>Mar d3 2017</td>
+  <td class="num">158.6</td><td class="num">96.84</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2018</td><td>Mar d1 2018</td>
+  <td class="num">642.6</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2019</td><td>Apr d3 2019</td>
+  <td class="num">194.8</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2020</td><td>Mar d1 2020</td>
+  <td class="num">508.9</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2021</td><td>Mar d3 2021</td>
+  <td class="num">229.7</td><td class="num">99.97</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2022</td><td>Mar d3 2022</td>
+  <td class="num">227.4</td><td class="num">99.67</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2023</td><td>Mar d2 2023</td>
+  <td class="num">361.6</td><td class="num">98.73</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2024</td><td>Mar d3 2024</td>
+  <td class="num">367.1</td><td class="num">100.0</td>
+  <td class="num"></td><td class="num"></td></tr>
+
+<tr><td class="num">2025</td><td>Mar d1 2025</td>
+  <td class="num">326.7</td><td class="num">98.76</td>
+  <td class="num"></td><td class="num"></td></tr>
+</tbody></table></div>
+
+</section>
+
+
+<section id="basis" class="page-break">
+<h2>6. Basis risk statement</h2>
+<p>Basis risk is the gap between what the index pays and what a member actually loses. This cover pays on one index
+  per ward, from satellite rainfall averaged over a box 0.1 degrees (about 11 km) wide around a
+  placeholder ward centre. A member's
+  own loss can differ because rain varies within the ward, and because soil, pests, disease, planting date and
+  farming practice differ from farm to farm. Members can lose a crop when the index pays nothing, and the index can
+  pay when a member's crop was fine.</p>
+<h3>What cannot be measured yet</h3>
+<ul>
+  <li><b>How often the index misses a real crop failure, or pays without one.</b> That needs a history of real maize
+    yields in each insured ward. None is available: Not measurable until real ward yields are available. Rainfall-derived synthetic yields were dropped because they agree with a rainfall index by construction.</li>
+  <li><b>The real pilot wards.</b> Both wards are placeholders (Rongai West, Molo Highlands);
+    their locations and soil water capacities are not real ward data.</li>
+</ul>
+<h3>What is measured or controlled now</h3>
+<ul>
+  <li><b>Agreement with an independent WRSI.</b> The comparison with the FEWS NET WRSI product is built but PENDING:
+    Not yet downloaded: the USGS FEWS NET download server (edcintl.cr.usgs.gov) returned 503 Service Unavailable when checked on 2026-10-28.</li>
+  <li><b>Sensitivity.</b> Payout frequency and price at other trigger levels and soil capacities (sections 3.3 and 3.4).</li>
+  <li><b>Known event.</b> The 1984 drought is required to pay at least 50% at Rongai West (section 3.2).</li>
+  <li><b>Input quality.</b> CHIRPS daily values are spread out from 5-day totals, so the index uses 10-day totals
+    and the flowering dry-spell component was dropped. PET is a flagged fallback (section 2.1).</li>
+  <li><b>Missed-payout reports.</b> Members report "my crop failed but the payout did not match" by USSD option 5 or
+    through their SACCO officer. Each report records the ward's index status at that moment and is reviewed by a
+    manager with an outcome. Reports never change a payout; they are the evidence for reviewing the index.</li>
+</ul>
+<p>The consumer disclosure (section 8) explains basis risk to members in plain words before they buy.</p>
+</section>
+
+
+<section id="timeline" class="page-break">
+<h2>7. Payout timeline</h2>
+
+<p>Payouts are due within <b>10 days</b> of the day the index is confirmed
+  (<code>monitoring.payout_within_days</code> in config/pilot.yaml). CHIRPS final rainfall is published about three weeks after the end of each month, so the index for a dekad is confirmed only then. The 10-day payout clock starts when the index is confirmed, not when the rain fell.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>What happens</th><th>Who</th></tr></thead>
+<tbody>
+<tr><td>Every day of the season</td><td>The daily job runs the same index on the rainfall observed so far (normal rain assumed for the rest). Ward status is shown to officers and members as a projection; each run is stored and audited.</td><td>System</td></tr>
+<tr><td>Day 0: index confirmed</td><td>Failed onset at the end of the planting window, the germination dry spell after its check, the WRSI at the end of the growing period, once observed data covers it. Payouts are calculated the same day for every policy whose cover was active.</td><td>System</td></tr>
+<tr><td>Day 0 onwards</td><td>The insurer's underwriter approves each payout, or holds it with a written reason (audited). The member is told by SMS only once it is approved.</td><td>Partner insurer (to be named)</td></tr>
+<tr><td>By day 10</td><td>Paid to the member's M-Pesa (simulated until the insurer's payout credentials exist), or credited to the SACCO loan where the member agreed. Replanting vouchers are sent as a code and are valid 30 days. Late payouts are flagged.</td><td>SACCO manager</td></tr>
+</tbody></table></div>
+
+<h3>Evidence: simulated season</h3>
+<p>A replay of the 2008 long rains at Rongai West with fictional members, on the platform's own
+  services: the index confirmed on 2008-08-01 (final WRSI 67.58, payout
+  41.4% of sum insured), the underwriter approved on 2008-08-02, and all
+  5 payouts were paid on 2008-08-04: 3 days after confirmation,
+  inside the 10-day window (due by 2008-08-11). SIMULATION / REPLAY with fictional people.
+  Source: <code>docs/remaining/season-2008/season.json</code> (SHA-256 <span class="mono">5f5d1d3b6208660e</span>), report beside it.</p>
+
+</section>
+
+
+<section id="disclosure" class="page-break">
+<h2>8. Consumer disclosure</h2>
+<p>Read with the member by the SACCO officer before enrolment. Also in <code>disclosure.html</code>.</p>
+<h3>English</h3>
+
+
+
+<article class="card" lang="en">
+<p><span class="chip warn">DRAFT</span> <span class="chip warn">ILLUSTRATIVE</span> The amounts and rules below are
+  placeholders until the partner insurer and the pilot wards are confirmed.</p>
+<h3>Your maize cover: what you need to know</h3>
+<p><b>What it is.</b> Insurance for your maize in the long rains. It pays when the rain in your ward is too little
+  for maize. The rain is measured by satellite for the whole ward. Nobody visits your farm to check, and you do not
+  make a claim.</p>
+<p><b>Who is who.</b> The insurer is the Partner insurer (to be named). Your SACCO sells the cover and collects your payments.
+  AgroShield runs the system that measures the rain and works out payouts.</p>
+<p><b>What it pays.</b></p>
+<ul>
+  <li>If the season's rain is too poor for maize in your ward (the ward score falls below 80 out of
+    100), you get part of your cover. The worse the season, the more you get, up to all of your cover when the score
+    is 50 or less.</li>
+  <li>If the planting rains never come (less than 80 mm in the whole planting
+    window), you get 25% of your cover.</li>
+  <li>If it stays dry for 20 days after the planting rain (less than
+    20 mm), you get a seed voucher worth KES 2,500
+    per acre to plant again.</li>
+</ul>
+<p><b>What it does not do.</b> It follows the rain in your ward, not on your own farm. Your crop can fail when the
+  ward score shows no payout, or the other way round. If this happens, tell your SACCO officer or use option 5
+  "Report crop loss" on the USSD menu. Your report is recorded and checked, but it does not change the payout.
+  The cover only measures lack of rain. It does not pay for pests, disease, floods or theft.</p>
+<p><b>When your cover starts.</b> Only when your share of the price is fully paid by the sales closing date. You
+  can pay in parts, by M-Pesa or by SACCO deduction. If it is not fully paid by that date there is no cover, and what
+  you paid is given back through your SACCO.</p>
+<p><b>The price.</b> The government (KAIP) pays 50% of the price for farms of
+  0.5 to 20 acres. You pay the rest. Good farming practice can
+  lower your share (Resilience discount). Your SACCO officer tells you the exact amount before you agree.</p>
+<p><b>When you are paid.</b> Within 10 days after the ward score is confirmed. Rain data
+  arrives about three weeks after each month ends, so the score is confirmed after the season. You are paid by
+  M-Pesa, or into your SACCO loan if you agreed to that.</p>
+<p><b>Messages.</b> You get SMS about your cover and payouts only if you agree.</p>
+<p><b>Your information.</b> Your national ID and phone number are stored locked (encrypted) and shown only partly.
+  They are used only for this cover and shared with the insurer only for this cover.</p>
+<p><b>Complaints.</b> [To be written with the partner insurer: who to call, how long a reply takes, and how to reach
+  the insurer and the Insurance Regulatory Authority.]</p>
+</article>
+
+<h3>Kiswahili (pending native-speaker review)</h3>
+
+
+
+<article class="card" lang="sw">
+<p><span class="chip warn">DRAFT</span> <span class="chip warn">ILLUSTRATIVE</span>
+  <span class="chip crit">Kiswahili: pending native-speaker review</span> Kiasi na masharti haya ni ya mfano hadi
+  kampuni ya bima na wadi za majaribio zithibitishwe.</p>
+<h3>Bima ya mahindi yako: unachohitaji kujua</h3>
+<p><b>Ni nini.</b> Bima ya mahindi yako wakati wa masika. Inalipa ikiwa mvua katika wadi yako haitoshi kwa mahindi.
+  Mvua inapimwa kwa satelaiti kwa wadi nzima. Hakuna anayekuja shambani kwako kukagua, na huhitaji kudai.</p>
+<p><b>Nani ni nani.</b> Kampuni ya bima ni Partner insurer (to be named) (kampuni ya bima mshirika, itatajwa). SACCO yako inauza
+  bima hii na kupokea malipo yako. AgroShield inaendesha mfumo unaopima mvua na kuhesabu malipo.</p>
+<p><b>Inalipa nini.</b></p>
+<ul>
+  <li>Ikiwa mvua ya msimu ni duni kwa mahindi katika wadi yako (alama ya wadi iko chini ya 80 kati
+    ya 100), unapata sehemu ya kiasi cha bima yako. Msimu ukiwa mbaya zaidi, unapata zaidi, hadi kiasi chote alama
+    ikiwa 50 au chini.</li>
+  <li>Ikiwa mvua ya kupanda haitanyesha kabisa (chini ya mm 80 katika kipindi chote cha
+    kupanda), unapata asilimia 25 ya kiasi cha bima yako.</li>
+  <li>Ikiwa kutakuwa na ukavu kwa siku 20 baada ya mvua ya kupanda (chini ya mm
+    20), unapata vocha ya mbegu ya KES 2,500
+    kwa ekari ili upande tena.</li>
+</ul>
+<p><b>Isiyolipa.</b> Bima inafuata mvua ya wadi yako, si ya shamba lako peke yake. Mazao yako yanaweza kuharibika
+  wakati alama ya wadi haionyeshi malipo, au kinyume chake. Hili likitokea, mwambie afisa wa SACCO yako au tumia
+  chaguo 5 "Ripoti hasara" kwenye menyu ya USSD. Ripoti yako inarekodiwa na kukaguliwa, lakini haibadilishi malipo.
+  Bima hii inapima ukosefu wa mvua pekee. Hailipii wadudu, magonjwa, mafuriko wala wizi.</p>
+<p><b>Bima inaanza lini.</b> Pale tu sehemu yako ya bei imelipwa yote kufikia tarehe ya mwisho ya mauzo. Unaweza
+  kulipa kwa awamu, kwa M-Pesa au kwa makato ya SACCO. Isipolipwa yote kufikia tarehe hiyo hakuna bima, na pesa
+  uliyolipa inarudishwa kupitia SACCO yako.</p>
+<p><b>Bei.</b> Serikali (KAIP) inalipa asilimia 50 ya bei kwa
+  mashamba ya ekari 0.5 hadi 20. Wewe unalipa iliyobaki. Kilimo
+  bora kinaweza kupunguza sehemu yako (punguzo la Resilience). Afisa wa SACCO yako atakuambia kiasi kamili kabla
+  hujakubali.</p>
+<p><b>Utalipwa lini.</b> Ndani ya siku 10 baada ya alama ya wadi kuthibitishwa. Takwimu za
+  mvua hufika takriban wiki tatu baada ya kila mwezi kuisha, kwa hiyo alama inathibitishwa baada ya msimu. Unalipwa
+  kwa M-Pesa, au kwenye mkopo wako wa SACCO ikiwa ulikubali hivyo.</p>
+<p><b>Ujumbe.</b> Unapata SMS kuhusu bima yako na malipo ikiwa tu umekubali.</p>
+<p><b>Taarifa zako.</b> Nambari yako ya kitambulisho na ya simu zimehifadhiwa kwa usimbaji na zinaonyeshwa sehemu
+  tu. Zinatumika kwa bima hii pekee na zinashirikiwa na kampuni ya bima kwa bima hii pekee.</p>
+<p><b>Malalamiko.</b> [Yataandikwa pamoja na kampuni ya bima mshirika: nani wa kupigia simu, jibu linachukua muda
+  gani, na jinsi ya kuwasiliana na kampuni ya bima na Mamlaka ya Udhibiti wa Bima.]</p>
+</article>
+
+</section>
+
+
+<section id="privacy" class="page-break">
+<h2>9. Data protection summary</h2>
+<p>Designed with the Kenya Data Protection Act in mind; the legal review of the consent wording is pending.</p>
+<ul>
+  <li><b>Encryption at rest.</b> National ID numbers and phone numbers are stored only encrypted (AES-256-GCM, a
+    fresh random nonce per value), with a keyed HMAC-SHA256 for look-ups. Keys come from the environment, never from
+    the code or the database. Officer passwords are stored as scrypt hashes.</li>
+  <li><b>Masking.</b> IDs and phone numbers are masked on every screen, export, bordereau, audit record and log line
+    (for example <span class="mono">+254 7** *** 678</span>). Tests read the raw database file, rendered pages, links
+    and audit rows for any clear ID or phone.</li>
+  <li><b>Never in a web address.</b> Searches are sent in the request body and enrolment state stays on the server,
+    so personal data never appears in a URL.</li>
+  <li><b>Local storage.</b> Data stays in the platform's own database (SQLite in development, PostgreSQL in
+    deployment). Public-site enquiries are stored locally and encrypted; nothing is emailed.</li>
+  <li><b>SMS.</b> Only to members who agreed to SMS. The phone number is decrypted only at the moment of sending and
+    never stored in the outbox. By default (<code>SMS_MODE=log</code>) messages are recorded and not sent.</li>
+  <li><b>Weather news (KMD and others).</b> Display only: pricing, triggers and payouts never read it (tested). Kenya
+    Meteorological Department forecasts are shown with their label and link after a person approves a summary.
+    No SMS of KMD content until KMD's written permission is on file. Other sources stay off:</li>
+</ul>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Source</th><th>On</th><th>Display</th><th>SMS allowed</th><th>Terms checked</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Kenya Meteorological Department</td><td>yes</td><td>yes</td>
+  <td>no</td><td>2026-10-28</td><td>No robots.txt and no published terms. Display with label and link; no SMS without written permission.</td></tr>
+
+<tr><td>Tuko News</td><td>no</td><td>no</td>
+  <td>no</td><td>2026-10-28</td><td>Stays off. Needs written permission from Tuko (Legit Media).</td></tr>
+
+<tr><td>Kenya News Agency</td><td>no</td><td>no</td>
+  <td>no</td><td>2026-10-28</td><td>Not built until KNA confirms in writing that headline, source, date and link may be shown.</td></tr>
+</tbody></table></div>
+<h3>Consent, per purpose (config/consent.yaml, version C-2026-10-29)</h3>
+<p>Each consent record stores the wording version and the SHA-256 of the exact words the member agreed to. Status:
+  <b>pending legal and Kiswahili review</b>. Live enrolment is blocked until both reviews are recorded; only demo SACCOs with
+  fictional members can enrol until then.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Purpose</th><th>Required</th><th>English</th><th>Kiswahili (pending review)</th><th>SHA-256</th></tr></thead>
+<tbody>
+<tr><td>data processing</td><td>yes</td><td>I agree that my SACCO and AgroShield may record my name, phone number, national ID, ward and farm details to provide and administer my crop insurance, and share them with the insurer for that purpose only. My national ID and phone number are stored encrypted.</td><td>Ninakubali SACCO yangu na AgroShield kuhifadhi jina langu, nambari ya simu, nambari ya kitambulisho, wadi na maelezo ya shamba ili kutoa na kusimamia bima ya mazao yangu, na kuyashiriki na kampuni ya bima kwa madhumuni hayo pekee. Kitambulisho na simu yangu vimehifadhiwa kwa usimbaji.</td><td class="mono">c612a72ff0db8be4</td></tr>
+
+<tr><td>sms</td><td>no, optional</td><td>I agree to receive SMS about my cover, rainfall in my ward and payouts.</td><td>Ninakubali kupokea SMS kuhusu bima yangu, mvua katika wadi yangu na malipo.</td><td class="mono">48d4d08d9beb457f</td></tr>
+
+<tr><td>loan linked payout</td><td>no, optional</td><td>I agree that any payout from this cover is first paid to my outstanding SACCO loan, and any balance is paid to me.</td><td>Ninakubali kwamba malipo yoyote ya bima hii yalipe kwanza mkopo wangu wa SACCO, na salio lolote nilipwe mimi.</td><td class="mono">86c030144c20d53a</td></tr>
+</tbody></table></div>
+</section>
+
+
+<section id="annex" class="page-break">
+<h2>10. Reproducing this pack</h2>
+<ul>
+  <li>Rebuild everything: <code>python tools/ira/build_pack.py</code>. It runs the engine offline from the committed
+    inputs (<code>agroshield-price run --all --offline --out var/ira-engine-run</code>), then writes this file, the PDF (AgroShield-IRA-pack-DRAFT-ILLUSTRATIVE.pdf), the consumer
+    disclosure and the figures. Identical inputs give identical engine results.</li>
+  <li>Figures: <code>data/pricing_summary.csv</code>, <code>data/backtest_*.csv</code>,
+    <code>data/trigger_sensitivity_*.csv</code>, <code>data/soil_sensitivity_*.csv</code>,
+    <code>data/data_sources.csv</code>, <code>data/figures.json</code> (everything quoted here), and
+    <code>data/engine_*.json</code> (the engine's results and run manifest, unchanged).</li>
+  <li><code>manifest.json</code> lists every file with its size and SHA-256.</li>
+  <li>Settings fingerprints at build time: pilot.yaml <span class="mono">622f69d948a92660</span>, wards.yaml <span class="mono">5d53a22fa76e715e</span>, phenology.yaml <span class="mono">5d36f0cdf5f2d3de</span>, product.yaml <span class="mono">9d83169771bf8496</span>.</li>
+</ul>
+<p class="banner"><b>DRAFT</b> <b>ILLUSTRATIVE</b> End of pack. Not submitted to or approved by the Insurance
+  Regulatory Authority. Insurer: Partner insurer (to be named).</p>
+</section>
+</main>
+</body>
+</html>
