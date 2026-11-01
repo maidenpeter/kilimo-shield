@@ -169,19 +169,26 @@ def main(argv: list[str] | None = None) -> int:
             audit(s, "cli", "officer.created", "officer", args.username, role=args.role)
         print(f"{args.role} {args.username} added to {org}")
     elif args.cmd == "set-paybill":
-        paybill = " ".join(args.paybill.split())[:60]
+        paybill = " ".join(args.paybill.split())
         if len(paybill) < 4:
             sys.exit("give the paybill or bank details")
+        if len(paybill) > 60:
+            sys.exit(f"paybill or bank details must be 60 characters or fewer (got {len(paybill)})")
+        from .crypto import scrub
+        from .db import PHONE_LIKE
         with transaction(factory) as s:
             ins = insurer(args.insurer)
-            old, ins.premium_paybill = ins.premium_paybill, paybill
-            audit(s, "cli", "insurer.paybill_set", "insurer", ins.code, old=old or "", new=paybill)
-        print(f"premium paybill for {ins.code} set")
+            old, ins.premium_paybill = ins.premium_paybill or "", paybill
+            # Kept in full so the old destination can be recovered (a paybill or bank account is not personal
+            # data); anything that looks like a phone number is still masked.
+            audit(s, "cli", "insurer.paybill_set", "insurer", ins.code,
+                  paybill_old=scrub(old) if PHONE_LIKE.search(old) else old,
+                  paybill_new=scrub(paybill) if PHONE_LIKE.search(paybill) else paybill)
+        print(f"premium paybill for {ins.code} set to: {paybill}")
     elif args.cmd == "mpesa-recheck":
         from . import mpesa
         ctx = _context(settings)
-        with transaction(factory) as s:
-            print("mpesa:", mpesa.recheck(ctx, s))
+        print("mpesa:", mpesa.run_recheck(ctx, factory))
     elif args.cmd == "demo":
         return _demo(settings, factory)
     elif args.cmd == "serve":
@@ -223,10 +230,11 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd in ("daily", "send-sms"):
         from . import monitoring, services, sms, weather
         ctx = _context(settings)
+        if args.cmd == "daily":
+            from . import mpesa
+            print("mpesa:", mpesa.run_recheck(ctx, factory))     # before the lapse, so confirmed payments count
         with transaction(factory) as s:
             if args.cmd == "daily":
-                from . import mpesa
-                print("mpesa:", mpesa.recheck(ctx, s))          # before the lapse, so confirmed payments count
                 print(services.close_sales_windows(ctx, s))
                 for st in monitoring.run_monitoring(ctx, s, allow_download=args.download):
                     print(f"{st.ward_id} {st.season} {st.year}: {st.phase} / {st.level}")
@@ -243,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _start_recheck(settings, factory) -> None:
     """While the portal runs, re-check unconfirmed M-Pesa payments every MPESA_RECHECK_SECONDS (a daemon thread;
-    each round is its own transaction, and an error in one round never stops the next)."""
+    one short transaction per request, and an error in one round never stops the next)."""
     import threading
 
     from . import mpesa
@@ -253,9 +261,8 @@ def _start_recheck(settings, factory) -> None:
         ctx = _context(settings)
         while not stop.wait(settings.mpesa_recheck_seconds):
             try:
-                with transaction(factory) as s:
-                    res = mpesa.recheck(ctx, s)
-                if res["checked"]:
+                res = mpesa.run_recheck(ctx, factory)
+                if res["checked"] or res["errors"]:
                     log.info("M-Pesa re-check: %s", res)
             except Exception:
                 log.exception("M-Pesa re-check failed; will try again")

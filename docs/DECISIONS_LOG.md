@@ -31,3 +31,13 @@ checklist of the run's report. "Pending owner confirmation" means the default is
 | 2.3 | New empty database | Created from the models and stamped at the newest revision (fast). A test proves the revisions build exactly the same schema, so the two cannot drift. | Built |
 | 2.4 | Pending M-Pesa requests at upgrade | Revision 0002 queues them for a status check at once, so none is left without a re-check. | Built |
 | 2.5 | Existing weather advisories | Become "every SACCO" items (managed by operations), because until now every advisory was shown to every SACCO. | Built |
+
+### Phase 1 review fixes (docs/remaining/REVIEW_PHASE1.md)
+
+| # | Decision | Default used | Status |
+|---|---|---|---|
+| 1.13 | M-Pesa request times | Stored in UTC, like every other platform timestamp written by the models. Payment `received_at` keeps its existing meaning (Nairobi time) so bordereaux do not change. | Built |
+| 1.14 | Result code 4999 | "Still being processed": treated as no answer yet, not as a failure. | Built |
+| 1.15 | Success callback after the status query said "not paid" | Flagged "Payment not confirmed" for a manager; never credited automatically and never dropped. | Built |
+| 1.16 | Same KMD PDF in two audiences | Allowed once for every SACCO and once per SACCO (migration 0003). | Built |
+| 1.17 | Paybill change audit | Old and new values kept in full so the previous destination can be recovered; anything that looks like a phone number is still masked. | Built |

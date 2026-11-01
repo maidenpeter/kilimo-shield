@@ -34,7 +34,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session
 
 from .crypto import mask_phone, normalise_phone
@@ -49,6 +49,9 @@ log = logging.getLogger("agroshield.mpesa")
 # STK timeout is about a minute, so the first check comes soon after; later ones cover outages.
 RECHECK_MINUTES = (2, 5, 15, 60, 240, 1440)
 RECEIPT = re.compile(r"^[A-Z0-9]{8,12}$")       # M-Pesa receipt numbers, e.g. SKL2ABC3DE
+# STK query result codes that mean "still being processed", not a final answer.
+IN_PROGRESS = {4999}
+OPEN = ("pending", "unconfirmed")               # no final answer yet
 
 
 class MpesaError(RuntimeError):
@@ -151,6 +154,18 @@ def make_client(cfg: Mpesa, callback_url: str):
     return SimulatedDaraja() if cfg.env == "simulated" else DarajaClient(cfg, callback_url)
 
 
+def _utc(ctx: Context) -> datetime:
+    """Every M-Pesa request time is stored in UTC (SQLite keeps no offset, and _aware reads it back as UTC)."""
+    return ctx.now().astimezone(timezone.utc)
+
+
+def _aware(d: datetime | None) -> datetime | None:
+    """SQLite gives naive datetimes back; M-Pesa request times are stored in UTC."""
+    if d is None:
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
 def request_premium(ctx: Context, s: Session, pol: Policy, amount: int, requested_by: str,
                     phone: str | None = None) -> MpesaRequest:
     """STK push for an instalment of a policy's farmer share, to the farmer's registered phone (or `phone`)."""
@@ -166,7 +181,7 @@ def request_premium(ctx: Context, s: Session, pol: Policy, amount: int, requeste
         raise PaymentError(f"amount must be a whole number of KES from {low} to {balance}")
     e164 = normalise_phone(phone) if phone else ctx.vault.decrypt(pol.farmer.phone_enc, "phone")
     r = ctx.mpesa.stk_push(e164, amount, pol.pay_ref, "AgroShield")
-    now = ctx.now()
+    now = _utc(ctx)
     req = MpesaRequest(policy_id=pol.id, amount_kes=amount, phone_masked=mask_phone(e164),
                        merchant_request_id=r["merchant_request_id"], checkout_request_id=r["checkout_request_id"],
                        environment=ctx.mpesa.env, requested_by=requested_by, created_at=now,
@@ -183,10 +198,20 @@ def _meta(cb: dict) -> dict:
 
 
 def _txn_time(v) -> datetime | None:
+    """Safaricom's TransactionDate (Nairobi wall time), as UTC."""
     try:
-        return datetime.strptime(str(int(v)), "%Y%m%d%H%M%S").replace(tzinfo=NAIROBI)
+        return datetime.strptime(str(int(v)), "%Y%m%d%H%M%S").replace(tzinfo=NAIROBI).astimezone(timezone.utc)
     except (TypeError, ValueError):
         return None
+
+
+def _claim(s: Session, req: MpesaRequest, status: str, **values) -> bool:
+    """Move a request out of pending/unconfirmed exactly once. A callback, the re-check and a manager can race;
+    the database decides who wins (compare-and-set), so a payment is never credited twice."""
+    won = s.execute(update(MpesaRequest).where(MpesaRequest.id == req.id, MpesaRequest.status.in_(OPEN))
+                    .values(status=status, **values).execution_options(synchronize_session=False)).rowcount == 1
+    s.refresh(req)
+    return won
 
 
 def handle_callback(ctx: Context, s: Session, body: dict) -> dict:
@@ -196,22 +221,36 @@ def handle_callback(ctx: Context, s: Session, body: dict) -> dict:
     if req is None:
         log.warning("M-Pesa callback for an unknown request ignored")
         return {"outcome": "unknown_request"}
-    if req.status not in ("pending", "unconfirmed"):
-        return {"outcome": "duplicate", "status": req.status}
     try:
         code = int(cb.get("ResultCode", -1))
     except (TypeError, ValueError):
         code = -1
+    m = _meta(cb)
+    amount, receipt = m.get("Amount"), str(m.get("MpesaReceiptNumber") or "").strip().upper()
+    good = code == 0 and amount is not None and int(round(float(amount))) == req.amount_kes and bool(receipt)
+    if req.status == "paid" and good and req.receipt == req.checkout_request_id[:30]:
+        # Paid on the status query alone; the late callback tells us the receipt. The payment is not touched.
+        req.receipt = receipt[:30]
+        audit(s, "mpesa", "mpesa.receipt_received_late", "policy", req.policy_id)
+        return {"outcome": "receipt_recorded"}
+    if req.status == "failed" and good and req.result_desc == "not paid (status query)":
+        # Safaricom's query said no, its callback says paid: a person decides (never dropped, never auto-credited).
+        req.status, req.callback_amount_kes, req.callback_receipt = "unconfirmed", float(amount), receipt[:30]
+        req.callback_txn_at = _txn_time(m.get("TransactionDate"))
+        audit(s, "mpesa", "mpesa.callback_after_query_failure", "policy", req.policy_id)
+        return {"outcome": "flagged"}
+    if req.status not in OPEN:
+        return {"outcome": "duplicate", "status": req.status}
     if code != 0:
-        req.status, req.result_code = "failed", code
-        req.result_desc, req.completed_at = str(cb.get("ResultDesc", ""))[:200], ctx.now()
+        if not _claim(s, req, "failed", result_code=code, result_desc=str(cb.get("ResultDesc", ""))[:200],
+                      completed_at=_utc(ctx), next_query_at=None):
+            return {"outcome": "duplicate", "status": req.status}
         audit(s, "mpesa", "mpesa.stk_failed", "policy", req.policy_id, result_code=code)
         return {"outcome": "failed", "result_code": code}
-    m = _meta(cb)
-    amount, receipt = m.get("Amount"), str(m.get("MpesaReceiptNumber") or "")
-    if amount is None or int(round(float(amount))) != req.amount_kes or not receipt:
-        req.status, req.result_code, req.completed_at = "failed", code, ctx.now()
-        req.result_desc = "rejected: amount or receipt does not match the request"
+    if not good:
+        if not _claim(s, req, "failed", result_code=code, completed_at=_utc(ctx), next_query_at=None,
+                      result_desc="rejected: amount or receipt does not match the request"):
+            return {"outcome": "duplicate", "status": req.status}
         audit(s, "mpesa", "mpesa.callback_rejected", "policy", req.policy_id, reason="amount or receipt mismatch")
         return {"outcome": "rejected"}
     if getattr(ctx.mpesa, "confirm_with_query", False):
@@ -220,7 +259,7 @@ def handle_callback(ctx: Context, s: Session, body: dict) -> dict:
             req.callback_amount_kes, req.callback_receipt = float(amount), receipt[:30]
             req.callback_txn_at = _txn_time(m.get("TransactionDate"))
             if req.status == "pending" and req.next_query_at is None:
-                req.next_query_at = ctx.now() + timedelta(minutes=RECHECK_MINUTES[0])
+                req.next_query_at = _utc(ctx) + timedelta(minutes=RECHECK_MINUTES[0])
             audit(s, "mpesa", "mpesa.callback_unconfirmed", "policy", req.policy_id)
             return {"outcome": "unconfirmed"}
     return _credit(ctx, s, req, float(amount), receipt, _txn_time(m.get("TransactionDate")),
@@ -228,74 +267,115 @@ def handle_callback(ctx: Context, s: Session, body: dict) -> dict:
 
 
 def _query(ctx: Context, req: MpesaRequest) -> dict:
-    """One STK status query. Any transport or parsing error counts as "no answer yet"."""
+    """One STK status query. Any transport or parsing error, or "still processing", counts as no answer yet."""
     try:
         res = ctx.mpesa.stk_query(req.checkout_request_id)
     except Exception as e:                      # network, Safaricom 5xx, bad JSON: try again later
         res = {"result_code": None, "result_desc": f"query error: {type(e).__name__}"}
-    req.last_query_at = ctx.now()
+    req.last_query_at = _utc(ctx)
     req.last_query_result = f"{res.get('result_code')}: {res.get('result_desc') or ''}"[:200]
+    if res.get("result_code") in IN_PROGRESS:
+        res = {**res, "result_code": None}
     return res
 
 
 def _credit(ctx: Context, s: Session, req: MpesaRequest, amount: float, reference: str, paid_at: datetime | None,
             desc: str, actor: str) -> dict:
-    """Mark the push paid and record the payment once. The sales window is judged by when the push was started,
-    so a payment begun before the close date still counts toward cover when Safaricom confirms it later."""
-    req.status, req.result_code, req.receipt = "paid", 0, reference[:30]
-    req.result_desc, req.completed_at, req.next_query_at = desc[:200], ctx.now(), None
+    """Mark the push paid and record the payment, once (see _claim). The sales window is judged by when the push
+    was started, so a payment begun before the close date still counts toward cover when confirmed later."""
+    if not _claim(s, req, "paid", result_code=0, receipt=reference[:30], result_desc=desc[:200],
+                  completed_at=_utc(ctx), next_query_at=None):
+        audit(s, actor, "mpesa.already_settled", "policy", req.policy_id, status=req.status)
+        return {"outcome": "duplicate", "status": req.status}
+    when = _aware(paid_at) or _utc(ctx)
     try:
         record_payment(ctx, s, req.policy, amount, "mpesa", reference, actor,
-                       received_at=paid_at or ctx.now(), window_at=_aware(req.created_at))
+                       received_at=when.astimezone(NAIROBI), window_at=_aware(req.created_at))
     except PaymentError as e:           # receipt already recorded: keep the first
         audit(s, actor, "mpesa.payment_skipped", "policy", req.policy_id, reason=str(e))
         return {"outcome": "duplicate_receipt"}
     return {"outcome": "paid", "policy_no": req.policy.policy_no}
 
 
-def _aware(d: datetime) -> datetime:
-    """SQLite gives naive datetimes back; they were stored in UTC."""
-    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+def due(s: Session, now: datetime) -> list[int]:
+    """Requests waiting for an answer whose next status check is due."""
+    now = now.astimezone(timezone.utc)
+    rows = s.execute(select(MpesaRequest.id, MpesaRequest.next_query_at).where(
+        MpesaRequest.status == "pending", MpesaRequest.next_query_at.is_not(None))
+        .order_by(MpesaRequest.next_query_at)).all()
+    return [i for i, at in rows if _aware(at) <= now]
+
+
+def recheck_one(ctx: Context, s: Session, req_id: int, now: datetime) -> str:
+    """One status check for one request: paid, failed, waiting, flagged or skipped."""
+    req = s.get(MpesaRequest, req_id)
+    if req is None or req.status != "pending" or req.next_query_at is None or _aware(req.next_query_at) > now:
+        return "skipped"
+    code = _query(ctx, req)["result_code"]          # the HTTP call comes before any write to the database
+    s.refresh(req, ["status", "callback_receipt", "callback_amount_kes", "callback_txn_at"])
+    if req.status != "pending":                     # a callback settled it while we were asking
+        return "skipped"
+    req.query_attempts = (req.query_attempts or 0) + 1
+    if code == 0:
+        if req.callback_receipt:            # Safaricom told us the receipt in the callback
+            res = _credit(ctx, s, req, req.callback_amount_kes or float(req.amount_kes), req.callback_receipt,
+                          req.callback_txn_at, "confirmed by status query", "mpesa-recheck")
+        else:                               # no callback ever came: the query carries no receipt number
+            res = _credit(ctx, s, req, float(req.amount_kes), req.checkout_request_id[:40], None,
+                          "confirmed by status query; no receipt number was received", "mpesa-recheck")
+        audit(s, "mpesa-recheck", "mpesa.confirmed_by_query", "policy", req.policy_id, attempt=req.query_attempts,
+              outcome=res["outcome"])
+        return "paid" if res["outcome"] in ("paid", "duplicate_receipt") else "skipped"
+    if isinstance(code, int) and not req.callback_receipt:
+        if not _claim(s, req, "failed", result_code=code, completed_at=_utc(ctx), next_query_at=None,
+                      result_desc="not paid (status query)", query_attempts=req.query_attempts):
+            return "skipped"
+        audit(s, "mpesa-recheck", "mpesa.failed_by_query", "policy", req.policy_id, result_code=code)
+        return "failed"
+    if req.query_attempts >= len(RECHECK_MINUTES):
+        # Still unknown (or a success callback the query contradicts): a person must check with the farmer.
+        if not _claim(s, req, "unconfirmed", next_query_at=None, query_attempts=req.query_attempts):
+            return "skipped"
+        audit(s, "mpesa-recheck", "mpesa.unconfirmed_flagged", "policy", req.policy_id, attempts=req.query_attempts,
+              had_callback=bool(req.callback_receipt))
+        return "flagged"
+    req.next_query_at = _aware(req.created_at) + timedelta(minutes=RECHECK_MINUTES[req.query_attempts])
+    return "waiting"
 
 
 def recheck(ctx: Context, s: Session, now: datetime | None = None) -> dict:
-    """Scheduled job (agroshield-portal mpesa-recheck, every few minutes; also part of daily): query Safaricom
-    about each push still waiting whose next check is due. Confirmed: credited. Refused (cancelled, timed out,
-    wrong PIN, low balance): failed. No answer: tried again later, and flagged after the last try."""
-    now = now or ctx.now()
+    """Scheduled job (also part of daily): query Safaricom about each push still waiting whose next check is due.
+    Confirmed: credited. Refused (cancelled, timed out, wrong PIN, low balance): failed. No answer: tried again
+    later, and flagged after the last try. One session for all; run_recheck uses one transaction per request."""
+    now = (now or ctx.now()).astimezone(timezone.utc)
     out = {"checked": 0, "paid": 0, "failed": 0, "waiting": 0, "flagged": 0}
-    due = s.scalars(select(MpesaRequest).where(MpesaRequest.status == "pending", MpesaRequest.next_query_at.is_not(None))
-                    .order_by(MpesaRequest.next_query_at)).all()
-    for req in due:
-        if _aware(req.next_query_at) > now:
+    for rid in due(s, now):
+        res = recheck_one(ctx, s, rid, now)
+        if res != "skipped":
+            out["checked"] += 1
+            out[res] += 1
+    return out
+
+
+def run_recheck(ctx: Context, factory, now: datetime | None = None) -> dict:
+    """The scheduled re-check with a short transaction per request, so the database is never locked while
+    waiting for Safaricom (callbacks keep working), and one bad request never undoes the others."""
+    from .db import transaction
+    now = (now or ctx.now()).astimezone(timezone.utc)
+    with transaction(factory) as s:
+        ids = due(s, now)
+    out = {"checked": 0, "paid": 0, "failed": 0, "waiting": 0, "flagged": 0, "errors": 0}
+    for rid in ids:
+        try:
+            with transaction(factory) as s:
+                res = recheck_one(ctx, s, rid, now)
+        except Exception:
+            log.exception("M-Pesa re-check of request %s failed; it will be tried again", rid)
+            out["errors"] += 1
             continue
-        out["checked"] += 1
-        req.query_attempts = (req.query_attempts or 0) + 1
-        code = _query(ctx, req)["result_code"]
-        if code == 0:
-            if req.callback_receipt:            # Safaricom told us the receipt in the callback
-                res = _credit(ctx, s, req, req.callback_amount_kes or float(req.amount_kes), req.callback_receipt,
-                              req.callback_txn_at, "confirmed by status query", "mpesa-recheck")
-            else:                               # no callback ever came: the query carries no receipt number
-                res = _credit(ctx, s, req, float(req.amount_kes), req.checkout_request_id[:40], None,
-                              "confirmed by status query; no receipt number was received", "mpesa-recheck")
-            audit(s, "mpesa-recheck", "mpesa.confirmed_by_query", "policy", req.policy_id, attempt=req.query_attempts,
-                  outcome=res["outcome"])
-            out["paid"] += 1
-        elif isinstance(code, int) and not req.callback_receipt:
-            req.status, req.result_code, req.completed_at, req.next_query_at = "failed", code, ctx.now(), None
-            req.result_desc = "not paid (status query)"
-            audit(s, "mpesa-recheck", "mpesa.failed_by_query", "policy", req.policy_id, result_code=code)
-            out["failed"] += 1
-        elif req.query_attempts >= len(RECHECK_MINUTES):
-            # Still unknown (or a success callback the query contradicts): a person must check with the farmer.
-            req.status, req.next_query_at = "unconfirmed", None
-            audit(s, "mpesa-recheck", "mpesa.unconfirmed_flagged", "policy", req.policy_id, attempts=req.query_attempts,
-                  had_callback=bool(req.callback_receipt))
-            out["flagged"] += 1
-        else:
-            req.next_query_at = _aware(req.created_at) + timedelta(minutes=RECHECK_MINUTES[req.query_attempts])
-            out["waiting"] += 1
+        if res != "skipped":
+            out["checked"] += 1
+            out[res] += 1
     return out
 
 
@@ -323,12 +403,19 @@ def resolve(ctx: Context, s: Session, req: MpesaRequest, actor: str, outcome: st
         receipt = (receipt or "").strip().upper()
         if not RECEIPT.match(receipt):
             raise ResolveError("Enter the M-Pesa receipt number from the farmer's SMS (8 to 12 letters and numbers).")
-        if s.scalar(select(Payment).where(Payment.reference == receipt)):
+        used = s.scalar(select(Payment).where(Payment.reference == receipt)) or s.scalar(
+            select(MpesaRequest).where(MpesaRequest.id != req.id,
+                                       or_(MpesaRequest.receipt == receipt, MpesaRequest.callback_receipt == receipt)))
+        if used:
             raise ResolveError("That receipt number is already recorded for another payment.")
-        _credit(ctx, s, req, req.callback_amount_kes or float(req.amount_kes), receipt, req.callback_txn_at,
-                "confirmed by the manager with the farmer's receipt", actor)
+        res = _credit(ctx, s, req, req.callback_amount_kes or float(req.amount_kes), receipt, req.callback_txn_at,
+                      "confirmed by the manager with the farmer's receipt", actor)
+        if res["outcome"] != "paid":
+            raise ResolveError("This payment was settled meanwhile; reload the page.")
     elif outcome == "not_paid":
-        req.status, req.completed_at, req.result_desc = "failed", ctx.now(), "not paid (checked with the farmer)"
+        if not _claim(s, req, "failed", completed_at=_utc(ctx), next_query_at=None,
+                      result_desc="not paid (checked with the farmer)"):
+            raise ResolveError("This payment was settled meanwhile; reload the page.")
     else:
         raise ResolveError("Choose paid or not paid.")
     req.resolution, req.resolved_by, req.resolution_note = outcome, actor, note or None

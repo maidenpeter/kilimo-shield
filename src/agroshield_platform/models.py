@@ -362,7 +362,7 @@ class WeatherItem(Base):
     source_label: Mapped[str] = mapped_column(String(40))          # e.g. "Source: KMD"
     title: Mapped[str] = mapped_column(String(300))
     url: Mapped[str | None] = mapped_column(String(400))
-    pdf_sha256: Mapped[str | None] = mapped_column(String(64), unique=True)
+    pdf_sha256: Mapped[str | None] = mapped_column(String(64), index=True)   # unique per audience (weather.store_pdf)
     pdf_path: Mapped[str | None] = mapped_column(String(300))
     text_excerpt: Mapped[str | None] = mapped_column(Text)
     valid_from: Mapped[date | None] = mapped_column(Date)

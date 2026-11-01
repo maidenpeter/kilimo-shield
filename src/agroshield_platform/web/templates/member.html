@@ -29,7 +29,7 @@
     <form class="stack" method="post" action="/policies/{{ p.id }}/refund">
       <input type="hidden" name="csrf_token" value="{{ csrf }}">
       <label for="rf-amt-{{ p.id }}">Amount paid back (KES)</label>
-      <input id="rf-amt-{{ p.id }}" name="amount" type="text" inputmode="decimal" required value="{{ left|round|int }}" class="w-sm">
+      <input id="rf-amt-{{ p.id }}" name="amount" type="text" inputmode="decimal" required value="{{ '%.2f'|format(left) if left % 1 else left|int }}" class="w-sm">
       <label for="rf-on-{{ p.id }}">Date paid</label>
       <input id="rf-on-{{ p.id }}" name="paid_on" type="date" required value="{{ today.isoformat() }}" class="w-sm">
       <label for="rf-m-{{ p.id }}">How it was paid</label>

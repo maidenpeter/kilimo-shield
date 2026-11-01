@@ -41,8 +41,10 @@ def transaction(factory: sessionmaker):
         s.close()
 
 
-# System identifiers that contain long digit runs (dates, hashes) but never personal data.
-SAFE_KEYS = {"quote_id", "policy_no", "file_sha256", "source_sha256", "index_versions"}
+# System identifiers that contain long digit runs (dates, hashes) but never personal data. Paybill values are
+# checked for phone-shaped numbers by the caller (cli set-paybill) before they are logged.
+SAFE_KEYS = {"quote_id", "policy_no", "file_sha256", "source_sha256", "index_versions", "paybill_old", "paybill_new"}
+PHONE_LIKE = __import__("re").compile(r"(\+?254|\b0)\s*[17](\s*\d){8}\b")
 
 
 def audit(s: Session, actor: str, action: str, entity: str, entity_id: str | None = None, **details) -> None:

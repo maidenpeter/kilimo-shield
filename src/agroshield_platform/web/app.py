@@ -283,14 +283,13 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
 
     def public_page(request: Request, name: str, status: int = 200, **kw):
         from .. import content
-        with transaction(factory) as s:
-            off = officer_or_none(request, s)
         tpl = f"public/{name}"
         if not (HERE / "templates" / tpl).exists():
             tpl = "public/_writing.html"
         kw.setdefault("articles", content.ARTICLES)
         kw.setdefault("sent", request.session.pop("enquiry_sent", None))      # reference shown after a form is stored
-        return render(request, tpl, off, status=status, enq=enq, **kw)
+        with transaction(factory) as s:         # render inside the session: the navbar reads the officer's SACCO
+            return render(request, tpl, officer_or_none(request, s), status=status, enq=enq, **kw)
 
     def _public_route(path: str, name: str):
         def view(request: Request):
@@ -477,7 +476,8 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
 
     def settlement_page(request: Request, s, off, status: int = 200, **kw):
         insurer_id = off.sacco.insurer_id
-        st = stl.summary(s, insurer_id, off.sacco_id) if insurer_id else {"rows": [], "ledger": [], "total": {}, "saccos": {}}
+        st = stl.summary(s, insurer_id, off.sacco_id) if insurer_id else {"rows": [], "ledger": [], "total": {}, "saccos": {},
+                                                                         "paybill": stl.paybill(None)}
         return render(request, "settlement.html", off, status=status, st=st, methods=stl.METHODS, today=ctx().date(), **kw)
 
     @app.get("/reports/premium", response_class=HTMLResponse)
@@ -1279,15 +1279,15 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     from starlette.exceptions import HTTPException as StarletteHTTPException
 
     def wants_html(request: Request) -> bool:
-        return "text/html" in request.headers.get("accept", "") and not request.url.path.startswith(("/ussd/", "/mpesa/"))
+        return "text/html" in request.headers.get("accept", "") and not request.url.path.startswith(("/ussd/", "/mpesa/callback/"))
 
     @app.exception_handler(StarletteHTTPException)
     async def html_http_errors(request: Request, exc: StarletteHTTPException):
         if exc.status_code < 400 or not wants_html(request):
             return await http_exception_handler(request, exc)      # redirects, callbacks and API clients unchanged
-        with transaction(factory) as s:
-            off = officer_or_none(request, s)
-        return render(request, "error.html", off, status=exc.status_code, code=exc.status_code, message=exc.detail)
+        with transaction(factory) as s:         # render inside the session: the navbar reads the officer's SACCO
+            return render(request, "error.html", officer_or_none(request, s), status=exc.status_code,
+                          code=exc.status_code, message=exc.detail)
 
     @app.exception_handler(Exception)
     async def html_server_errors(request: Request, exc: Exception):

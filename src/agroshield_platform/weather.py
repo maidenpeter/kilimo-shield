@@ -148,7 +148,7 @@ class Fetcher:
             title = re.sub(r"\s+", " ", title_m.group(1)).strip() if title_m else page_url
             for href in sorted(set(re.findall(r'href="([^"]+\.pdf)"', page.text, re.I)))[:2]:
                 pdf_url = urljoin(page_url, href)
-                if self.s.scalar(select(WeatherItem).where(WeatherItem.url == pdf_url)):
+                if self.s.scalar(select(WeatherItem).where(WeatherItem.url == pdf_url, WeatherItem.sacco_id.is_(None))):
                     continue
                 pdf = self.get(src, pdf_url)
                 if pdf is None:
@@ -164,8 +164,9 @@ def store_pdf(s: Session, store: Path, src: Source, data: bytes, title: str, url
     if not data.startswith(b"%PDF"):
         raise WeatherError("not a PDF file")
     sha = hashlib.sha256(data).hexdigest()
-    if s.scalar(select(WeatherItem).where(WeatherItem.pdf_sha256 == sha)):
-        return None                                     # same document already held
+    scope = WeatherItem.sacco_id.is_(None) if sacco_id is None else WeatherItem.sacco_id == sacco_id
+    if s.scalar(select(WeatherItem).where(WeatherItem.pdf_sha256 == sha, scope)):
+        return None                                     # same document already held for the same audience
     store.mkdir(parents=True, exist_ok=True)
     path = store / f"{sha}.pdf"
     path.write_bytes(data)

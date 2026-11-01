@@ -18,6 +18,7 @@ Entries are never edited or deleted: a mistake is reversed by a new negative ent
 """
 from __future__ import annotations
 
+import math
 import re
 import secrets
 from collections import defaultdict
@@ -34,6 +35,10 @@ METHODS = {"bank_transfer": "Bank transfer", "mpesa": "M-Pesa", "cheque": "Chequ
 REFUND_METHODS = {"mpesa": "M-Pesa", "sacco_account": "Paid into the member's SACCO account",
                   "bank_transfer": "Bank transfer", "other": "Other"}
 PAYBILL_UNSET = "the insurer's paybill (to be configured)"
+
+
+def _shillings(v: float) -> str:
+    return f"{v:,.2f}" if round(v % 1, 2) else f"{v:,.0f}"
 
 
 def paybill(insurer: Insurer | None) -> str:
@@ -53,6 +58,8 @@ def _parse_amount(raw: str) -> float:
         v = round(float(t), 2)
     except ValueError:
         raise SettlementError("Enter the amount in shillings, for example 12500.") from None
+    if not math.isfinite(v):
+        raise SettlementError("Enter the amount in shillings, for example 12500.")
     if v == 0 or abs(v) > 100_000_000:
         raise SettlementError("Enter an amount above zero (or below zero to reverse an earlier entry).")
     return v
@@ -163,7 +170,7 @@ def record_refund(s: Session, off: Officer, pol: Policy, amount: str, paid_on: s
         raise SettlementError("Enter the amount paid back, above zero.")
     left = refund_outstanding(s, pol)
     if value > left + 0.005:
-        raise SettlementError(f"Only KES {left:,.0f} is owed back on this policy.")
+        raise SettlementError(f"Only KES {_shillings(left)} is owed back on this policy.")
     try:
         on = date.fromisoformat(paid_on)
     except ValueError:
