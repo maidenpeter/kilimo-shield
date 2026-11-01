@@ -308,8 +308,21 @@ def write_manifest(out: Path, generated_at: str, extra: dict) -> dict:
     return man
 
 
+def _check_replaceable(out: Path) -> None:
+    """The output folder is deleted and rebuilt, so it must be new, empty or an earlier pack (never, say, the repo)."""
+    if not out.exists() or not any(out.iterdir()):
+        return
+    try:
+        earlier = json.loads((out / "manifest.json").read_text(encoding="utf-8")).get("marking") == MARK
+    except (OSError, ValueError):
+        earlier = False
+    if not earlier:
+        raise SystemExit(f"{out} is not empty and holds no earlier IRA pack: choose a new or empty folder")
+
+
 def build(out: Path = REPO / "docs" / "ira", pdf: bool = True, runs: dict | None = None) -> dict:
     out = Path(out)
+    _check_replaceable(out)
     runs = runs or run_engine()             # first, so the run records a clean tree when the pack is committed
     if out.exists():
         shutil.rmtree(out)

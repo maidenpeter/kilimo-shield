@@ -216,6 +216,35 @@ def test_a_late_payout_fails_the_check(season):
         simulate.check(late, 10)
 
 
+def test_check_accepts_a_season_with_no_trigger_or_an_early_last_sms(season):
+    res, _ = season
+    # A year with no trigger (for example --year 2010) has nothing to approve or pay.
+    quiet = json.loads(json.dumps(res, default=str))
+    S = quiet["steps"]
+    del S["approval"], S["payout"]
+    S["trigger"] = {"date": S["trigger"]["date"], "none": True, "final_wrsi": 95.0, "index_version": "B-1.2.0"}
+    ck = simulate.check(quiet, 10)
+    assert ck["payouts"] == 0 and ck["max_days_to_pay"] is None
+    assert "no trigger, so no payout" in simulate.render_html(quiet)
+    # The SMS log runs all season: its last message may come before the last payout (a voucher-only year, 2007).
+    early = json.loads(json.dumps(res, default=str))
+    early["steps"]["sms"]["date"] = early["steps"]["approval"]["date"]
+    simulate.check(early, 10)
+    # A step really out of order still fails.
+    bad = json.loads(json.dumps(res, default=str))
+    bad["steps"]["approval"]["date"] = bad["steps"]["enrolment"]["date"]
+    with pytest.raises(simulate.SimulationError, match="out of order"):
+        simulate.check(bad, 10)
+
+
+def test_pack_build_will_not_replace_an_unrelated_folder(tmp_path):
+    bp = _build_pack_module()
+    (tmp_path / "keep.txt").write_text("not a pack", encoding="utf-8")
+    with pytest.raises(SystemExit, match="no earlier IRA pack"):
+        bp.build(tmp_path, pdf=False, runs={})
+    assert (tmp_path / "keep.txt").exists()
+
+
 def test_sms_are_logged_never_sent_and_only_with_consent(season):
     res, _ = season
     sms = res["steps"]["sms"]

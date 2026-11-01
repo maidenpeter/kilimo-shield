@@ -550,11 +550,16 @@ def _sha_file(p: Path) -> str | None:
 def check(result: dict, within: int) -> dict:
     """Every step is there, dated and in order; every payout landed inside the window. Raises SimulationError."""
     steps = result["steps"]
-    missing = [k for k in STEP_ORDER if k not in steps or not steps[k].get("date")]
+    # A season with no trigger has nothing to approve or pay.
+    no_trigger = bool(steps.get("trigger", {}).get("none"))
+    required = [k for k in STEP_ORDER if not (no_trigger and k in ("approval", "payout"))]
+    missing = [k for k in required if k not in steps or not steps[k].get("date")]
     if missing:
         raise SimulationError(f"steps missing or undated: {', '.join(missing)}")
-    dates = [date.fromisoformat(steps[k]["date"][:10]) for k in STEP_ORDER]
-    out_of_order = [f"{a} after {b}" for (a, da), (b, db) in zip(zip(STEP_ORDER[1:], dates[1:]), zip(STEP_ORDER, dates))
+    # The SMS log runs all season (its date is the last message), so it is not placed in the order.
+    ordered = [k for k in required if k != "sms"]
+    dates = [date.fromisoformat(steps[k]["date"][:10]) for k in ordered]
+    out_of_order = [f"{a} after {b}" for (a, da), (b, db) in zip(zip(ordered[1:], dates[1:]), zip(ordered, dates))
                     if da < db]
     if out_of_order:
         raise SimulationError("steps out of order: " + "; ".join(out_of_order))
@@ -653,8 +658,11 @@ def main(argv: list[str] | None = None) -> int:
     res = run_season(a.year, a.ward, out_dir=out)
     ck = res["checks"]
     print(f"{LABEL}: {res['ward']['display_name']} long rains {a.year}, {res['members']} fictional members")
-    print(f"  {ck['payouts']} payouts, KES {res['payout_total_kes']:,.2f}; slowest paid {ck['max_days_to_pay']} days after "
-          f"the trigger confirmed (limit {ck['window_days']})")
+    if ck["payouts"]:
+        print(f"  {ck['payouts']} payouts, KES {res['payout_total_kes']:,.2f}; slowest paid {ck['max_days_to_pay']} days "
+              f"after the trigger confirmed (limit {ck['window_days']})")
+    else:
+        print(f"  no trigger this season (final index {res['steps']['trigger'].get('final_wrsi')}): no payouts")
     print(f"  report: {out / 'index.html'}")
     return 0
 

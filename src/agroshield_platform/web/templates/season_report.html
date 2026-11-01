@@ -169,11 +169,17 @@
 {% if S.trigger.none %}
 <p>The season ended with an index of {{ S.trigger.final_wrsi }}: no trigger, so no payout.</p>
 {% else %}
+{% if 'wrsi_final' not in (S.trigger.confirmed or []) %}
+<p>On {{ S.trigger.date|day }}, with rainfall in to {{ S.trigger.data_through[:10]|day }}, the index confirmed an early
+  trigger: <b>{{ (S.trigger.confirmed or [])|join(', ')|replace('_', ' ') }}</b>. Payouts were calculated the same
+  morning for every member whose cover was active, and the {{ r.payout_within_days }}-day clock started.</p>
+{% else %}
 <p>The growing season (planting rain {{ S.trigger.sos }}) ended on {{ S.trigger.season_end|day }}. The next morning,
   with rainfall in to {{ S.trigger.data_through[:10]|day }}, the index was final: <b>WRSI {{ S.trigger.final_wrsi }}</b>,
   below the trigger of {{ S.trigger.trigger_wrsi|round(0)|int }}. That pays {{ S.trigger.share|pct }} of the sum insured
   ({{ "%.1f"|format(S.trigger.share * 100) }}%), on a straight line from 0 at the trigger to 100% at {{ S.trigger.exit_wrsi|round(0)|int }}.
   Payouts were calculated the same morning for every member whose cover was active, and the 10-day clock started.</p>
+{% endif %}
 <div class="table-wrap"><table>
 <thead><tr><th>Member</th><th>Payout</th><th class="num">Share of sum insured</th><th class="num">Amount</th><th>Paid to</th><th>Due by</th></tr></thead>
 <tbody>{% for p in S.trigger.payouts %}
