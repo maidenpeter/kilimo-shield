@@ -1,0 +1,311 @@
+<!doctype html>
+{# Stand-alone report of the simulated season (agroshield_platform.simulate). Opens from disk; no server. #}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIMULATION / REPLAY: {{ r.ward.display_name }}, long rains {{ r.year }}</title>
+<style>{{ css|safe }}</style>
+</head>
+<body>
+<main>
+{% set S = r.steps %}
+<div class="banner" role="note"><b>SIMULATION / REPLAY</b> Fictional SACCO, officers and members. Real {{ r.year }} rainfall
+  (CHIRPS). Prices, triggers and sums insured are ILLUSTRATIVE. No money moved and no SMS was sent.</div>
+
+<h1>Simulated season: {{ r.ward.display_name }}, long rains {{ r.year }}</h1>
+<p class="lead">One whole season replayed day by day on the real AgroShield services, in a throwaway database that was
+  deleted afterwards. {{ r.ward.display_name }} is the display name of the placeholder pilot ward {{ r.ward.id }}
+  ({{ r.ward.config_name }}). The {{ r.year }} long rains were a real drought in the committed rainfall record.</p>
+
+<div class="grid">
+  <div class="kpi"><div class="v">{{ r.members }}</div><div class="k">fictional members enrolled</div></div>
+  <div class="kpi"><div class="v">{{ S.sales_close.status.values()|selectattr('status', 'equalto', 'active')|list|length }}</div>
+    <div class="k">with cover active at sales close</div></div>
+  {% if S.payout is defined %}
+  <div class="kpi"><div class="v">{{ S.trigger.final_wrsi }}</div><div class="k">final index (WRSI), trigger {{ S.trigger.trigger_wrsi|round(0)|int }}</div></div>
+  <div class="kpi"><div class="v">{{ r.payout_total_kes|kes }}</div><div class="k">paid to {{ S.payout.events|length }} members</div></div>
+  <div class="kpi"><div class="v">{{ r.checks.max_days_to_pay }} of {{ r.payout_within_days }} days</div>
+    <div class="k">slowest payout after the trigger confirmed</div></div>
+  {% endif %}
+</div>
+
+<nav class="toc card" aria-label="Steps"><b>Steps, in order</b>
+<ol>
+  <li><a href="#enrolment">Enrolment</a> ({{ S.enrolment.date|day }})</li>
+  <li><a href="#premium">Premium payments</a> ({{ S.premium.date|day }})</li>
+  <li><a href="#settlement">Premium sent to the insurer</a> ({{ S.settlement.date|day }})</li>
+  <li><a href="#sales_close">Sales close</a> ({{ S.sales_close.date|day }})</li>
+  <li><a href="#monitoring">Daily rainfall monitoring</a> ({{ S.monitoring.date|day }})</li>
+  <li><a href="#trigger">Trigger confirmed</a> ({{ S.trigger.date|day }})</li>
+  <li><a href="#approval">Underwriter approval</a> ({{ S.approval.date|day if S.approval is defined else 'none' }})</li>
+  <li><a href="#payout">Payout</a> ({{ S.payout.date|day if S.payout is defined else 'none' }})</li>
+  <li><a href="#sms">SMS log</a> ({{ S.sms.date|day }})</li>
+  <li><a href="#missed_payout">Missed-payout report</a> ({{ S.missed_payout.date|day }})</li>
+  <li><a href="#bordereaux">Bordereaux</a> ({{ S.bordereaux.date|day }})</li>
+  <li><a href="#reinsurer">Reinsurer summary</a> ({{ S.reinsurer.date|day }})</li>
+</ol></nav>
+
+{# ------------------------------------------------------------ 1 #}
+<section class="step" id="enrolment">
+<h2>1. Enrolment</h2>
+<p class="when">{{ S.enrolment.date|day }} to {{ S.enrolment.end|day }}</p>
+<p>The SACCO officer enrols each member with the same rules as the enrolment screens: the sales window must be open
+  (it ran from {{ r.sales_window[0]|day }} to {{ r.sales_window[1]|day }}), the member agrees to data processing, and the
+  price comes from the pricing engine's rate book. The government (KAIP) share is shown as "not yet received".</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Member</th><th>Phone</th><th>ID</th><th class="num">Acres</th><th class="num">Sum insured</th>
+  <th class="num">Gross premium</th><th class="num">Government share</th><th class="num">Farmer pays</th><th>Pays by</th></tr></thead>
+<tbody>{% for e in S.enrolment.events %}
+<tr><td>{{ e.date }}</td><td><b>{{ e.member_no }}</b> {{ e.name }}{% if e.loan_linked %} <span class="chip info">loan-linked</span>{% endif %}
+  {% if not e.sms_consent %} <span class="chip">no SMS</span>{% endif %}</td>
+  <td class="mono">{{ e.phone }}</td><td class="mono">{{ e.national_id }}</td><td class="num">{{ e.acres }}</td>
+  <td class="num">{{ e.sum_insured_kes|kes }}</td><td class="num">{{ e.gross_kes|kes }}</td>
+  <td class="num">{{ e.government_share_kes|kes }}</td><td class="num">{{ e.farmer_pays_kes|kes }}</td>
+  <td>{{ 'M-Pesa' if e.route == 'mpesa' else 'SACCO deduction' }}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="muted">Index version {{ S.enrolment.events[0].index_version }}. National IDs and phone numbers are stored
+  encrypted and shown masked, as on every AgroShield screen.</p>
+</section>
+
+{# ------------------------------------------------------------ 2 #}
+<section class="step" id="premium">
+<h2>2. Premium payments</h2>
+<p class="when">{{ S.premium.date|day }} to {{ S.premium.end|day }}</p>
+<p>M-Pesa payments are an STK push to the member's phone and Safaricom's answer (both simulated, no network). SACCO
+  deductions are recorded by the SACCO. Members may pay in instalments; cover starts only once the farmer's share is
+  fully paid by the sales close.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>Member</th><th>How</th><th class="num">Amount</th><th>Answer</th><th class="num">Paid so far</th><th>Cover</th></tr></thead>
+<tbody>{% for e in S.premium.events %}
+<tr><td>{{ e.date }}{% if e.callback_at %}<div class="muted">answer {{ e.callback_at[11:] }}</div>{% endif %}</td>
+  <td><b>{{ e.member_no }}</b> (payment {{ e.instalment }})</td><td>{{ e.channel }}</td><td class="num">{{ e.amount_kes|kes }}</td>
+  <td>{% if e.callback == 'paid' or e.callback == 'recorded' %}<span class="chip ok">{{ 'paid' if e.callback == 'paid' else 'recorded' }}</span>
+      {% else %}<span class="chip warn">{{ e.callback }}</span> {% if e.request_status == 'failed' %}cancelled on the phone{% endif %}{% endif %}
+      {% if e.receipt %}<div class="mono muted">{{ e.receipt }}</div>{% endif %}</td>
+  <td class="num">{{ e.paid_kes|kes }}</td>
+  <td>{% if e.status == 'active' %}<span class="chip ok">active</span>{% else %}{{ e.status|replace('_', ' ') }}{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------ 3 #}
+<section class="step" id="settlement">
+<h2>3. Premium sent to the insurer</h2>
+<p class="when">{{ S.settlement.date|day }} to {{ S.settlement.end|day }}</p>
+{% set rm, cf = S.settlement.remitted, S.settlement.confirmed %}
+<p>On {{ rm.date }} the SACCO manager recorded sending {{ rm.amount_kes|kes }} (all premium collected so far, gross,
+  with no fee taken off) by {{ rm.method|replace('_', ' ') }}, reference {{ rm.reference }}. On {{ cf.date }} the
+  underwriter confirmed it arrived. The settlement record is a ledger only: it moves no money.</p>
+<div class="grid">
+  <div class="kpi"><div class="v">{{ cf.summary.collected_kes|kes }}</div><div class="k">collected from members</div></div>
+  <div class="kpi"><div class="v">{{ cf.summary.confirmed_kes|kes }}</div><div class="k">remitted and confirmed</div></div>
+  <div class="kpi"><div class="v">{{ cf.summary.outstanding_kes|kes }}</div><div class="k">still to remit</div></div>
+  <div class="kpi"><div class="v">{{ S.settlement.underwriter_money.kaip_receivable_kes|kes }}</div><div class="k">government share, not yet received</div></div>
+</div>
+</section>
+
+{# ------------------------------------------------------------ 4 #}
+<section class="step" id="sales_close">
+<h2>4. Sales close</h2>
+<p class="when">Sales closed {{ S.sales_close.closes|day }}; the daily job acted on {{ S.sales_close.date|day }}</p>
+<p>The daily job sends reminders 7 days and 1 day before the close to members who still owe, and the day after the
+  close it marks cover that was not fully paid as not started. What they paid is owed back and the refund is recorded
+  when the SACCO pays it.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>What happened</th></tr></thead>
+<tbody>{% for e in S.sales_close.events %}
+<tr><td>{{ e.date }}</td><td>{% if e.refund %}Refund {{ e.refund }} of {{ e.amount_kes|kes }} paid to {{ e.member_no }} ({{ e.method|replace('_', ' ') }})
+  {% else %}{% if e.reminders %}{{ e.reminders }} reminder{{ 's' if e.reminders != 1 }} queued. {% endif %}{% if e.lapsed %}{{ e.lapsed }} cover{{ 's' if e.lapsed != 1 }} not started (not fully paid).{% endif %}{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Member</th><th>Cover</th><th class="num">Paid</th><th class="num">Owed back</th><th>Active from</th></tr></thead>
+<tbody>{% for no, p in S.sales_close.status.items() %}
+<tr><td><b>{{ no }}</b></td><td>{% if p.status == 'active' %}<span class="chip ok">active</span>{% else %}<span class="chip warn">did not start</span>{% endif %}</td>
+  <td class="num">{{ p.paid_kes|kes }}</td><td class="num">{{ p.refund_due_kes|kes }}</td><td>{{ p.cover_active_from or '' }}</td></tr>
+{% endfor %}</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------ 5 #}
+<section class="step" id="monitoring">
+<h2>5. Daily rainfall monitoring</h2>
+<p class="when">{{ S.monitoring.date|day }} to {{ S.monitoring.end|day }}: {{ S.monitoring.runs }} daily runs</p>
+<p>Every morning the daily job works out where the season stands for the ward, with the same index the price comes
+  from: the rain observed so far, and a normal season for the days still to come. Each run is stored and audited
+  with the index version, the settings fingerprint and a fingerprint of the rainfall it used. In this replay the run
+  for a day sees the record up to the day before, and never later rain.</p>
+{% if chart %}
+<figure class="card" aria-label="Projected index by day">
+<svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" width="100%" role="img" aria-label="Projected end-of-season index (WRSI) by day, falling below the trigger">
+  {% for t in chart.ticks %}<line class="grid" x1="{{ chart.x0 }}" x2="{{ chart.x1 }}" y1="{{ t.y }}" y2="{{ t.y }}"/>
+  <text x="{{ chart.x0 - 8 }}" y="{{ t.y + 4 }}" text-anchor="end">{{ t.v }}</text>{% endfor %}
+  {% for m in chart.months %}<text x="{{ m.x }}" y="{{ chart.base + 20 }}" text-anchor="middle">{{ m.label }}</text>{% endfor %}
+  <line class="trig" x1="{{ chart.x0 }}" x2="{{ chart.x1 }}" y1="{{ chart.trig_y }}" y2="{{ chart.trig_y }}"/>
+  <text x="{{ chart.x1 }}" y="{{ chart.trig_y - 6 }}" text-anchor="end">trigger {{ S.trigger.trigger_wrsi|round(0)|int if S.trigger.trigger_wrsi else 80 }}: payouts start below</text>
+  <line class="exit" x1="{{ chart.x0 }}" x2="{{ chart.x1 }}" y1="{{ chart.exit_y }}" y2="{{ chart.exit_y }}"/>
+  <text x="{{ chart.x1 }}" y="{{ chart.exit_y - 6 }}" text-anchor="end">exit {{ S.trigger.exit_wrsi|round(0)|int if S.trigger.exit_wrsi else 50 }}: full payout</text>
+  <polyline class="line" points="{{ chart.points }}"/>
+  <circle class="mark" cx="{{ chart.last.x }}" cy="{{ chart.last.y }}" r="5"/>
+  <text x="{{ chart.last.x - 8 }}" y="{{ chart.last.y + 18 }}" text-anchor="end">final {{ chart.last.v }}</text>
+</svg>
+<figcaption class="muted">Projected end-of-season index (WRSI, 100 = all the water the crop needed) on each day of the
+  replay. Until the season ends this is a projection that assumes normal rain from then on.</figcaption>
+</figure>
+{% endif %}
+<div class="table-wrap"><table>
+<thead><tr><th>From</th><th>Status</th><th>What officers and farmers see</th><th class="num">Projected index</th><th class="num">Rain, % of normal</th></tr></thead>
+<tbody>{% for t in S.monitoring.transitions %}
+<tr><td>{{ t.date|day }}</td><td>{{ t.phase|replace('_', ' ') }} / <span class="chip {{ 'crit' if t.level in ('alert', 'payout') else 'warn' if t.level == 'watch' else '' }}">{{ t.level }}</span></td>
+  <td>{{ t.says }}</td><td class="num">{{ t.projected_wrsi if t.projected_wrsi is not none else '' }}</td>
+  <td class="num">{{ t.rain_pct_of_normal if t.rain_pct_of_normal is not none else '' }}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="muted">Runs continued every day after the trigger confirmed, as the daily job does; they created no further
+  payouts.</p>
+</section>
+
+{# ------------------------------------------------------------ 6 #}
+<section class="step" id="trigger">
+<h2>6. Trigger confirmed</h2>
+<p class="when">{{ S.trigger.date|day }}</p>
+{% if S.trigger.none %}
+<p>The season ended with an index of {{ S.trigger.final_wrsi }}: no trigger, so no payout.</p>
+{% else %}
+<p>The growing season (planting rain {{ S.trigger.sos }}) ended on {{ S.trigger.season_end|day }}. The next morning,
+  with rainfall in to {{ S.trigger.data_through[:10]|day }}, the index was final: <b>WRSI {{ S.trigger.final_wrsi }}</b>,
+  below the trigger of {{ S.trigger.trigger_wrsi|round(0)|int }}. That pays {{ S.trigger.share|pct }} of the sum insured
+  ({{ "%.1f"|format(S.trigger.share * 100) }}%), on a straight line from 0 at the trigger to 100% at {{ S.trigger.exit_wrsi|round(0)|int }}.
+  Payouts were calculated the same morning for every member whose cover was active, and the 10-day clock started.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Member</th><th>Payout</th><th class="num">Share of sum insured</th><th class="num">Amount</th><th>Paid to</th><th>Due by</th></tr></thead>
+<tbody>{% for p in S.trigger.payouts %}
+<tr><td><b>{{ p.member_no }}</b></td><td>{{ {'wrsi': 'Drought (index below the trigger)', 'failed_onset': 'Failed onset', 'replant_voucher': 'Replanting seed voucher'}.get(p.kind, p.kind) }}</td><td class="num">{{ p.share|pct }}</td><td class="num">{{ p.amount_kes|kes }}</td>
+  <td>{{ 'SACCO loan' if p.method == 'sacco_loan' else 'M-Pesa' if p.method == 'mpesa' else 'seed voucher' }}</td><td>{{ p.due_by|day }}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="muted">No payout for {{ S.trigger.no_payout_for|join(', ') or 'nobody' }}: cover did not start. Index
+  {{ S.trigger.index_version }}; rainfall fingerprint <span class="mono">{{ S.trigger.inputs_sha256[:16] }}</span>;
+  product settings fingerprint <span class="mono">{{ (S.trigger.config_sha256 or '')[:16] }}</span>.
+  Live, final CHIRPS rainfall arrives about three weeks after each month ends, so a live confirmation comes later than
+  in this replay; the clock starts at confirmation either way.</p>
+{% endif %}
+</section>
+
+{# ------------------------------------------------------------ 7 #}
+<section class="step" id="approval">
+<h2>7. Underwriter approval</h2>
+{% if S.approval is defined %}
+<p class="when">{{ S.approval.date|day }}</p>
+<p>The underwriter approves each calculated payout (or holds it with a reason). Members are told about a payout only
+  once it is approved.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>Member</th><th class="num">Amount</th><th>By</th><th class="num">Days left on the clock</th></tr></thead>
+<tbody>{% for a in S.approval.events %}
+<tr><td>{{ a.date }}</td><td><b>{{ a.member_no }}</b></td><td class="num">{{ a.amount_kes|kes }}</td><td>{{ a.by }}</td><td class="num">{{ a.days_left }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<p>Nothing to approve.</p>{% endif %}
+</section>
+
+{# ------------------------------------------------------------ 8 #}
+<section class="step" id="payout">
+<h2>8. Payout</h2>
+{% if S.payout is defined %}
+<p class="when">{{ S.payout.date|day }}</p>
+<p>The SACCO manager pays each approved payout: to the member's M-Pesa (simulated: no money moved) or, for a
+  loan-linked member who agreed to it, as a credit to the SACCO loan.</p>
+<h3>The 10-day clock</h3>
+<div class="clock" role="list">{% for c in clock %}
+  <div role="listitem" class="{{ 'hit' if c.hit }} {{ 'due' if c.due }}"><b>Day {{ c.n }}</b>{{ c.date }}{% for w in c.what %}<br>{{ w }}{% endfor %}</div>
+{% endfor %}</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Paid</th><th>Member</th><th class="num">Amount</th><th>To</th><th>Reference</th><th class="num">Days after confirmation</th><th>Within {{ S.payout.within_days }} days</th></tr></thead>
+<tbody>{% for p in S.payout.events %}
+<tr><td>{{ p.date }}</td><td><b>{{ p.member_no }}</b> {{ p.name }}</td><td class="num">{{ p.amount_kes|kes }}</td>
+  <td>{{ 'SACCO loan' if p.method == 'sacco_loan' else 'M-Pesa' if p.method == 'mpesa' else 'seed voucher' }}</td>
+  <td class="mono">{{ p.reference }}</td><td class="num">{{ p.days_after_confirmation }}</td>
+  <td>{% if p.within_window %}<span class="chip ok">yes, due {{ p.due_by }}</span>{% else %}<span class="chip crit">LATE</span>{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="ok-text">Checked: every payout was paid within {{ r.payout_within_days }} days of the trigger confirming
+  (slowest: {{ r.checks.max_days_to_pay }} days).</p>
+{% else %}<p>No payout this season.</p>{% endif %}
+</section>
+
+{# ------------------------------------------------------------ 9 #}
+<section class="step" id="sms">
+<h2>9. SMS log</h2>
+<p class="when">The whole season; last message {{ S.sms.date|day }}</p>
+<p>{{ S.sms.count }} messages, in each member's language, recorded in the outbox and <b>not sent</b> (log-only
+  sender). Members without SMS consent get none: {{ S.sms.no_consent|join(', ') or 'none' }}. The Kiswahili text is
+  pending native-speaker review.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Queued</th><th>Member</th><th>Phone</th><th>Lang.</th><th>Message</th><th>Status</th></tr></thead>
+<tbody>{% for m in S.sms.messages %}
+<tr><td>{{ m.queued }}</td><td>{{ m.member_no }}</td><td class="mono">{{ m.phone }}</td><td>{{ m.language }}</td><td>{{ m.body }}</td>
+  <td><span class="chip">recorded, not sent</span></td></tr>
+{% endfor %}</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------ 10 #}
+<section class="step" id="missed_payout">
+<h2>10. Missed-payout report</h2>
+{% set mr, rv = S.missed_payout.report, S.missed_payout.review %}
+<p class="when">Reported {{ mr.date }}; reviewed {{ rv.date }}</p>
+<p>Member {{ mr.member_no }} used USSD option "Report crop loss" to say the payout was
+  {{ 'too small for the loss on the farm' if mr.category == 'payout_too_small' else 'missing' }} (reference {{ mr.ref }}).
+  The report keeps a snapshot of the ward status at that moment (index {{ mr.snapshot.projected_wrsi }},
+  {{ mr.snapshot.level }}). The SACCO manager reviewed it: <b>{{ rv.outcome|replace('_', ' ') }}</b>. "{{ rv.note }}"</p>
+<p class="{{ 'ok-text' if rv.payouts_unchanged else 'crit-text' }}">Checked: the report did {{ '' if rv.payouts_unchanged else 'NOT ' }}leave
+  every payout unchanged. Reports like this are how basis risk is recorded until ward yield data exists.</p>
+</section>
+
+{# ------------------------------------------------------------ 11 #}
+<section class="step" id="bordereaux">
+<h2>11. Bordereaux</h2>
+<p class="when">{{ S.bordereaux.date|day }}</p>
+<p>The underwriter's monthly files: premium (policies written in the month) and payouts (triggers confirmed in the
+  month). IDs and phone numbers are masked. Each ZIP holds the two CSV files and a manifest with their SHA-256.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Month</th><th class="num">Premium rows</th><th class="num">Payout rows</th><th>File</th><th>SHA-256 of the ZIP</th></tr></thead>
+<tbody>{% for f in S.bordereaux.files %}
+<tr><td>{{ f.month }}</td><td class="num">{{ f.premium_rows }}</td><td class="num">{{ f.payout_rows }}</td>
+  <td><a href="{{ f.file }}">{{ f.file }}</a></td><td class="mono">{{ f.sha256 }}</td></tr>
+{% endfor %}</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------ 12 #}
+<section class="step" id="reinsurer">
+<h2>12. Reinsurer summary</h2>
+<p class="when">{{ S.reinsurer.date|day }}</p>
+{% set pf, ai, es = S.reinsurer.portfolio, S.reinsurer.as_if, S.reinsurer.esg %}
+<p>The underwriter's one-page summary after the season. The as-if figures run this season's book through every
+  season the engine prices ({{ ai.years[0] }} to {{ ai.years[1] }}, {{ ai.seasons }} seasons), so they describe the
+  risk of this tiny fictional book, not a forecast.</p>
+<div class="grid">
+  <div class="kpi"><div class="v">{{ pf.active }} of {{ pf.policies }}</div><div class="k">policies in force</div></div>
+  <div class="kpi"><div class="v">{{ pf.in_force_sum_insured_kes|kes }}</div><div class="k">sum insured in force</div></div>
+  <div class="kpi"><div class="v">{{ pf.gross_kes|kes }}</div><div class="k">gross premium written</div></div>
+  <div class="kpi"><div class="v">{{ ai.expected_loss_kes|kes }}</div><div class="k">expected loss (as-if)</div></div>
+  <div class="kpi"><div class="v">{{ ai.loss_1_in_10_kes|kes }}</div><div class="k">1-in-10 season loss</div></div>
+  <div class="kpi"><div class="v">{{ ai.loss_1_in_20_kes|kes }}</div><div class="k">1-in-20 season loss</div></div>
+  <div class="kpi"><div class="v">{{ es.paid_to_farmers_kes|kes }}</div><div class="k">paid to {{ es.payouts_paid }} members</div></div>
+</div>
+<p>Worst seasons for this book: {% for w in ai.worst_years %}{{ w.year }} ({{ w.loss_kes|kes }}){{ ', ' if not loop.last }}{% endfor %}.</p>
+<p class="muted">The workspace's "median days to pay" leaves out replayed seasons ({{ es.replay_excluded }} payouts here),
+  because a replay's timing is not real; the 10-day clock for this replay is shown in step 8.</p>
+</section>
+
+<h2>How this was made</h2>
+<ul>
+  <li>Command: <code>python -m agroshield_platform.simulate --year {{ r.year }}</code> (or <code>python tools/sim/season.py</code>).
+    Generated {{ r.generated_at }} (UTC).</li>
+  <li>Each step calls the platform's own services (enrolment, M-Pesa, settlement, the daily job, monitoring,
+    approval, payment, SMS outbox, missed-payout reports, bordereaux, reinsurer summary). Prices, triggers and
+    payouts are not re-calculated here.</li>
+  <li>A simulated clock stands in for the time of day inside the platform while the replay runs, so every record
+    carries the replayed date. M-Pesa is the built-in simulator and SMS is log-only, whatever the settings say.</li>
+  <li>Rainfall: {{ r.rainfall.source }}, <span class="mono">{{ r.rainfall.file }}</span>, SHA-256
+    <span class="mono">{{ r.rainfall.sha256 }}</span>. Index {{ r.index_version }}.</li>
+  <li>Settings fingerprints: {% for k, v in r.config_sha256.items() %}{{ k }} <span class="mono">{{ v[:12] }}</span>{{ ', ' if not loop.last }}{% endfor %}.</li>
+  <li>Everything in the season is in <a href="season.json">season.json</a>.</li>
+</ul>
+<p class="banner"><b>SIMULATION / REPLAY</b> Fictional people. ILLUSTRATIVE terms. Not a record of real cover or payments.</p>
+</main>
+</body>
+</html>
