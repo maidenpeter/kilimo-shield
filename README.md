@@ -38,6 +38,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-price run --source synthetic` | Generated rainfall and PET instead of real data |
 | `agroshield-price run --offline` | Never download; fail if inputs are not cached |
 | `agroshield-price fetch-rainfall --all [--refresh]` | Download and cache CHIRPS |
+| `agroshield-price fetch-rainfall --dataset chirps3 --all [--through YYYY-MM-DD]` | Download and cache CHIRPS v3.0 (branch `pricing/chirps3`, needs owner approval) |
+| `agroshield-price run --all --source chirps3` | Price on CHIRPS v3.0 instead of v2.0 (comparison; the config default stays v2.0) |
 | `agroshield-price fetch-climate --all [--refresh]` | Download and cache NASA POWER temperature |
 | `agroshield-price quote --ward ward-a --acres 2 --layers A,B --resilience certified_seed_verified` | Quote a farmer from the command line |
 | `agroshield-api` | Quote API on http://127.0.0.1:8770 (interactive docs at `/docs`) |
@@ -368,6 +370,11 @@ computed).
 
 - **Rainfall:** CHIRPS v2.0 daily, averaged over a 0.10 degree box around each ward
   centroid, from SERVIR ClimateSERV. Committed in `data/raw/chirps/`.
+  - CHIRPS v2 ends after December 2026. CHIRPS v3.0 daily (rnl) for the same pixels is
+    committed in `data/raw/chirps3/` and selectable with `rainfall.source: chirps3`.
+    Monitoring reads v3 for seasons from 2027 (`rainfall.monitoring_chirps3_from_year`).
+    Side by side results: `docs/pricing/chirps3-comparison.md`. Needs owner approval:
+    not merged into main.
 - **PET:** FAO-56 Hargreaves from NASA POWER daily Tmax/Tmin, shifted from the POWER
   grid-cell elevation to the ward's (6.5 C/km). A fallback for FEWS NET Penman-Monteith
   PET, which was unreachable and only starts in 2001. Committed in `data/raw/nasapower/`.
@@ -391,7 +398,7 @@ data/raw/                committed CHIRPS and NASA POWER inputs + metadata and c
 src/agroshield_pricing/
   config.py              load + validate config
   provenance.py          REAL / SYNTHETIC / ILLUSTRATIVE / PENDING labels
-  rainfall/              CHIRPS (ClimateSERV) loader, synthetic generator
+  rainfall/              CHIRPS v2 (ClimateSERV) and CHIRPS v3 (CHC) loaders, synthetic generator
   pet/                   Hargreaves, NASA POWER loader, synthetic PET
   wrsi.py                v1: dekads, onset and germination triggers, Kc, water balance, WRSI payout
   layer_a.py             Layer A: synthetic tercile forecast, verification scores, voucher pricing
