@@ -161,7 +161,7 @@ an independent check. This section is updated when it lands.
 |---|---|---|
 | Start of this run (b35d99f) | 295 | 0 |
 | After integrating Phases 4 and 5 (86f7fa3) | 409 | 0 |
-| Final main (one more test added in 3e1dadc) | FINAL_COUNT | FINAL_FAILED |
+| Final main (3e1dadc added one test; run on 97019ad) | 410 | 0 |
 
 New test files: `test_phase1_review_fixes.py`, `test_phase1_review_round2.py`, `test_migrations.py`,
 `test_photos.py` (including the offline queue in a real Chrome), `test_photos_review.py`, `test_devices.py`,
