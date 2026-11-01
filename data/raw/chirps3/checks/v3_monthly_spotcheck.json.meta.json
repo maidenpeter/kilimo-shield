@@ -1,0 +1,11 @@
+{
+  "source_urls": [
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.1984.04.tif",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.2022.11.tif",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.2026.09.tif"
+  ],
+  "retrieved_at": "2026-11-01T22:04:52+00:00",
+  "made_by": "review of branch pricing/chirps3 on 2026-11-01: three monthly GeoTIFFs downloaded one at a time with pauses, no account",
+  "sha256": "d95c37f428829b03de42bd1c80bf61c884de24add58987066a7995b2d914dbcd",
+  "bytes": 3094
+}

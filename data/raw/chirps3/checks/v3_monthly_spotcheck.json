@@ -1,0 +1,32 @@
+{
+ "purpose": "Independent check that data/raw/chirps3/<ward>.pixels.csv really is CHIRPS v3.0 at the right pixels. CHIRPS v3 daily is a split of the CHIRPS v3 pentad totals, and the pentads in a month sum to the CHIRPS v3 monthly total. So the sum of each cached daily pixel over a month must equal the separately published CHIRPS v3.0 monthly GeoTIFF at the same pixel centre. Three months were checked: April 1984 (early record, where v3 is much wetter than v2), November 2022 (where v3 has about twice the v2 total) and September 2026 (the last cached month).",
+ "result": "All 24 pixel-months (2 wards x 4 pixels x 3 months) match: the monthly GeoTIFF value equals the sum of the cached daily values to 0.01 mm (rounding). The pixel order and positions in <ward>.meta.json are therefore right, and the cached daily series is CHIRPS v3.0.",
+ "request": {
+  "urls": [
+   "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.1984.04.tif",
+   "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.2022.11.tif",
+   "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/monthly/africa/tifs/chirps-v3.0.2026.09.tif"
+  ],
+  "grid": "Africa, 1500 x 1600, 0.05 deg, origin 20W 40N, float32 mm per month",
+  "pixels": "the pixel centres listed in data/raw/chirps3/<ward>.meta.json, in that order",
+  "file_sha256": {
+   "1984.04": "0b8e0b984e6286d33c2339532c1a0ba489aeb955a703d457087815b7ba170b0d",
+   "2022.11": "523bd69625807e6cd9ec42556e9423a66c05cb15db8ff608f7c4d0540aad2321",
+   "2026.09": "3d6e0c1dabd50a9e31a0eaeb64b1631be4b3ddbde53311683f5e3a9a9e0da5f7"
+  },
+  "file_note": "The three GeoTIFFs (about 5 MB each) are not committed; only the values used are kept here. Re-download and compare the SHA-256 above to repeat the check."
+ },
+ "retrieved_at": "2026-11-01T22:04:52+00:00",
+ "wards": {
+  "ward-a": {
+   "1984.04": {"monthly_tif_pixels_mm": [105.73, 116.3, 117.27, 126.68], "monthly_tif_mean_mm": 116.49, "daily_cache_pixel_sums_mm": [105.73, 116.3, 117.27, 126.68], "daily_cache_polygon_sum_mm": 116.49},
+   "2022.11": {"monthly_tif_pixels_mm": [422.88, 407.0, 443.01, 392.73], "monthly_tif_mean_mm": 416.4, "daily_cache_pixel_sums_mm": [422.88, 407.0, 443.01, 392.73], "daily_cache_polygon_sum_mm": 416.4},
+   "2026.09": {"monthly_tif_pixels_mm": [55.19, 50.06, 49.24, 47.07], "monthly_tif_mean_mm": 50.39, "daily_cache_pixel_sums_mm": [55.19, 50.06, 49.24, 47.07], "daily_cache_polygon_sum_mm": 50.39}
+  },
+  "ward-b": {
+   "1984.04": {"monthly_tif_pixels_mm": [133.03, 155.23, 101.5, 110.45], "monthly_tif_mean_mm": 125.05, "daily_cache_pixel_sums_mm": [133.03, 155.23, 101.5, 110.45], "daily_cache_polygon_sum_mm": 125.05},
+   "2022.11": {"monthly_tif_pixels_mm": [608.06, 526.96, 463.91, 470.26], "monthly_tif_mean_mm": 517.3, "daily_cache_pixel_sums_mm": [608.06, 526.96, 463.91, 470.26], "daily_cache_polygon_sum_mm": 517.3},
+   "2026.09": {"monthly_tif_pixels_mm": [50.83, 48.67, 50.56, 44.53], "monthly_tif_mean_mm": 48.65, "daily_cache_pixel_sums_mm": [50.82, 48.68, 50.56, 44.53], "daily_cache_polygon_sum_mm": 48.65}
+  }
+ }
+}

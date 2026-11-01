@@ -215,6 +215,9 @@ main), so basis risk cannot be measured. The "backtest" here is the 45-season re
   preliminary v3 daily, but it splits days with IMERG ("sat"), not ERA5 ("rnl"). Monitoring here reads
   final data only, so for 2027 the index is confirmed about two to seven weeks after the rain fell.
   Whether to use preliminary data for early warnings (never for payouts) is a decision for the owner.
+- **Load on the CHC server.** Each live v3 check re-reads a whole year of chunks (about 50 requests
+  and 50 to 100 MB per ward). So the daily job asks the server only when a newer month could have
+  been published (the end of last month is not yet cached), and then at most about once a day.
 
 ## What the owner is asked to decide
 
@@ -233,6 +236,10 @@ main), so basis risk cannot be measured. The "backtest" here is the 45-season re
 - CHIRPS v3 runs: `results.json` SHA-256 ward-a d23e9f16..., ward-b 3f779d45....
 - Cached v3 inputs: `data/raw/chirps3/ward-a.csv` SHA-256 c9bde1ab..., `ward-b.csv` 2d173bfb...;
   each `.meta.json` lists every yearly file read (URL, size, last modified, requests, bytes).
+- Independent check against a second CHC product (added in review): for April 1984, November 2022
+  and September 2026, the cached daily values of each pixel add up to the CHIRPS v3.0 monthly
+  GeoTIFF at the same pixel centre, to 0.01 mm, at all 8 pixels. Record:
+  `data/raw/chirps3/checks/v3_monthly_spotcheck.json` (tested).
 - Full test suite green on the branch.
 
 ## Sources
