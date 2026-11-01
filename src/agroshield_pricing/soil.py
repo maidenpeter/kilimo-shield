@@ -14,8 +14,10 @@ What it computes
             the layer above that depth.
 
 Source and access
-  ISRIC SoilGrids 2.0 (Poggio et al. 2021, SOIL 7:217-240) water retention
-  layers, 250 m, CC BY 4.0, from ISRIC's open WCS at maps.isric.org. No account
+  ISRIC SoilGrids 2.0 water retention layers, 250 m, CC BY 4.0, from ISRIC's
+  open WCS at maps.isric.org. (Poggio et al. 2021, SOIL 7:217-240, describes
+  SoilGrids 2.0 in general; the water retention layers were published later
+  with their own ISRIC documentation, which was not checked here.) No account
   is needed. The raster is requested in its native Interrupted Goode Homolosine
   grid (an equal-area projection), so no resampling happens and each pixel
   counts equally in the polygon mean. wv* values are stored as integers in

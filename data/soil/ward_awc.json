@@ -33,7 +33,7 @@
           ]
         ]
       },
-      "config_soil_whc_mm": 100.0,
+      "config_soil_whc_mm": 130.0,
       "pixels": 2022,
       "pixel_area_km2": 0.0625,
       "layers": [
@@ -191,7 +191,7 @@
           ]
         ]
       },
-      "config_soil_whc_mm": 140.0,
+      "config_soil_whc_mm": 121.0,
       "pixels": 2006,
       "pixel_area_km2": 0.0625,
       "layers": [

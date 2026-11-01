@@ -143,7 +143,9 @@ def test_ward_awc_reproduces_the_committed_summary(cfg):
     committed = json.loads(SUMMARY.read_text())
     for w in cfg.pilot.wards:
         fresh = soil.ward_awc(RAW, ward_geometry(cfg.ward(w)))
-        assert fresh["primary"] == committed["wards"][w]["primary"]
+        # every derived number (layers, sensitivity depths, primary), not just the headline
+        for key, value in fresh.items():
+            assert committed["wards"][w][key] == value, key
         assert committed["wards"][w]["geometry"] == ward_geometry(cfg.ward(w))
 
 
@@ -155,6 +157,8 @@ def test_ward_config_uses_the_soilgrids_value(cfg):
         assert "SoilGrids" in ward.soil_source and "0-100 cm" in ward.soil_source
         # config is rounded to whole millimetres
         assert ward.soil_whc_mm == round(committed["wards"][w]["primary"]["awc_33kpa_mm"])
+        # the committed summary was written against the current config, not the old placeholder
+        assert committed["wards"][w]["config_soil_whc_mm"] == ward.soil_whc_mm
 
 
 def test_real_soil_label_needs_a_source(config_copy):
