@@ -1,0 +1,88 @@
+{# Consumer disclosure, English and Kiswahili. Every term comes from config (conf). DRAFT, ILLUSTRATIVE. #}
+{% macro disclosure_en() %}
+{% set lb, mon, sub = conf.layer_b, conf.monitoring, conf.subsidy %}
+{% set fo, gd = lb.failed_onset, lb.germination_dry_spell %}
+<article class="card" lang="en">
+<p><span class="chip warn">DRAFT</span> <span class="chip warn">ILLUSTRATIVE</span> The amounts and rules below are
+  placeholders until the partner insurer and the pilot wards are confirmed.</p>
+<h3>Your maize cover: what you need to know</h3>
+<p><b>What it is.</b> Insurance for your maize in the long rains. It pays when the rain in your ward is too little
+  for maize. The rain is measured by satellite for the whole ward. Nobody visits your farm to check, and you do not
+  make a claim.</p>
+<p><b>Who is who.</b> The insurer is the {{ insurer }}. Your SACCO sells the cover and collects your payments.
+  AgroShield runs the system that measures the rain and works out payouts.</p>
+<p><b>What it pays.</b></p>
+<ul>
+  <li>If the season's rain is too poor for maize in your ward (the ward score falls below {{ lb.trigger_wrsi }} out of
+    100), you get part of your cover. The worse the season, the more you get, up to all of your cover when the score
+    is {{ lb.exit_wrsi }} or less.</li>
+  <li>If the planting rains never come (less than {{ fo.window_rain_below_mm|int }} mm in the whole planting
+    window), you get {{ fo.payout|pct }} of your cover.</li>
+  <li>If it stays dry for {{ gd.days_after_planting }} days after the planting rain (less than
+    {{ gd.rain_below_mm|int }} mm), you get a seed voucher worth KES {{ "{:,.0f}".format(gd.replant_cost_kes_per_acre) }}
+    per acre to plant again.</li>
+</ul>
+<p><b>What it does not do.</b> It follows the rain in your ward, not on your own farm. Your crop can fail when the
+  ward score shows no payout, or the other way round. If this happens, tell your SACCO officer or use option 5
+  "Report crop loss" on the USSD menu. Your report is recorded and checked, but it does not change the payout.
+  The cover only measures lack of rain. It does not pay for pests, disease, floods or theft.</p>
+<p><b>When your cover starts.</b> Only when your share of the price is fully paid by the sales closing date. You
+  can pay in parts, by M-Pesa or by SACCO deduction. If it is not fully paid by that date there is no cover, and what
+  you paid is given back through your SACCO.</p>
+<p><b>The price.</b> The government ({{ sub.programme }}) pays {{ sub.government_share|pct }} of the price for farms of
+  {{ sub.eligible_acres.min }} to {{ sub.eligible_acres.max }} acres. You pay the rest. Good farming practice can
+  lower your share (Resilience discount). Your SACCO officer tells you the exact amount before you agree.</p>
+<p><b>When you are paid.</b> Within {{ mon.payout_within_days }} days after the ward score is confirmed. Rain data
+  arrives about three weeks after each month ends, so the score is confirmed after the season. You are paid by
+  M-Pesa, or into your SACCO loan if you agreed to that.</p>
+<p><b>Messages.</b> You get SMS about your cover and payouts only if you agree.</p>
+<p><b>Your information.</b> Your national ID and phone number are stored locked (encrypted) and shown only partly.
+  They are used only for this cover and shared with the insurer only for this cover.</p>
+<p><b>Complaints.</b> [To be written with the partner insurer: who to call, how long a reply takes, and how to reach
+  the insurer and the Insurance Regulatory Authority.]</p>
+</article>
+{% endmacro %}
+{% macro disclosure_sw() %}
+{% set lb, mon, sub = conf.layer_b, conf.monitoring, conf.subsidy %}
+{% set fo, gd = lb.failed_onset, lb.germination_dry_spell %}
+<article class="card" lang="sw">
+<p><span class="chip warn">DRAFT</span> <span class="chip warn">ILLUSTRATIVE</span>
+  <span class="chip crit">Kiswahili: pending native-speaker review</span> Kiasi na masharti haya ni ya mfano hadi
+  kampuni ya bima na wadi za majaribio zithibitishwe.</p>
+<h3>Bima ya mahindi yako: unachohitaji kujua</h3>
+<p><b>Ni nini.</b> Bima ya mahindi yako wakati wa masika. Inalipa ikiwa mvua katika wadi yako haitoshi kwa mahindi.
+  Mvua inapimwa kwa satelaiti kwa wadi nzima. Hakuna anayekuja shambani kwako kukagua, na huhitaji kudai.</p>
+<p><b>Nani ni nani.</b> Kampuni ya bima ni {{ insurer }} (kampuni ya bima mshirika, itatajwa). SACCO yako inauza
+  bima hii na kupokea malipo yako. AgroShield inaendesha mfumo unaopima mvua na kuhesabu malipo.</p>
+<p><b>Inalipa nini.</b></p>
+<ul>
+  <li>Ikiwa mvua ya msimu ni duni kwa mahindi katika wadi yako (alama ya wadi iko chini ya {{ lb.trigger_wrsi }} kati
+    ya 100), unapata sehemu ya kiasi cha bima yako. Msimu ukiwa mbaya zaidi, unapata zaidi, hadi kiasi chote alama
+    ikiwa {{ lb.exit_wrsi }} au chini.</li>
+  <li>Ikiwa mvua ya kupanda haitanyesha kabisa (chini ya mm {{ fo.window_rain_below_mm|int }} katika kipindi chote cha
+    kupanda), unapata asilimia {{ (fo.payout * 100)|round|int }} ya kiasi cha bima yako.</li>
+  <li>Ikiwa kutakuwa na ukavu kwa siku {{ gd.days_after_planting }} baada ya mvua ya kupanda (chini ya mm
+    {{ gd.rain_below_mm|int }}), unapata vocha ya mbegu ya KES {{ "{:,.0f}".format(gd.replant_cost_kes_per_acre) }}
+    kwa ekari ili upande tena.</li>
+</ul>
+<p><b>Isiyolipa.</b> Bima inafuata mvua ya wadi yako, si ya shamba lako peke yake. Mazao yako yanaweza kuharibika
+  wakati alama ya wadi haionyeshi malipo, au kinyume chake. Hili likitokea, mwambie afisa wa SACCO yako au tumia
+  chaguo 5 "Ripoti hasara" kwenye menyu ya USSD. Ripoti yako inarekodiwa na kukaguliwa, lakini haibadilishi malipo.
+  Bima hii inapima ukosefu wa mvua pekee. Hailipii wadudu, magonjwa, mafuriko wala wizi.</p>
+<p><b>Bima inaanza lini.</b> Pale tu sehemu yako ya bei imelipwa yote kufikia tarehe ya mwisho ya mauzo. Unaweza
+  kulipa kwa awamu, kwa M-Pesa au kwa makato ya SACCO. Isipolipwa yote kufikia tarehe hiyo hakuna bima, na pesa
+  uliyolipa inarudishwa kupitia SACCO yako.</p>
+<p><b>Bei.</b> Serikali ({{ sub.programme }}) inalipa asilimia {{ (sub.government_share * 100)|round|int }} ya bei kwa
+  mashamba ya ekari {{ sub.eligible_acres.min }} hadi {{ sub.eligible_acres.max }}. Wewe unalipa iliyobaki. Kilimo
+  bora kinaweza kupunguza sehemu yako (punguzo la Resilience). Afisa wa SACCO yako atakuambia kiasi kamili kabla
+  hujakubali.</p>
+<p><b>Utalipwa lini.</b> Ndani ya siku {{ mon.payout_within_days }} baada ya alama ya wadi kuthibitishwa. Takwimu za
+  mvua hufika takriban wiki tatu baada ya kila mwezi kuisha, kwa hiyo alama inathibitishwa baada ya msimu. Unalipwa
+  kwa M-Pesa, au kwenye mkopo wako wa SACCO ikiwa ulikubali hivyo.</p>
+<p><b>Ujumbe.</b> Unapata SMS kuhusu bima yako na malipo ikiwa tu umekubali.</p>
+<p><b>Taarifa zako.</b> Nambari yako ya kitambulisho na ya simu zimehifadhiwa kwa usimbaji na zinaonyeshwa sehemu
+  tu. Zinatumika kwa bima hii pekee na zinashirikiwa na kampuni ya bima kwa bima hii pekee.</p>
+<p><b>Malalamiko.</b> [Yataandikwa pamoja na kampuni ya bima mshirika: nani wa kupigia simu, jibu linachukua muda
+  gani, na jinsi ya kuwasiliana na kampuni ya bima na Mamlaka ya Udhibiti wa Bima.]</p>
+</article>
+{% endmacro %}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consumer disclosure (DRAFT, ILLUSTRATIVE)</title>
+<style>{{ css|safe }}</style>
+</head>
+<body>
+{% from "_disclosure.html" import disclosure_en, disclosure_sw with context %}
+<main>
+<div class="banner" role="note"><b>DRAFT</b> <b>ILLUSTRATIVE</b> Consumer disclosure for the AgroShield maize cover.
+  Not submitted to or approved by the Insurance Regulatory Authority. The Kiswahili text is pending native-speaker
+  review.</div>
+<h1>Consumer disclosure</h1>
+<p class="muted">Plain-English and Kiswahili versions of the same text, for the SACCO officer to read with the member
+  before enrolment. Part of the IRA documentation pack (pack.html, {{ pdf_name }}). Generated {{ generated_at }}.</p>
+<h2>English</h2>
+{{ disclosure_en() }}
+<h2>Kiswahili (pending native-speaker review)</h2>
+{{ disclosure_sw() }}
+<p class="banner"><b>DRAFT</b> <b>ILLUSTRATIVE</b> Placeholder terms until the partner insurer (to be named) confirms them.</p>
+</main>
+</body>
+</html>

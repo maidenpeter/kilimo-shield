@@ -1,0 +1,436 @@
+<!doctype html>
+{# IRA documentation pack: the HTML source of the PDF. Every number is from figs (the engine run), conf (config) or
+   sources (data/raw/*/*.meta.json); see tools/ira/build_pack.py. DRAFT, ILLUSTRATIVE. #}
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroShield IRA documentation pack (DRAFT, ILLUSTRATIVE)</title>
+<style>{{ css|safe }}
+.placeholder { border: 2px dashed var(--crit); background: var(--crit-soft); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); }
+.small td, .small th { padding: 3px 6px; font-size: var(--fs-2xs); }
+.cover h1 { font-size: 2.4rem; margin-top: var(--sp-6); }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-1) var(--sp-4); }
+dl.facts dt { color: var(--ink-3); } dl.facts dd { margin: 0; }
+td.path { word-break: break-all; font-family: var(--font-mono); font-size: 9px; line-height: 1.35; }
+article.card { break-inside: auto; }
+h3, h4 { break-after: avoid; }
+</style>
+</head>
+<body>
+{% from "_disclosure.html" import disclosure_en, disclosure_sw with context %}
+{% set A = figs.values()|list %}
+{% set lb = conf.layer_b %}
+<main>
+<section class="cover">
+<div class="banner" role="note"><b>DRAFT</b> <b>ILLUSTRATIVE</b> Not submitted to, reviewed or approved by the
+  Insurance Regulatory Authority (IRA). Pilot wards, soils, crop calendars, triggers, loadings and sums insured are
+  placeholders. Only the rainfall and temperature records are real.</div>
+<h1>AgroShield parametric maize cover: documentation pack for the Insurance Regulatory Authority of Kenya</h1>
+<p class="lead">Index-based drought cover for smallholder maize in the long rains, sold through SACCOs and
+  underwritten by a licensed insurer. AgroShield is the technology and pricing layer, not the risk carrier.</p>
+<dl class="facts card">
+  <dt>Status</dt><dd><b>DRAFT</b>, every figure <b>ILLUSTRATIVE</b>. For discussion with the partner insurer before any filing.</dd>
+  <dt>Insurer</dt><dd>{{ insurer }}</dd>
+  <dt>Distribution</dt><dd>SACCOs (pilot SACCO not yet chosen)</dd>
+  <dt>Pilot scope</dt><dd>Maize, long rains, two placeholder wards in Nakuru County:
+    {% for w in conf.wards %}{{ w.display_name }} ({{ w.id }}){{ ', ' if not loop.last }}{% endfor %}</dd>
+  <dt>Index</dt><dd>Layer B, version {{ lb.version }}: seasonal Water Requirement Satisfaction Index (WRSI) on CHIRPS rainfall</dd>
+  <dt>Generated</dt><dd>{{ generated_at }} (UTC), code {{ git.commit if git else 'unknown' }}{{ ' (uncommitted changes)' if git and git.dirty }}</dd>
+  <dt>Pricing runs</dt><dd>{% for w, f in figs.items() %}{{ f.run.run_id }}{{ ', ' if not loop.last }}{% endfor %}
+    (command <code>{{ engine_cmd }}</code>)</dd>
+</dl>
+<p class="muted">The IRA logo is not used and nothing here implies IRA review or approval. No partner names are given
+  because none is agreed.</p>
+<nav class="toc card" aria-label="Contents"><b>Contents</b>
+<ol>
+  <li><a href="#wording">Policy wording (placeholder)</a></li>
+  <li><a href="#pricing">Pricing methodology</a></li>
+  <li><a href="#index">Index development</a></li>
+  <li><a href="#data">Data sources and provenance</a></li>
+  <li><a href="#backtest">Backtest results</a></li>
+  <li><a href="#basis">Basis risk statement</a></li>
+  <li><a href="#timeline">Payout timeline</a></li>
+  <li><a href="#disclosure">Consumer disclosure (English and Kiswahili)</a></li>
+  <li><a href="#privacy">Data protection summary</a></li>
+  <li><a href="#annex">Reproducing this pack</a></li>
+</ol></nav>
+</section>
+
+{# ------------------------------------------------------------------ 1 #}
+<section id="wording" class="page-break">
+<h2>1. Policy wording (placeholder)</h2>
+<div class="placeholder"><b>PLACEHOLDER.</b> The policy wording will be written with the {{ insurer }} and its legal
+  advisers. Nothing in this section is policy wording. It lists what the wording must cover and the index terms that
+  the engine uses today.</div>
+<h3>What the wording will cover</h3>
+<ol>
+  <li>Parties: the insured member, the {{ insurer }} (risk carrier), the SACCO (distributor and premium collector),
+    AgroShield (index calculation and administration). [To be written]</li>
+  <li>Insured interest and unit of cover: maize planted in the long rains on the declared acres, in one insured ward.
+    [To be written]</li>
+  <li>The index, the triggers and the payout formula (schedule below), and that payouts follow the ward index, not a
+    loss assessment on the farm. [To be written]</li>
+  <li>Sum insured options, premium, the government subsidy share and the Resilience discount. [To be written]</li>
+  <li>Cover start: only once the member's share is fully paid by the sales close date; refunds otherwise.
+    [To be written]</li>
+  <li>Payment of claims: within {{ conf.monitoring.payout_within_days }} days of the index being confirmed, by M-Pesa
+    or to the SACCO loan with the member's consent; seed vouchers valid {{ conf.monitoring.voucher_valid_days }} days.
+    [To be written]</li>
+  <li>Basis risk, exclusions and what the index cannot see. [To be written]</li>
+  <li>Data protection and consent; complaints and disputes. [To be written]</li>
+</ol>
+<h3>Schedule of index terms (from config/product.yaml and config/phenology.yaml)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Term</th><th>Value used by the engine</th></tr></thead>
+<tbody>
+<tr><td>Index version</td><td>{{ lb.version }}</td></tr>
+<tr><td>WRSI trigger and exit</td><td>No payout at or above {{ lb.trigger_wrsi }}; straight line to the full sum insured at or below {{ lb.exit_wrsi }}</td></tr>
+<tr><td>Failed onset</td><td>Less than {{ lb.failed_onset.window_rain_below_mm }} mm over the whole planting window: {{ lb.failed_onset.payout|pct }} of sum insured, and no WRSI season</td></tr>
+<tr><td>Germination dry spell</td><td>Less than {{ lb.germination_dry_spell.rain_below_mm }} mm in the {{ lb.germination_dry_spell.days_after_planting }} days after the planting rain: seed voucher of KES {{ "{:,.0f}".format(lb.germination_dry_spell.replant_cost_kes_per_acre) }} per acre, at most once a season; the season restarts at the next planting rain</td></tr>
+<tr><td>Planting rain</td><td>First dekad (10-day period) with at least {{ lb.planting_rain_mm }} mm, searched within the planting window</td></tr>
+<tr><td>Sum insured options</td><td>{% for s in conf.sum_insured.options_kes_per_acre %}KES {{ "{:,}".format(s) }}{{ ', ' if not loop.last }}{% endfor %} per acre (default KES {{ "{:,}".format(conf.sum_insured.default_kes_per_acre) }})</td></tr>
+<tr><td>Cap</td><td>All payouts in a season together never exceed the sum insured</td></tr>
+{% for w in conf.wards %}
+<tr><td>{{ w.display_name }} ({{ w.id }})</td><td>Planting window {{ w.planting_window.start }} to {{ w.planting_window.end }} (month-day);
+  growing period {{ w.lgp_days }} days ({{ w.variety }}); sales window {{ w.sales_window.opens }} to {{ w.sales_window.closes }};
+  soil water capacity {{ w.soil_whc_mm|int }} mm (placeholder)</td></tr>
+{% endfor %}
+</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------------ 2 #}
+<section id="pricing" class="page-break">
+<h2>2. Pricing methodology</h2>
+<p>The price comes from the AgroShield pricing engine (<code>src/agroshield_pricing</code>). It applies today's index
+  terms to every long-rains season from {{ conf.history.start_year }} to {{ conf.history.end_year }} at each ward
+  (a burn-cost analysis), turns the payouts into an expected loss, adds a risk margin and loadings, and prices each
+  sum-insured option in shillings. Every setting is in <code>config/</code>; changing a term is a settings change,
+  not a code change, and every run records the SHA-256 of every settings file and input.</p>
+
+<h3>2.1 The index: seasonal WRSI</h3>
+<p>The Water Requirement Satisfaction Index (WRSI) is the FAO and FEWS NET measure of how much of the water a crop
+  needed it actually got over the season. The engine computes it on a 10-day (dekad) water balance:</p>
+<ol>
+  <li>Daily CHIRPS v2.0 rainfall and daily potential evapotranspiration (PET) are summed to dekads.</li>
+  <li>Failed onset: if the whole planting window gets less than {{ lb.failed_onset.window_rain_below_mm }} mm, the
+    season never started and the failed-onset payout applies instead of WRSI.</li>
+  <li>Start of season: the first dekad in the window with at least {{ lb.planting_rain_mm }} mm. If the
+    {{ lb.germination_dry_spell.days_after_planting }} days after it bring less than
+    {{ lb.germination_dry_spell.rain_below_mm }} mm, the replanting voucher applies and the season restarts at the next
+    planting rain.</li>
+  <li>For each dekad of the growing period: the crop's water requirement is its crop coefficient (FEWS NET maize curve:
+    {% for v in lb.kc["values"] %}{{ v }}{{ ', ' if not loop.last }}{% endfor %} at
+    {% for v in lb.kc.points_pct %}{{ v }}{{ ', ' if not loop.last }}{% endfor %}% of the season) times PET. A soil
+    bucket holds the ward's water capacity; the crop is stressed once the soil is drier than
+    {{ ((1 - lb.depletion_fraction) * 100)|round|int }}% of capacity (depletion fraction {{ lb.depletion_fraction }}).
+    {{ lb.spinup_dekads }} dekads of bare-soil balance before the start put pre-season rain in the soil.</li>
+  <li>WRSI = 100 x total water the crop used / total water it needed, at the end of the season.</li>
+  <li>Payout share: 0 at or above {{ lb.trigger_wrsi }}, rising in a straight line to 100% at or below
+    {{ lb.exit_wrsi }} (crop failure).</li>
+</ol>
+<p class="muted">Source: <code>src/agroshield_pricing/wrsi.py</code> and README.md. PET is FAO-56 Hargreaves from NASA
+  POWER temperature, shifted to ward elevation ({{ conf.pet.lapse_rate_c_per_km }} C per km), flagged as a FALLBACK: {{ conf.pet.fewsnet_status }}</p>
+
+<h3>2.2 Payout per acre in a season</h3>
+<p>Failed onset: {{ lb.failed_onset.payout|pct }} of sum insured, and nothing else. Otherwise: the WRSI share of sum
+  insured, plus the replanting voucher (a fixed KES amount per acre) if the germination dry spell fired. Capped at the
+  sum insured. Because the voucher is a fixed amount, the engine prices each sum-insured option separately.</p>
+
+<h3>2.3 From payouts to premium</h3>
+{% set pm = conf.premium %}
+<ul>
+  <li><b>Burn cost.</b> The payout of every season, as a share of sum insured. Expected loss is the mean; the 1-in-10
+    and 1-in-20 losses are the 90th and 95th percentiles of the seasons.</li>
+  <li><b>Risk margin.</b> Method <code>{{ pm.risk_margin.method }}</code>: {{ pm.risk_margin.factor }} x the standard
+    deviation of the season losses.</li>
+  <li><b>Pure premium</b> = expected loss + risk margin.</li>
+  <li><b>Gross premium</b> = pure premium / (1 - sum of loadings), with loadings as shares of gross:
+    {% for k, v in pm.loadings.items() %}{{ k|replace('_', ' ') }} {{ v|pct }}{{ ', ' if not loop.last }}{% endfor %}
+    (total {{ pm.loadings.values()|sum|pct }}). The intermediary loading is the SACCO's distribution fee; the platform
+    loading is AgroShield's fee.</li>
+</ul>
+<h3>2.4 Who pays</h3>
+{% set sb, rs = conf.subsidy, conf.resilience %}
+<p>The insurer always receives the full gross premium. The government ({{ sb.programme }}, Kenya Agricultural
+  Insurance Programme) pays {{ sb.government_share|pct }} of gross for farms of {{ sb.eligible_acres.min }} to
+  {{ sb.eligible_acres.max }} acres, recorded as "not yet received" until it arrives (no subsidy outside that band).
+  The member pays the rest, less a Resilience discount of {{ rs.discount_per_point|pct }} per verified good-practice
+  point, capped at {{ rs.discount_cap|pct }} of the member's share, funded by the <b>{{ rs.funder }}</b>, never by
+  the insurer. The discount does not change the risk price: payouts follow the ward index whatever the farmer does.
+  Subsidy terms, the cap and the points are ILLUSTRATIVE pending {{ sb.programme }} and the insurer.</p>
+<h3>2.5 Not in the product</h3>
+<ul>
+  <li><b>Layer A (pre-season seed voucher):</b> dropped. {{ conf.layer_a.reason }}</li>
+  <li><b>Flowering dry-spell component:</b> off. CHIRPS daily values are spread out from 5-day totals, so dry-spell
+    lengths are unreliable; it needs station rainfall first.</li>
+  <li><b>Early advance on Layer B:</b> EXPERIMENTAL ({{ lb.advance.status }}), not included in quotes
+    (<code>included_in_quotes: {{ lb.advance.included_in_quotes|lower }}</code>).</li>
+</ul>
+<h3>2.6 Result: gross premium per acre</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Sum insured</th><th class="num">Expected loss</th><th class="num">Risk margin</th>
+  <th class="num">Loadings</th><th class="num">Gross premium</th><th class="num">Gross rate</th></tr></thead>
+<tbody>{% for w, f in figs.items() %}{% for o in f.premium.per_acre %}
+<tr><td>{{ f.ward.display_name }}</td><td class="num">{{ o.sum_insured_kes_per_acre|kes }}</td><td class="num">{{ o.expected_loss_kes|kes }}</td>
+  <td class="num">{{ o.risk_margin_kes|kes }}</td><td class="num">{{ o.loadings_kes.values()|sum|kes }}</td>
+  <td class="num"><b>{{ o.gross_premium_kes|kes }}</b></td><td class="num">{{ o.gross_rate|pct(2) }}</td></tr>
+{% endfor %}{% endfor %}</tbody></table></div>
+<p class="muted">From the engine runs {% for w, f in figs.items() %}{{ f.run.run_id }}{{ ', ' if not loop.last }}{% endfor %}
+  (data/pricing_summary.csv). The gross rate differs slightly between options because the replanting voucher is a fixed amount.</p>
+</section>
+
+{# ------------------------------------------------------------------ 3 #}
+<section id="index" class="page-break">
+<h2>3. Index development</h2>
+<p>How the index reached its current form, from the project's version history:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Date</th><th>Version</th><th>What changed and why</th></tr></thead>
+<tbody>
+<tr><td>27 Oct 2026</td><td>{{ A[0].v0.version }} (v0)</td><td>First index: rainfall deficit in fixed crop phases (germination,
+  vegetative, flowering, grain fill), each with a trigger and exit set at historical percentiles. Burn cost, premium
+  build-up and backtest report. (commit 14128b3)</td></tr>
+<tr><td>28 Oct 2026</td><td>B-1.x (v1)</td><td>Replaced by a seasonal WRSI on a dekadal water balance with a dynamic
+  start of season, because a fixed planting date does not follow the real season. v0 is kept for comparison only.
+  Rainfall-derived synthetic yields were removed, so basis risk is reported as not measurable until real yields exist.
+  Short rains dropped from the pilot. (commit 9e9d7a6)</td></tr>
+<tr><td>28 Oct 2026</td><td>{{ lb.version }}</td><td>Replanting voucher given its own payout-frequency target; planting-rain
+  start date per ward; failed onset kept at {{ lb.failed_onset.window_rain_below_mm|int }} mm as catastrophe-only cover;
+  flowering component dropped (needs station data). (commit 4aaa47d)</td></tr>
+<tr><td>29 Oct 2026</td><td>{{ lb.version }}</td><td>Layer A dropped from the product for lack of forecast skill
+  (see 2.5). (config/product.yaml)</td></tr>
+</tbody></table></div>
+
+<h3>3.1 v1 (WRSI) against v0 (per-phase), same rainfall</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Seasons</th><th class="num">Both pay</th><th class="num">Only v1 pays</th><th class="num">Only v0 pays</th>
+  <th class="num">Rank correlation of payouts</th><th class="num">v1 / v0 payout frequency</th><th class="num">v1 / v0 gross rate</th></tr></thead>
+<tbody>{% for w, f in figs.items() %}{% set c = f.comparison %}
+<tr><td>{{ f.ward.display_name }}</td><td class="num">{{ c.seasons }}</td><td class="num">{{ c.both_pay }}</td><td class="num">{{ c.only_v1_pays }}</td>
+  <td class="num">{{ c.only_v0_pays }}</td><td class="num">{{ "%.2f"|format(c.spearman_payouts) }}</td>
+  <td class="num">{{ f.burn_cost.payout_frequency|pct }} / {{ f.v0.payout_frequency|pct }}</td>
+  <td class="num">{{ f.premium.gross_rate|pct(1) }} / {{ f.v0.gross_rate|pct(1) }}</td></tr>
+{% endfor %}</tbody></table></div>
+
+<h3>3.2 Known-event test</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th>Event</th><th class="num">WRSI</th><th class="num">v1 payout</th><th class="num">v0 payout</th><th>Test</th></tr></thead>
+<tbody>{% for w, f in figs.items() %}{% for e in f.event_tests %}
+<tr><td>{{ f.ward.display_name }}</td><td>{{ e.year }}: {{ e.note }}</td><td class="num">{{ e.wrsi }}</td><td class="num">{{ e.payout|pct }}</td>
+  <td class="num">{{ e.v0_payout|pct }}</td><td>{% if e.required %}{{ 'PASS' if e.passed else 'FAIL' }} (needs at least {{ e.min_payout|pct }}){% else %}reported only{% endif %}</td></tr>
+{% endfor %}{% endfor %}</tbody></table></div>
+
+<h3>3.3 Sensitivity: trigger level</h3>
+<p class="muted">Each row re-prices the whole history with a different WRSI trigger (exit unchanged).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Trigger</th><th class="num">WRSI payout frequency</th><th class="num">Any payout</th><th class="num">Expected loss</th><th class="num">Gross rate</th><th>In target band</th></tr></thead>
+<tbody>{% for w, f in figs.items() %}{% for t in f.trigger_sensitivity %}
+<tr><td>{{ f.ward.display_name }}</td><td class="num">{{ t.trigger_wrsi|int }}{{ ' (current)' if t.is_current }}</td><td class="num">{{ t.main_frequency|pct }}</td>
+  <td class="num">{{ t.payout_frequency|pct }}</td><td class="num">{{ t.expected_loss|pct(1) }}</td><td class="num">{{ t.gross_rate|pct(1) }}</td><td>{{ 'yes' if t.in_target_band else 'no' }}</td></tr>
+{% endfor %}{% endfor %}</tbody></table></div>
+<h3>3.4 Sensitivity: soil water capacity (a placeholder input)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Ward</th><th class="num">Soil capacity</th><th class="num">Median WRSI</th><th class="num">Payout frequency</th><th class="num">Expected loss</th><th class="num">Gross rate</th></tr></thead>
+<tbody>{% for w, f in figs.items() %}{% for t in f.whc_sensitivity %}
+<tr><td>{{ f.ward.display_name }}</td><td class="num">{{ t.whc_mm|int }} mm{{ ' (current)' if t.is_current }}</td><td class="num">{{ t.median_wrsi }}</td>
+  <td class="num">{{ t.payout_frequency|pct }}</td><td class="num">{{ t.expected_loss|pct(1) }}</td><td class="num">{{ t.gross_rate|pct(1) }}</td></tr>
+{% endfor %}{% endfor %}</tbody></table></div>
+<h3>3.5 Validation against FEWS NET</h3>
+<p>{% for w, f in figs.items() %}{{ f.ward.display_name }}: {{ 'available' if f.fewsnet_validation.available else 'PENDING. ' ~ f.fewsnet_validation.reason }}{{ ' ' if not loop.last }}{% endfor %}</p>
+</section>
+
+{# ------------------------------------------------------------------ 4 #}
+<section id="data" class="page-break">
+<h2>4. Data sources and provenance</h2>
+<p>Every input file is committed with a metadata file recording the exact request, the retrieval time and its
+  SHA-256. The engine refuses a file whose checksum no longer matches. The checksums below were recomputed when this
+  pack was built.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>File</th><th>Used for</th><th>Dataset and provider</th><th>Retrieved (UTC)</th><th>SHA-256 (recorded)</th><th>Check</th></tr></thead>
+<tbody>{% for r in sources %}
+<tr><td class="path">{{ r.file }}</td><td>{{ r.use }}</td><td>{{ r.dataset }}{% if r.provider %} ({{ r.provider }}){% endif %}</td>
+  <td>{{ r.retrieved_at[:19]|replace('T', ' ') }}</td><td class="path">{{ r.sha256_recorded }}</td>
+  <td>{% if r.status == 'matches' %}<span class="chip ok">matches</span>{% elif r.status == 'DIFFERS' %}<span class="chip crit">DIFFERS</span>{% else %}{{ r.status }}{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+<h3>Labels on every input</h3>
+<p>Each input of a pricing run carries a label: REAL (observed, named source), SYNTHETIC (generated here),
+  ILLUSTRATIVE (placeholder awaiting a decision) or PENDING (not available; dependent results not computed).
+  {{ A[0].ward.display_name }}:</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Input</th><th>Label</th><th>Source</th><th>Note</th></tr></thead>
+<tbody>{% for p in A[0].provenance %}
+<tr><td>{{ p.input }}</td><td><span class="chip {{ 'ok' if p.label == 'REAL' else 'crit' if p.label == 'PENDING' else 'warn' }}">{{ p.label }}</span></td>
+  <td>{{ p.source }}</td><td>{{ p.note or p.caveat or '' }}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="muted">The same labels apply at every ward (data/engine_ward-*.json).</p>
+</section>
+
+{# ------------------------------------------------------------------ 5 #}
+<section id="backtest" class="page-break">
+<h2>5. Backtest results</h2>
+<p>Today's terms applied to every long-rains season in the record. Numbers are the engine's own output (runs listed
+  on the cover); the season-by-season tables are in <code>data/backtest_*.csv</code>.</p>
+{% for w, f in figs.items() %}{% set b, t = f.burn_cost, f.target %}
+<h3>{{ f.ward.display_name }} ({{ w }}): {{ b.first_year }} to {{ b.last_year }}, {{ b.seasons }} seasons</h3>
+<div class="grid">
+  <div class="kpi"><div class="v">{{ b.payout_seasons }} of {{ b.seasons }}</div><div class="k">seasons with any payout ({{ b.payout_frequency|pct }}, about 1 in {{ "%.1f"|format(t.combined.about_one_in) }})</div></div>
+  <div class="kpi"><div class="v">{{ b.expected_loss|pct(1) }}</div><div class="k">expected loss, share of sum insured</div></div>
+  <div class="kpi"><div class="v">{{ b.loss_1_in_10|pct(1) }} / {{ b.loss_1_in_20|pct(1) }}</div><div class="k">1-in-10 / 1-in-20 season loss</div></div>
+  <div class="kpi"><div class="v">{{ b.max_loss|pct(1) }}</div><div class="k">worst season ({{ b.worst_seasons[0].year if b.worst_seasons else '' }})</div></div>
+  <div class="kpi"><div class="v">{{ f.premium.gross_rate|pct(2) }}</div><div class="k">gross rate at the default sum insured</div></div>
+</div>
+<p>Target payout frequency: WRSI and failed onset {{ t.main.frequency|pct }} against a target of 1 season in
+  {{ t.main.return_period_years[0]|int }} to {{ t.main.return_period_years[1]|int }} ({{ 'inside' if t.main.in_band else 'OUTSIDE' }} the band);
+  replanting vouchers {{ t.replanting.frequency|pct }} against 1 in {{ t.replanting.return_period_years[0]|int }} to
+  {{ t.replanting.return_period_years[1]|int }} ({{ 'inside' if t.replanting.in_band else 'OUTSIDE' }} the band). Targets are placeholders for the insurer to confirm.
+  Median WRSI {{ f.wrsi_stats.median }}, lowest {{ f.wrsi_stats.min }}; failed onsets {{ f.onset_stats.failed_onsets }}; germination dry spells {{ f.onset_stats.germination_failures }}.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Component</th><th class="num">Seasons paying</th><th class="num">Frequency</th><th class="num">Expected cost per acre</th><th class="num">Gross per acre alone</th></tr></thead>
+<tbody>{% for c in f.components %}
+<tr><td>{{ c.component }}</td><td class="num">{{ c.seasons_paying }}</td><td class="num">{{ c.payout_frequency|pct }}</td><td class="num">{{ c.expected_loss_kes|kes }}</td><td class="num">{{ c.gross_kes_alone|kes }}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="muted">Per acre at the default sum insured of {{ f.premium.default_sum_insured_kes_per_acre|kes }}.</p>
+<h4>Worst seasons</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Rank</th><th class="num">Year</th><th>Start of season</th><th class="num">WRSI</th><th>Early trigger</th><th class="num">Payout share</th></tr></thead>
+<tbody>{% for s in f.worst_seasons %}
+<tr><td class="num">{{ s.rank }}</td><td class="num">{{ s.year }}</td><td>{{ s.sos }}</td><td class="num">{{ s.wrsi }}</td>
+  <td>{{ 'failed onset' if s.failed_onset else 'germination dry spell' if s.germination_failed else '' }}</td><td class="num">{{ s.payout|pct(1) }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% if f.early_season_triggers %}<h4>Early-season triggers</h4>
+<ul class="small">{% for e in f.early_season_triggers %}<li>{{ e.year }}, {{ e.trigger }}: {{ e.payout_kes|kes }} per acre ({{ e.cause }})</li>{% endfor %}</ul>{% endif %}
+<h4>Every season</h4>
+<div class="table-wrap"><table class="small">
+<thead><tr><th class="num">Year</th><th>Start</th><th class="num">Window rain (mm)</th><th class="num">WRSI</th><th class="num">Payout share</th><th class="num">Per acre</th></tr></thead>
+<tbody>{% for h in f.history %}
+<tr><td class="num">{{ h.year }}</td><td>{{ h.sos or '' }}{{ ' (replant)' if h.germination_failed }}{{ ' (failed onset)' if h.failed_onset }}</td>
+  <td class="num">{{ h.window_rain_mm }}</td><td class="num">{{ h.wrsi if h.wrsi is not none else '' }}</td>
+  <td class="num">{{ h.payout|pct(1) if h.payout else '' }}</td><td class="num">{{ h.payout_kes|kes if h.payout_kes else '' }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% endfor %}
+</section>
+
+{# ------------------------------------------------------------------ 6 #}
+<section id="basis" class="page-break">
+<h2>6. Basis risk statement</h2>
+<p>Basis risk is the gap between what the index pays and what a member actually loses. This cover pays on one index
+  per ward, from satellite rainfall averaged over a box {{ conf.wards[0].box_deg }} degrees (about 11 km) wide around a
+  placeholder ward centre. A member's
+  own loss can differ because rain varies within the ward, and because soil, pests, disease, planting date and
+  farming practice differ from farm to farm. Members can lose a crop when the index pays nothing, and the index can
+  pay when a member's crop was fine.</p>
+<h3>What cannot be measured yet</h3>
+<ul>
+  <li><b>How often the index misses a real crop failure, or pays without one.</b> That needs a history of real maize
+    yields in each insured ward. None is available: {{ A[0].basis_risk.reason }}</li>
+  <li><b>The real pilot wards.</b> Both wards are placeholders ({% for w in conf.wards %}{{ w.display_name }}{{ ', ' if not loop.last }}{% endfor %});
+    their locations and soil water capacities are not real ward data.</li>
+</ul>
+<h3>What is measured or controlled now</h3>
+<ul>
+  <li><b>Agreement with an independent WRSI.</b> The comparison with the FEWS NET WRSI product is built but PENDING:
+    {{ conf.validation.fewsnet_status }}</li>
+  <li><b>Sensitivity.</b> Payout frequency and price at other trigger levels and soil capacities (sections 3.3 and 3.4).</li>
+  <li><b>Known event.</b> The 1984 drought is required to pay at least 50% at {{ A[0].ward.display_name }} (section 3.2).</li>
+  <li><b>Input quality.</b> CHIRPS daily values are spread out from 5-day totals, so the index uses 10-day totals
+    and the flowering dry-spell component was dropped. PET is a flagged fallback (section 2.1).</li>
+  <li><b>Missed-payout reports.</b> Members report "my crop failed but the payout did not match" by USSD option 5 or
+    through their SACCO officer. Each report records the ward's index status at that moment and is reviewed by a
+    manager with an outcome. Reports never change a payout; they are the evidence for reviewing the index.</li>
+</ul>
+<p>The consumer disclosure (section 8) explains basis risk to members in plain words before they buy.</p>
+</section>
+
+{# ------------------------------------------------------------------ 7 #}
+<section id="timeline" class="page-break">
+<h2>7. Payout timeline</h2>
+{% set mon = conf.monitoring %}
+<p>Payouts are due within <b>{{ mon.payout_within_days }} days</b> of the day the index is confirmed
+  (<code>monitoring.payout_within_days</code> in config/pilot.yaml). {{ mon.data_note }}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>When</th><th>What happens</th><th>Who</th></tr></thead>
+<tbody>
+<tr><td>Every day of the season</td><td>The daily job runs the same index on the rainfall observed so far (normal rain assumed for the rest). Ward status is shown to officers and members as a projection; each run is stored and audited.</td><td>System</td></tr>
+<tr><td>Day 0: index confirmed</td><td>Failed onset at the end of the planting window, the germination dry spell after its check, the WRSI at the end of the growing period, once observed data covers it. Payouts are calculated the same day for every policy whose cover was active.</td><td>System</td></tr>
+<tr><td>Day 0 onwards</td><td>The insurer's underwriter approves each payout, or holds it with a written reason (audited). The member is told by SMS only once it is approved.</td><td>{{ insurer }}</td></tr>
+<tr><td>By day {{ mon.payout_within_days }}</td><td>Paid to the member's M-Pesa (simulated until the insurer's payout credentials exist), or credited to the SACCO loan where the member agreed. Replanting vouchers are sent as a code and are valid {{ mon.voucher_valid_days }} days. Late payouts are flagged.</td><td>SACCO manager</td></tr>
+</tbody></table></div>
+{% if season %}
+<h3>Evidence: simulated season</h3>
+<p>A replay of the {{ season.year }} long rains at {{ season.ward }} with fictional members, on the platform's own
+  services: the index confirmed on {{ season.confirmed_on }} (final WRSI {{ season.final_wrsi }}, payout
+  {{ season.share|pct(1) }} of sum insured), the underwriter approved on {{ season.approved_on }}, and all
+  {{ season.payouts }} payouts were paid on {{ season.paid_on }}: {{ season.max_days }} days after confirmation,
+  inside the {{ season.window }}-day window (due by {{ season.due_by }}). SIMULATION / REPLAY with fictional people.
+  Source: <code>{{ season.file }}</code> (SHA-256 <span class="mono">{{ season.sha256|short(16) }}</span>), report beside it.</p>
+{% endif %}
+</section>
+
+{# ------------------------------------------------------------------ 8 #}
+<section id="disclosure" class="page-break">
+<h2>8. Consumer disclosure</h2>
+<p>Read with the member by the SACCO officer before enrolment. Also in <code>disclosure.html</code>.</p>
+<h3>English</h3>
+{{ disclosure_en() }}
+<h3>Kiswahili (pending native-speaker review)</h3>
+{{ disclosure_sw() }}
+</section>
+
+{# ------------------------------------------------------------------ 9 #}
+<section id="privacy" class="page-break">
+<h2>9. Data protection summary</h2>
+<p>Designed with the Kenya Data Protection Act in mind; the legal review of the consent wording is pending.</p>
+<ul>
+  <li><b>Encryption at rest.</b> National ID numbers and phone numbers are stored only encrypted (AES-256-GCM, a
+    fresh random nonce per value), with a keyed HMAC-SHA256 for look-ups. Keys come from the environment, never from
+    the code or the database. Officer passwords are stored as scrypt hashes.</li>
+  <li><b>Masking.</b> IDs and phone numbers are masked on every screen, export, bordereau, audit record and log line
+    (for example <span class="mono">+254 7** *** 678</span>). Tests read the raw database file, rendered pages, links
+    and audit rows for any clear ID or phone.</li>
+  <li><b>Never in a web address.</b> Searches are sent in the request body and enrolment state stays on the server,
+    so personal data never appears in a URL.</li>
+  <li><b>Local storage.</b> Data stays in the platform's own database (SQLite in development, PostgreSQL in
+    deployment). Public-site enquiries are stored locally and encrypted; nothing is emailed.</li>
+  <li><b>SMS.</b> Only to members who agreed to SMS. The phone number is decrypted only at the moment of sending and
+    never stored in the outbox. By default (<code>SMS_MODE=log</code>) messages are recorded and not sent.</li>
+  <li><b>Weather news (KMD and others).</b> Display only: pricing, triggers and payouts never read it (tested). Kenya
+    Meteorological Department forecasts are shown with their label and link after a person approves a summary.
+    No SMS of KMD content until KMD's written permission is on file. Other sources stay off:</li>
+</ul>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Source</th><th>On</th><th>Display</th><th>SMS allowed</th><th>Terms checked</th><th>Note</th></tr></thead>
+<tbody>{% for s in conf.weather %}
+<tr><td>{{ s.name }}</td><td>{{ 'yes' if s.enabled else 'no' }}</td><td>{{ 'yes' if s.display_allowed else 'no' }}</td>
+  <td>{{ 'yes' if s.sms_distribution_allowed else 'no' }}</td><td>{{ s.terms_checked_on }}</td><td>{{ s.note }}</td></tr>
+{% endfor %}</tbody></table></div>
+<h3>Consent, per purpose (config/consent.yaml, version {{ conf.consent.version }})</h3>
+<p>Each consent record stores the wording version and the SHA-256 of the exact words the member agreed to. Status:
+  <b>{{ conf.consent.status }}</b>. Live enrolment is blocked until both reviews are recorded; only demo SACCOs with
+  fictional members can enrol until then.</p>
+<div class="table-wrap"><table class="small">
+<thead><tr><th>Purpose</th><th>Required</th><th>English</th><th>Kiswahili (pending review)</th><th>SHA-256</th></tr></thead>
+<tbody>{% for p in conf.consent.purposes %}
+<tr><td>{{ p.id|replace('_', ' ') }}</td><td>{{ 'yes' if p.required else 'no, optional' }}</td><td>{{ p.en }}</td><td>{{ p.sw }}</td><td class="mono">{{ p.sha256|short(16) }}</td></tr>
+{% endfor %}</tbody></table></div>
+</section>
+
+{# ------------------------------------------------------------------ 10 #}
+<section id="annex" class="page-break">
+<h2>10. Reproducing this pack</h2>
+<ul>
+  <li>Rebuild everything: <code>python tools/ira/build_pack.py</code>. It runs the engine offline from the committed
+    inputs (<code>{{ engine_cmd }}</code>), then writes this file, the PDF ({{ pdf_name }}), the consumer
+    disclosure and the figures. Identical inputs give identical engine results.</li>
+  <li>Figures: <code>data/pricing_summary.csv</code>, <code>data/backtest_*.csv</code>,
+    <code>data/trigger_sensitivity_*.csv</code>, <code>data/soil_sensitivity_*.csv</code>,
+    <code>data/data_sources.csv</code>, <code>data/figures.json</code> (everything quoted here), and
+    <code>data/engine_*.json</code> (the engine's results and run manifest, unchanged).</li>
+  <li><code>manifest.json</code> lists every file with its size and SHA-256.</li>
+  <li>Settings fingerprints at build time: {% for k, v in conf.file_sha256.items() %}{{ k }} <span class="mono">{{ v|short(16) }}</span>{{ ', ' if not loop.last }}{% endfor %}.</li>
+</ul>
+<p class="banner"><b>DRAFT</b> <b>ILLUSTRATIVE</b> End of pack. Not submitted to or approved by the Insurance
+  Regulatory Authority. Insurer: {{ insurer }}.</p>
+</section>
+</main>
+</body>
+</html>
