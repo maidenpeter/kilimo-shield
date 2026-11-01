@@ -10,7 +10,9 @@ illustrative: true
 layer_b:
   # Bump on any change to the index definition or its terms. Recorded in every
   # run manifest so a historical payout can be traced to the exact rules.
-  version: "B-1.2.0"
+  # B-1.2.1 (2026-11-01, branch pricing/soil-whc): ward soil water holding capacity
+  # from SoilGrids 2.0 instead of placeholders (wards.yaml). Method unchanged.
+  version: "B-1.2.1"
 
   # FEWS NET maize crop coefficients at % of the length of growing period,
   # linearly interpolated to each dekad's midpoint.

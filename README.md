@@ -8,14 +8,16 @@ not the risk carrier.
 
 **Status:** milestones 1-7 of 10 (quote API in 4; SACCO portal and data model in 5; USSD, M-Pesa
 and SMS in 6; ward monitoring, Payout Tracker and weather advisories in 7) and research task 3b.
-Layer B is a seasonal WRSI index (B-1.2.0) with failed-onset and germination dry-spell
+Layer B is a seasonal WRSI index (B-1.2.1) with failed-onset and germination dry-spell
 triggers; the superseded per-phase index (v0) is kept for comparison only. Layer A
 (anticipatory seed voucher) is **dropped from the product** (2026-10-29): its code is kept,
 switched off. An EXPERIMENTAL early advance on Layer B at Ward A is validated and priced,
 but not in quotes.
-Everything priced here is **illustrative**: pilot wards, soil, crop calendars, trigger
+Everything priced here is **illustrative**: pilot wards, crop calendars, trigger
 levels, loadings and sum insured are placeholders. Rainfall is real (CHIRPS); PET is a
-flagged fallback (Hargreaves from NASA POWER temperature).
+flagged fallback (Hargreaves from NASA POWER temperature). Soil water holding capacity
+is real for each placeholder ward's rainfall box (ISRIC SoilGrids 2.0, 0-100 cm; see
+`docs/pricing/soil-whc-comparison.md`), and must be re-derived when the real wards are chosen.
 
 Pilot scope: maize, long rains only, at two placeholder Nakuru wards.
 
@@ -39,6 +41,8 @@ That prices one ward from the committed inputs and prints where its report is:
 | `agroshield-price run --offline` | Never download; fail if inputs are not cached |
 | `agroshield-price fetch-rainfall --all [--refresh]` | Download and cache CHIRPS |
 | `agroshield-price fetch-climate --all [--refresh]` | Download and cache NASA POWER temperature |
+| `agroshield-price fetch-soil [--refresh]` | Download and cache SoilGrids water retention, write `data/soil/ward_awc.json` (needs `pip install -e .[soil]`) |
+| `agroshield-price soil-awc` | Ward root-zone available water capacity from the cached soil rasters (never edits config) |
 | `agroshield-price quote --ward ward-a --acres 2 --layers A,B --resilience certified_seed_verified` | Quote a farmer from the command line |
 | `agroshield-api` | Quote API on http://127.0.0.1:8770 (interactive docs at `/docs`) |
 | `agroshield-price validate` | Check the config without pricing |

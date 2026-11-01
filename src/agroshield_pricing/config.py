@@ -88,8 +88,18 @@ class Ward(BaseModel):
     elevation_m: float | None = None
     soil_whc_mm: float = Field(gt=0, le=400)   # plant-available water holding capacity
     soil_illustrative: bool = True
+    # Where a non-placeholder soil_whc_mm came from (dataset, depth, method). Required
+    # once soil_illustrative is false, so a REAL label always names its source.
+    soil_source: str = ""
     seasons: list[Season]
     notes: str = ""
+
+    @model_validator(mode="after")
+    def _soil_source(self):
+        if not self.soil_illustrative and not self.soil_source.strip():
+            raise ValueError(f"ward {self.id}: soil_illustrative is false but soil_source is empty; "
+                             "say which dataset and depth soil_whc_mm came from")
+        return self
 
     @property
     def label(self) -> str:

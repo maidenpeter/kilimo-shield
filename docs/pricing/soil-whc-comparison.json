@@ -1,0 +1,985 @@
+{
+  "status": "Needs owner approval: not merged into main",
+  "label": "Soil values REAL (SoilGrids 2.0 for each ward's extraction box); ward locations, triggers, loadings and the rest of the pricing stay ILLUSTRATIVE",
+  "command": "agroshield-price run --all --offline (before: placeholder wards.yaml; after: SoilGrids wards.yaml)",
+  "wards": {
+    "ward-a": {
+      "before_run": "20261101T023200Z_ward-a_62ebdf",
+      "before_results_sha256": "76436465366497deb69a8c2747798ad78b7de83a9a7846c0722d047a0f96e873",
+      "after_run": "20261101T141326Z_ward-a_99f4e5",
+      "after_results_sha256": "19615cee3ade0b4ebc123e2880e24b2cf57a74569ba0819a2f2e8c192ae7ee9b",
+      "soil_provenance_after": {
+        "input": "Soil water holding capacity",
+        "label": "REAL",
+        "source": "config/wards.yaml",
+        "note": "130 mm. ISRIC SoilGrids 2.0 (250 m), available water 0-100 cm (33 to 1500 kPa), mean over the ward's rainfall box; 2026-11-01"
+      },
+      "seasons": {
+        "LR": {
+          "before": {
+            "soil_whc_mm": 100.0,
+            "wrsi_median": 97.19,
+            "wrsi_min": 55.56,
+            "seasons": 45,
+            "seasons_wrsi_below_trigger": 9,
+            "main_payout_frequency": 0.2,
+            "any_payout_frequency": 0.26666666666666666,
+            "payout_frequency": 0.26666666666666666,
+            "expected_loss": 0.0860592888888889,
+            "gross_rate": 0.18840481488265046,
+            "event_tests": [
+              {
+                "year": 1984,
+                "wrsi": 55.56,
+                "payout": 0.814667,
+                "passed": true
+              }
+            ]
+          },
+          "after": {
+            "soil_whc_mm": 130.0,
+            "wrsi_median": 98.61,
+            "wrsi_min": 54.96,
+            "seasons": 45,
+            "seasons_wrsi_below_trigger": 7,
+            "main_payout_frequency": 0.15555555555555556,
+            "any_payout_frequency": 0.2222222222222222,
+            "payout_frequency": 0.2222222222222222,
+            "expected_loss": 0.0746,
+            "gross_rate": 0.16695281047460195,
+            "event_tests": [
+              {
+                "year": 1984,
+                "wrsi": 54.96,
+                "payout": 0.834667,
+                "passed": true
+              }
+            ]
+          },
+          "wrsi_change_summary": {
+            "seasons_compared": 45,
+            "mean": 1.28,
+            "min": -2.03,
+            "max": 6.52,
+            "seasons_changed": 34
+          },
+          "years_where_payout_changed": [
+            1984,
+            1999,
+            2000,
+            2002,
+            2004,
+            2008,
+            2009,
+            2014,
+            2022
+          ],
+          "per_year": [
+            {
+              "year": 1981,
+              "wrsi_before": 100.0,
+              "wrsi_after": 99.35,
+              "wrsi_change": -0.65,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1982,
+              "wrsi_before": 95.78,
+              "wrsi_after": 99.77,
+              "wrsi_change": 3.99,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1983,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1984,
+              "wrsi_before": 55.56,
+              "wrsi_after": 54.96,
+              "wrsi_change": -0.6,
+              "payout_before": 0.814667,
+              "payout_after": 0.834667
+            },
+            {
+              "year": 1985,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1986,
+              "wrsi_before": 100.0,
+              "wrsi_after": 99.5,
+              "wrsi_change": -0.5,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1987,
+              "wrsi_before": 100.0,
+              "wrsi_after": 99.52,
+              "wrsi_change": -0.48,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1988,
+              "wrsi_before": 98.03,
+              "wrsi_after": 99.99,
+              "wrsi_change": 1.96,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1989,
+              "wrsi_before": 91.73,
+              "wrsi_after": 95.48,
+              "wrsi_change": 3.75,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1990,
+              "wrsi_before": 88.35,
+              "wrsi_after": 93.28,
+              "wrsi_change": 4.93,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1991,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1992,
+              "wrsi_before": 84.6,
+              "wrsi_after": 82.57,
+              "wrsi_change": -2.03,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1993,
+              "wrsi_before": 83.43,
+              "wrsi_after": 89.16,
+              "wrsi_change": 5.73,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1994,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 1995,
+              "wrsi_before": 93.77,
+              "wrsi_after": 94.27,
+              "wrsi_change": 0.5,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1996,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1997,
+              "wrsi_before": 96.13,
+              "wrsi_after": 99.15,
+              "wrsi_change": 3.02,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1998,
+              "wrsi_before": 99.09,
+              "wrsi_after": 99.28,
+              "wrsi_change": 0.19,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1999,
+              "wrsi_before": 68.96,
+              "wrsi_after": 68.23,
+              "wrsi_change": -0.73,
+              "payout_before": 0.368,
+              "payout_after": 0.392333
+            },
+            {
+              "year": 2000,
+              "wrsi_before": 72.99,
+              "wrsi_after": 72.48,
+              "wrsi_change": -0.51,
+              "payout_before": 0.233667,
+              "payout_after": 0.250667
+            },
+            {
+              "year": 2001,
+              "wrsi_before": 88.63,
+              "wrsi_after": 92.73,
+              "wrsi_change": 4.1,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2002,
+              "wrsi_before": 69.75,
+              "wrsi_after": 74.89,
+              "wrsi_change": 5.14,
+              "payout_before": 0.591667,
+              "payout_after": 0.420333
+            },
+            {
+              "year": 2003,
+              "wrsi_before": 95.98,
+              "wrsi_after": 98.61,
+              "wrsi_change": 2.63,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2004,
+              "wrsi_before": 65.66,
+              "wrsi_after": 72.18,
+              "wrsi_change": 6.52,
+              "payout_before": 0.478,
+              "payout_after": 0.260667
+            },
+            {
+              "year": 2005,
+              "wrsi_before": 97.19,
+              "wrsi_after": 96.12,
+              "wrsi_change": -1.07,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2006,
+              "wrsi_before": 91.94,
+              "wrsi_after": 93.79,
+              "wrsi_change": 1.85,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2007,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2008,
+              "wrsi_before": 67.58,
+              "wrsi_after": 67.99,
+              "wrsi_change": 0.41,
+              "payout_before": 0.414,
+              "payout_after": 0.400333
+            },
+            {
+              "year": 2009,
+              "wrsi_before": 76.29,
+              "wrsi_after": 81.11,
+              "wrsi_change": 4.82,
+              "payout_before": 0.12366700000000001,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2010,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2011,
+              "wrsi_before": 97.71,
+              "wrsi_after": 97.96,
+              "wrsi_change": 0.25,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2012,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2013,
+              "wrsi_before": 99.39,
+              "wrsi_after": 98.74,
+              "wrsi_change": -0.65,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2014,
+              "wrsi_before": 78.2,
+              "wrsi_after": 78.56,
+              "wrsi_change": 0.36,
+              "payout_before": 0.06,
+              "payout_after": 0.048
+            },
+            {
+              "year": 2015,
+              "wrsi_before": 92.26,
+              "wrsi_after": 97.26,
+              "wrsi_change": 5.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2016,
+              "wrsi_before": 99.16,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.84,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2017,
+              "wrsi_before": 87.55,
+              "wrsi_after": 85.67,
+              "wrsi_change": -1.88,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2018,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2019,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2020,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2021,
+              "wrsi_before": 99.71,
+              "wrsi_after": 99.02,
+              "wrsi_change": -0.69,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2022,
+              "wrsi_before": 78.83,
+              "wrsi_after": 84.29,
+              "wrsi_change": 5.46,
+              "payout_before": 0.039,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2023,
+              "wrsi_before": 92.89,
+              "wrsi_after": 97.42,
+              "wrsi_change": 4.53,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2024,
+              "wrsi_before": 98.07,
+              "wrsi_after": 100.0,
+              "wrsi_change": 1.93,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2025,
+              "wrsi_before": 99.01,
+              "wrsi_after": 98.44,
+              "wrsi_change": -0.57,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            }
+          ],
+          "whc_sensitivity_after": [
+            {
+              "whc_mm": 60.0,
+              "is_current": false,
+              "median_wrsi": 87.97,
+              "payout_frequency": 0.3333333333333333,
+              "expected_loss": 0.12667406666666667,
+              "gross_rate": 0.26537820395894696,
+              "event_payouts": {
+                "1984": 0.825
+              }
+            },
+            {
+              "whc_mm": 100.0,
+              "is_current": false,
+              "median_wrsi": 97.19,
+              "payout_frequency": 0.26666666666666666,
+              "expected_loss": 0.0860592888888889,
+              "gross_rate": 0.18840481488265046,
+              "event_payouts": {
+                "1984": 0.814667
+              }
+            },
+            {
+              "whc_mm": 130.0,
+              "is_current": true,
+              "median_wrsi": 98.61,
+              "payout_frequency": 0.2222222222222222,
+              "expected_loss": 0.0746,
+              "gross_rate": 0.16695281047460195,
+              "event_payouts": {
+                "1984": 0.834667
+              }
+            },
+            {
+              "whc_mm": 140.0,
+              "is_current": false,
+              "median_wrsi": 98.58,
+              "payout_frequency": 0.2222222222222222,
+              "expected_loss": 0.07277037777777778,
+              "gross_rate": 0.16357206362144738,
+              "event_payouts": {
+                "1984": 0.841
+              }
+            },
+            {
+              "whc_mm": 180.0,
+              "is_current": false,
+              "median_wrsi": 98.26,
+              "payout_frequency": 0.2222222222222222,
+              "expected_loss": 0.07106666666666667,
+              "gross_rate": 0.16277403318863534,
+              "event_payouts": {
+                "1984": 0.872667
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ward-b": {
+      "before_run": "20261101T023204Z_ward-b_88064d",
+      "before_results_sha256": "a9ad3062d46964dfc78111f9b69254cbd975c6f5ba29e74fa6d71d573697a291",
+      "after_run": "20261101T141331Z_ward-b_c6e53a",
+      "after_results_sha256": "d760c212a450bd137606c051d7b0e42440832de0ea6157d437efd3428d00ede6",
+      "soil_provenance_after": {
+        "input": "Soil water holding capacity",
+        "label": "REAL",
+        "source": "config/wards.yaml",
+        "note": "121 mm. ISRIC SoilGrids 2.0 (250 m), available water 0-100 cm (33 to 1500 kPa), mean over the ward's rainfall box; 2026-11-01"
+      },
+      "seasons": {
+        "LR": {
+          "before": {
+            "soil_whc_mm": 140.0,
+            "wrsi_median": 99.57,
+            "wrsi_min": 74.79,
+            "seasons": 45,
+            "seasons_wrsi_below_trigger": 1,
+            "main_payout_frequency": 0.022222222222222223,
+            "any_payout_frequency": 0.13333333333333333,
+            "payout_frequency": 0.13333333333333333,
+            "expected_loss": 0.03163704444444444,
+            "gross_rate": 0.07456864909053143,
+            "event_tests": [
+              {
+                "year": 1984,
+                "wrsi": 83.26,
+                "payout": 0.0,
+                "passed": null
+              }
+            ]
+          },
+          "after": {
+            "soil_whc_mm": 121.0,
+            "wrsi_median": 99.62,
+            "wrsi_min": 72.36,
+            "seasons": 45,
+            "seasons_wrsi_below_trigger": 1,
+            "main_payout_frequency": 0.022222222222222223,
+            "any_payout_frequency": 0.13333333333333333,
+            "payout_frequency": 0.13333333333333333,
+            "expected_loss": 0.033437044444444446,
+            "gross_rate": 0.07855783102990979,
+            "event_tests": [
+              {
+                "year": 1984,
+                "wrsi": 84.21,
+                "payout": 0.0,
+                "passed": null
+              }
+            ]
+          },
+          "wrsi_change_summary": {
+            "seasons_compared": 45,
+            "mean": -0.36,
+            "min": -2.46,
+            "max": 1.04,
+            "seasons_changed": 27
+          },
+          "years_where_payout_changed": [
+            2009
+          ],
+          "per_year": [
+            {
+              "year": 1981,
+              "wrsi_before": 99.62,
+              "wrsi_after": 99.9,
+              "wrsi_change": 0.28,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1982,
+              "wrsi_before": 99.38,
+              "wrsi_after": 99.62,
+              "wrsi_change": 0.24,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1983,
+              "wrsi_before": 96.65,
+              "wrsi_after": 97.19,
+              "wrsi_change": 0.54,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1984,
+              "wrsi_before": 83.26,
+              "wrsi_after": 84.21,
+              "wrsi_change": 0.95,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1985,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1986,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 1987,
+              "wrsi_before": 100.0,
+              "wrsi_after": 99.48,
+              "wrsi_change": -0.52,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1988,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1989,
+              "wrsi_before": 99.0,
+              "wrsi_after": 99.23,
+              "wrsi_change": 0.23,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1990,
+              "wrsi_before": 99.41,
+              "wrsi_after": 97.86,
+              "wrsi_change": -1.55,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1991,
+              "wrsi_before": 98.59,
+              "wrsi_after": 98.77,
+              "wrsi_change": 0.18,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1992,
+              "wrsi_before": 97.16,
+              "wrsi_after": 97.53,
+              "wrsi_change": 0.37,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1993,
+              "wrsi_before": 93.17,
+              "wrsi_after": 90.71,
+              "wrsi_change": -2.46,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1994,
+              "wrsi_before": 99.44,
+              "wrsi_after": 99.75,
+              "wrsi_change": 0.31,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1995,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1996,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1997,
+              "wrsi_before": 99.57,
+              "wrsi_after": 99.31,
+              "wrsi_change": -0.26,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1998,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 1999,
+              "wrsi_before": 93.92,
+              "wrsi_after": 91.91,
+              "wrsi_change": -2.01,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2000,
+              "wrsi_before": 92.21,
+              "wrsi_after": 93.25,
+              "wrsi_change": 1.04,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2001,
+              "wrsi_before": 98.05,
+              "wrsi_after": 98.48,
+              "wrsi_change": 0.43,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2002,
+              "wrsi_before": 87.6,
+              "wrsi_after": 85.16,
+              "wrsi_change": -2.44,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2003,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2004,
+              "wrsi_before": 82.74,
+              "wrsi_after": 80.47,
+              "wrsi_change": -2.27,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2005,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2006,
+              "wrsi_before": 99.33,
+              "wrsi_after": 97.76,
+              "wrsi_change": -1.57,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2007,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2008,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2009,
+              "wrsi_before": 74.79,
+              "wrsi_after": 72.36,
+              "wrsi_change": -2.43,
+              "payout_before": 0.173667,
+              "payout_after": 0.254667
+            },
+            {
+              "year": 2010,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2011,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2012,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2013,
+              "wrsi_before": 99.31,
+              "wrsi_after": 99.57,
+              "wrsi_change": 0.26,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2014,
+              "wrsi_before": 99.34,
+              "wrsi_after": 97.8,
+              "wrsi_change": -1.54,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2015,
+              "wrsi_before": 97.92,
+              "wrsi_after": 96.45,
+              "wrsi_change": -1.47,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2016,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.25,
+              "payout_after": 0.25
+            },
+            {
+              "year": 2017,
+              "wrsi_before": 96.84,
+              "wrsi_after": 95.26,
+              "wrsi_change": -1.58,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2018,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2019,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2020,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2021,
+              "wrsi_before": 99.97,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.03,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2022,
+              "wrsi_before": 99.67,
+              "wrsi_after": 99.87,
+              "wrsi_change": 0.2,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2023,
+              "wrsi_before": 98.73,
+              "wrsi_after": 97.52,
+              "wrsi_change": -1.21,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2024,
+              "wrsi_before": 100.0,
+              "wrsi_after": 100.0,
+              "wrsi_change": 0.0,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            },
+            {
+              "year": 2025,
+              "wrsi_before": 98.76,
+              "wrsi_after": 98.96,
+              "wrsi_change": 0.2,
+              "payout_before": 0.0,
+              "payout_after": 0.0
+            }
+          ],
+          "whc_sensitivity_after": [
+            {
+              "whc_mm": 60.0,
+              "is_current": false,
+              "median_wrsi": 96.24,
+              "payout_frequency": 0.15555555555555556,
+              "expected_loss": 0.04931853333333333,
+              "gross_rate": 0.11450399069793561,
+              "event_payouts": {
+                "1984": 0.0
+              }
+            },
+            {
+              "whc_mm": 100.0,
+              "is_current": false,
+              "median_wrsi": 99.37,
+              "payout_frequency": 0.15555555555555556,
+              "expected_loss": 0.03715555555555555,
+              "gross_rate": 0.08609633733793062,
+              "event_payouts": {
+                "1984": 0.0
+              }
+            },
+            {
+              "whc_mm": 121.0,
+              "is_current": true,
+              "median_wrsi": 99.62,
+              "payout_frequency": 0.13333333333333333,
+              "expected_loss": 0.033437044444444446,
+              "gross_rate": 0.07855783102990979,
+              "event_payouts": {
+                "1984": 0.0
+              }
+            },
+            {
+              "whc_mm": 140.0,
+              "is_current": false,
+              "median_wrsi": 99.57,
+              "payout_frequency": 0.13333333333333333,
+              "expected_loss": 0.03163704444444444,
+              "gross_rate": 0.07456864909053143,
+              "event_payouts": {
+                "1984": 0.0
+              }
+            },
+            {
+              "whc_mm": 180.0,
+              "is_current": false,
+              "median_wrsi": 99.47,
+              "payout_frequency": 0.13333333333333333,
+              "expected_loss": 0.027918511111111113,
+              "gross_rate": 0.06824447758386387,
+              "event_payouts": {
+                "1984": 0.0
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

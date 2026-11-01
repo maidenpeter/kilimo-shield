@@ -254,9 +254,10 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
                          "gross_rate": pr["premium"]["gross_rate"], "in_target_band": _in_band(fq["main"], band),
                          "is_current": trig == terms["trigger_wrsi"]})
 
-        # Placeholder soil: how much does the water holding capacity move things?
+        # How much does the soil water holding capacity move things? The ward's own
+        # value is always one of the rows, so the table shows where it sits.
         whc_sens = []
-        for whc in lb.sensitivity_whc_mm:
+        for whc in sorted(set(lb.sensitivity_whc_mm) | {ward.soil_whc_mm}):
             alt = component_table(run(whc), terms, cfg)
             pr = price_product(alt, cfg, fl_on)
             whc_sens.append({"whc_mm": whc, "is_current": whc == ward.soil_whc_mm,
@@ -385,7 +386,9 @@ def price_ward(cfg: Config, ward_id: str, rain_source: RainfallSource, pet_sourc
 
     calibration = getattr(pet_source, "calibration", {}).get(ward_id)
     summary = {
-        "ward": ward.model_dump(),
+        # soil_source is left out while empty, so placeholder runs stay byte-identical
+        # to the reference results.json hashes.
+        "ward": ward.model_dump(exclude=None if ward.soil_source else {"soil_source"}),
         "rainfall_provenance": rain_source.provenance(ward).to_dict(),
         "pet_provenance": pet_source.provenance(ward).to_dict(),
         "pet_calibration": calibration or {"available": False, "reason": "PET source has no calibration step."},
@@ -411,7 +414,9 @@ def provenance_block(cfg: Config, ward_id: str, rain_source: RainfallSource, pet
         ("Ward location", Provenance(ill(ward.illustrative), "config/wards.yaml",
                                      {"note": "Placeholder location, not a real ward boundary."})),
         ("Soil water holding capacity", Provenance(ill(ward.soil_illustrative), "config/wards.yaml",
-                                                   {"note": f"{ward.soil_whc_mm:g} mm placeholder until ward soil data."})),
+                                                   {"note": (f"{ward.soil_whc_mm:g} mm placeholder until ward soil data."
+                                                             if ward.soil_illustrative else
+                                                             f"{ward.soil_whc_mm:g} mm. {ward.soil_source.strip()}")})),
         ("Crop calendar and LGP", Provenance(ill(cfg.phenology.illustrative), "config/phenology.yaml",
                                              {"note": "Planting window and growing period pending agronomist sign-off."})),
         ("WRSI trigger and exit", Provenance(ill(cfg.product.illustrative), "config/product.yaml",

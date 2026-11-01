@@ -168,7 +168,7 @@ def test_pricing_runs_and_reports(world):
     login(c, "uw-UW1")
     html = c.get("/uw/pricing").text
     runs = re.findall(r'href="/uw/runs/([^/]+)/report.html"', html)
-    assert runs and "B-1.2.0" in html
+    assert runs and "B-1.2.1" in html
     assert c.get(f"/uw/runs/{runs[0]}/report.html").status_code == 200
     assert c.get("/uw/runs/..%2F..%2Fconfig/report.html").status_code == 404
     assert "trigger.calculated" in html

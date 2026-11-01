@@ -29,6 +29,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Only for `agroshield-price fetch-soil` / `soil-awc` (SoilGrids rasters). Pricing reads
+# the resulting soil_whc_mm from config/wards.yaml and does not need it.
+soil = ["rasterio>=1.3"]
 
 [project.scripts]
 agroshield-price = "agroshield_pricing.cli:main"

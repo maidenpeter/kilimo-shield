@@ -36,7 +36,9 @@ def test_every_input_carries_a_provenance_label(cfg):
     labels = {p["input"]: p["label"] for p in r.summary["provenance"]}
     assert labels["Rainfall"] == "SYNTHETIC" and labels["PET"] == "SYNTHETIC"
     assert labels["Ward location"] == "ILLUSTRATIVE"
-    assert labels["Soil water holding capacity"] == "ILLUSTRATIVE"
+    # Soil is REAL since Phase 7 (SoilGrids 2.0), and its note names the source.
+    soil_row = next(p for p in r.summary["provenance"] if p["input"] == "Soil water holding capacity")
+    assert soil_row["label"] == "REAL" and "SoilGrids" in soil_row["note"]
     assert labels["Yields (basis risk)"] == "PENDING"
     assert r.summary["seasons"]["LR"]["basis_risk"]["available"] is False
 
@@ -78,7 +80,8 @@ def test_regression_ward_a_1984_from_committed_inputs(cfg):
     r = price_ward(cfg, "ward-a", make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False))
     e = r.summary["seasons"]["LR"]["event_tests"][0]
     assert e["year"] == 1984 and e["sos"] == "Apr d1 1984"
-    assert e["wrsi"] == pytest.approx(55.56, abs=0.01)
+    # B-1.2.1: 54.96 with SoilGrids soil (130 mm). Was 55.56 at B-1.2.0 with the 100 mm placeholder.
+    assert e["wrsi"] == pytest.approx(54.96, abs=0.01)
     assert e["passed"]
 
 

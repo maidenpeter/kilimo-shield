@@ -1,0 +1,325 @@
+{
+  "source": "ISRIC SoilGrids 2.0 (250 m, CC BY 4.0) via maps.isric.org WCS",
+  "raw_dir": "data/raw/soil/soilgrids",
+  "method": "AWC = sum over layers of (wv0033 - wv1500) x layer thickness above the root depth, computed per pixel; mean over the pixels whose centre lies in the ward's CHIRPS extraction box (equal-area grid, so unweighted)",
+  "primary_depth_cm": 100,
+  "units": "mm of plant-available water",
+  "wards": {
+    "ward-a": {
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              35.81,
+              -0.22
+            ],
+            [
+              35.91,
+              -0.22
+            ],
+            [
+              35.91,
+              -0.12
+            ],
+            [
+              35.81,
+              -0.12
+            ],
+            [
+              35.81,
+              -0.22
+            ]
+          ]
+        ]
+      },
+      "config_soil_whc_mm": 100.0,
+      "pixels": 2022,
+      "pixel_area_km2": 0.0625,
+      "layers": [
+        {
+          "layer": "0-5cm",
+          "wv0033_mean": 0.3279,
+          "wv0010_mean": 0.3814,
+          "wv1500_mean": 0.1926,
+          "cfvo_mean": 0.0724,
+          "wv0010_Q0.05": 0.2277,
+          "wv0010_Q0.95": 0.5177,
+          "wv0033_Q0.05": 0.1562,
+          "wv0033_Q0.95": 0.4788,
+          "wv1500_Q0.05": 0.0651,
+          "wv1500_Q0.95": 0.3167
+        },
+        {
+          "layer": "5-15cm",
+          "wv0033_mean": 0.3224,
+          "wv0010_mean": 0.3728,
+          "wv1500_mean": 0.1929,
+          "cfvo_mean": 0.0735,
+          "wv0010_Q0.05": 0.2026,
+          "wv0010_Q0.95": 0.5057,
+          "wv0033_Q0.05": 0.1543,
+          "wv0033_Q0.95": 0.4765,
+          "wv1500_Q0.05": 0.0636,
+          "wv1500_Q0.95": 0.3156
+        },
+        {
+          "layer": "15-30cm",
+          "wv0033_mean": 0.3258,
+          "wv0010_mean": 0.3791,
+          "wv1500_mean": 0.1924,
+          "cfvo_mean": 0.0856,
+          "wv0010_Q0.05": 0.2259,
+          "wv0010_Q0.95": 0.5048,
+          "wv0033_Q0.05": 0.1621,
+          "wv0033_Q0.95": 0.4713,
+          "wv1500_Q0.05": 0.062,
+          "wv1500_Q0.95": 0.3134
+        },
+        {
+          "layer": "30-60cm",
+          "wv0033_mean": 0.3266,
+          "wv0010_mean": 0.374,
+          "wv1500_mean": 0.1992,
+          "cfvo_mean": 0.0982,
+          "wv0010_Q0.05": 0.1877,
+          "wv0010_Q0.95": 0.4962,
+          "wv0033_Q0.05": 0.1656,
+          "wv0033_Q0.95": 0.4618,
+          "wv1500_Q0.05": 0.0664,
+          "wv1500_Q0.95": 0.336
+        },
+        {
+          "layer": "60-100cm",
+          "wv0033_mean": 0.3254,
+          "wv0010_mean": 0.3774,
+          "wv1500_mean": 0.1952,
+          "cfvo_mean": 0.132,
+          "wv0010_Q0.05": 0.2282,
+          "wv0010_Q0.95": 0.4777,
+          "wv0033_Q0.05": 0.1621,
+          "wv0033_Q0.95": 0.4746,
+          "wv1500_Q0.05": 0.0606,
+          "wv1500_Q0.95": 0.3336
+        },
+        {
+          "layer": "100-200cm",
+          "wv0033_mean": 0.3246,
+          "wv0010_mean": 0.3739,
+          "wv1500_mean": 0.211,
+          "cfvo_mean": 0.1815,
+          "wv0010_Q0.05": 0.2307,
+          "wv0010_Q0.95": 0.4783,
+          "wv0033_Q0.05": 0.1721,
+          "wv0033_Q0.95": 0.4594,
+          "wv1500_Q0.05": 0.0592,
+          "wv1500_Q0.95": 0.3615
+        }
+      ],
+      "depths": {
+        "60": {
+          "depth_cm": 60,
+          "awc_33kpa_mm": 78.0,
+          "awc_33kpa_of_polygon_means_mm": 78.0,
+          "awc_10kpa_mm": 107.9,
+          "awc_33kpa_less_stones_mm": 71.0,
+          "pixel_p10_mm": 69.0,
+          "pixel_p90_mm": 84.9,
+          "pixel_min_mm": 50.5,
+          "pixel_max_mm": 91.9
+        },
+        "100": {
+          "depth_cm": 100,
+          "awc_33kpa_mm": 130.1,
+          "awc_33kpa_of_polygon_means_mm": 130.1,
+          "awc_10kpa_mm": 180.8,
+          "awc_33kpa_less_stones_mm": 116.3,
+          "pixel_p10_mm": 115.9,
+          "pixel_p90_mm": 141.1,
+          "pixel_min_mm": 89.6,
+          "pixel_max_mm": 153.4
+        },
+        "150": {
+          "depth_cm": 150,
+          "awc_33kpa_mm": 186.9,
+          "awc_33kpa_of_polygon_means_mm": 186.9,
+          "awc_10kpa_mm": 262.3,
+          "awc_33kpa_less_stones_mm": 162.8,
+          "pixel_p10_mm": 167.2,
+          "pixel_p90_mm": 201.6,
+          "pixel_min_mm": 129.2,
+          "pixel_max_mm": 219.4
+        }
+      },
+      "primary": {
+        "depth_cm": 100,
+        "awc_33kpa_mm": 130.1,
+        "awc_33kpa_of_polygon_means_mm": 130.1,
+        "awc_10kpa_mm": 180.8,
+        "awc_33kpa_less_stones_mm": 116.3,
+        "pixel_p10_mm": 115.9,
+        "pixel_p90_mm": 141.1,
+        "pixel_min_mm": 89.6,
+        "pixel_max_mm": 153.4
+      }
+    },
+    "ward-b": {
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              35.68,
+              -0.3
+            ],
+            [
+              35.78,
+              -0.3
+            ],
+            [
+              35.78,
+              -0.2
+            ],
+            [
+              35.68,
+              -0.2
+            ],
+            [
+              35.68,
+              -0.3
+            ]
+          ]
+        ]
+      },
+      "config_soil_whc_mm": 140.0,
+      "pixels": 2006,
+      "pixel_area_km2": 0.0625,
+      "layers": [
+        {
+          "layer": "0-5cm",
+          "wv0033_mean": 0.3329,
+          "wv0010_mean": 0.3903,
+          "wv1500_mean": 0.2005,
+          "cfvo_mean": 0.1224,
+          "wv0010_Q0.05": 0.2293,
+          "wv0010_Q0.95": 0.5229,
+          "wv0033_Q0.05": 0.153,
+          "wv0033_Q0.95": 0.4874,
+          "wv1500_Q0.05": 0.0899,
+          "wv1500_Q0.95": 0.3104
+        },
+        {
+          "layer": "5-15cm",
+          "wv0033_mean": 0.3292,
+          "wv0010_mean": 0.3826,
+          "wv1500_mean": 0.1994,
+          "cfvo_mean": 0.1381,
+          "wv0010_Q0.05": 0.2212,
+          "wv0010_Q0.95": 0.5008,
+          "wv0033_Q0.05": 0.1489,
+          "wv0033_Q0.95": 0.4888,
+          "wv1500_Q0.05": 0.0894,
+          "wv1500_Q0.95": 0.2992
+        },
+        {
+          "layer": "15-30cm",
+          "wv0033_mean": 0.3279,
+          "wv0010_mean": 0.3812,
+          "wv1500_mean": 0.1976,
+          "cfvo_mean": 0.1532,
+          "wv0010_Q0.05": 0.216,
+          "wv0010_Q0.95": 0.4913,
+          "wv0033_Q0.05": 0.1495,
+          "wv0033_Q0.95": 0.4877,
+          "wv1500_Q0.05": 0.0869,
+          "wv1500_Q0.95": 0.3024
+        },
+        {
+          "layer": "30-60cm",
+          "wv0033_mean": 0.3231,
+          "wv0010_mean": 0.3832,
+          "wv1500_mean": 0.2066,
+          "cfvo_mean": 0.1662,
+          "wv0010_Q0.05": 0.2271,
+          "wv0010_Q0.95": 0.4922,
+          "wv0033_Q0.05": 0.1551,
+          "wv0033_Q0.95": 0.4804,
+          "wv1500_Q0.05": 0.0814,
+          "wv1500_Q0.95": 0.3233
+        },
+        {
+          "layer": "60-100cm",
+          "wv0033_mean": 0.3259,
+          "wv0010_mean": 0.3852,
+          "wv1500_mean": 0.208,
+          "cfvo_mean": 0.1815,
+          "wv0010_Q0.05": 0.2422,
+          "wv0010_Q0.95": 0.4878,
+          "wv0033_Q0.05": 0.1718,
+          "wv0033_Q0.95": 0.4613,
+          "wv1500_Q0.05": 0.082,
+          "wv1500_Q0.95": 0.3333
+        },
+        {
+          "layer": "100-200cm",
+          "wv0033_mean": 0.3252,
+          "wv0010_mean": 0.3822,
+          "wv1500_mean": 0.2202,
+          "cfvo_mean": 0.1988,
+          "wv0010_Q0.05": 0.2346,
+          "wv0010_Q0.95": 0.4949,
+          "wv0033_Q0.05": 0.175,
+          "wv0033_Q0.95": 0.4635,
+          "wv1500_Q0.05": 0.0676,
+          "wv1500_Q0.95": 0.3654
+        }
+      ],
+      "depths": {
+        "60": {
+          "depth_cm": 60,
+          "awc_33kpa_mm": 74.1,
+          "awc_33kpa_of_polygon_means_mm": 74.1,
+          "awc_10kpa_mm": 108.3,
+          "awc_33kpa_less_stones_mm": 62.7,
+          "pixel_p10_mm": 65.0,
+          "pixel_p90_mm": 83.8,
+          "pixel_min_mm": 55.5,
+          "pixel_max_mm": 95.7
+        },
+        "100": {
+          "depth_cm": 100,
+          "awc_33kpa_mm": 121.3,
+          "awc_33kpa_of_polygon_means_mm": 121.3,
+          "awc_10kpa_mm": 179.2,
+          "awc_33kpa_less_stones_mm": 101.3,
+          "pixel_p10_mm": 106.0,
+          "pixel_p90_mm": 136.7,
+          "pixel_min_mm": 88.7,
+          "pixel_max_mm": 153.9
+        },
+        "150": {
+          "depth_cm": 150,
+          "awc_33kpa_mm": 173.8,
+          "awc_33kpa_of_polygon_means_mm": 173.8,
+          "awc_10kpa_mm": 260.3,
+          "awc_33kpa_less_stones_mm": 143.4,
+          "pixel_p10_mm": 152.4,
+          "pixel_p90_mm": 194.4,
+          "pixel_min_mm": 128.2,
+          "pixel_max_mm": 221.4
+        }
+      },
+      "primary": {
+        "depth_cm": 100,
+        "awc_33kpa_mm": 121.3,
+        "awc_33kpa_of_polygon_means_mm": 121.3,
+        "awc_10kpa_mm": 179.2,
+        "awc_33kpa_less_stones_mm": 101.3,
+        "pixel_p10_mm": 106.0,
+        "pixel_p90_mm": 136.7,
+        "pixel_min_mm": 88.7,
+        "pixel_max_mm": 153.9
+      }
+    }
+  }
+}

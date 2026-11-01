@@ -4,6 +4,8 @@ Subcommands
   run              price one ward (or all pilot wards) -> runs/<run_id>/
   fetch-rainfall   download and cache CHIRPS for one or all pilot wards
   fetch-climate    download and cache NASA POWER temperature (for Hargreaves PET)
+  fetch-soil       download and cache ISRIC SoilGrids water retention rasters
+  soil-awc         ward root-zone available water capacity from the cached soil rasters
   validate         load and validate config/ without pricing anything
 """
 from __future__ import annotations
@@ -118,6 +120,51 @@ def cmd_fetch_climate(args) -> int:
     return _fetch(args, make_pet_source(cfg, "hargreaves_nasapower").base, "NASA POWER")
 
 
+SOIL_RAW_DIR = Path("data/raw/soil/soilgrids")
+SOIL_SUMMARY = Path("data/soil/ward_awc.json")
+
+
+def cmd_fetch_soil(args) -> int:
+    from . import soil
+    from .rainfall.chirps import ward_geometry
+    cfg = load_config(args.config)
+    repo = _repo_root(Path(args.config))
+    geoms = [ward_geometry(cfg.ward(w)) for w in cfg.pilot.wards]
+    print(f"SoilGrids 2.0 water retention for {', '.join(cfg.pilot.wards)} (one request at a time)")
+    soil.fetch_all(geoms, repo / SOIL_RAW_DIR, refresh=args.refresh)
+    return cmd_soil_awc(args)
+
+
+def cmd_soil_awc(args) -> int:
+    """Per-ward AWC from the cached rasters -> data/soil/ward_awc.json. Never edits config:
+    a person copies the chosen value into wards.yaml."""
+    from . import soil
+    from .rainfall.chirps import ward_geometry
+    cfg = load_config(args.config)
+    repo = _repo_root(Path(args.config))
+    out = {"source": "ISRIC SoilGrids 2.0 (250 m, CC BY 4.0) via maps.isric.org WCS",
+           "raw_dir": SOIL_RAW_DIR.as_posix(),
+           "method": ("AWC = sum over layers of (wv0033 - wv1500) x layer thickness above the root depth, "
+                      "computed per pixel; mean over the pixels whose centre lies in the ward's CHIRPS "
+                      "extraction box (equal-area grid, so unweighted)"),
+           "primary_depth_cm": soil.PRIMARY_DEPTH_CM, "units": "mm of plant-available water",
+           "wards": {}}
+    for w in cfg.pilot.wards:
+        ward = cfg.ward(w)
+        g = ward_geometry(ward)
+        out["wards"][w] = {"geometry": g, "config_soil_whc_mm": ward.soil_whc_mm,
+                           **soil.ward_awc(repo / SOIL_RAW_DIR, g)}
+        pr = out["wards"][w]["primary"]
+        print(f"{w}: AWC 0-{soil.PRIMARY_DEPTH_CM} cm {pr['awc_33kpa_mm']:.0f} mm (33 kPa), "
+              f"{pr['awc_10kpa_mm']:.0f} mm (10 kPa); pixels p10-p90 {pr['pixel_p10_mm']:.0f}-"
+              f"{pr['pixel_p90_mm']:.0f} mm; config has {ward.soil_whc_mm:g} mm")
+    dest = repo / SOIL_SUMMARY
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    write_json(dest, out)
+    print(f"wrote {dest}")
+    return 0
+
+
 def cmd_quote(args) -> int:
     from .quote import QuoteError, RateBook, quote
     cfg = load_config(args.config)
@@ -172,6 +219,12 @@ def main(argv: list[str] | None = None) -> int:
         f.add_argument("--all", action="store_true")
         f.add_argument("--refresh", action="store_true", help="re-download even if cached")
         f.set_defaults(fn=fn)
+
+    fs = sub.add_parser("fetch-soil", help="download SoilGrids water retention for the pilot wards")
+    fs.add_argument("--refresh", action="store_true", help="re-download even if cached")
+    fs.set_defaults(fn=cmd_fetch_soil)
+    sa = sub.add_parser("soil-awc", help="ward available water capacity from cached SoilGrids rasters")
+    sa.set_defaults(fn=cmd_soil_awc)
 
     q = sub.add_parser("quote", help="quote a farmer (gross, subsidy split, Resilience discount)")
     q.add_argument("--ward")

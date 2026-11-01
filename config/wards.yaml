@@ -16,10 +16,21 @@ wards:
     # centroid: 0.10 deg is about 11 km, roughly 2x2 CHIRPS pixels.
     extraction_box_deg: 0.10
     elevation_m: 1900
-    # Plant-available water holding capacity of the root zone (mm). Placeholder
-    # until ward soil data (e.g. KALRO / iSDAsoil) is in.
-    soil_whc_mm: 100
-    soil_illustrative: true
+    # Plant-available water holding capacity of the maize root zone (mm).
+    # REAL, from ISRIC SoilGrids 2.0 (250 m, CC BY 4.0), retrieved 2026-11-01:
+    #   AWC = sum over layers of (water at 33 kPa - water at 1500 kPa) x thickness,
+    #   0-100 cm (SoilGrids layers 0-5, 5-15, 15-30, 30-60, 60-100 cm), computed per
+    #   250 m pixel and averaged over the 2,022 pixels in this ward's rainfall box.
+    #   Units: mm of water. Was 100 mm (placeholder).
+    # Uncertainty (data/soil/ward_awc.json, docs/pricing/soil-whc-comparison.md):
+    #   pixels in the box range 116-141 mm (10th-90th percentile);
+    #   field capacity at 10 kPa instead of 33 kPa gives 181 mm;
+    #   rooting depth 60 cm gives 78 mm, 150 cm gives 187 mm;
+    #   SoilGrids' own 90% prediction interval per layer is wide (about +-0.15 cm3/cm3).
+    # Re-derive with `agroshield-price fetch-soil` (or `soil-awc` from the cache).
+    soil_whc_mm: 130
+    soil_illustrative: false
+    soil_source: "ISRIC SoilGrids 2.0 (250 m), available water 0-100 cm (33 to 1500 kPa), mean over the ward's rainfall box; 2026-11-01"
     # Short rains dropped from the pilot (2026-10-28): too unreliable to insure
     # at a sensible price in this lowland.
     seasons: [LR]
@@ -32,8 +43,15 @@ wards:
     centroid: {lat: -0.250, lon: 35.730}
     extraction_box_deg: 0.10
     elevation_m: 2500
-    soil_whc_mm: 140             # deeper volcanic highland soils; placeholder
-    soil_illustrative: true
+    # REAL, from ISRIC SoilGrids 2.0, same method as ward-a (0-100 cm, 33 to
+    # 1500 kPa, mean of 2,006 pixels in this ward's rainfall box). Was 140 mm
+    # (placeholder that assumed deeper volcanic highland soils; SoilGrids does not
+    # show more water holding here than at ward-a).
+    # Uncertainty: pixels 106-137 mm (10th-90th percentile); 10 kPa field capacity
+    # gives 179 mm; 60 cm roots 74 mm, 150 cm 174 mm.
+    soil_whc_mm: 121
+    soil_illustrative: false
+    soil_source: "ISRIC SoilGrids 2.0 (250 m), available water 0-100 cm (33 to 1500 kPa), mean over the ward's rainfall box; 2026-11-01"
     # Highland maize is a 6-7 month crop planted on the long rains; a short-rains
     # crop would run into the Jan-Feb dry season, so only LR is offered here.
     seasons: [LR]

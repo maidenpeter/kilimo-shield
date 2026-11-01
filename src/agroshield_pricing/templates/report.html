@@ -127,7 +127,7 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
 
   <div class="banner">
     <b>Illustrative pricing. Not a filed product and not for sale.</b>
-    Ward location, soil water capacity, crop calendar, WRSI trigger and exit, failed-onset and germination thresholds,
+    Ward location, {% if r.ward.soil_illustrative %}soil water capacity, {% endif %}crop calendar, WRSI trigger and exit, failed-onset and germination thresholds,
     replanting seed-voucher value, payout frequency targets, loadings and sum insured are placeholders.
     PET is a flagged fallback (Hargreaves).
     The FEWS NET comparison and basis risk are pending the data listed below.
@@ -323,7 +323,8 @@ code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; f
     {% if not s.target.main.triggers_in_band %}<p class="meta" style="margin:8px 0 0">No trigger in this range reaches the main target frequency.</p>{% endif %}
   </div>
 
-  <h3>Placeholder soil: sensitivity to water holding capacity</h3>
+  <h3>{% if r.ward.soil_illustrative %}Placeholder soil: s{% else %}S{% endif %}ensitivity to water holding capacity</h3>
+  {% if not r.ward.soil_illustrative %}<p class="meta">Soil capacity from {{ r.ward.soil_source }}</p>{% endif %}
   <div class="card table-wrap" tabindex="0">
     <table>
       <tr><th class="num">Soil capacity</th><th class="num">Median WRSI</th><th class="num">Seasons paying</th><th class="num">Expected loss</th><th class="num">Gross rate</th>
