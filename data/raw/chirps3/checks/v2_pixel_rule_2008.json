@@ -1,0 +1,64 @@
+{
+ "purpose": "Check that our polygon-mean rule (equal mean of the 0.05 deg pixels whose centres fall inside the ward box) is the rule ClimateSERV used for the committed CHIRPS v2 series, so that CHIRPS v3 is averaged the same way. Raw CHIRPS v2.0 daily for 2008 was read from the CHC file with the same range-request reader as CHIRPS v3 and compared day by day with data/raw/chirps/<ward>.csv.",
+ "result": "Pixel centres inside (4 pixels): identical to ClimateSERV for every day of 2008 at both wards (largest difference 0.0001 mm, a rounding digit). The other two rules tried do not match.",
+ "request": {
+  "url": "https://data.chc.ucsb.edu/products/CHIRPS/v2.0/global_daily/netcdf/p05/chirps-v2.0.2008.days_p05.nc",
+  "window_rows_cols": [
+   993,
+   998,
+   4313,
+   4318
+  ],
+  "requests": 157,
+  "bytes": 59338909
+ },
+ "retrieved_at": "2026-11-01T21:18:43+00:00",
+ "wards": {
+  "ward-a": {
+   "centres_inside_4px": {
+    "mean_abs_diff_mm": 0.0,
+    "max_abs_diff_mm": 0.0,
+    "annual_raw": 812.6,
+    "annual_climateserv": 812.6,
+    "corr": 1.0
+   },
+   "touching_9px": {
+    "mean_abs_diff_mm": 0.4206,
+    "max_abs_diff_mm": 10.2147,
+    "annual_raw": 784.0,
+    "annual_climateserv": 812.6,
+    "corr": 0.97631
+   },
+   "area_weighted": {
+    "mean_abs_diff_mm": 0.2085,
+    "max_abs_diff_mm": 6.35,
+    "annual_raw": 797.2,
+    "annual_climateserv": 812.6,
+    "corr": 0.99434
+   }
+  },
+  "ward-b": {
+   "centres_inside_4px": {
+    "mean_abs_diff_mm": 0.0,
+    "max_abs_diff_mm": 0.0001,
+    "annual_raw": 978.2,
+    "annual_climateserv": 978.2,
+    "corr": 1.0
+   },
+   "touching_9px": {
+    "mean_abs_diff_mm": 0.5701,
+    "max_abs_diff_mm": 8.9697,
+    "annual_raw": 1003.7,
+    "annual_climateserv": 978.2,
+    "corr": 0.9748
+   },
+   "area_weighted": {
+    "mean_abs_diff_mm": 0.2728,
+    "max_abs_diff_mm": 5.0253,
+    "annual_raw": 981.1,
+    "annual_climateserv": 978.2,
+    "corr": 0.99459
+   }
+  }
+ }
+}

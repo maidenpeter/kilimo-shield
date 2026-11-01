@@ -1,0 +1,401 @@
+{
+  "ward_id": "ward-a",
+  "dataset": "CHIRPS v3.0 daily final (rnl, ERA5 disaggregation), 0.05 deg, polygon mean",
+  "provider": "UCSB Climate Hazards Center data server (data.chc.ucsb.edu)",
+  "request": {
+    "base_url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0",
+    "disaggregation": "rnl",
+    "file_pattern": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.{year}.days_p05.nc",
+    "access": "HTTP range requests on yearly NetCDF4 files: file index plus the compressed chunks covering the ward pixels",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            35.81,
+            -0.22
+          ],
+          [
+            35.91,
+            -0.22
+          ],
+          [
+            35.91,
+            -0.12
+          ],
+          [
+            35.81,
+            -0.12
+          ],
+          [
+            35.81,
+            -0.22
+          ]
+        ]
+      ]
+    },
+    "geometry_note": "same polygon as the CHIRPS v2 request in data/raw/chirps/ward-a.meta.json",
+    "pixel_method": "mean of 0.05 deg pixels whose centres fall inside the ward polygon, equal weights",
+    "pixels": [
+      {
+        "row": 1196,
+        "col": 4316,
+        "lat": -0.175,
+        "lon": 35.825
+      },
+      {
+        "row": 1196,
+        "col": 4317,
+        "lat": -0.175,
+        "lon": 35.875
+      },
+      {
+        "row": 1197,
+        "col": 4316,
+        "lat": -0.125,
+        "lon": 35.825
+      },
+      {
+        "row": 1197,
+        "col": 4317,
+        "lat": -0.125,
+        "lon": 35.875
+      }
+    ]
+  },
+  "start_year": 1981,
+  "end_year": 2025,
+  "last_date": "2026-09-30",
+  "files": [
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1981.days_p05.nc",
+      "file_size": 4161566217,
+      "last_modified": "Mon, 17 Aug 2026 18:33:32 GMT",
+      "requests": 48,
+      "bytes": 59880116
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1982.days_p05.nc",
+      "file_size": 4019979264,
+      "last_modified": "Mon, 17 Aug 2026 18:40:24 GMT",
+      "requests": 47,
+      "bytes": 58625534
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1983.days_p05.nc",
+      "file_size": 3913824843,
+      "last_modified": "Mon, 17 Aug 2026 18:47:11 GMT",
+      "requests": 50,
+      "bytes": 55499244
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1984.days_p05.nc",
+      "file_size": 4912511733,
+      "last_modified": "Mon, 17 Aug 2026 18:54:46 GMT",
+      "requests": 50,
+      "bytes": 61712471
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1985.days_p05.nc",
+      "file_size": 3903544012,
+      "last_modified": "Mon, 17 Aug 2026 19:01:25 GMT",
+      "requests": 47,
+      "bytes": 54007763
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1986.days_p05.nc",
+      "file_size": 4583204976,
+      "last_modified": "Mon, 17 Aug 2026 19:08:37 GMT",
+      "requests": 45,
+      "bytes": 56238286
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1987.days_p05.nc",
+      "file_size": 3926996286,
+      "last_modified": "Mon, 17 Aug 2026 19:15:16 GMT",
+      "requests": 53,
+      "bytes": 54710800
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1988.days_p05.nc",
+      "file_size": 3939904550,
+      "last_modified": "Mon, 17 Aug 2026 19:22:02 GMT",
+      "requests": 49,
+      "bytes": 54742167
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1989.days_p05.nc",
+      "file_size": 4004124997,
+      "last_modified": "Mon, 17 Aug 2026 19:28:52 GMT",
+      "requests": 48,
+      "bytes": 55463796
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1990.days_p05.nc",
+      "file_size": 3957311239,
+      "last_modified": "Mon, 17 Aug 2026 19:35:37 GMT",
+      "requests": 54,
+      "bytes": 55450676
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1991.days_p05.nc",
+      "file_size": 4475906159,
+      "last_modified": "Mon, 17 Aug 2026 19:42:44 GMT",
+      "requests": 49,
+      "bytes": 55518488
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1992.days_p05.nc",
+      "file_size": 3872866747,
+      "last_modified": "Mon, 17 Aug 2026 19:49:22 GMT",
+      "requests": 48,
+      "bytes": 52952206
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1993.days_p05.nc",
+      "file_size": 3885263870,
+      "last_modified": "Mon, 17 Aug 2026 19:56:05 GMT",
+      "requests": 49,
+      "bytes": 53176798
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1994.days_p05.nc",
+      "file_size": 3830963954,
+      "last_modified": "Mon, 17 Aug 2026 20:02:46 GMT",
+      "requests": 54,
+      "bytes": 55638567
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1995.days_p05.nc",
+      "file_size": 3843267569,
+      "last_modified": "Mon, 17 Aug 2026 20:09:24 GMT",
+      "requests": 48,
+      "bytes": 52557968
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1996.days_p05.nc",
+      "file_size": 3856489706,
+      "last_modified": "Mon, 17 Aug 2026 20:16:03 GMT",
+      "requests": 46,
+      "bytes": 53004770
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1997.days_p05.nc",
+      "file_size": 4401368946,
+      "last_modified": "Mon, 17 Aug 2026 20:23:06 GMT",
+      "requests": 48,
+      "bytes": 54727591
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1998.days_p05.nc",
+      "file_size": 3872684602,
+      "last_modified": "Mon, 17 Aug 2026 20:29:50 GMT",
+      "requests": 50,
+      "bytes": 53132955
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.1999.days_p05.nc",
+      "file_size": 3829513902,
+      "last_modified": "Mon, 17 Aug 2026 20:36:25 GMT",
+      "requests": 49,
+      "bytes": 52657993
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2000.days_p05.nc",
+      "file_size": 3940434402,
+      "last_modified": "Mon, 17 Aug 2026 20:43:07 GMT",
+      "requests": 52,
+      "bytes": 53681851
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2001.days_p05.nc",
+      "file_size": 4054780060,
+      "last_modified": "Mon, 17 Aug 2026 20:49:53 GMT",
+      "requests": 48,
+      "bytes": 55047902
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2002.days_p05.nc",
+      "file_size": 3995840205,
+      "last_modified": "Mon, 17 Aug 2026 20:56:39 GMT",
+      "requests": 49,
+      "bytes": 54197941
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2003.days_p05.nc",
+      "file_size": 4000140072,
+      "last_modified": "Mon, 17 Aug 2026 21:03:28 GMT",
+      "requests": 52,
+      "bytes": 53299696
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2004.days_p05.nc",
+      "file_size": 4024677053,
+      "last_modified": "Mon, 17 Aug 2026 21:10:10 GMT",
+      "requests": 48,
+      "bytes": 54401020
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2005.days_p05.nc",
+      "file_size": 3988535492,
+      "last_modified": "Mon, 17 Aug 2026 21:16:55 GMT",
+      "requests": 52,
+      "bytes": 53226006
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2006.days_p05.nc",
+      "file_size": 4130076561,
+      "last_modified": "Mon, 17 Aug 2026 21:23:47 GMT",
+      "requests": 50,
+      "bytes": 54487406
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2007.days_p05.nc",
+      "file_size": 4051868054,
+      "last_modified": "Mon, 17 Aug 2026 21:30:44 GMT",
+      "requests": 47,
+      "bytes": 53792391
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2008.days_p05.nc",
+      "file_size": 3997208668,
+      "last_modified": "Mon, 17 Aug 2026 21:37:35 GMT",
+      "requests": 50,
+      "bytes": 55217534
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2009.days_p05.nc",
+      "file_size": 4073187512,
+      "last_modified": "Mon, 17 Aug 2026 21:44:32 GMT",
+      "requests": 47,
+      "bytes": 53188656
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2010.days_p05.nc",
+      "file_size": 4043650378,
+      "last_modified": "Mon, 17 Aug 2026 21:51:32 GMT",
+      "requests": 50,
+      "bytes": 53755309
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2011.days_p05.nc",
+      "file_size": 3966179924,
+      "last_modified": "Mon, 17 Aug 2026 21:58:37 GMT",
+      "requests": 45,
+      "bytes": 54477406
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2012.days_p05.nc",
+      "file_size": 4034816331,
+      "last_modified": "Mon, 17 Aug 2026 22:05:50 GMT",
+      "requests": 48,
+      "bytes": 53878967
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2013.days_p05.nc",
+      "file_size": 4017791358,
+      "last_modified": "Mon, 17 Aug 2026 22:12:47 GMT",
+      "requests": 49,
+      "bytes": 54000275
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2014.days_p05.nc",
+      "file_size": 4031104175,
+      "last_modified": "Mon, 17 Aug 2026 22:19:49 GMT",
+      "requests": 48,
+      "bytes": 54324349
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2015.days_p05.nc",
+      "file_size": 4635815277,
+      "last_modified": "Mon, 17 Aug 2026 22:27:08 GMT",
+      "requests": 50,
+      "bytes": 56572729
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2016.days_p05.nc",
+      "file_size": 4068923402,
+      "last_modified": "Mon, 17 Aug 2026 22:34:08 GMT",
+      "requests": 44,
+      "bytes": 52355387
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2017.days_p05.nc",
+      "file_size": 4027896733,
+      "last_modified": "Mon, 17 Aug 2026 22:41:15 GMT",
+      "requests": 47,
+      "bytes": 53414198
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2018.days_p05.nc",
+      "file_size": 4061749369,
+      "last_modified": "Mon, 17 Aug 2026 22:48:10 GMT",
+      "requests": 49,
+      "bytes": 54770306
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2019.days_p05.nc",
+      "file_size": 4019840128,
+      "last_modified": "Mon, 17 Aug 2026 22:54:48 GMT",
+      "requests": 50,
+      "bytes": 55339929
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2020.days_p05.nc",
+      "file_size": 3868969181,
+      "last_modified": "Mon, 17 Aug 2026 23:01:13 GMT",
+      "requests": 47,
+      "bytes": 54873461
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2021.days_p05.nc",
+      "file_size": 3927181528,
+      "last_modified": "Mon, 17 Aug 2026 23:08:06 GMT",
+      "requests": 47,
+      "bytes": 53340959
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2022.days_p05.nc",
+      "file_size": 4000747684,
+      "last_modified": "Mon, 17 Aug 2026 23:15:04 GMT",
+      "requests": 51,
+      "bytes": 54981596
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2023.days_p05.nc",
+      "file_size": 4012981608,
+      "last_modified": "Mon, 17 Aug 2026 23:22:05 GMT",
+      "requests": 49,
+      "bytes": 54271619
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2024.days_p05.nc",
+      "file_size": 3895097852,
+      "last_modified": "Mon, 17 Aug 2026 23:28:37 GMT",
+      "requests": 49,
+      "bytes": 55078669
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2025.days_p05.nc",
+      "file_size": 3877714018,
+      "last_modified": "Mon, 17 Aug 2026 23:34:59 GMT",
+      "requests": 47,
+      "bytes": 52851826
+    },
+    {
+      "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/chirps-v3.0.rnl.2026.days_p05.nc",
+      "file_size": 2966175315,
+      "last_modified": "Thu, 15 Oct 2026 22:57:41 GMT",
+      "requests": 43,
+      "bytes": 104223961
+    }
+  ],
+  "sources": [
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/README-CHIRPSv3.0.txt",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/readme.txt",
+    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/"
+  ],
+  "retrieved_at": "2026-11-01T21:02:00+00:00",
+  "sha256": "c9bde1ab0c6ee1d5e6d7719690710e8617ac8e2621938f4832c5e9b27d4a2aaa",
+  "pixels_sha256": "b93f2c82a48d9c9a5970b601b75b40bd840e5bd3474c926d47ac7da6f8e6478f"
+}

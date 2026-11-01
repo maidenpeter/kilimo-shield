@@ -1,0 +1,7 @@
+{
+  "url": "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/readme.txt",
+  "retrieved_at": "2026-11-01T15:13:26+00:00",
+  "sha256": "1bf517c4db1b348cf32b4f452a35c798027ea0ed454ebc0ec4d755c766dc6f1f",
+  "bytes": 6481,
+  "note": "CHC description of CHIRPS v3 daily: rnl (ERA5) and sat (IMERG) disaggregation; preliminary daily uses sat"
+}
