@@ -19,7 +19,9 @@ import json
 import struct
 import sys
 import time
+import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +61,12 @@ def _range(url: str, start: int, end: int) -> bytes:
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code == 404 or attempt == 3:
+                raise                       # not published: no point asking again
+            # The CHC server rate-limits (HTTP 429): back off for longer than for other errors.
+            time.sleep((30 if e.code == 429 else 5) * (attempt + 1))
+            continue
         except Exception:
             if attempt == 3:
                 raise
@@ -133,17 +141,42 @@ def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE) -> dict:
                 continue
             issue = pd.Timestamp(r["sos_date"]) + pd.Timedelta(days=CHECK_DAY)
             key = f"{wid}:{y}"
-            if key in cache and cache[key]["issue"] == str(issue.date()):
+            if key in cache and cache[key]["issue"] == str(issue.date()) and not _retry(cache[key]):
                 continue
             mm, url = gefs_15day_mm(c.lat, c.lon, issue)
             cache[key] = {"ward_id": wid, "year": int(y), "issue": str(issue.date()), "gefs_15day_mm": mm, "url": url}
             print(f"  {wid} {y}: issued {issue.date()} -> {mm}")
             cache_path.parent.mkdir(parents=True, exist_ok=True)
             cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
-            time.sleep(0.5)
+            time.sleep(2.0)                 # one request at a time, with pauses
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
+    if cache_path != CACHE:
+        _write_meta(cache_path)
     return cache
+
+
+def _retry(entry: dict) -> bool:
+    """A cached failure is asked for again unless the file was simply not published (HTTP 404)."""
+    return entry.get("gefs_15day_mm") is None and "404" not in str(entry.get("url"))
+
+
+def _write_meta(cache_path: Path) -> None:
+    """<cache>.meta.json beside a per-dataset GEFS cache: request, retrieved_at and SHA-256."""
+    import hashlib
+
+    meta = cache_path.with_name(cache_path.name + ".meta.json")
+    sha = hashlib.sha256(cache_path.read_bytes()).hexdigest()
+    if meta.exists() and json.loads(meta.read_text()).get("sha256") == sha:
+        return
+    meta.write_text(json.dumps({
+        "url_pattern": GEFS_URL,
+        "request": "HTTP range requests for the 3 x 3 pixels around each ward centroid, one file per check day",
+        "seeded_from": CACHE.relative_to(REPO).as_posix(),
+        "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sha256": sha,
+        "bytes": cache_path.stat().st_size,
+    }, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def projected_wrsi(cfg, ward, cal, rain: pd.Series, pet_dk: pd.Series, sos_date: str, gefs_mm: float | None) -> float:

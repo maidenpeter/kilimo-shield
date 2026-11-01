@@ -8,12 +8,16 @@ Source (no account needed, plain HTTPS):
   https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl/netcdf/byYear/
   chirps-v3.0.rnl.<year>.days_p05.nc   (one global 0.05 deg file per year, 3-5 GB)
 
-SERVIR ClimateSERV, which serves our CHIRPS v2 polygon means, does not offer
-CHIRPS v3 (checked 2026-10-30), so the polygon mean is computed here instead.
-We never download a whole global file. Each yearly NetCDF4 file is stored in
-compressed chunks of 31 days x 200 x 600 pixels; we read the file's index with
-HTTP range requests, then fetch only the chunks that hold the ward pixels
-(about a dozen requests per year, both wards together).
+Our CHIRPS v2 polygon means come from SERVIR ClimateSERV; the WIP note said
+ClimateSERV did not offer CHIRPS v3 on 2026-10-30 (not re-checked). So the
+polygon mean is computed here from the CHC files instead.
+We never download a whole global file. Each yearly NetCDF4 file (checked on
+the 1981-2026 files, 2026-11-01) is stored in deflate-compressed chunks of
+31 days x 200 x 600 pixels, float32, fill -9999. We read the file's index with
+HTTP range requests (about 40 small reads), then fetch only the 12 chunks that
+hold the ward pixels (both wards share them): about 50 requests and 45 to 55 MB
+per year. The server rate-limits (HTTP 429), so requests go one at a time with
+a pause and back off when told to.
 
 Disaggregation: CHIRPS v3 daily is a pentad total split across days. "rnl"
 splits it using ERA5 reanalysis and covers 1981 to date; "sat" uses IMERG and
@@ -22,9 +26,10 @@ method. Both sum to the same pentad totals; our index only uses multi-week
 phase totals, so the choice moves little.
 
 Polygon mean: the mean of the 0.05 deg pixels whose centres fall inside the
-ward polygon, equally weighted. This is the same definition ClimateSERV uses
-for our CHIRPS v2 series; tests/test_chirps3.py and the comparison note record
-the check against ClimateSERV.
+ward polygon, equally weighted, using the same polygon as the CHIRPS v2 request
+(recorded in data/raw/chirps/<ward>.meta.json; tested). For our 0.10 deg boxes
+that is 4 pixels per ward. docs/pricing/chirps3-comparison.md records how this
+rule was checked against the ClimateSERV v2 series.
 
 Cache: data/raw/chirps3/<ward>.csv (date, rain_mm polygon mean), plus
 <ward>.pixels.csv (every pixel's daily value, so the mean can be audited) and
@@ -56,7 +61,8 @@ BASE_URL = os.environ.get("CHIRPS3_BASE_URL", "https://data.chc.ucsb.edu/product
 DISAGGREGATION = "rnl"           # ERA5-based; the only v3 daily variant that starts in 1981
 DATASET = "CHIRPS v3.0 daily final (rnl, ERA5 disaggregation), 0.05 deg, polygon mean"
 PIXEL_METHOD = "mean of 0.05 deg pixels whose centres fall inside the ward polygon, equal weights"
-PAUSE_S = 1.0                    # pause between requests: one at a time, gently
+PAUSE_S = 2.0                    # pause between requests: one at a time, gently
+BACKOFF_S = 30.0                 # wait after HTTP 429 / 5xx when the server gives no Retry-After
 SOURCES = [
     "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/README-CHIRPSv3.0.txt",
     "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/readme.txt",
@@ -113,33 +119,56 @@ class HttpRangeFile(io.RawIOBase):
     """
 
     def __init__(self, url: str, session, block: int = 256 * 1024, log=print):
-        self.url, self.block, self.pos, self.session = url, block, 0, session
+        self.url, self.block, self.pos, self.session, self.log = url, block, 0, session, log
         self.cache: dict[int, bytes] = {}
         self.requests = 0
         self.bytes = 0
-        r = session.head(url, timeout=60, allow_redirects=True)
-        r.raise_for_status()
+        r = self._polite(lambda: session.head(url, timeout=60, allow_redirects=True), (200,))
         self.size = int(r.headers["Content-Length"])
         self.last_modified = r.headers.get("Last-Modified")
 
-    def get_range(self, start: int, length: int) -> bytes:
-        for attempt in range(4):
+    def _polite(self, call, ok: tuple[int, ...]):
+        """One request after a pause; on 429 or 5xx wait (Retry-After if given) and retry.
+
+        The CHC server rate-limits (HTTP 429). We back off rather than retry fast.
+        """
+        attempts = 6
+        for attempt in range(attempts):
+            time.sleep(PAUSE_S)
             try:
-                time.sleep(PAUSE_S)
-                r = self.session.get(self.url, headers={"Range": f"bytes={start}-{start + length - 1}"},
-                                     timeout=300)
-                if r.status_code != 206:
-                    raise IOError(f"expected 206 Partial Content, got {r.status_code} for {self.url}")
-                if len(r.content) != length:
-                    raise IOError(f"short read {len(r.content)} of {length} bytes")
+                r = call()
+            except Exception:
+                if attempt == attempts - 1:
+                    raise
+                time.sleep(BACKOFF_S * (attempt + 1))
+                continue
+            if r.status_code in ok:
+                return r
+            if r.status_code == 404:
+                raise FileNotFoundError(f"not published (HTTP 404): {self.url}")
+            if r.status_code == 429 or r.status_code >= 500:
+                if attempt == attempts - 1:
+                    break
+                try:
+                    wait = float(r.headers.get("Retry-After", ""))
+                except ValueError:
+                    wait = BACKOFF_S * (attempt + 1)
+                self.log(f"  server answered HTTP {r.status_code}; waiting {wait:.0f} s")
+                time.sleep(wait)
+                continue
+            raise IOError(f"unexpected HTTP {r.status_code} for {self.url}")
+        raise IOError(f"gave up after {attempts} attempts (last HTTP {r.status_code}) for {self.url}")
+
+    def get_range(self, start: int, length: int) -> bytes:
+        for attempt in range(3):
+            r = self._polite(lambda: self.session.get(
+                self.url, headers={"Range": f"bytes={start}-{start + length - 1}"}, timeout=300), (206,))
+            if len(r.content) == length:
                 self.requests += 1
                 self.bytes += length
                 return r.content
-            except Exception:
-                if attempt == 3:
-                    raise
-                time.sleep(10 * (attempt + 1))
-        raise AssertionError("unreachable")
+            self.log(f"  short read {len(r.content)} of {length} bytes; retrying")
+        raise IOError(f"short reads from {self.url} at byte {start}")
 
     def seekable(self):
         return True
@@ -272,11 +301,13 @@ class Chirps3Source(RainfallSource):
             raise ValueError(f"{pix} does not match its recorded SHA-256; the raw input was modified")
         return m["start_year"] <= start_year and m["end_year"] >= end_year
 
-    def _read_years(self, wards: list[Ward], years: list[int], partial_dir: Path | None = None):
+    def _read_years(self, wards: list[Ward], years: list[int], partial_dir: Path | None = None,
+                    missing_ok: bool = False):
         """Pixel values for each ward, one remote yearly file at a time.
 
         With `partial_dir`, each year's window is kept there as it arrives so an
         interrupted fetch resumes where it stopped (the folder is not committed).
+        With `missing_ok`, a last year whose file is not yet published is skipped.
         """
         import requests
 
@@ -301,7 +332,13 @@ class Chirps3Source(RainfallSource):
                 dates, arr = pd.DatetimeIndex(z["dates"].astype("datetime64[ns]")), z["arr"]
                 info = json.loads(str(z["info"]))
             else:
-                dates, arr, info = read_year_window(year_url(year), r_lo, r_hi, c_lo, c_hi, session, self.log)
+                try:
+                    dates, arr, info = read_year_window(year_url(year), r_lo, r_hi, c_lo, c_hi, session, self.log)
+                except FileNotFoundError:
+                    if not (missing_ok and year == years[-1]):
+                        raise
+                    self.log(f"  {year}: not published yet")   # e.g. January, before the first month is out
+                    continue
                 if part is not None and not np.isnan(arr).any():   # only complete years are kept
                     part.parent.mkdir(parents=True, exist_ok=True)
                     np.savez(part, dates=dates.values.astype("datetime64[D]"), arr=arr,
@@ -320,7 +357,7 @@ class Chirps3Source(RainfallSource):
         For monitoring: nothing is written here; the caller caches what it keeps.
         """
         years = list(range(int(start[:4]), int(end[:4]) + 1))
-        _, _, _, _, per_ward, _ = self._read_years([ward], years)
+        _, _, _, _, per_ward, _ = self._read_years([ward], years, missing_ok=True)
         df = pd.concat(per_ward[ward.id]).sort_index().loc[start:end]
         df = df[df.notna().all(axis=1)]
         s = polygon_mean(df)
@@ -369,6 +406,8 @@ class Chirps3Source(RainfallSource):
                     "access": "HTTP range requests on yearly NetCDF4 files: file index plus the "
                               "compressed chunks covering the ward pixels",
                     "geometry": geoms[w.id],
+                    "geometry_note": "same polygon as the CHIRPS v2 request in data/raw/chirps/"
+                                     f"{w.id}.meta.json",
                     "pixel_method": PIXEL_METHOD,
                     "pixels": [{"row": r, "col": c, "lat": round(float(lats[r]), 4),
                                 "lon": round(float(lons[c]), 4)} for r, c in pix[w.id]],

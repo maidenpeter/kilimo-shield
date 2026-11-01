@@ -6,7 +6,8 @@ data/raw/research/early_trigger_results.json) and the final Layer B payout from
 the engine. Writes data/raw/research/advance_results.json.
 
     .venv/Scripts/python research/advance.py            # CHIRPS v2.0 (default)
-    .venv/Scripts/python research/advance.py chirps3    # CHIRPS v3.0: reads early_trigger_results.chirps3.json
+    .venv/Scripts/python research/advance.py chirps3 all   # CHIRPS v3.0, every pilot ward:
+                                                           # reads early_trigger_results.chirps3.json
 """
 from __future__ import annotations
 
@@ -43,7 +44,10 @@ def paths(dataset: str | None) -> tuple[Path, Path]:
             OUT.with_name(f"advance_results.{dataset}.json"))
 
 
-def run(dataset: str | None = None) -> dict:
+def run(dataset: str | None = None, wards: list[str] | None = None, write: bool = True) -> dict:
+    """Validate and price the advance. `wards` defaults to the offered wards; other wards
+    can be checked for comparison (they are marked not offered). `write=False` returns
+    the result without touching the committed results file."""
     cfg = load_config(REPO / "config")
     a = cfg.product.layer_b.advance
     projections, _ = paths(dataset)
@@ -55,7 +59,7 @@ def run(dataset: str | None = None) -> dict:
     out = {"terms": a.model_dump(), "wards": {}}
     if dataset not in (None, "chirps"):
         out["rainfall_dataset"] = dataset
-    for wid in a.offered_wards:
+    for wid in wards or a.offered_wards:
         table = price_ward(cfg, wid, rs, ps).seasons["LR"].table
         hist = pd.DataFrame(proj_all["wards"][wid]["history"]).set_index("year")
         y0, y1 = a.validation_years
@@ -65,6 +69,7 @@ def run(dataset: str | None = None) -> dict:
         o = adv.outcomes(proj, final, a.projected_wrsi_below, a.advance_share)
         missing = [y for y in range(y0, y1 + 1) if y not in hist.index]
         out["wards"][wid] = {
+            "offered": wid in a.offered_wards,
             "seasons": int(len(hist)), "years": [y0, y1], "missing_years": missing,
             "missing_note": "No CHIRPS-GEFS file for the check day (HTTP 404 on the CHC archive)." if missing else None,
             "in_sample": adv.verify(o["fired"].to_numpy(), o["event"].to_numpy()),
@@ -82,13 +87,16 @@ def run(dataset: str | None = None) -> dict:
                          "fired": bool(r["fired"]), "farmer_receives_share": float(r["farmer_receives_share"]),
                          "extra_share": float(r["extra_share"])} for y, r in o.iterrows()],
         }
-    paths(dataset)[1].write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
+    if write:
+        paths(dataset)[1].write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
     return out
 
 
 if __name__ == "__main__":
-    # Optional argument: rainfall dataset (chirps = v2.0, the default; chirps3 = v3.0).
-    r = run(sys.argv[1] if len(sys.argv) > 1 else None)
+    # Optional arguments: rainfall dataset (chirps = v2.0, the default; chirps3 = v3.0), then
+    # "all" to also check the wards where the advance is not offered (comparison only).
+    ds = sys.argv[1] if len(sys.argv) > 1 else None
+    r = run(ds, load_config(REPO / "config").pilot.wards if "all" in sys.argv[2:] else None)
     for wid, w in r["wards"].items():
         print(wid, "in-sample", w["in_sample"])
         print("  LOOCV", w["loocv"]["out_of_sample"], w["loocv"]["thresholds_chosen"])

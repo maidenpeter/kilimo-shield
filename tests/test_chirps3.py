@@ -256,3 +256,109 @@ def test_live_chirps3_never_calls_climateserv(cfg, monkeypatch, tmp_path):
     assert got.index.max() == pd.Timestamp("2027-04-20")
     assert (tmp_path / "live" / "ward-a_2027.chirps3.csv").exists()
     assert not (tmp_path / "live" / "ward-a_2027.csv").exists()      # never mixed with the v2 live cache
+
+
+# ------------------------------------------------------------------ follow-up checks (phase 6 completion)
+def test_v3_uses_the_same_polygon_as_the_v2_request(cfg):
+    """Same polygon-mean definition as CHIRPS v2: the polygon in data/raw/chirps/<ward>.meta.json."""
+    for wid in cfg.pilot.wards:
+        v2 = json.loads((REPO / "data" / "raw" / "chirps" / f"{wid}.meta.json").read_text())
+        assert ward_geometry(cfg.ward(wid)) == v2["request"]["geometry"]
+
+
+def test_default_config_still_prices_on_chirps_v2(cfg):
+    # The reference hashes in docs/overnight/pricing_reference.json assume CHIRPS v2.
+    assert cfg.rainfall.source == "chirps"
+    assert make_source(cfg, allow_download=False).__class__.__name__ == "ChirpsClimateServSource"
+
+
+def test_cli_run_accepts_chirps3_as_the_pricing_source(cfg, tmp_path, monkeypatch):
+    from agroshield_pricing import cli
+
+    asked = []
+
+    def fake(c, name=None, allow_download=True):
+        asked.append(name)
+        return Chirps3Source(tmp_path / "empty", allow_download=False)
+
+    monkeypatch.setattr(cli, "make_source", fake)
+    with pytest.raises(FileNotFoundError, match="CHIRPS3"):
+        cli.main(["--config", str(cfg.root), "run", "--ward", "ward-a", "--source", "chirps3", "--offline",
+                  "--out", str(tmp_path / "runs")])
+    assert asked == ["chirps3"]
+
+
+class _Answers:
+    """A session that answers HEAD with a scripted list of status codes."""
+
+    def __init__(self, codes, headers=None):
+        self.codes, self.headers, self.calls = list(codes), headers or {}, 0
+
+    def head(self, url, **kw):
+        self.calls += 1
+        return _LocalRangeSession._R(self.codes.pop(0), headers={"Content-Length": "10", **self.headers})
+
+
+def test_rate_limit_answers_are_waited_out_not_hammered(monkeypatch):
+    waits = []
+    monkeypatch.setattr(c3.time, "sleep", waits.append)
+    s = _Answers([429, 503, 200], headers={"Retry-After": "7"})
+    f = c3.HttpRangeFile("http://x/y.nc", s, log=lambda *_: None)
+    assert f.size == 10 and s.calls == 3
+    assert waits.count(7.0) == 2                       # the server's Retry-After is honoured
+    assert waits.count(c3.PAUSE_S) == 3                # and every request waits the polite pause first
+
+
+def test_unpublished_file_is_reported_as_missing(monkeypatch):
+    monkeypatch.setattr(c3.time, "sleep", lambda s: None)
+    with pytest.raises(FileNotFoundError, match="not published"):
+        c3.HttpRangeFile("http://x/2031.nc", _Answers([404]), log=lambda *_: None)
+
+
+def test_live_range_skips_a_new_year_not_yet_published(cfg, monkeypatch):
+    """January 2027: the 2027 file does not exist yet, so live monitoring keeps Oct-Dec 2026."""
+    pytest.importorskip("requests")
+    ward = cfg.ward("ward-a")
+    pix = c3.pixels_in_polygon(ward_geometry(ward), GRID_LATS, GRID_LONS)
+    monkeypatch.setattr(c3, "read_grid", lambda url, session: (GRID_LATS, GRID_LONS))
+
+    def window(url, r_lo, r_hi, c_lo, c_hi, session, log=print):
+        if ".2027." in url:
+            raise FileNotFoundError(f"not published (HTTP 404): {url}")
+        days = pd.date_range("2026-01-01", "2026-12-31")
+        arr = np.full((len(days), r_hi - r_lo + 1, c_hi - c_lo + 1), 2.0)
+        arr[days > "2026-11-30"] = np.nan                         # December not out yet
+        return days, arr, {"url": url, "file_size": 1, "last_modified": None, "requests": 1, "bytes": 1}
+
+    monkeypatch.setattr(c3, "read_year_window", window)
+    s = Chirps3Source("unused", log=lambda *_: None).fetch_range(ward, "2026-10-01", "2027-01-20")
+    assert s.index.min() == pd.Timestamp("2026-10-01") and s.index.max() == pd.Timestamp("2026-11-30")
+    assert (s == 2.0).all() and len(pix) == 4
+    # A missing year that is not the last one is still an error.
+    with pytest.raises(FileNotFoundError):
+        Chirps3Source("unused", log=lambda *_: None)._read_years([ward], [2027, 2026])
+
+
+def test_committed_chirps3_pixels_are_the_v2_polygon_pixels(cfg):
+    d = REPO / "data" / "raw" / "chirps3"
+    if not (d / "ward-a.meta.json").exists():
+        pytest.skip("CHIRPS v3 cache not committed")
+    for wid in cfg.pilot.wards:
+        m = json.loads((d / f"{wid}.meta.json").read_text())
+        expect = c3.pixels_in_polygon(ward_geometry(cfg.ward(wid)), GRID_LATS, GRID_LONS)
+        got = sorted((p["lat"], p["lon"]) for p in m["request"]["pixels"])
+        assert got == sorted((round(float(GRID_LATS[r]), 4), round(float(GRID_LONS[c]), 4)) for r, c in expect)
+        # The committed polygon mean is the equal-weight mean of the committed pixel columns.
+        mean = pd.read_csv(d / f"{wid}.csv", index_col="date")["rain_mm"]
+        pix = pd.read_csv(d / f"{wid}.pixels.csv", index_col="date")
+        assert np.allclose(pix.mean(axis=1), mean, atol=1e-3)
+
+
+def test_research_retries_transient_gefs_failures_but_not_404():
+    import sys
+    sys.path.insert(0, str(REPO / "research"))
+    from early_trigger import _retry
+
+    assert not _retry({"gefs_15day_mm": 3.2, "url": "u"})
+    assert not _retry({"gefs_15day_mm": None, "url": "u [HTTPError: HTTP Error 404: Not Found]"})
+    assert _retry({"gefs_15day_mm": None, "url": "u [HTTPError: HTTP Error 429: Too Many Requests]"})

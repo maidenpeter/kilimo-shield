@@ -28,6 +28,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Only for downloading CHIRPS v3.0 (fetch-rainfall --dataset chirps3, live monitoring of
+# seasons from 2027); reading the committed cache needs neither.
+chirps3 = ["h5py>=3.10", "requests>=2.31"]
 
 [project.scripts]
 agroshield-price = "agroshield_pricing.cli:main"
