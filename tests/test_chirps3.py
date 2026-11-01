@@ -354,6 +354,23 @@ def test_committed_chirps3_pixels_are_the_v2_polygon_pixels(cfg):
         assert np.allclose(pix.mean(axis=1), mean, atol=1e-3)
 
 
+def test_committed_v3_daily_pixels_sum_to_the_published_v3_monthly_totals():
+    """The cached daily pixels add up to the separately published CHIRPS v3.0 monthly GeoTIFFs."""
+    d = REPO / "data" / "raw" / "chirps3"
+    check = d / "checks" / "v3_monthly_spotcheck.json"
+    if not check.exists():
+        pytest.skip("CHIRPS v3 monthly spot check not committed")
+    meta = json.loads((d / "checks" / "v3_monthly_spotcheck.json.meta.json").read_text())
+    assert hashlib.sha256(check.read_bytes()).hexdigest() == meta["sha256"]
+    c = json.loads(check.read_text())
+    for wid, months in c["wards"].items():
+        pix = pd.read_csv(d / f"{wid}.pixels.csv", index_col="date", parse_dates=True)
+        order = [f"p{p['row']}_{p['col']}" for p in json.loads((d / f"{wid}.meta.json").read_text())["request"]["pixels"]]
+        for ym, v in months.items():
+            sums = pix.loc[ym.replace(".", "-"), order].sum()
+            assert np.allclose(sums, v["monthly_tif_pixels_mm"], atol=0.02), (wid, ym)
+
+
 def test_monitoring_on_committed_data_switches_to_v3_for_2027(cfg):
     """End to end on the committed caches: LR 2026 is watched on CHIRPS v2, LR 2027 on CHIRPS v3."""
     from agroshield_platform import monitoring as mon
@@ -370,6 +387,51 @@ def test_monitoring_on_committed_data_switches_to_v3_for_2027(cfg):
     assert new.attrs["dataset"] == "chirps3"
     assert np.allclose(new.loc["1981":"2025"], v3.loc["1981":"2025"])      # v3 climatology, not v2
     assert new.index.max() == v3.index.max() > pd.Timestamp("2025-12-31")  # 2026 v3 days already cached
+
+
+def _live_v3_setup(cfg, tmp_path, monkeypatch, cached_through=None, age_s=None):
+    """A live CHIRPS v3 cache for LR 2027 at Ward A, and a fake CHC fetch that counts calls."""
+    import os
+    import time
+    from agroshield_platform import monitoring as mon
+
+    calls = []
+
+    class FakeV3:
+        def fetch_range(self, ward, start, end):
+            calls.append((start, end))
+            return pd.Series(1.0, index=pd.date_range(start, "2027-03-31"), name="rain_mm")
+
+    monkeypatch.setattr(mon, "make_source", lambda c, name=None, allow_download=True, log=print: FakeV3())
+    c = cfg.model_copy(update={"root": tmp_path / "config",
+                               "monitoring": cfg.monitoring.model_copy(update={"live_cache_dir": "live"})})
+    path = tmp_path / "live" / "ward-a_2027.chirps3.csv"
+    if cached_through is not None:
+        path.parent.mkdir(parents=True)
+        days = pd.date_range("2026-10-01", cached_through)
+        pd.DataFrame({"date": days.strftime("%Y-%m-%d"), "rain_mm": 2.0}).to_csv(path, index=False)
+        if age_s is not None:
+            t = time.time() - age_s
+            os.utime(path, (t, t))
+    return mon, c, calls
+
+
+def test_live_chirps3_is_not_refetched_when_nothing_newer_can_be_published(cfg, tmp_path, monkeypatch):
+    # 20 April 2027: final v3 for April cannot exist yet; March is cached, so no request.
+    mon, c, calls = _live_v3_setup(cfg, tmp_path, monkeypatch, cached_through="2027-03-31", age_s=10 * 86400)
+    got = mon._live_rain(c, cfg.ward("ward-a"), 2027, date(2027, 4, 20), True, "chirps3")
+    assert calls == [] and got.index.max() == pd.Timestamp("2027-03-31")
+
+
+def test_live_chirps3_waiting_for_a_month_asks_the_server_at_most_daily(cfg, tmp_path, monkeypatch):
+    # 10 April 2027, March not out yet. Checked an hour ago: no new request.
+    mon, c, calls = _live_v3_setup(cfg, tmp_path, monkeypatch, cached_through="2027-02-28", age_s=3600)
+    mon._live_rain(c, cfg.ward("ward-a"), 2027, date(2027, 4, 10), True, "chirps3")
+    assert calls == []
+    # Checked two days ago: ask again.
+    mon, c, calls = _live_v3_setup(cfg, tmp_path / "old", monkeypatch, cached_through="2027-02-28", age_s=2 * 86400)
+    got = mon._live_rain(c, cfg.ward("ward-a"), 2027, date(2027, 4, 10), True, "chirps3")
+    assert calls == [("2026-10-01", "2027-04-10")] and got.index.max() == pd.Timestamp("2027-03-31")
 
 
 def test_research_retries_transient_gefs_failures_but_not_404():

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -62,6 +63,24 @@ def _fetch_live(cfg, dataset: str, ward, start: date, as_of: date) -> pd.Series:
     return fetch_chunk(ward_geometry(ward), f"{start:%m/%d/%Y}", f"{as_of:%m/%d/%Y}", log=log.info)
 
 
+CHIRPS3_RECHECK_S = 20 * 3600    # ask the CHC server for new CHIRPS v3 days at most about once a day
+
+
+def _chirps3_fresh_enough(path: Path, cached: pd.Series, as_of: date) -> bool:
+    """Whether the live CHIRPS v3 cache can be used without asking the CHC server again.
+
+    CHIRPS v3 final for a month is published around the middle of the next month, and
+    each check re-reads a whole year of chunks (about 50 requests and 50 to 100 MB).
+    So: nothing newer than the end of last month can exist yet, and while that month
+    is still missing the server is asked at most about once a day (by the cache file's
+    age), not on every monitoring run.
+    """
+    last_possible = pd.Timestamp(as_of.replace(day=1)) - pd.Timedelta(days=1)
+    if len(cached) and cached.index.max() >= last_possible:
+        return True
+    return path.exists() and time.time() - path.stat().st_mtime < CHIRPS3_RECHECK_S
+
+
 def _live_rain(cfg, ward, year: int, as_of: date, allow_download: bool, dataset: str = "chirps") -> pd.Series:
     """Rain for a year beyond the committed history, cached under monitoring.live_cache_dir.
 
@@ -71,7 +90,10 @@ def _live_rain(cfg, ward, year: int, as_of: date, allow_download: bool, dataset:
     suffix = "" if dataset == "chirps" else f".{dataset}"
     path = Path(cfg.root).parent / cfg.monitoring.live_cache_dir / f"{ward.id}_{year}{suffix}.csv"
     cached = pd.read_csv(path, parse_dates=["date"]).set_index("date")["rain_mm"] if path.exists() else pd.Series(dtype=float)
-    fresh_enough = len(cached) and cached.index.max() >= pd.Timestamp(as_of) - pd.Timedelta(days=1)
+    if dataset == "chirps3":
+        fresh_enough = _chirps3_fresh_enough(path, cached, as_of)
+    else:
+        fresh_enough = len(cached) and cached.index.max() >= pd.Timestamp(as_of) - pd.Timedelta(days=1)
     if allow_download and not fresh_enough:
         start = date(year - 1, 10, 1)
         try:
