@@ -92,3 +92,18 @@ checklist of the run's report. "Pending owner confirmation" means the default is
 | 4.14 | Underwriter navbar | "Devices" added as the eighth link; underwriter links use 8 px side padding instead of 12 px (app.css) so the bar still fits at 1280 px and wider. | Built |
 | 4.15 | Simulator clock | The simulator sets `app.state.device_clock` (in-process only) so readings arrive at simulated times; unset, the server uses the real clock. | Built |
 | 4.16 | TAHMO | Labelled stub raising `TahmoBlocked`; no sign-up or contact. | Blocked (credentials) |
+
+### Phase 5: IRA pack and end-to-end season (milestone 10, docs/remaining/PHASE5.md)
+
+| # | Decision | Default used | Status |
+|---|---|---|---|
+| 5.1 | How the pack and the season are run | Tools scripts (`tools/ira/build_pack.py`, `tools/sim/season.py`) and `python -m agroshield_platform.simulate`; no new `agroshield-portal` subcommand, so `cli.py` is unchanged. | Built |
+| 5.2 | Where the pack's engine run goes | `var/ira-engine-run/` (git-ignored, with its own audit log). The committed `runs/audit_log.jsonl` is unchanged; the run's id, command, code commit and results SHA-256 are recorded in the pack. | Built |
+| 5.3 | Marking every file | The PDF has DRAFT and ILLUSTRATIVE in the header and footer of every page; HTML and JSON carry the words; each CSV starts with a `# DRAFT / ILLUSTRATIVE` line. The engine's results are embedded unchanged in a marked JSON wrapper; its unmarked report.html is not copied (the command regenerates it). | Built |
+| 5.4 | PDF engine | Playwright's bundled Chromium, falling back to installed Chrome or Edge (Chrome printed it here). | Built |
+| 5.5 | Kiswahili consumer disclosure | Written by the agent from the same config values as the English, marked "pending native-speaker review". Complaints paragraph left as a placeholder for the partner insurer. | Needs review |
+| 5.6 | Simulation clock | During the replay, `datetime` in the platform modules is replaced by one that reads a simulated clock, and put back afterwards (tested). No production code changed. | Built |
+| 5.7 | Simulation never sends or pays | M-Pesa is always `SimulatedDaraja` and SMS always `LogOnlySender`, whatever the environment says; the database is a temporary file deleted afterwards. | Built |
+| 5.8 | Simulation calendar | Set for Ward A's sales window. Premium remitted and confirmed before the sales close (so the steps follow the brief's order); approval the day after the trigger confirms, payment two days later; missed-payout report two days after payment, reviewed six days later; bordereaux and reinsurer summary at month end. | Built |
+| 5.9 | Replay confirmation timing | In a replay the index confirms the day after the season's last dekad; live, CHIRPS final arrives about three weeks later. The 10-day clock starts at confirmation either way; both documents say so. | Built |
+| 5.10 | Consent, masking, auth, roles, money | Unchanged. | Built |

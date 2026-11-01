@@ -350,6 +350,18 @@ approved payouts. Set up with `agroshield-portal add-insurer`, `add-sacco --insu
 - **Picture-based rider**: damage report and assessment built, ILLUSTRATIVE, switched off in quotes.
 - Settings: `config/photo.yaml` (not part of pricing). Demo: phone 0712 000 001, PIN 246810 (fictional farmer).
 
+## IRA pack and simulated season (milestone 10)
+
+- **IRA documentation pack** (DRAFT, ILLUSTRATIVE; not submitted to or approved by the Insurance Regulatory Authority):
+  `python tools/ira/build_pack.py` runs the engine offline and writes `docs/ira/`: one PDF (printed by Chromium through
+  Playwright, every page marked), its HTML source, the consumer disclosure in English and Kiswahili (pending
+  native-speaker review), the figures as CSV and JSON, and `manifest.json` with the SHA-256 of every file.
+- **Simulated season** (SIMULATION / REPLAY, fictional members): `python tools/sim/season.py --year 2008` replays the
+  2008 long rains at Rongai West (Ward A) day by day on the real services in a throwaway database: enrolment, M-Pesa
+  and SACCO premium, settlement, sales close, daily monitoring, trigger, approval, payout (checked against the 10-day
+  window), SMS log, a missed-payout report, bordereaux and the reinsurer summary. Report:
+  `docs/remaining/season-2008/index.html`.
+
 ## Research (task 3b: forecast skill)
 
 `research/` holds analysis that informs the product but is not part of the pricing
