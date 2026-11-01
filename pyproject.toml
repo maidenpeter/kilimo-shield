@@ -31,6 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+hardware = ["paho-mqtt>=2"]   # MQTT bridge for field devices (python -m agroshield_platform.devices mqtt-bridge)
 
 [project.scripts]
 agroshield-price = "agroshield_pricing.cli:main"

@@ -563,3 +563,105 @@ class PhotoReview(Base):
     agreed_with_suggestion: Mapped[bool | None] = mapped_column(Boolean)
     flags_cleared: Mapped[bool] = mapped_column(Boolean, default=False)       # reviewer judged the flags harmless
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+# ---------------------------------------------------------------------------------------------------- milestone 9
+# Hardware layer (Phase 4): field devices, their messages, readings, photos and health. Device data is for checking
+# satellite rainfall and reducing basis risk only: it is never a trigger source, and nothing in the pricing package
+# or the trigger and payout code reads these tables. No personal data: devices are hosted at schools and SACCO
+# offices, labelled by site type, never by a person.
+from sqlalchemy import Index  # noqa: E402  (kept with the milestone 9 models so the section merges as one block)
+
+
+class Device(Base):
+    """A field device: sentinel camera, soil moisture node or rain gauge. It signs in with its own key, of which only
+    a SHA-256 hash is kept (the key is a 256-bit random value shown once at registration)."""
+    __tablename__ = "device"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    uid: Mapped[str] = mapped_column(String(32), unique=True)          # printed on the device label, e.g. CAM-A-01
+    kind: Mapped[str] = mapped_column(String(12))                      # camera | soil | rain
+    name: Mapped[str] = mapped_column(String(80))
+    ward_id: Mapped[str] = mapped_column(String(40), index=True)
+    site_type: Mapped[str] = mapped_column(String(20))                 # school | sacco_office | demo_plot | other
+    site_label: Mapped[str] = mapped_column(String(120))               # e.g. "Primary school (fictional)"
+    lat: Mapped[float | None] = mapped_column(Float)
+    lon: Mapped[float | None] = mapped_column(Float)
+    secret_hash: Mapped[str] = mapped_column(String(64))
+    dev_eui: Mapped[str | None] = mapped_column(String(16), unique=True)   # LoRaWAN devices only
+    settings: Mapped[dict] = mapped_column(JSON, default=dict)        # mm_per_tip, depths_cm, report_every_min ...
+    status: Mapped[str] = mapped_column(String(12), default="active")  # active | retired
+    firmware: Mapped[str | None] = mapped_column(String(40))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))      # last message received
+    last_observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # newest reading time
+    last_battery_v: Mapped[float | None] = mapped_column(Float)
+    last_signal_dbm: Mapped[float | None] = mapped_column(Float)
+    last_error: Mapped[str | None] = mapped_column(String(200))
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class DeviceMessage(Base):
+    """One message from a device (a set of readings, or one photo). The device's message id makes a resend
+    harmless: the same id is stored once."""
+    __tablename__ = "device_message"
+    __table_args__ = (UniqueConstraint("device_id", "msg_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"), index=True)
+    msg_id: Mapped[str] = mapped_column(String(64))
+    transport: Mapped[str] = mapped_column(String(10))                 # https | mqtt | lorawan
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    payload_sha256: Mapped[str] = mapped_column(String(64))
+
+
+class DeviceReading(Base):
+    """One value in the time series: a metric (soil_vwc_10cm, rain_mm, greenness_gcc ...) at a time."""
+    __tablename__ = "device_reading"
+    __table_args__ = (Index("ix_device_reading_series", "device_id", "metric", "observed_at"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("device_message.id"), index=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"))
+    metric: Mapped[str] = mapped_column(String(32))
+    value: Mapped[float] = mapped_column(Float)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class DeviceImage(Base):
+    """A sentinel camera photo, stored as a file outside the database, with its greenness index."""
+    __tablename__ = "device_image"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"), index=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("device_message.id"), unique=True)
+    sha256: Mapped[str] = mapped_column(String(64))
+    path: Mapped[str] = mapped_column(String(300))                    # relative to the device image store
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    gcc: Mapped[float] = mapped_column(Float)                          # green chromatic coordinate, image mean
+    exg: Mapped[float] = mapped_column(Float)                          # excess green 2g - r - b, image mean
+    green_fraction: Mapped[float] = mapped_column(Float)               # share of pixels that look like plants
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class DeviceIssue(Base):
+    """Something to look at: a refused message, an error the device reported, a failed sign-in."""
+    __tablename__ = "device_issue"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("device.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))                      # rejected | device_error | auth_failed
+    msg_id: Mapped[str | None] = mapped_column(String(64))
+    detail: Mapped[str] = mapped_column(String(300))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+
+
+class DeviceIntegration(Base):
+    """A LoRaWAN network server that forwards uplinks (webhook). LoRaWAN devices are authenticated by the network
+    (their own session keys); the network server signs in here with its key, kept only as a SHA-256 hash."""
+    __tablename__ = "device_integration"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(60), unique=True)
+    kind: Mapped[str] = mapped_column(String(20))                      # lorawan_webhook
+    secret_hash: Mapped[str] = mapped_column(String(64))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

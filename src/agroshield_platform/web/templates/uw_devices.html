@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Devices{% endblock %}
+{% block body %}
+<h1>Field devices</h1>
+<div class="callout">
+  <p><b>For checking only, never for payouts.</b> Cameras, soil moisture sensors and rain gauges help check the satellite
+    rainfall estimate and show where it may miss what happened on the ground (basis risk). Payouts always follow the
+    satellite rainfall index written in the policy. No single device, and no device a farmer controls, can change one.</p>
+</div>
+<p class="muted">Every device in the pilot wards. Devices are hosted at schools and SACCO offices with a paid caretaker.
+  Wards where your book has cover are listed first. Pilot wards are placeholders during development.</p>
+
+<div class="kpi-strip tiles">
+  <div class="tile"><div class="k">Devices</div><div class="v">{{ totals.all }}</div></div>
+  <div class="tile"><div class="k">Reporting</div><div class="v">{{ totals.ok }}</div><div class="n">on time</div></div>
+  <div class="tile"><div class="k">Need a visit</div><div class="v">{{ totals.attention }}</div><div class="n">late, not heard from or never reported</div></div>
+  <div class="tile"><div class="k">Low battery</div><div class="v">{{ totals.low_battery }}</div></div>
+</div>
+
+{% for g in groups %}
+<section>
+  <h2>{{ ward_label(g.ward_id) }} {% if g.covered %}<span class="chip ok">your cover</span>{% endif %}</h2>
+  {% if g.rows %}
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Devices in {{ ward_label(g.ward_id) }}"><table>
+    <thead><tr><th>Device</th><th>Site</th><th>Status</th><th>Last heard from</th><th class="num">Battery</th>
+      <th>Latest</th><th class="num">Problems (7 days)</th></tr></thead>
+    <tbody>
+    {% for r in g.rows %}{% set d = r.d %}
+      <tr>
+        <td><a href="/uw/devices/{{ d.uid }}">{{ d.uid }}</a><br><span class="muted">{{ kinds[d.kind] }}</span></td>
+        <td>{{ d.site_label }}<br><span class="muted">{{ sites[d.site_type] }}</span></td>
+        <td><span class="chip {{ r.h.tone }}">{{ r.h.label }}</span></td>
+        <td>{{ r.h.seen_text }}</td>
+        <td class="num">{% if d.last_battery_v is not none %}{{ d.last_battery_v|num(2) }} V{% if r.h.battery_low %} <span class="chip warn">low</span>{% endif %}{% else %}<span class="muted">not reported</span>{% endif %}</td>
+        <td>
+          {% if d.kind == 'soil' %}
+            {% if r.sum.soil %}{% for depth, v in r.sum.soil %}{{ depth }} cm: {{ v|num(1) }}%{% if not loop.last %}, {% endif %}{% endfor %}
+            <br><span class="muted">soil water</span>{% else %}<span class="muted">no readings yet</span>{% endif %}
+          {% elif d.kind == 'rain' %}
+            {{ r.sum.rain_24h|num(1) }} mm today, {{ r.sum.rain_7d|num(1) }} mm in 7 days
+          {% else %}
+            {% if r.sum.gcc is not none %}Greenness {{ r.sum.gcc|num(3) }}<br><span class="muted">{{ r.sum.photos_7d }} photos in 7 days</span>
+            {% else %}<span class="muted">no photos yet</span>{% endif %}
+          {% endif %}
+        </td>
+        <td class="num">{{ r.issues_7d }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="muted">No devices in this ward yet.</p>
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if not totals.all %}
+<div class="empty">
+  <h2>No devices yet</h2>
+  <p>Devices appear here once AgroShield operations registers them and they start reporting.</p>
+</div>
+{% endif %}
+{% endblock %}

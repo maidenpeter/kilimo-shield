@@ -75,6 +75,8 @@ header.site .menu-btn { display: none; }
 @media (max-width: 1279.98px) { header.site[data-collapse="lg"] .full { display: none !important; } header.site[data-collapse="lg"] .menu-btn { display: inline-flex; } }
 header.site.collapsed .full { display: none !important; }
 header.site.collapsed .menu-btn { display: inline-flex; }
+/* The underwriter bar (eight links since milestone 9 added Devices) uses tighter link padding so it still fits. */
+header.site[data-collapse="lg"] nav.primary a { padding: 0 var(--sp-2); }
 
 /* account dropdown (click to open; keyboard and Esc in nav.js) */
 .dropdown { position: relative; }

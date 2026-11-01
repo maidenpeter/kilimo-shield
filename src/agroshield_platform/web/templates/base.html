@@ -22,7 +22,7 @@
   {% if role == 'underwriter' %}
     {% for href, label in [('/uw', 'Portfolio'), ('/uw/triggers', 'Triggers and payouts'), ('/uw/money', 'Money'),
                            ('/uw/bordereaux', 'Bordereaux'), ('/uw/pricing', 'Pricing'), ('/uw/photos', 'Photos'),
-                           ('/uw/reinsurer', 'Reinsurer'), ('/uw/weather', 'Weather')] %}
+                           ('/uw/reinsurer', 'Reinsurer'), ('/uw/weather', 'Weather'), ('/uw/devices', 'Devices')] %}
     <a class="{{ cls }}" href="{{ href }}" {% if here == href or (href != '/uw' and here.startswith(href)) %}aria-current="page"{% endif %}>{{ label }}</a>
     {% endfor %}
   {% elif role == 'ops' %}

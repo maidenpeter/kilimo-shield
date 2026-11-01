@@ -1281,6 +1281,10 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
     def payout_kind_text(k: str) -> str:
         return {"wrsi": "drought payout", "failed_onset": "failed-onset payout", "replant_voucher": "seed voucher"}.get(k, k)
 
+    # ------------------------------------------------------------------ hardware layer (milestone 9: web/devices.py)
+    from . import devices as devices_web
+    devices_web.register(app, factory=factory, render=render, require=require, cfg=cfg, settings=settings)
+
     # ------------------------------------------------------------------ export
     @app.get("/export/policies.csv")
     def export(request: Request):
