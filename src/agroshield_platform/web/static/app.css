@@ -98,7 +98,7 @@ header.site[data-collapse="lg"] nav.primary a { padding: 0 var(--sp-2); }
 /* mobile sheet */
 .sheet-backdrop { position: fixed; inset: 0; background: var(--overlay); z-index: 90; }
 .sheet { position: fixed; left: 0; right: 0; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border);
-  box-shadow: var(--sh-pop); max-height: 100dvh; overflow-y: auto; padding: var(--sp-2) var(--gutter) var(--sp-5); }
+  box-shadow: var(--sh-pop); max-height: calc(100dvh - 64px); overflow-y: auto; padding: var(--sp-2) var(--gutter) var(--sp-5); }
 .sheet[hidden], .sheet-backdrop[hidden] { display: none; }
 .sheet .sheet-top { display: flex; align-items: center; justify-content: space-between; height: var(--nav-h); }
 .sheet nav a, .sheet .menu-item { min-height: 52px; font-size: var(--fs-base); }

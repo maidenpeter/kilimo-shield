@@ -45,13 +45,13 @@ ROUTES = {
     "manager": ["/dashboard", "/enrol", "/quote", "/members", "/payouts", "/reports", "/import", "/weather", "/sms",
                 "/dev/mpesa"],
     "underwriter": ["/uw", "/uw/triggers", "/uw/money", "/uw/bordereaux", "/uw/pricing", "/uw/reinsurer", "/uw/photos",
-                    "/uw/weather"],
+                    "/uw/weather", "/uw/devices"],
     "ops": ["/weather"],
     "farmer": ["/app", "/app/weather", "/app/consent", "/app/damage"],
 }
 OPTIONAL = {"/uw/devices"}                 # pages from branches that may not be merged yet: skipped when they 404
 DISCOVER = {"public": [r"^/learn/[a-z0-9-]+$"], "officer": [r"^/members/[0-9a-f]{32}$"], "manager": [r"^/members/[0-9a-f]{32}$"],
-            "underwriter": [r"^/uw/runs/[^/]+/report\.html$", r"^/uw/photos/PH-[0-9A-F]+$"]}
+            "underwriter": [r"^/uw/runs/[^/]+/report\.html$", r"^/uw/photos/PH-[0-9A-F]+$", r"^/uw/devices/[A-Za-z0-9_-]+$"]}
 # Words officers and farmers should not meet on their screens (outside "Details" toggles). Underwriter pages may use them.
 JARGON = ["WRSI", "parametric", "dekad", "phenology", "actuarial", "bordereau", "CHIRPS", "basis risk", "loading",
           "stochastic", "indemnity", "attachment point", "exhaustion point"]
