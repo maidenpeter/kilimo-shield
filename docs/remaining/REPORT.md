@@ -1,4 +1,4 @@
-# Remaining brief: report (30 October to 1 November 2026)
+# Remaining brief: report (30 October to 2 November 2026)
 
 Everything below is on `main` unless it says otherwise. The two pricing changes (CHIRPS3 and soil water-holding
 capacity) are on their own branches and are **not merged**. Nothing was pushed: there is no GitHub remote yet (see
@@ -52,13 +52,17 @@ brief default worth confirming), with the default that is built now. The other d
 
 **Pricing branches (need approval, not merged)**
 - [ ] Phase 7 `pricing/soil-whc`: replace the placeholder soil water-holding capacity with ISRIC SoilGrids values (ward-a 100 to 130 mm, ward-b 140 to 121 mm; index B-1.2.1). Also confirm the field-capacity definition (33 kPa used; 10 kPa gives 181 mm at ward-a) and the 100 cm rooting depth.
-- [ ] Phase 6 `pricing/chirps3`: move pricing and monitoring to CHIRPS3. **In progress** (section 4).
+- [ ] Phase 6 `pricing/chirps3`: move pricing to CHIRPS v3 for the long rains 2027 (`rainfall.source: chirps3`) and
+  monitor seasons from 2027 on CHIRPS v3. Ward A gross rate 18.84% to 19.05%, Ward B 7.46% to 5.79%; 1984 and 2008
+  still pay at Ward A (section 4). **Recommended before any further 2027 sales.** Also decide: what to do with cover
+  sold at a v2 price but settled on v3; whether to use CHC's preliminary v3 (about 2 to 7 weeks sooner) for early
+  warnings only.
 
 **Last night's review ("needs approval", `docs/overnight/REVIEW.md`, 17 rows).** Changed by this run (Phase 1,
 9ff7db2, with the review fixes in 73a377e): M-Pesa unconfirmed payments are re-checked and flagged for a manager (1.5
 to 1.9); weather advisory approval is scoped by SACCO with the ops role (1.10; KIAMIS still open, 1.12); settlement
 "collected" is gross with refunds owed and paid shown separately (1.1, 1.4); the session cookie is Secure with
-`AGROSHIELD_HTTPS=true` (1.11). CHIRPS v2 end of production: Phase 6, in progress. **Still unchanged:**
+`AGROSHIELD_HTTPS=true` (1.11). CHIRPS v2 end of production: Phase 6, done on `pricing/chirps3`, needs approval. **Still unchanged:**
 - [ ] No way to reverse a mistaken premium payment (reversal entry with a second approver).
 - [ ] With real keys, `MPESA_ENV` still defaults to simulated; the simulator should be refused outside development.
 - [ ] SMS outbox can send the same message twice after one bad provider response.
@@ -90,7 +94,7 @@ table (335cc0e is c9d1762, f3ca971 is 097f8a8, 5bdfa77 is 14eaf9f, 47ae4dd is 99
 f7c1b19, 64b7e2c is a3a3fd1, 1d1f66e is c275984).
 
 Separate branches (not merged): `pricing/soil-whc` (Phase 7, c9d96ee, e1e4bbf, 09926e2; branched from e8c93e4) and
-`pricing/chirps3` (Phase 6, in progress; branched from b35d99f). Merging either one means rebuilding the IRA pack
+`pricing/chirps3` (Phase 6: 43daf65, 920e904, 7077726, 01bfaf5, 1d3b39a, 2c520fd, 9c200b2; branched from b35d99f). Merging either one means rebuilding the IRA pack
 (`python tools/ira/build_pack.py`) and the 2008 season (`python tools/sim/season.py`); until then
 `test_pack_data_sources_checksums_still_match` fails (`PHASE5.md`).
 
@@ -98,7 +102,12 @@ Separate branches (not merged): `pricing/soil-whc` (Phase 7, c9d96ee, e1e4bbf, 0
 
 - **Push to GitHub**: the GitHub CLI (`gh`) is not installed, so the private repo could not be created. Needed: create an empty **private** repo `agroshield` at github.com/new (no README, licence or .gitignore), then I add it as `origin` and push `main` and the two pricing branches (not the `backup/pre-strip` tag). The pre-push checks are done: no secrets tracked; QA crawl screenshots are ignored (the 38 milestone screenshots under
   `docs/screenshots/` are committed, about 4.6 MB, and will be pushed).
-- **CHIRPS3 (Phase 6)**: in progress (section 4).
+- **CHIRPS3 (Phase 6)**: done on its branch, not merged. Left open: the 2008 check that v3 is averaged the same way
+  as ClimateSERV's v2 has no committed script and its raw v2 values were not cached, so it cannot be re-run from the
+  repo (the v3 monthly spot check backs up the same pixel positions); live v3 monitoring fetches each ward separately
+  and re-reads the year file at most once a day while a month is missing; merging changes the pilot.yaml checksum in
+  `docs/overnight/pricing_reference.json` (results.json does not change). The old CHIRPS-GEFS v12 forecast folder now
+  answers "not found", so the v2 early-trigger results rely on their committed cache.
 - **TAHMO rain stations**: blocked. Needed: a TAHMO API account under a data-sharing agreement, and the station codes nearest each ward.
 - **Camera firmware on real hardware**: compiles only. Needed: an ESP32-CAM board, a SIM800L, a SIM, a microSD card,
   the power parts in `docs/hardware/BOM.md` and a USB-to-serial adapter. To check on the bench: GPIO 12 is a boot
@@ -146,14 +155,38 @@ by SoilGrids, though SoilGrids is too coarse to rule it out. The branch was made
 rebasing onto current main and the tests re-running before a merge; the early-advance and short-rains research were
 not re-run on the new soil values. Full comparison: `docs/pricing/soil-whc-comparison.md` on that branch.
 
-**Phase 6, CHIRPS3 (`pricing/chirps3`, not merged): IN PROGRESS.** The first build agent was cut off by a network
-error; its partial work was kept (43daf65) and a second agent finished the loader (920e904). The loader fetches only
-the compressed chunks that hold the ward pixels from the Climate Hazards Center's CHIRPS v3.0 daily files (about 50
-range requests and 45 to 55 MB per year, instead of a 3 to 5 GB global file; no account needed). Already on the
-branch, with tests: the loader, a pricing source switch (default still CHIRPS v2) and the monitoring switch (seasons
-from 2027 read CHIRPS v3). Still to come: the full download for both wards, pricing, backtest and early-advance
-re-runs on CHIRPS3, the side-by-side comparison (season totals, WRSI, payout seasons, gross rate, 1984 and 2008) and
-an independent check. This section is updated when it lands.
+**Phase 6, CHIRPS3 (`pricing/chirps3`, not merged): done, needs approval.** CHIRPS v2 stops after December 2026, so
+the long rains 2027 cover will be settled on CHIRPS v3. CHIRPS v3.0 daily final ("rnl"), REAL, 1981-01-01 to
+2026-09-30, read from the Climate Hazards Center server by fetching only the chunks that hold the ward pixels (no
+account; one request at a time, with a pause and waiting when the server asked; about 5.5 hours in all). Same ward
+boxes and the same 4-pixel average as the v2 data (checked against raw v2 for 2008 to 0.0001 mm), cached in
+`data/raw/chirps3/` with checksums. An independent check found every cached day summing to CHC's published v3 monthly
+values at all 8 pixels in three test months. Same engine, terms and PET; only the rainfall changes. The default
+config on the branch still gives the main hashes; `--source chirps3` gives ward-a `d23e9f16...`, ward-b
+`3f779d45...`.
+
+| Long rains, 45 seasons | ward-a v2 | ward-a v3 | ward-b v2 | ward-b v3 |
+|---|---|---|---|---|
+| Mean annual rain (mm) | 1,056 | 1,129 | 1,284 | 1,374 |
+| Seasons with any payout | 12 | 11 | 6 | 4 |
+| Median WRSI | 97.19 | 97.44 | 99.57 | 100.00 |
+| Expected loss | 8.61% | 8.82% | 3.16% | 2.24% |
+| Gross rate | 18.84% | 19.05% | 7.46% | 5.79% |
+| Premium per acre (KES) | 1,884 | 1,905 | 746 | 579 |
+| 1984 WRSI, payout | 55.56, 81% | 57.68, 74% (passes) | 83.26, 0 | 96.98, 0 |
+| 2008 WRSI, payout | 67.58, 41% | 66.77, 44% | 100, 0 | 100, 0 |
+
+CHIRPS v3 is about 7% wetter a year, mostly in 1981 to 2000 (17% and 14% wetter in the 1980s, within about 2% since
+2011); the CHC says v3 corrects rain gauges that catch too little and uses many more stations. The two records agree
+well over 10 days (correlation 0.89) but poorly day by day (0.47), so the parts of the product that depend on a few
+days of rain move most: at Ward A 9 payout seasons are the same, 1994, 2002 and 2007 pay only on v2 and 1993 (failed
+onset) and 2012 (seed voucher) only on v3; at Ward B the 1986 and 2007 vouchers drop out. Early advance at Ward A
+(research, paired with the matching CHIRPS3-GEFS forecast): catches 4 of 7 payout seasons on v2 and 1 of 5 on v3; the
+early trigger never fires on either. No yield backtest is possible on either record (no real yields in the repo).
+Monitoring on the branch reads v3 for seasons from 2027 (history and observed rain) and v2 before that, never mixing
+the two in one season; each ward status records the rainfall dataset used. Checked by a second agent, which also
+fixed live v3 monitoring re-downloading a year of data on every daily run (2c520fd). 324 tests pass on the branch.
+Full comparison: `docs/pricing/chirps3-comparison.md` on that branch.
 
 ## 5. Tests
 
@@ -162,6 +195,7 @@ an independent check. This section is updated when it lands.
 | Start of this run (b35d99f) | 295 | 0 |
 | After integrating Phases 4 and 5 (86f7fa3) | 409 | 0 |
 | Final main (3e1dadc added one test; run on 97019ad) | 410 | 0 |
+| `pricing/chirps3` (9c200b2), on its branch | 324 | 0 |
 
 New test files: `test_phase1_review_fixes.py`, `test_phase1_review_round2.py`, `test_migrations.py`,
 `test_photos.py` (including the offline queue in a real Chrome), `test_photos_review.py`, `test_devices.py`,
@@ -172,7 +206,7 @@ QA crawl (`qa-final-summary.md` and `qa-final.json`, committed): 58 pages (every
 ## 6. Still needed from the owner
 
 1. The approval checklist in section 1, especially the money defaults (1.1 to 1.3), the photo_ai legal review, photo
-   retention, and whether to merge the soil branch (and CHIRPS3 once it lands).
+   retention, and whether to merge the soil and CHIRPS3 branches (CHIRPS3 is recommended before more 2027 sales).
 2. A private GitHub repo named `agroshield` (or `gh` installed and signed in as maidenpeter), so I can push.
 3. A Kiswahili reviewer, a lawyer for the consent and cross-border wording, and, once an insurer is chosen (none is
    named yet), its policy wording and complaints text.
