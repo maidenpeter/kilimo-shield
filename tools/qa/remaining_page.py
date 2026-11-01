@@ -37,7 +37,10 @@ def main() -> None:
     for role, rx, what in SCREENS:
         hits = [p for p in pages if p["role"] == role and re.search(rx, p["path"])]
         if not hits:
-            blocks.append(f'<section><h2>{html.escape(what)}</h2><p class="muted">Not in the crawl ({role} {rx}).</p></section>')
+            why = ("The demo database has no registered devices, so there is no device page to show. "
+                   "tools/devices/simulate.py registers devices and fills this page." if "devices" in rx
+                   else f"Not in the crawl ({role} {rx}).")
+            blocks.append(f'<section><h2>{html.escape(what)}</h2><p class="muted">{html.escape(why)}</p></section>')
             continue
         path = hits[0]["path"]
         shots = {p["width"]: p["screenshot"] for p in hits if p["path"] == path}

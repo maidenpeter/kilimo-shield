@@ -3,7 +3,7 @@
 Everything below is on `main` unless it says otherwise. The two pricing changes (CHIRPS3 and soil water-holding
 capacity) are on their own branches and are **not merged**. Nothing was pushed: there is no GitHub remote yet (see
 section 6). Commits are by maidenpeter with no AI attribution. Screenshots of the new screens: `index.html` in this
-folder, once the screenshot re-run finishes (section 5; open it from the repo, the images are local and not committed).
+folder (open it from the repo; the images are local and not committed).
 
 ## 1. Approval checklist
 
@@ -167,7 +167,7 @@ New test files: `test_phase1_review_fixes.py`, `test_phase1_review_round2.py`, `
 `test_photos.py` (including the offline queue in a real Chrome), `test_photos_review.py`, `test_devices.py`,
 `test_device_simulator.py`, `test_phase5_ira.py`.
 
-QA crawl (`qa-final-summary.md`): 58 pages (every role, including the new operations and farmer roles) x 4 widths x light and dark = 464 views: 0 axe-core violations; no horizontal scroll, navbar wrapping, extra or missing h1, console errors, failed requests or broken links. It found two things, both fixed and re-checked (manager and farmer roles at 375 and 1440 px): rainfall index terms (CHIRPS, WRSI, dekad) on the manager Reports page, now behind Details; and an image check that counted the photo app's empty placeholder images. The only tap targets under 44 px are licence and citation links inside sentences, as last night. A re-run with screenshots for `index.html` is in progress (the first re-run hung in the browser after the public pages and was restarted).
+QA crawl (`qa-final-summary.md` and `qa-final.json`, committed): 58 pages (every role, including the new operations and farmer roles) x 4 widths x light and dark = 464 views. **0 axe-core violations; no wrong HTTP status, horizontal scroll, navbar wrapping, wrong h1 count, skipped heading levels, console errors, failed requests, broken images, images without alt, broken links, overflowing elements or jargon on officer and farmer screens.** The only tap targets under 44 px are 15 licence and citation links inside sentences on public pages, as last night. An earlier full crawl found two things, both fixed in 7bdcd38 before this one: rainfall index terms (CHIRPS, WRSI, dekad) on the manager Reports page, now behind Details, and an image check that counted the photo app's empty placeholder images. Screenshots of the new screens at 375 and 1440 px: `index.html` (the single-device page is not shown because the demo has no registered devices).
 
 ## 6. Still needed from the owner
 
