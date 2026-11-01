@@ -7,6 +7,9 @@
 #include "secrets.h"
 #else
 #include "secrets.example.h"          // placeholders: builds, but the server will refuse the key
+#if !defined(ROOT_CA_PEM) && !defined(ALLOW_INSECURE_TLS)
+#define ALLOW_INSECURE_TLS 1          // placeholder build only: a real secrets.h must set ROOT_CA_PEM
+#endif
 #endif
 
 #define FIRMWARE_VERSION "cam-0.1.0"

@@ -16,7 +16,7 @@
 #define WIFI_SSID "school-network"
 #define WIFI_PASSWORD "replace-me"
 
-// PEM of the root certificate that signed the server's TLS certificate. Leave undefined only on a bench
-// test against a local server, together with ALLOW_INSECURE_TLS (never in the field).
+// PEM of the root certificate that signed the server's TLS certificate. The Wi-Fi build refuses to compile
+// without it. Only for a bench test against a local server, define ALLOW_INSECURE_TLS instead (never in the field).
 // #define ROOT_CA_PEM "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"
-#define ALLOW_INSECURE_TLS 1
+// #define ALLOW_INSECURE_TLS 1

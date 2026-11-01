@@ -76,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
                                            site_label=args.site_label, name=args.name, lat=args.lat, lon=args.lon,
                                            dev_eui=args.dev_eui, settings=extra, actor="cli", wards=cfg.wards)
                 if args.json:
-                    print(json.dumps({"uid": d.uid, "kind": d.kind, "key": key}))
+                    print(json.dumps({"uid": d.uid, "kind": d.kind, "ward": d.ward_id, "key": key,
+                                      **({"dev_eui": d.dev_eui} if d.dev_eui else {})}))
                 else:
                     print(f"Registered {d.uid} ({registry.KINDS[d.kind]}, {d.ward_id}).")
                     print(f"Device key (shown once; put it in the device's secrets): {key}")

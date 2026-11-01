@@ -37,10 +37,11 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Device
+from ..models import Device, DeviceMessage
 from .ingest import Result, _reject, now_utc, parse_time, store_message
 
 VERSION = 1
+RESEND_SLACK = timedelta(minutes=10)     # how far a resent reading's computed time may drift from the first copy's
 SOIL_PORT, RAIN_PORT = 1, 2
 NO_VWC, NO_TEMP = 0xFFFF, 0x7FFF
 SOIL_FLAGS = {0: "soil sensor at depth 1 not responding", 1: "soil sensor at depth 2 not responding",
@@ -162,5 +163,15 @@ def handle_uplink(s: Session, body: dict, now: datetime | None = None) -> tuple[
            "observed_at": observed.isoformat(), "readings": readings, "errors": d["errors"]}
     p = up["payload"]
     identity = hashlib.sha256(bytes([up["port"]]) + p[:3] + b"\0\0\0" + p[6:]).hexdigest()
+    # The age is in whole minutes, so a reading measured just before midnight UTC can come back on a resend with a
+    # time just after it, under the next day's id. The same reading under a neighbouring day's id is a duplicate.
+    for edge in (observed - RESEND_SLACK, observed + RESEND_SLACK):
+        other = f"lw{up['port']}-{d['seq']}-{edge:%Y%m%d}"
+        if other != msg["msg_id"]:
+            old = s.scalar(select(DeviceMessage).where(DeviceMessage.device_id == device.id,
+                                                       DeviceMessage.msg_id == other))
+            if old is not None and old.payload_sha256 == identity:
+                device.last_seen_at = now
+                return 200, Result(other, "duplicate").as_dict()
     r: Result = store_message(s, device, msg, "lorawan", now, identity=identity)
     return {"accepted": 200, "duplicate": 200, "conflict": 409}.get(r.status, 422), r.as_dict()

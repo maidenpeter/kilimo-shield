@@ -47,7 +47,8 @@ The network server posts each uplink to `POST /api/devices/v1/lorawan/uplink` wi
 accepted. The time measured is the network server's receive time minus the age field. The message id is
 `lw<port>-<sequence>-<day measured>`; the identity hash leaves out the age and flags bytes and the radio signal, so a
 reading the node sends again later (because it was not acknowledged) is recognised as the same reading and stored
-once. A node that restarts and reuses a sequence number on the same day would be refused as a conflict, so the
+once. The age is in whole minutes, so a resent reading measured just before midnight UTC can come back with a time
+just after it; the server also looks for the same reading under the neighbouring day's id and answers "duplicate". A node that restarts and reuses a sequence number on the same day would be refused as a conflict, so the
 firmware must keep the sequence number in non-volatile memory.
 
 LoRaWAN devices do not hold an AgroShield device key: the network authenticates them with their own LoRaWAN session

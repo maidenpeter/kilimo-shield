@@ -319,6 +319,34 @@ def test_lorawan_webhook(app, fleet):
         assert "device restarted" in errs and any("FPort 2 is for a rain device" in e for e in errs)
 
 
+def test_lorawan_resend_across_midnight_is_stored_once(app, fleet):
+    """Measured at 23:59:40 UTC; the ack is lost and the node resends 30.5 minutes later with age 30 (whole minutes),
+    so the computed time falls just after midnight. It is still the same reading: the rain is not counted twice."""
+    import base64
+    measured = (now() - timedelta(days=1)).replace(hour=23, minute=59, second=40)
+
+    def up(received, age):
+        p = lorawan.encode_rain(7, age, 3600, 50, 60)
+        return {"deviceInfo": {"devEui": "70B3D57ED0000002"}, "fPort": 2, "data": base64.b64encode(p).decode(),
+                "time": received.isoformat(), "rxInfo": [{"rssi": -100}]}
+
+    with transaction(app.state.factory) as s:
+        at = measured + timedelta(hours=2)
+        first = lorawan.handle_uplink(s, up(measured + timedelta(seconds=2), 0), at)
+        again = lorawan.handle_uplink(s, up(measured + timedelta(minutes=30, seconds=30), 30), at)
+        assert first == (200, {"msg_id": f"lw2-7-{measured:%Y%m%d}", "status": "accepted"})
+        assert again == (200, {"msg_id": f"lw2-7-{measured:%Y%m%d}", "status": "duplicate"})
+        # a different reading with the same sequence number on the next day is still stored
+        p = lorawan.encode_rain(7, 0, 3600, 3, 60)
+        other = {"deviceInfo": {"devEui": "70B3D57ED0000002"}, "fPort": 2, "data": base64.b64encode(p).decode(),
+                 "time": (measured + timedelta(minutes=5)).isoformat()}
+        assert lorawan.handle_uplink(s, other, at)[1]["status"] == "accepted"
+        rg = registry.get(s, "RAIN-T-02")
+        total = s.scalar(select(func.sum(DeviceReading.value)).where(DeviceReading.device_id == rg.id,
+                                                                     DeviceReading.metric == "rain_mm"))
+        assert total == pytest.approx(10.6)                                  # 50 + 3 tips x 0.2 mm, each once
+
+
 # ------------------------------------------------------------------ MQTT
 def test_mqtt_bridge_handler(app, fleet):
     f = app.state.factory
@@ -447,7 +475,7 @@ def test_underwriter_device_pages(world, cfg):  # noqa: F811
     assert "never for payouts" in html and "satellite rainfall index" in html
     assert 'href="/uw/devices" aria-current="page">Devices' in html
     assert "your cover" in html and html.index("Rongai West") < html.index("Molo Highlands")   # covered ward first
-    assert "CAM-A-01" in html and "SOIL-B-01" in html and "10.0 mm today" in html           # 50 tips x 0.2 mm
+    assert "CAM-A-01" in html and "SOIL-B-01" in html and "10.0 mm in 24 hours" in html           # 50 tips x 0.2 mm
     assert "21.0%" in html and "Greenness" in html and '<span class="chip warn">low</span>' in html   # RAIN-A-01: 3.2 V
     assert "\N{EM DASH}" not in html                                                     # no em dashes
     assert_no_pii(html)
@@ -494,7 +522,7 @@ def test_device_cli(tmp_path, monkeypatch, capsys):
     assert main(["register", "--uid", "rain-c-01", "--kind", "rain", "--ward", "ward-b", "--site-type", "sacco_office",
                  "--site-label", "SACCO office (fictional)", "--mm-per-tip", "0.25", "--json"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["uid"] == "RAIN-C-01" and len(out["key"]) >= 40
+    assert out["uid"] == "RAIN-C-01" and len(out["key"]) >= 40 and out["ward"] == "ward-b"   # what simulate.py --keys reads
     assert main(["register", "--uid", "RAIN-C-01", "--kind", "rain", "--ward", "ward-b", "--site-type", "school",
                  "--site-label", "x"]) == 2
     assert main(["list"]) == 0 and "Never reported" in capsys.readouterr().out

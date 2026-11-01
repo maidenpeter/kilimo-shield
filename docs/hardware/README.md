@@ -46,7 +46,7 @@ The device signs in with headers `X-Device-Id` and `X-Device-Key` (never in the 
 `POST /api/devices/v1/readings` with JSON:
 
     {"messages": [
-      {"msg_id": "SOIL-A-01-1793520000", "observed_at": "2026-11-01T06:00:00Z",
+      {"msg_id": "SOIL-A-01-1793520000", "observed_at": "2026-11-01T08:00:00Z",
        "readings": {"soil_vwc_10cm": 23.4, "soil_vwc_30cm": 27.0, "soil_temp_c": 19.2, "battery_v": 3.92},
        "errors": ["sensor at 60 cm not responding"], "firmware": "soil-0.1.0"}
     ]}

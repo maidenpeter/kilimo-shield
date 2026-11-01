@@ -46,6 +46,9 @@ Not tested on hardware: no board was available in this phase. Bench test before 
 the modem power switch, SD card behaviour at low battery, and a full queue catch-up.
 
 `secrets.h` is git-ignored. With `secrets.example.h` the firmware builds but the server refuses its placeholder key.
+A real `secrets.h` for the Wi-Fi build must set `ROOT_CA_PEM`, or the build stops with an error (checked on
+1 November 2026 by building `esp32cam-wifi` with an unedited copy of the template); `ALLOW_INSECURE_TLS` is for a
+bench test against a local server only.
 
 ## Wiring (AI-Thinker ESP32-CAM)
 

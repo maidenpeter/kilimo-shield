@@ -15,7 +15,7 @@ paths are exercised. All devices and sites are fictional.
     python tools/devices/simulate.py --in-process --days 10
         a temporary database and the app in this process (FastAPI TestClient); prints a summary
     python tools/devices/simulate.py --base-url http://127.0.0.1:8000 --keys keys.json [--integration-key K]
-        a running portal. keys.json lists {"uid", "kind", "key", "dev_eui"?} for each device, from
+        a running portal. keys.json lists {"uid", "kind", "ward", "key", "dev_eui"?} for each device, from
         python -m agroshield_platform.devices register --json. Every message then arrives "now", so the portal shows
         them as sent late; --in-process sets the server clock to the simulated time instead.
 """

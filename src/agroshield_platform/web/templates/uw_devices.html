@@ -7,7 +7,7 @@
     rainfall estimate and show where it may miss what happened on the ground (basis risk). Payouts always follow the
     satellite rainfall index written in the policy. No single device, and no device a farmer controls, can change one.</p>
 </div>
-<p class="muted">Every device in the pilot wards. Devices are hosted at schools and SACCO offices with a paid caretaker.
+<p class="muted">Every device in the pilot wards. The plan is to host devices at schools and SACCO offices with a paid caretaker.
   Wards where your book has cover are listed first. Pilot wards are placeholders during development.</p>
 
 <div class="kpi-strip tiles">
@@ -37,7 +37,7 @@
             {% if r.sum.soil %}{% for depth, v in r.sum.soil %}{{ depth }} cm: {{ v|num(1) }}%{% if not loop.last %}, {% endif %}{% endfor %}
             <br><span class="muted">soil water</span>{% else %}<span class="muted">no readings yet</span>{% endif %}
           {% elif d.kind == 'rain' %}
-            {{ r.sum.rain_24h|num(1) }} mm today, {{ r.sum.rain_7d|num(1) }} mm in 7 days
+            {{ r.sum.rain_24h|num(1) }} mm in 24 hours, {{ r.sum.rain_7d|num(1) }} mm in 7 days
           {% else %}
             {% if r.sum.gcc is not none %}Greenness {{ r.sum.gcc|num(3) }}<br><span class="muted">{{ r.sum.photos_7d }} photos in 7 days</span>
             {% else %}<span class="muted">no photos yet</span>{% endif %}
