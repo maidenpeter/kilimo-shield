@@ -12,6 +12,7 @@ import base64
 import hashlib
 import hmac
 import logging
+from collections.abc import Mapping
 import re
 import secrets
 
@@ -70,9 +71,13 @@ class ScrubFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.msg = scrub(str(record.msg))
         if record.args:
-            # Keep non-text arguments (e.g. a %d status code) as they are unless masking changes them.
-            record.args = tuple(a if not isinstance(a, str) and scrub(str(a)) == str(a) else scrub(str(a))
-                                for a in record.args)
+            # Keep non-text arguments (e.g. a %d status code) as they are unless masking changes them. A single dict
+            # argument (logging's "%(name)s" style, or "%s" of a dict) stays a dict, with its values masked.
+            keep = lambda a: a if not isinstance(a, str) and scrub(str(a)) == str(a) else scrub(str(a))  # noqa: E731
+            if isinstance(record.args, Mapping):
+                record.args = {k: keep(v) for k, v in record.args.items()}
+            else:
+                record.args = tuple(keep(a) for a in record.args)
         return True
 
 

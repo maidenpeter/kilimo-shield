@@ -159,3 +159,15 @@ def test_input_borders_meet_non_text_contrast():
     assert min(ratio(light, "#F3EFE6"), ratio(light, "#FFFFFF")) >= 3
     assert min(ratio(dark, "#20232E"), ratio(dark, "#1A1D26")) >= 3
     assert math.isfinite(ratio(light, dark))
+
+
+def test_scrub_filter_keeps_dict_arguments(caplog):
+    """The M-Pesa re-check logs a dict of counts; the scrubber once turned it into a tuple of keys (a logging error)."""
+    import logging
+    from agroshield_platform.crypto import ScrubFilter
+    rec = logging.LogRecord("t", logging.INFO, __file__, 1, "M-Pesa re-check: %s", ({"checked": 2, "paid": 1},), None)
+    ScrubFilter().filter(rec)
+    assert rec.getMessage() == "M-Pesa re-check: {'checked': 2, 'paid': 1}"
+    rec = logging.LogRecord("t", logging.INFO, __file__, 1, "phone %(p)s", ({"p": "0722 718 281"},), None)
+    ScrubFilter().filter(rec)
+    assert "718 281" not in rec.getMessage()

@@ -47,11 +47,11 @@ def check_pack(folder: Path) -> dict:
             for i, page in enumerate(PdfReader(p).pages):
                 text = page.extract_text() or ""
                 assert all(m in text for m in MARKS), f"page {i + 1} is not marked"
-                assert "—" not in text
+                assert "\u2014" not in text
         else:
             text = p.read_text(encoding="utf-8")
             assert all(m in text for m in MARKS), f["path"]
-            assert "—" not in text, f"em dash in {f['path']}"
+            assert "\u2014" not in text, f"em dash in {f['path']}"
     return man
 
 
@@ -263,7 +263,7 @@ def test_outputs_are_labelled_fictional_and_masked(season):
     html = (out / "index.html").read_text(encoding="utf-8")
     js = (out / "season.json").read_text(encoding="utf-8")
     assert "SIMULATION / REPLAY" in html and "(fictional)" in html and "ILLUSTRATIVE" in html
-    assert "—" not in html
+    assert "\u2014" not in html
     for text in (html, js):
         assert not any(x in text for x in CLEAR_PII)
     for f in res["steps"]["bordereaux"]["files"]:
