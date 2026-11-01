@@ -23,6 +23,10 @@ Per-ward soil numbers: `data/soil/ward_awc.json`. Raw rasters: `data/raw/soil/so
   (140 mm), but SoilGrids shows about the same water holding as Ward A. Payout
   frequency does not change; only the size of the 2009 payout grows.
 - The 1984 drought test at Ward A still passes (payout 83%, was 81%).
+- The test quote for the fictional farmer Wanjiku Kamau (Ward A, 2 acres, Layer B,
+  7 Resilience points) falls from KES 1,752.17 to KES 1,552.66 for the farmer's share.
+  The regression tests that pin this quote, the 1984 WRSI (55.56 to 54.96) and the
+  2008 replay WRSI (67.58 to 67.99) were re-recorded on this branch.
 - The Layer B index version moves from B-1.2.0 to **B-1.2.1**, because a ward
   term changed. The method is unchanged.
 

@@ -1,7 +1,7 @@
 """Milestone 7: ward monitoring, Payout Tracker, missed-payout reports, weather (display only).
 
 Seasons replayed here are real CHIRPS history at the placeholder Ward A: 2008 (drought,
-final WRSI 67.58) and 2007 (germination dry spell). Farmers are fictional.
+final WRSI 67.99 at B-1.2.1; 67.58 with the placeholder soil) and 2007 (germination dry spell). Farmers are fictional.
 """
 import dataclasses
 import re

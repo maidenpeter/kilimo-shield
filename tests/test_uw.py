@@ -138,7 +138,8 @@ def test_triggers_page_shows_the_clock(world):
     c = TestClient(world)
     login(c, "uw-UW1")
     html = c.get("/uw/triggers").text
-    assert "Payout clock per event" in html and "67.58 (final)" in html
+    # Ward A 2008 WRSI: 67.99 at B-1.2.1 (SoilGrids soil); was 67.58 with the placeholder.
+    assert "Payout clock per event" in html and "67.99 (final)" in html
     assert re.search(r"<td class=\"num\">\s*\d+\s*</td>", html)                     # days left on the replay calendar
     assert "Waiting for approval (2)" in html
 

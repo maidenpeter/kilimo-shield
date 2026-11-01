@@ -142,6 +142,8 @@ def test_acceptance_scenario_wanjiku_kamau(cfg, tmp_path):
     Wanjiku Kamau (fictional), Ward A, long rains, 2 acres, KES 10,000 sum insured per
     acre, Layer B only, certified seed verified and SACCO member in good standing
     (7 points). Recorded from the engine on 2026-10-28: farmer pays KES 1,752.17.
+    Re-recorded 2026-11-01 for B-1.2.1 (Ward A soil 130 mm from SoilGrids instead of the
+    100 mm placeholder, gross rate 18.84% -> 16.70%): farmer pays KES 1,552.66.
     The band is +/-2%. If it moves, a term or an input changed; review the change and
     re-record the value deliberately. Never tune rates to land in this band.
     """
@@ -149,4 +151,4 @@ def test_acceptance_scenario_wanjiku_kamau(cfg, tmp_path):
     q = quote(cfg, book, ward_id="ward-a", acres=2, layers=["B"], sum_insured_kes_per_acre=10000,
               resilience={"certified_seed_verified": True, "sacco_good_standing": True})
     assert q["subsidy"]["eligible"] and q["resilience"]["points"] == 7
-    assert 1717.0 <= q["farmer_pays_kes"] <= 1787.0
+    assert 1521.6 <= q["farmer_pays_kes"] <= 1583.7
