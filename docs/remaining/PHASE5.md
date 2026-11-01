@@ -66,21 +66,41 @@ The final WRSI and payout share equal the pricing engine's 2008 result (tested).
 
 ### 3. Tests
 
-`tests/test_phase5_ira.py`, 12 tests, all passing (about 110 seconds): the pack builds from scratch with a PDF; every
+`tests/test_phase5_ira.py`, 14 tests (12, plus 2 added in review), all passing (about 115 seconds): the pack builds from scratch with a PDF; every
 PDF page and every file carries DRAFT and ILLUSTRATIVE and no em dash; the manifest hashes and sizes match; the
 figures are the engine's (the embedded results, written the engine's way, give the engine's own SHA-256); input
 checksums match their metadata; the simulation covers every step in order; the trigger and payouts equal the engine's
 2008 result; every payout lands within 10 days (and a late one fails the check); SMS are log-only and only with
 consent; outputs are labelled, fictional and masked (including inside the bordereaux ZIPs); the clock is put back.
 
-Full suite: see the commit list below for the run before the final commit.
+Full suite (review run at `1d1f66e`, import path checked to point at the branch's `src/`): 353 passed in 836
+seconds. `tests/test_uw.py::test_pricing_runs_and_reports` needs engine run folders in the git-ignored `runs/`; in a
+fresh checkout it fails until `agroshield-price run --all --offline` has been run once (not caused by this phase).
 
 ## Commits
 
 - `5bdfa77` Phase 5: simulated season, end to end on the real services
 - `47ae4dd` Phase 5: IRA documentation pack builder (DRAFT, ILLUSTRATIVE)
 - `52298bd` Phase 5: tests for the IRA pack and the simulated season
-- then: this report, decisions and README; then the generated pack and season report
+- `9fef985` Phase 5: report, decisions and README
+- `64b7e2c` Phase 5: generated IRA pack and 2008 season report
+- `1d1f66e` Phase 5 review: simulator runs any year, pack build guards its folder
+
+## Review (independent check of this branch)
+
+- Rebuilt the pack into a scratch folder (32 seconds): the engine results SHA-256 and every figure in
+  `data/*.csv` match the committed pack; only run ids and timestamps differ.
+- Re-ran the 2008 season (136 seconds): same result (5 payouts, KES 48,645, paid 3 days after confirmation).
+- Found and fixed: `--year 2010` (no trigger) stopped with "steps missing: approval, payout", and `--year 2007`
+  (replanting voucher only) stopped with "sms after payout". Both now run (2010: no payouts; 2007: 5 vouchers,
+  KES 28,750, 3 days after confirmation); the report words an early trigger correctly. Decision 5.12.
+- Found and fixed: `build_pack.py --out` deleted whatever folder it was given; it now refuses a folder that is not
+  empty and holds no earlier pack.
+- Checked: no changes to pricing, triggers, payouts, consent, masking, auth, money handling or the hashed config
+  files; no em dashes, no personal data, no logo or partner name in the outputs; commits carry no AI attribution.
+- Still open: the committed pack and season report are snapshots. If main changes the engine or adds files under
+  `data/raw/` before this branch merges, rebuild both (`python tools/ira/build_pack.py`, `python tools/sim/season.py`);
+  `test_pack_data_sources_checksums_still_match` fails on any new `data/raw/*/*.meta.json` until the pack is rebuilt.
 
 ## Blocked
 
