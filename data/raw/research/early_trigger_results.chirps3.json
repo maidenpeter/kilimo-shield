@@ -1,0 +1,592 @@
+{
+ "check_day": 35,
+ "trigger_wrsi": 80.0,
+ "wards": {
+  "ward-a": {
+   "available": true,
+   "seasons": 24,
+   "years": [
+    2001,
+    2025
+   ],
+   "actual_below_trigger_seasons": 5,
+   "corr_projected_vs_actual": 0.44038732804998587,
+   "corr_no_forecast_vs_actual": 0.25094065592136067,
+   "with_gefs": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "no_forecast": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "early_payout_share": 0.2,
+   "expected_cost_kes_per_acre": 0.0,
+   "gross_kes_per_acre": 0.0,
+   "history": [
+    {
+     "year": 2001,
+     "sos": "Mar d1 2001",
+     "gefs_15day_mm": 30.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 84.49,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2002,
+     "sos": "Mar d1 2002",
+     "gefs_15day_mm": 1.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 88.23,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2003,
+     "sos": "Mar d3 2003",
+     "gefs_15day_mm": 179.5,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 99.88,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2004,
+     "sos": "Mar d2 2004",
+     "gefs_15day_mm": 53.5,
+     "projected_wrsi": 99.53,
+     "projected_wrsi_no_forecast": 99.53,
+     "actual_wrsi": 76.63,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2005,
+     "sos": "Apr d1 2005",
+     "gefs_15day_mm": 91.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.98,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2006,
+     "sos": "Mar d1 2006",
+     "gefs_15day_mm": 131.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 93.77,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2007,
+     "sos": "Apr d2 2007",
+     "gefs_15day_mm": 49.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2008,
+     "sos": "Mar d3 2008",
+     "gefs_15day_mm": 11.1,
+     "projected_wrsi": 95.83,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 66.77,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2009,
+     "sos": "Mar d3 2009",
+     "gefs_15day_mm": 1.0,
+     "projected_wrsi": 82.35,
+     "projected_wrsi_no_forecast": 97.89,
+     "actual_wrsi": 71.74,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2010,
+     "sos": "Mar d1 2010",
+     "gefs_15day_mm": 68.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2011,
+     "sos": "Mar d2 2011",
+     "gefs_15day_mm": 7.4,
+     "projected_wrsi": 95.91,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 88.73,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2012,
+     "sos": "Apr d1 2012",
+     "gefs_15day_mm": 96.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2013,
+     "sos": "Mar d3 2013",
+     "gefs_15day_mm": 133.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2014,
+     "sos": "Mar d2 2014",
+     "gefs_15day_mm": 67.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 66.19,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2015,
+     "sos": "Apr d1 2015",
+     "gefs_15day_mm": 123.5,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 88.82,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2016,
+     "sos": "Apr d1 2016",
+     "gefs_15day_mm": 145.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2017,
+     "sos": "Apr d3 2017",
+     "gefs_15day_mm": 95.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.79,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2018,
+     "sos": "Mar d1 2018",
+     "gefs_15day_mm": 140.0,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2019,
+     "sos": "Apr d3 2019",
+     "gefs_15day_mm": 74.1,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2021,
+     "sos": "Apr d1 2021",
+     "gefs_15day_mm": 138.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 91.69,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2022,
+     "sos": "Apr d2 2022",
+     "gefs_15day_mm": 43.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 74.17,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2023,
+     "sos": "Mar d2 2023",
+     "gefs_15day_mm": 81.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 86.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2024,
+     "sos": "Mar d3 2024",
+     "gefs_15day_mm": 179.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 94.37,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2025,
+     "sos": "Mar d1 2025",
+     "gefs_15day_mm": 117.6,
+     "projected_wrsi": 98.57,
+     "projected_wrsi_no_forecast": 98.57,
+     "actual_wrsi": 98.57,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    }
+   ]
+  },
+  "ward-b": {
+   "available": true,
+   "seasons": 24,
+   "years": [
+    2001,
+    2025
+   ],
+   "actual_below_trigger_seasons": 1,
+   "corr_projected_vs_actual": 0.3800671297057266,
+   "corr_no_forecast_vs_actual": 0.3800671297057266,
+   "with_gefs": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "no_forecast": {
+    "triggers": 0,
+    "frequency": 0.0,
+    "hit_rate": 0.0,
+    "false_alarm_ratio": null
+   },
+   "early_payout_share": 0.2,
+   "expected_cost_kes_per_acre": 0.0,
+   "gross_kes_per_acre": 0.0,
+   "history": [
+    {
+     "year": 2001,
+     "sos": "Mar d1 2001",
+     "gefs_15day_mm": 46.5,
+     "projected_wrsi": 97.81,
+     "projected_wrsi_no_forecast": 97.81,
+     "actual_wrsi": 97.81,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2002,
+     "sos": "Apr d2 2002",
+     "gefs_15day_mm": 28.5,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 83.56,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2003,
+     "sos": "Mar d3 2003",
+     "gefs_15day_mm": 232.5,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2004,
+     "sos": "Mar d2 2004",
+     "gefs_15day_mm": 72.7,
+     "projected_wrsi": 99.98,
+     "projected_wrsi_no_forecast": 99.98,
+     "actual_wrsi": 88.97,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2005,
+     "sos": "Mar d2 2005",
+     "gefs_15day_mm": 76.8,
+     "projected_wrsi": 99.53,
+     "projected_wrsi_no_forecast": 99.53,
+     "actual_wrsi": 99.53,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2006,
+     "sos": "Mar d1 2006",
+     "gefs_15day_mm": 143.6,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2007,
+     "sos": "Apr d2 2007",
+     "gefs_15day_mm": 60.0,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2008,
+     "sos": "Mar d3 2008",
+     "gefs_15day_mm": 20.2,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2009,
+     "sos": "Mar d3 2009",
+     "gefs_15day_mm": 4.5,
+     "projected_wrsi": 98.24,
+     "projected_wrsi_no_forecast": 98.24,
+     "actual_wrsi": 72.27,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": true
+    },
+    {
+     "year": 2010,
+     "sos": "Mar d1 2010",
+     "gefs_15day_mm": 85.6,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2011,
+     "sos": "Mar d2 2011",
+     "gefs_15day_mm": 16.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2012,
+     "sos": "Apr d1 2012",
+     "gefs_15day_mm": 99.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2013,
+     "sos": "Mar d3 2013",
+     "gefs_15day_mm": 150.8,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2014,
+     "sos": "Mar d2 2014",
+     "gefs_15day_mm": 89.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 98.75,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2015,
+     "sos": "Apr d1 2015",
+     "gefs_15day_mm": 126.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.68,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2016,
+     "sos": "Apr d1 2016",
+     "gefs_15day_mm": 137.6,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2017,
+     "sos": "Mar d3 2017",
+     "gefs_15day_mm": 126.0,
+     "projected_wrsi": 97.81,
+     "projected_wrsi_no_forecast": 97.81,
+     "actual_wrsi": 97.81,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2018,
+     "sos": "Mar d1 2018",
+     "gefs_15day_mm": 167.0,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2019,
+     "sos": "Apr d3 2019",
+     "gefs_15day_mm": 76.1,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2021,
+     "sos": "Apr d1 2021",
+     "gefs_15day_mm": 158.4,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2022,
+     "sos": "Apr d2 2022",
+     "gefs_15day_mm": 53.9,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2023,
+     "sos": "Mar d2 2023",
+     "gefs_15day_mm": 102.7,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 97.01,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2024,
+     "sos": "Mar d3 2024",
+     "gefs_15day_mm": 191.3,
+     "projected_wrsi": 100.0,
+     "projected_wrsi_no_forecast": 100.0,
+     "actual_wrsi": 100.0,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    },
+    {
+     "year": 2025,
+     "sos": "Mar d2 2025",
+     "gefs_15day_mm": 177.9,
+     "projected_wrsi": 99.81,
+     "projected_wrsi_no_forecast": 99.81,
+     "actual_wrsi": 99.81,
+     "early_trigger": false,
+     "early_trigger_no_forecast": false,
+     "actual_below_trigger": false
+    }
+   ]
+  }
+ },
+ "rainfall_dataset": "chirps3",
+ "forecast_product": "CHIRPS3-GEFS 15-day total, global"
+}

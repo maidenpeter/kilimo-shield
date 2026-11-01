@@ -117,6 +117,7 @@ def test_payouts_only_from_confirmed_triggers_and_active_cover(cfg, replay, db):
         _run(ctx, s, date(2008, 6, 1))
         assert s.scalar(select(Payout)) is None                                   # projected, not confirmed
         [st] = _run(ctx, s, date(2008, 9, 1))
+        assert st.result["rainfall_dataset"] == "chirps"                          # 2008 is history: CHIRPS v2
         pays = s.scalars(select(Payout).order_by(Payout.id)).all()
         assert sorted(p.policy_id for p in pays) == sorted(ids[:3])               # the lapsed policy gets nothing
         share = st.projected_share

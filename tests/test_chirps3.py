@@ -354,6 +354,24 @@ def test_committed_chirps3_pixels_are_the_v2_polygon_pixels(cfg):
         assert np.allclose(pix.mean(axis=1), mean, atol=1e-3)
 
 
+def test_monitoring_on_committed_data_switches_to_v3_for_2027(cfg):
+    """End to end on the committed caches: LR 2026 is watched on CHIRPS v2, LR 2027 on CHIRPS v3."""
+    from agroshield_platform import monitoring as mon
+
+    d = REPO / "data" / "raw" / "chirps3"
+    if not (d / "ward-a.meta.json").exists():
+        pytest.skip("CHIRPS v3 cache not committed")
+    v2 = pd.read_csv(REPO / "data" / "raw" / "chirps" / "ward-a.csv", index_col="date", parse_dates=True)["rain_mm"]
+    v3 = pd.read_csv(d / "ward-a.csv", index_col="date", parse_dates=True)["rain_mm"]
+    old, _ = mon.ward_inputs(cfg, "ward-a", 2026, date(2026, 3, 1))
+    assert old.attrs["dataset"] == "chirps"
+    assert np.allclose(old.loc["1981":"2025"], v2.loc["1981":"2025"])
+    new, _ = mon.ward_inputs(cfg, "ward-a", 2027, date(2027, 3, 1))
+    assert new.attrs["dataset"] == "chirps3"
+    assert np.allclose(new.loc["1981":"2025"], v3.loc["1981":"2025"])      # v3 climatology, not v2
+    assert new.index.max() == v3.index.max() > pd.Timestamp("2025-12-31")  # 2026 v3 days already cached
+
+
 def test_research_retries_transient_gefs_failures_but_not_404():
     import sys
     sys.path.insert(0, str(REPO / "research"))
@@ -362,3 +380,27 @@ def test_research_retries_transient_gefs_failures_but_not_404():
     assert not _retry({"gefs_15day_mm": 3.2, "url": "u"})
     assert not _retry({"gefs_15day_mm": None, "url": "u [HTTPError: HTTP Error 404: Not Found]"})
     assert _retry({"gefs_15day_mm": None, "url": "u [HTTPError: HTTP Error 429: Too Many Requests]"})
+
+
+def test_chirps3_research_pairs_with_the_chirps3_gefs_forecast(monkeypatch):
+    import sys
+    sys.path.insert(0, str(REPO / "research"))
+    import early_trigger as et
+
+    assert et.gefs_for(None) is et.GEFS["chirps"] and et.gefs_for("chirps") is et.GEFS["chirps"]
+    g = et.gefs_for("chirps3")
+    assert "CHIRPS3-GEFS" in g["product"]
+    asked = {}
+
+    def rows(url, rs):
+        asked["url"], asked["rows"] = url, rs
+        return {r: np.full(7200, 12.0, dtype="<f4") for r in rs}
+
+    monkeypatch.setattr(et, "_tiff_rows", rows)
+    mm, url = et.gefs_15day_mm(-0.17, 35.86, pd.Timestamp("2008-04-16"), g)
+    assert url.endswith("/chirps3_gefs_global_15day_data/data_20080416_20080416.tif")
+    # Global grid, origin 180W 60N: the ward row is (60 + 0.17) / 0.05, the column (180 + 35.86) / 0.05.
+    assert asked["rows"] == [1202, 1203, 1204] and mm == 12.0
+    # The CHIRPS v2 forecast keeps its Africa grid (origin 20W 40N).
+    et.gefs_15day_mm(-0.17, 35.86, pd.Timestamp("2008-04-16"))
+    assert asked["rows"] == [802, 803, 804] and "data.2008.107.tif" in asked["url"]

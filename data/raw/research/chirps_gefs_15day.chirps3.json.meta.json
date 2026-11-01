@@ -1,0 +1,8 @@
+{
+  "product": "CHIRPS3-GEFS 15-day total, global",
+  "url_pattern": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_{ymd}_{ymd}.tif",
+  "request": "HTTP range requests for the 3 x 3 pixels around each ward centroid, one file per check day",
+  "retrieved_at": "2026-11-01T21:48:07+00:00",
+  "sha256": "f27792f5c25b45a262201b89e2604e46dcec285c5052e627d766beb66f2b6ff3",
+  "bytes": 15523
+}

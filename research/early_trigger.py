@@ -12,6 +12,18 @@ A "no forecast" variant (climatology from the check day) shows what GEFS adds.
 CHIRPS-GEFS: 15-day mean forecast, Africa 0.05 deg, uncompressed float32 GeoTIFF
 (1500 x 1600, origin 20W 40N, one row per strip). Only the 3 x 3 pixels around a
 ward are read, with an HTTP range request, and cached in data/raw/research/.
+
+Each rainfall dataset is paired with the forecast made from it (GEFS table):
+  chirps  (v2.0) -> CHIRPS-GEFS v12, Africa. Its old folder products/EWX/... returned
+                    HTTP 404 on 2026-11-01 (the CHC reorganised the server), so the v2
+                    run now relies on its committed cache.
+  chirps3 (v3.0) -> CHIRPS3-GEFS 15-day totals, global 0.05 deg GeoTIFF (7200 x 2400,
+                    origin 180W 60N, one PackBits row per strip, the same layout this
+                    reader already handles), daily issues from 2001-01-01, at
+                    products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/.
+
+    .venv/Scripts/python research/early_trigger.py            # CHIRPS v2.0
+    .venv/Scripts/python research/early_trigger.py chirps3    # CHIRPS v3.0 + CHIRPS3-GEFS
 """
 from __future__ import annotations
 
@@ -43,6 +55,18 @@ CHECK_DAY = 35            # days after the start of season
 EARLY_PAYOUT = 0.20       # share of sum insured, EXPERIMENTAL placeholder
 WIDTH, ORIGIN_LON, ORIGIN_LAT, RES = 1500, -20.0, 40.0, 0.05
 CACHE = REPO / "data" / "raw" / "research" / "chirps_gefs_15day.json"
+GEFS = {
+    "chirps": {"product": "CHIRPS-GEFS v12 15-day mean, Africa", "url": GEFS_URL,
+               "origin_lon": ORIGIN_LON, "origin_lat": ORIGIN_LAT},
+    "chirps3": {"product": "CHIRPS3-GEFS 15-day total, global",
+                "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/"
+                       "data_{ymd}_{ymd}.tif",
+                "origin_lon": -180.0, "origin_lat": 60.0},
+}
+
+
+def gefs_for(dataset: str | None) -> dict:
+    return GEFS["chirps" if dataset in (None, "chirps") else dataset]
 
 
 def paths(dataset: str | None) -> tuple[Path, Path]:
@@ -58,6 +82,7 @@ def paths(dataset: str | None) -> tuple[Path, Path]:
 def _range(url: str, start: int, end: int) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": f"bytes={start}-{end}"})
     for attempt in range(4):
+        time.sleep(1.0)                     # one request at a time, with a pause
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
@@ -116,11 +141,11 @@ def _tiff_rows(url: str, rows: list[int]) -> dict[int, np.ndarray]:
     return out
 
 
-def gefs_15day_mm(lat: float, lon: float, issue: pd.Timestamp) -> tuple[float | None, str]:
+def gefs_15day_mm(lat: float, lon: float, issue: pd.Timestamp, gefs: dict = GEFS["chirps"]) -> tuple[float | None, str]:
     """Mean 15-day forecast total (mm) over the 3x3 pixels around a point."""
-    url = GEFS_URL.format(y=issue.year, doy=issue.dayofyear)
-    row = int((ORIGIN_LAT - lat) / RES)
-    col = int((lon - ORIGIN_LON) / RES)
+    url = gefs["url"].format(y=issue.year, doy=issue.dayofyear, ymd=issue.strftime("%Y%m%d"))
+    row = int((gefs["origin_lat"] - lat) / RES)
+    col = int((lon - gefs["origin_lon"]) / RES)
     try:
         rows = _tiff_rows(url, [row - 1, row, row + 1])
     except Exception as e:
@@ -129,11 +154,10 @@ def gefs_15day_mm(lat: float, lon: float, issue: pd.Timestamp) -> tuple[float | 
     return (float(np.mean(vals)) if len(vals) >= 5 else None), url
 
 
-def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE) -> dict:
-    if cache_path.exists():
-        cache = json.loads(cache_path.read_text())
-    else:   # start from the CHIRPS v2 cache: entries whose issue date matches are reused
-        cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE, gefs: dict = GEFS["chirps"]) -> dict:
+    # Each dataset keeps its own cache: CHIRPS v3 pairs with CHIRPS3-GEFS, so CHIRPS v2
+    # forecasts are never reused for it, even on the same issue date.
+    cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
     for wid, table in tables.items():
         c = cfg.ward(wid).centroid
         for y, r in table.iterrows():
@@ -143,8 +167,10 @@ def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE) -> dict:
             key = f"{wid}:{y}"
             if key in cache and cache[key]["issue"] == str(issue.date()) and not _retry(cache[key]):
                 continue
-            mm, url = gefs_15day_mm(c.lat, c.lon, issue)
+            mm, url = gefs_15day_mm(c.lat, c.lon, issue, gefs)
             cache[key] = {"ward_id": wid, "year": int(y), "issue": str(issue.date()), "gefs_15day_mm": mm, "url": url}
+            if gefs is not GEFS["chirps"]:
+                cache[key]["product"] = gefs["product"]
             print(f"  {wid} {y}: issued {issue.date()} -> {mm}")
             cache_path.parent.mkdir(parents=True, exist_ok=True)
             cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
@@ -152,7 +178,7 @@ def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE) -> dict:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
     if cache_path != CACHE:
-        _write_meta(cache_path)
+        _write_meta(cache_path, gefs)
     return cache
 
 
@@ -161,7 +187,7 @@ def _retry(entry: dict) -> bool:
     return entry.get("gefs_15day_mm") is None and "404" not in str(entry.get("url"))
 
 
-def _write_meta(cache_path: Path) -> None:
+def _write_meta(cache_path: Path, gefs: dict) -> None:
     """<cache>.meta.json beside a per-dataset GEFS cache: request, retrieved_at and SHA-256."""
     import hashlib
 
@@ -170,9 +196,9 @@ def _write_meta(cache_path: Path) -> None:
     if meta.exists() and json.loads(meta.read_text()).get("sha256") == sha:
         return
     meta.write_text(json.dumps({
-        "url_pattern": GEFS_URL,
+        "product": gefs["product"],
+        "url_pattern": gefs["url"],
         "request": "HTTP range requests for the 3 x 3 pixels around each ward centroid, one file per check day",
-        "seeded_from": CACHE.relative_to(REPO).as_posix(),
         "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "sha256": sha,
         "bytes": cache_path.stat().st_size,
@@ -209,7 +235,7 @@ def run(dataset: str | None = None) -> dict:
         r = price_ward(cfg, wid, rs, ps)
         tables[wid] = r.seasons["LR"].table
         data[wid] = (r.rain_daily, to_dekads(r.pet_daily))
-    cache = fetch_gefs(cfg, tables, paths(dataset)[0])
+    cache = fetch_gefs(cfg, tables, paths(dataset)[0], gefs_for(dataset))
     trig = cfg.product.layer_b.trigger_wrsi
     for wid, table in tables.items():
         ward, cal = cfg.ward(wid), cfg.calendar(wid, "LR")
@@ -257,6 +283,7 @@ def run(dataset: str | None = None) -> dict:
     out = {"check_day": CHECK_DAY, "trigger_wrsi": trig, "wards": results}
     if dataset not in (None, "chirps"):
         out["rainfall_dataset"] = dataset
+        out["forecast_product"] = gefs_for(dataset)["product"]
     return out
 
 

@@ -1,0 +1,418 @@
+{
+ "ward-a:2000": {
+  "ward_id": "ward-a",
+  "year": 2000,
+  "issue": "2000-05-16",
+  "gefs_15day_mm": null,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20000516_20000516.tif [HTTPError: HTTP Error 404: Not Found]",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2001": {
+  "ward_id": "ward-a",
+  "year": 2001,
+  "issue": "2001-04-05",
+  "gefs_15day_mm": 30.214918348524307,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20010405_20010405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2002": {
+  "ward_id": "ward-a",
+  "year": 2002,
+  "issue": "2002-04-05",
+  "gefs_15day_mm": 1.4090978238317702,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20020405_20020405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2003": {
+  "ward_id": "ward-a",
+  "year": 2003,
+  "issue": "2003-04-25",
+  "gefs_15day_mm": 179.5089145236545,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20030425_20030425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2004": {
+  "ward_id": "ward-a",
+  "year": 2004,
+  "issue": "2004-04-15",
+  "gefs_15day_mm": 53.462845696343315,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20040415_20040415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2005": {
+  "ward_id": "ward-a",
+  "year": 2005,
+  "issue": "2005-05-06",
+  "gefs_15day_mm": 91.36711544460721,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20050506_20050506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2006": {
+  "ward_id": "ward-a",
+  "year": 2006,
+  "issue": "2006-04-05",
+  "gefs_15day_mm": 131.3346176147461,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20060405_20060405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2007": {
+  "ward_id": "ward-a",
+  "year": 2007,
+  "issue": "2007-05-16",
+  "gefs_15day_mm": 49.20840199788412,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20070516_20070516.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2008": {
+  "ward_id": "ward-a",
+  "year": 2008,
+  "issue": "2008-04-25",
+  "gefs_15day_mm": 11.071193906995985,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20080425_20080425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2009": {
+  "ward_id": "ward-a",
+  "year": 2009,
+  "issue": "2009-04-25",
+  "gefs_15day_mm": 0.9891495770878262,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20090425_20090425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2010": {
+  "ward_id": "ward-a",
+  "year": 2010,
+  "issue": "2010-04-05",
+  "gefs_15day_mm": 68.32924567328558,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20100405_20100405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2011": {
+  "ward_id": "ward-a",
+  "year": 2011,
+  "issue": "2011-04-15",
+  "gefs_15day_mm": 7.433100912306044,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20110415_20110415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2012": {
+  "ward_id": "ward-a",
+  "year": 2012,
+  "issue": "2012-05-06",
+  "gefs_15day_mm": 96.27817959255643,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20120506_20120506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2013": {
+  "ward_id": "ward-a",
+  "year": 2013,
+  "issue": "2013-04-25",
+  "gefs_15day_mm": 133.44793870713977,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20130425_20130425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2014": {
+  "ward_id": "ward-a",
+  "year": 2014,
+  "issue": "2014-04-15",
+  "gefs_15day_mm": 67.73193105061848,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20140415_20140415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2015": {
+  "ward_id": "ward-a",
+  "year": 2015,
+  "issue": "2015-05-06",
+  "gefs_15day_mm": 123.47364213731554,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20150506_20150506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2016": {
+  "ward_id": "ward-a",
+  "year": 2016,
+  "issue": "2016-05-06",
+  "gefs_15day_mm": 145.70171949598523,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20160506_20160506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2017": {
+  "ward_id": "ward-a",
+  "year": 2017,
+  "issue": "2017-05-26",
+  "gefs_15day_mm": 95.28852250840929,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20170526_20170526.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2018": {
+  "ward_id": "ward-a",
+  "year": 2018,
+  "issue": "2018-04-05",
+  "gefs_15day_mm": 139.96456231011285,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20180405_20180405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2019": {
+  "ward_id": "ward-a",
+  "year": 2019,
+  "issue": "2019-05-26",
+  "gefs_15day_mm": 74.14915805392795,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20190526_20190526.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2020": {
+  "ward_id": "ward-a",
+  "year": 2020,
+  "issue": "2020-04-05",
+  "gefs_15day_mm": null,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20200405_20200405.tif [HTTPError: HTTP Error 404: Not Found]",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2021": {
+  "ward_id": "ward-a",
+  "year": 2021,
+  "issue": "2021-05-06",
+  "gefs_15day_mm": 138.66542053222656,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20210506_20210506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2022": {
+  "ward_id": "ward-a",
+  "year": 2022,
+  "issue": "2022-05-16",
+  "gefs_15day_mm": 43.17468558417426,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20220516_20220516.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2023": {
+  "ward_id": "ward-a",
+  "year": 2023,
+  "issue": "2023-04-15",
+  "gefs_15day_mm": 81.76124487982855,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20230415_20230415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2024": {
+  "ward_id": "ward-a",
+  "year": 2024,
+  "issue": "2024-04-25",
+  "gefs_15day_mm": 179.80625745985242,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20240425_20240425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-a:2025": {
+  "ward_id": "ward-a",
+  "year": 2025,
+  "issue": "2025-04-05",
+  "gefs_15day_mm": 117.58953264024522,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20250405_20250405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2000": {
+  "ward_id": "ward-b",
+  "year": 2000,
+  "issue": "2000-05-16",
+  "gefs_15day_mm": null,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20000516_20000516.tif [HTTPError: HTTP Error 404: Not Found]",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2001": {
+  "ward_id": "ward-b",
+  "year": 2001,
+  "issue": "2001-04-05",
+  "gefs_15day_mm": 46.49678378634982,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20010405_20010405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2002": {
+  "ward_id": "ward-b",
+  "year": 2002,
+  "issue": "2002-05-16",
+  "gefs_15day_mm": 28.48787519666884,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20020516_20020516.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2003": {
+  "ward_id": "ward-b",
+  "year": 2003,
+  "issue": "2003-04-25",
+  "gefs_15day_mm": 232.49767896864148,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20030425_20030425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2004": {
+  "ward_id": "ward-b",
+  "year": 2004,
+  "issue": "2004-04-15",
+  "gefs_15day_mm": 72.6779547797309,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20040415_20040415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2005": {
+  "ward_id": "ward-b",
+  "year": 2005,
+  "issue": "2005-04-15",
+  "gefs_15day_mm": 76.84189181857639,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20050415_20050415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2006": {
+  "ward_id": "ward-b",
+  "year": 2006,
+  "issue": "2006-04-05",
+  "gefs_15day_mm": 143.59612358940973,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20060405_20060405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2007": {
+  "ward_id": "ward-b",
+  "year": 2007,
+  "issue": "2007-05-16",
+  "gefs_15day_mm": 59.95593685574002,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20070516_20070516.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2008": {
+  "ward_id": "ward-b",
+  "year": 2008,
+  "issue": "2008-04-25",
+  "gefs_15day_mm": 20.209587415059406,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20080425_20080425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2009": {
+  "ward_id": "ward-b",
+  "year": 2009,
+  "issue": "2009-04-25",
+  "gefs_15day_mm": 4.533562646971808,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20090425_20090425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2010": {
+  "ward_id": "ward-b",
+  "year": 2010,
+  "issue": "2010-04-05",
+  "gefs_15day_mm": 85.60223473442926,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20100405_20100405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2011": {
+  "ward_id": "ward-b",
+  "year": 2011,
+  "issue": "2011-04-15",
+  "gefs_15day_mm": 16.256312900119358,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20110415_20110415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2012": {
+  "ward_id": "ward-b",
+  "year": 2012,
+  "issue": "2012-05-06",
+  "gefs_15day_mm": 99.29101053873698,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20120506_20120506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2013": {
+  "ward_id": "ward-b",
+  "year": 2013,
+  "issue": "2013-04-25",
+  "gefs_15day_mm": 150.80321417914496,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20130425_20130425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2014": {
+  "ward_id": "ward-b",
+  "year": 2014,
+  "issue": "2014-04-15",
+  "gefs_15day_mm": 89.41519419352214,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20140415_20140415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2015": {
+  "ward_id": "ward-b",
+  "year": 2015,
+  "issue": "2015-05-06",
+  "gefs_15day_mm": 126.74715508355035,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20150506_20150506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2016": {
+  "ward_id": "ward-b",
+  "year": 2016,
+  "issue": "2016-05-06",
+  "gefs_15day_mm": 137.63701375325522,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20160506_20160506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2017": {
+  "ward_id": "ward-b",
+  "year": 2017,
+  "issue": "2017-04-25",
+  "gefs_15day_mm": 126.00491502549913,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20170425_20170425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2018": {
+  "ward_id": "ward-b",
+  "year": 2018,
+  "issue": "2018-04-05",
+  "gefs_15day_mm": 167.0282457139757,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20180405_20180405.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2019": {
+  "ward_id": "ward-b",
+  "year": 2019,
+  "issue": "2019-05-26",
+  "gefs_15day_mm": 76.09825049506293,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20190526_20190526.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2020": {
+  "ward_id": "ward-b",
+  "year": 2020,
+  "issue": "2020-04-05",
+  "gefs_15day_mm": null,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20200405_20200405.tif [HTTPError: HTTP Error 404: Not Found]",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2021": {
+  "ward_id": "ward-b",
+  "year": 2021,
+  "issue": "2021-05-06",
+  "gefs_15day_mm": 158.44832017686633,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20210506_20210506.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2022": {
+  "ward_id": "ward-b",
+  "year": 2022,
+  "issue": "2022-05-16",
+  "gefs_15day_mm": 53.890022701687286,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20220516_20220516.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2023": {
+  "ward_id": "ward-b",
+  "year": 2023,
+  "issue": "2023-04-15",
+  "gefs_15day_mm": 102.67372470431857,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20230415_20230415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2024": {
+  "ward_id": "ward-b",
+  "year": 2024,
+  "issue": "2024-04-25",
+  "gefs_15day_mm": 191.31034681532117,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20240425_20240425.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ },
+ "ward-b:2025": {
+  "ward_id": "ward-b",
+  "year": 2025,
+  "issue": "2025-04-15",
+  "gefs_15day_mm": 177.87239752875433,
+  "url": "https://data.chc.ucsb.edu/products/EWX2/CHIRPS3-GEFS/chirps3_gefs_global_15day_data/data_20250415_20250415.tif",
+  "product": "CHIRPS3-GEFS 15-day total, global"
+ }
+}
