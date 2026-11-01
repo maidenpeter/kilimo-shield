@@ -2,7 +2,7 @@
 
 Subcommands
   run              price one ward (or all pilot wards) -> runs/<run_id>/
-  fetch-rainfall   download and cache CHIRPS for one or all pilot wards
+  fetch-rainfall   download and cache CHIRPS (v2 or, with --dataset chirps3, v3) for pilot wards
   fetch-climate    download and cache NASA POWER temperature (for Hargreaves PET)
   validate         load and validate config/ without pricing anything
 """
@@ -110,7 +110,34 @@ def _fetch(args, src, what: str) -> int:
 
 def cmd_fetch_rain(args) -> int:
     cfg = load_config(args.config)
+    if args.dataset == "chirps3":
+        return _fetch_chirps3(args, cfg)
     return _fetch(args, make_source(cfg, "chirps"), "CHIRPS")
+
+
+def _fetch_chirps3(args, cfg) -> int:
+    """CHIRPS v3 wards are fetched together: they share the remote chunks."""
+    src = make_source(cfg, "chirps3")
+    wards = cfg.pilot.wards if args.all or not args.ward else [args.ward]
+    h = cfg.rainfall.history
+    todo = []
+    for ward_id in wards:
+        ward = cfg.ward(ward_id)
+        try:
+            cached = src.is_cached(ward, h.start_year, h.end_year)
+        except ValueError as e:
+            if not args.refresh:
+                print(f"{ward_id}: {e}")
+                return 1
+            cached = False
+        if cached and not args.refresh and not args.through:
+            print(f"{ward_id}: CHIRPS3 cached, skipping (use --refresh to re-download)")
+            continue
+        todo.append(ward)
+    if todo:
+        for p in src.fetch_many(todo, h.start_year, h.end_year, through=args.through):
+            print(f"saved {p}")
+    return 0
 
 
 def cmd_fetch_climate(args) -> int:
@@ -159,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("run", help="price a ward, write the HTML report")
     r.add_argument("--ward", help="ward id from wards.yaml (default: pilot.default_ward)")
     r.add_argument("--all", action="store_true", help="every pilot ward")
-    r.add_argument("--source", choices=["chirps", "synthetic"], help="override rainfall.source")
+    r.add_argument("--source", choices=["chirps", "chirps3", "synthetic"], help="override rainfall.source")
     r.add_argument("--pet", choices=["hargreaves_nasapower", "synthetic"], help="override pet.source")
     r.add_argument("--offline", action="store_true", help="never download; fail if not cached")
     r.add_argument("--out", help="output directory (default: ./runs)")
@@ -171,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
         f.add_argument("--ward")
         f.add_argument("--all", action="store_true")
         f.add_argument("--refresh", action="store_true", help="re-download even if cached")
+        if name == "fetch-rainfall":
+            f.add_argument("--dataset", choices=["chirps", "chirps3"], default="chirps",
+                           help="chirps = v2.0 via ClimateSERV (default); chirps3 = v3.0 from the CHC server")
+            f.add_argument("--through", help="chirps3 only: also keep days after history.end_year up to "
+                                             "this date (YYYY-MM-DD), as far as published")
         f.set_defaults(fn=fn)
 
     q = sub.add_parser("quote", help="quote a farmer (gross, subsidy split, Resilience discount)")

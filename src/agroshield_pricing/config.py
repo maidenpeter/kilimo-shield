@@ -30,10 +30,24 @@ class History(BaseModel):
         return self
 
 
+RainfallName = Literal["chirps", "chirps3", "synthetic"]
+
+
 class RainfallSettings(BaseModel):
-    source: Literal["chirps", "synthetic"]
+    # chirps = CHIRPS v2.0 (ClimateSERV), chirps3 = CHIRPS v3.0 (CHC), synthetic = tests only
+    source: RainfallName
     history: History
     synthetic_seed: int = 0
+    # CHC retires CHIRPS v2 after December 2026. Monitoring of any season planted in
+    # this year or later reads CHIRPS v3.0 (history and observed rain alike);
+    # earlier seasons keep `source`. Synthetic runs are never switched.
+    monitoring_chirps3_from_year: int = Field(default=2027, ge=1981)
+
+    def monitoring_source(self, season_year: int) -> str:
+        """Which rainfall dataset monitors a season planted in `season_year`."""
+        if self.source == "synthetic":
+            return "synthetic"
+        return "chirps3" if season_year >= self.monitoring_chirps3_from_year else self.source
 
 
 class PetSettings(BaseModel):

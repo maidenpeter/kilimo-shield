@@ -22,6 +22,8 @@ runs/*
 var/
 data/raw/research/chirps_monthly_eastern_kenya.nc
 data/raw/research/chirps_monthly_eastern_kenya.npz
+# CHIRPS v3 per-year windows kept only so an interrupted fetch can resume
+data/raw/chirps3/_partial/
 
 # Editors / OS
 .vscode/

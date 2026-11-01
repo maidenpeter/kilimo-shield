@@ -8,9 +8,17 @@ pilot:
   underwriter: TBD              # [ASK] licensed underwriter not yet chosen
 
 rainfall:
-  # chirps  = real CHIRPS v2.0 daily via SERVIR ClimateSERV, cached in data/raw/chirps/
+  # chirps    = real CHIRPS v2.0 daily via SERVIR ClimateSERV, cached in data/raw/chirps/
+  # chirps3   = real CHIRPS v3.0 daily (rnl) from the UCSB CHC data server, cached in
+  #             data/raw/chirps3/ (fetch-rainfall --dataset chirps3)
   # synthetic = generated bimodal rainfall, labelled SYNTHETIC in every output
+  # Pricing stays on CHIRPS v2 until the owner approves the move (see
+  # docs/pricing/chirps3-comparison.md); set chirps3 here to price on v3.
   source: chirps
+  # CHC retires CHIRPS v2 after December 2026. Seasons planted in this year or later
+  # are monitored on CHIRPS v3.0 (history and observed rain); earlier seasons keep
+  # the source above.
+  monitoring_chirps3_from_year: 2027
   history:
     start_year: 1981            # first full year of CHIRPS
     end_year: 2025              # last complete year available

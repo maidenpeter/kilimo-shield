@@ -54,31 +54,57 @@ def season_for(cfg, ward_id: str, season: str, as_of: date) -> int:
     return as_of.year if as_of <= latest_end else as_of.year + 1
 
 
-def _live_rain(cfg, ward, year: int, as_of: date, allow_download: bool) -> pd.Series:
-    """Rain for a year beyond the committed history, cached under monitoring.live_cache_dir."""
-    path = Path(cfg.root).parent / cfg.monitoring.live_cache_dir / f"{ward.id}_{year}.csv"
+def _fetch_live(cfg, dataset: str, ward, start: date, as_of: date) -> pd.Series:
+    """Download observed rain for monitoring from the dataset that monitors this season."""
+    if dataset == "chirps3":
+        src = make_source(cfg, "chirps3", allow_download=True, log=log.info)
+        return src.fetch_range(ward, f"{start:%Y-%m-%d}", f"{as_of:%Y-%m-%d}")
+    return fetch_chunk(ward_geometry(ward), f"{start:%m/%d/%Y}", f"{as_of:%m/%d/%Y}", log=log.info)
+
+
+def _live_rain(cfg, ward, year: int, as_of: date, allow_download: bool, dataset: str = "chirps") -> pd.Series:
+    """Rain for a year beyond the committed history, cached under monitoring.live_cache_dir.
+
+    CHIRPS v3 live data is cached apart from v2 (<ward>_<year>.chirps3.csv): the two
+    datasets must never be mixed in one season's series.
+    """
+    suffix = "" if dataset == "chirps" else f".{dataset}"
+    path = Path(cfg.root).parent / cfg.monitoring.live_cache_dir / f"{ward.id}_{year}{suffix}.csv"
     cached = pd.read_csv(path, parse_dates=["date"]).set_index("date")["rain_mm"] if path.exists() else pd.Series(dtype=float)
     fresh_enough = len(cached) and cached.index.max() >= pd.Timestamp(as_of) - pd.Timedelta(days=1)
     if allow_download and not fresh_enough:
         start = date(year - 1, 10, 1)
         try:
-            got = fetch_chunk(ward_geometry(ward), f"{start:%m/%d/%Y}", f"{as_of:%m/%d/%Y}", log=log.info)
+            got = _fetch_live(cfg, dataset, ward, start, as_of)
             path.parent.mkdir(parents=True, exist_ok=True)
             got.rename("rain_mm").rename_axis("date").to_csv(path, lineterminator="\n")
             cached = got
         except Exception as e:                     # monitoring degrades to "data unavailable", never guesses
-            log.warning("CHIRPS live fetch failed for %s: %s", ward.id, type(e).__name__)
+            log.warning("%s live fetch failed for %s: %s", dataset.upper(), ward.id, type(e).__name__)
     return cached
 
 
 def ward_inputs(cfg, ward_id: str, year: int, as_of: date, allow_download: bool = False) -> tuple[pd.Series, pd.Series]:
+    """Rain and PET for monitoring one season.
+
+    The rainfall dataset follows the season (rainfall.monitoring_source): seasons
+    planted from rainfall.monitoring_chirps3_from_year on read CHIRPS v3.0 for both
+    the history (climatology) and the observed days, because CHIRPS v2 stops after
+    December 2026. Earlier seasons keep the configured source (CHIRPS v2 history).
+    """
     ward, hist = cfg.ward(ward_id), cfg.rainfall.history
-    rain = make_source(cfg, allow_download=False).daily(ward, hist.start_year, hist.end_year)
+    dataset = cfg.rainfall.monitoring_source(year)
+    src = make_source(cfg, dataset, allow_download=False)
+    rain = src.daily(ward, hist.start_year, hist.end_year)
+    if hasattr(src, "latest"):                       # CHIRPS v3 cache can run past the history window
+        extra = src.latest(ward)
+        rain = pd.concat([rain, extra[extra.index > rain.index.max()]])
     pet = make_pet_source(cfg, allow_download=False).daily(ward, hist.start_year, hist.end_year)
     if year > hist.end_year or as_of > date(hist.end_year, 12, 31):
-        live = _live_rain(cfg, ward, year, as_of, allow_download)
+        live = _live_rain(cfg, ward, year, as_of, allow_download, dataset)
         if len(live):
             rain = pd.concat([rain, live[live.index > rain.index.max()]])
+    rain.attrs["dataset"] = dataset
     return rain, pet
 
 
@@ -93,6 +119,7 @@ def run_monitoring(ctx: Context, s: Session, as_of: date | None = None, mode: st
         y = year or season_for(cfg, wid, season, as_of)
         rain, pet = ward_inputs(cfg, wid, y, as_of, allow_download and mode == "live")
         r = ward_status(cfg, wid, season, y, as_of, rain, pet)
+        r["rainfall_dataset"] = rain.attrs.get("dataset", cfg.rainfall.source)
         st = WardStatus(ward_id=wid, season=season, year=y, as_of=as_of, mode=mode, phase=r["phase"], level=r["level"],
                         data_through=date.fromisoformat(r["data_through"]) if r["data_through"] else None,
                         projected_wrsi=r.get("projected_wrsi"), projected_share=r.get("projected_share", 0.0),
@@ -101,6 +128,7 @@ def run_monitoring(ctx: Context, s: Session, as_of: date | None = None, mode: st
         s.flush()
         audit(s, "monitor", "trigger.calculated", "ward_status", str(st.id), ward=wid, season=season, year=y, mode=mode,
               phase=st.phase, level=st.level, confirmed=r["confirmed"], index_versions=r["index_version"],
+              rainfall_dataset=r["rainfall_dataset"],
               source_sha256=r.get("inputs_sha256"), file_sha256=r["config_sha256"].get("product.yaml"))
         apply_confirmed(ctx, s, st)
         out.append(st)

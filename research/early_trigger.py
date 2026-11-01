@@ -43,6 +43,16 @@ WIDTH, ORIGIN_LON, ORIGIN_LAT, RES = 1500, -20.0, 40.0, 0.05
 CACHE = REPO / "data" / "raw" / "research" / "chirps_gefs_15day.json"
 
 
+def paths(dataset: str | None) -> tuple[Path, Path]:
+    """(GEFS cache, results file) for a rainfall dataset. CHIRPS v2 keeps the original
+    names; any other dataset gets its own files, because its start-of-season dates
+    (and so the forecast issue dates) differ."""
+    out = REPO / "data" / "raw" / "research"
+    if dataset in (None, "chirps"):
+        return CACHE, out / "early_trigger_results.json"
+    return out / f"chirps_gefs_15day.{dataset}.json", out / f"early_trigger_results.{dataset}.json"
+
+
 def _range(url: str, start: int, end: int) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": f"bytes={start}-{end}"})
     for attempt in range(4):
@@ -111,8 +121,11 @@ def gefs_15day_mm(lat: float, lon: float, issue: pd.Timestamp) -> tuple[float | 
     return (float(np.mean(vals)) if len(vals) >= 5 else None), url
 
 
-def fetch_gefs(cfg, tables: dict) -> dict:
-    cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+def fetch_gefs(cfg, tables: dict, cache_path: Path = CACHE) -> dict:
+    if cache_path.exists():
+        cache = json.loads(cache_path.read_text())
+    else:   # start from the CHIRPS v2 cache: entries whose issue date matches are reused
+        cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
     for wid, table in tables.items():
         c = cfg.ward(wid).centroid
         for y, r in table.iterrows():
@@ -125,9 +138,11 @@ def fetch_gefs(cfg, tables: dict) -> dict:
             mm, url = gefs_15day_mm(c.lat, c.lon, issue)
             cache[key] = {"ward_id": wid, "year": int(y), "issue": str(issue.date()), "gefs_15day_mm": mm, "url": url}
             print(f"  {wid} {y}: issued {issue.date()} -> {mm}")
-            CACHE.parent.mkdir(parents=True, exist_ok=True)
-            CACHE.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
             time.sleep(0.5)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(json.dumps(cache, indent=1) + "\n", encoding="utf-8", newline="\n")
     return cache
 
 
@@ -153,15 +168,15 @@ def projected_wrsi(cfg, ward, cal, rain: pd.Series, pet_dk: pd.Series, sos_date:
     return wrsi_from(tr)
 
 
-def run() -> dict:
+def run(dataset: str | None = None) -> dict:
     cfg = load_config(REPO / "config")
-    rs, ps = make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False)
+    rs, ps = make_source(cfg, dataset, allow_download=False), make_pet_source(cfg, allow_download=False)
     results, tables, data = {}, {}, {}
     for wid in cfg.pilot.wards:
         r = price_ward(cfg, wid, rs, ps)
         tables[wid] = r.seasons["LR"].table
         data[wid] = (r.rain_daily, to_dekads(r.pet_daily))
-    cache = fetch_gefs(cfg, tables)
+    cache = fetch_gefs(cfg, tables, paths(dataset)[0])
     trig = cfg.product.layer_b.trigger_wrsi
     for wid, table in tables.items():
         ward, cal = cfg.ward(wid), cfg.calendar(wid, "LR")
@@ -206,12 +221,17 @@ def run() -> dict:
             "gross_kes_per_acre": round(gross * si, 2),
             "history": df.to_dict(orient="records"),
         }
-    return {"check_day": CHECK_DAY, "trigger_wrsi": trig, "wards": results}
+    out = {"check_day": CHECK_DAY, "trigger_wrsi": trig, "wards": results}
+    if dataset not in (None, "chirps"):
+        out["rainfall_dataset"] = dataset
+    return out
 
 
 if __name__ == "__main__":
-    out = run()
-    p = REPO / "data" / "raw" / "research" / "early_trigger_results.json"
+    # Optional argument: rainfall dataset (chirps = v2.0, the default; chirps3 = v3.0).
+    ds = sys.argv[1] if len(sys.argv) > 1 else None
+    out = run(ds)
+    p = paths(ds)[1]
     p.write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
     for wid, r in out["wards"].items():
         print(wid, {k: v for k, v in r.items() if k != "history"})

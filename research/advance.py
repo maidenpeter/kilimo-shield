@@ -5,7 +5,8 @@ Uses the day-35 projected WRSI already computed by research/early_trigger.py
 data/raw/research/early_trigger_results.json) and the final Layer B payout from
 the engine. Writes data/raw/research/advance_results.json.
 
-    .venv/Scripts/python research/advance.py
+    .venv/Scripts/python research/advance.py            # CHIRPS v2.0 (default)
+    .venv/Scripts/python research/advance.py chirps3    # CHIRPS v3.0: reads early_trigger_results.chirps3.json
 """
 from __future__ import annotations
 
@@ -34,15 +35,26 @@ def _equivalent_range(proj: pd.Series, t: float) -> list[float]:
     return [round(float(below.max()), 2) if len(below) else None, round(float(above.min()), 2) if len(above) else None]
 
 
-def run() -> dict:
+def paths(dataset: str | None) -> tuple[Path, Path]:
+    """(projections, results) for a rainfall dataset; CHIRPS v2 keeps the original names."""
+    if dataset in (None, "chirps"):
+        return PROJECTIONS, OUT
+    return (PROJECTIONS.with_name(f"early_trigger_results.{dataset}.json"),
+            OUT.with_name(f"advance_results.{dataset}.json"))
+
+
+def run(dataset: str | None = None) -> dict:
     cfg = load_config(REPO / "config")
     a = cfg.product.layer_b.advance
-    proj_all = json.loads(PROJECTIONS.read_text())
+    projections, _ = paths(dataset)
+    proj_all = json.loads(projections.read_text())
     if proj_all["check_day"] != a.check_day_after_sos:
         raise SystemExit(f"projections are for day {proj_all['check_day']}, config says {a.check_day_after_sos}; "
                          "re-run research/early_trigger.py")
-    rs, ps = make_source(cfg, allow_download=False), make_pet_source(cfg, allow_download=False)
+    rs, ps = make_source(cfg, dataset, allow_download=False), make_pet_source(cfg, allow_download=False)
     out = {"terms": a.model_dump(), "wards": {}}
+    if dataset not in (None, "chirps"):
+        out["rainfall_dataset"] = dataset
     for wid in a.offered_wards:
         table = price_ward(cfg, wid, rs, ps).seasons["LR"].table
         hist = pd.DataFrame(proj_all["wards"][wid]["history"]).set_index("year")
@@ -70,12 +82,13 @@ def run() -> dict:
                          "fired": bool(r["fired"]), "farmer_receives_share": float(r["farmer_receives_share"]),
                          "extra_share": float(r["extra_share"])} for y, r in o.iterrows()],
         }
-    OUT.write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
+    paths(dataset)[1].write_text(json.dumps(out, indent=1, default=str) + "\n", encoding="utf-8", newline="\n")
     return out
 
 
 if __name__ == "__main__":
-    r = run()
+    # Optional argument: rainfall dataset (chirps = v2.0, the default; chirps3 = v3.0).
+    r = run(sys.argv[1] if len(sys.argv) > 1 else None)
     for wid, w in r["wards"].items():
         print(wid, "in-sample", w["in_sample"])
         print("  LOOCV", w["loocv"]["out_of_sample"], w["loocv"]["thresholds_chosen"])
