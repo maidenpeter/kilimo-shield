@@ -56,6 +56,12 @@ sms:
   payout_calculated: "AgroShield: ukame umethibitishwa katika wadi yako. Malipo KES {amount} kwa {cert} yatalipwa kufikia {by}."
   payout_paid: "AgroShield: malipo KES {amount} kwa {cert} yametumwa kwa M-Pesa yako, nambari {ref}."
   payout_paid_loan: "AgroShield: malipo KES {amount} kwa {cert} yamelipa mkopo wako wa SACCO {loan}. SACCO itakulipa salio lolote."
+  photo_healthy: "AgroShield: picha ya shamba lako kwa {cert} imekaguliwa. Mahindi yanaonekana mazima. Endelea kupalilia na tuma picha inayofuata kwa wakati."
+  photo_drought_stress: "AgroShield: picha ya {cert} inaonyesha dalili za ukame. Weka matandazo kuhifadhi unyevu. Malipo hufuata kipimo cha mvua cha wadi."
+  photo_pest: "AgroShield: picha ya {cert} inaonyesha dalili za wadudu. Uliza afisa wa ugani au muuzaji wa pembejeo dawa ya kutumia."
+  photo_disease: "AgroShield: picha ya {cert} inaonyesha dalili za ugonjwa. Uliza afisa wa ugani kabla ya kunyunyiza dawa."
+  photo_flood: "AgroShield: picha ya {cert} inaonyesha madhara ya maji. Fungua mifereji ukiweza. Malipo hufuata kipimo cha mvua cha wadi."
+  photo_other: "AgroShield: mtaalamu wa kilimo amekagua picha ya {cert}. Afisa wa SACCO yako atakueleza zaidi."
 
 ward:
   before_season: "Msimu bado haujaanza."

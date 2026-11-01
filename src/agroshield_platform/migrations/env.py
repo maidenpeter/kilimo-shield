@@ -38,11 +38,14 @@ def run_online() -> None:
         return
     engine = engine_from_config({"sqlalchemy.url": _url()}, prefix="sqlalchemy.", poolclass=pool.NullPool)
     with engine.connect() as conn:
-        _run(conn)
+        if conn.dialect.name == "sqlite":
+            conn.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            conn.commit()                      # so Alembic starts (and commits) its own transaction
+        _run(conn, pragma=False)
 
 
-def _run(connection) -> None:
-    if connection.dialect.name == "sqlite":
+def _run(connection, pragma: bool = True) -> None:
+    if pragma and connection.dialect.name == "sqlite":
         # Batch mode rebuilds a table by copy, drop and rename; with foreign keys enforced, SQLite refuses to drop a
         # table other tables point at. Off for this connection only (migrate.upgrade drops it from the pool after).
         connection.exec_driver_sql("PRAGMA foreign_keys=OFF")

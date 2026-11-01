@@ -460,3 +460,10 @@ fieldset.choice-group > legend { font-weight: var(--fw-semibold); font-size: var
 /* M-Pesa payments with no answer after every status check (Home, Reports) */
 .card.unconfirmed { border-left: 4px solid var(--crit); }
 .card.unconfirmed .inline-form { margin-top: var(--sp-2); }
+
+/* Milestone 8: photo review and the one-time PIN */
+.photo-full { width: 100%; height: auto; border-radius: var(--r-md); }
+.pin { font-family: var(--font-mono); font-size: var(--fs-lg); letter-spacing: .15em; }
+.grid2 { display: grid; gap: var(--sp-4); grid-template-columns: 1fr; }
+.grid2 > * { min-width: 0; }
+@media (min-width: 768px) { .grid2 { grid-template-columns: 1fr 1fr; } }

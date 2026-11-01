@@ -15,6 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from agroshield_pricing.config import load_config
 from agroshield_pricing.quote import RateBook, WardRates
 from agroshield_platform import services as sv
 from agroshield_platform.crypto import (PIIError, ScrubFilter, Vault, hash_password, mask_national_id, mask_phone,
@@ -359,7 +360,8 @@ def test_portal_enrolment_wizard_end_to_end(app):
         assert_no_pii(r.text)
     member_url = re.search(r'href="(/members/[0-9a-f]{32})"', c.get("/members").text).group(1)
     r = c.get(member_url)
-    assert "data processing" in r.text and "C-2026-10-29" in r.text
+    version = sv.load_consent_wording(load_config(REPO / "config"))["version"]
+    assert "data processing" in r.text and version in r.text
     assert_no_pii(r.text)
     export = c.get("/export/policies.csv")
     assert export.status_code == 200 and "*****926" in export.text

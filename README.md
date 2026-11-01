@@ -332,6 +332,24 @@ approved payouts. Set up with `agroshield-portal add-insurer`, `add-sacco --insu
   mpesa-recheck` every 5 minutes instead.
 - Overnight QA, review and morning report: `docs/overnight/`.
 
+## Crop photo app (milestone 8, remaining brief 1 to 3 Nov 2026)
+
+- **For farmers and champion farmers**: an installable web app at `/app` (works offline; photos wait on the phone and
+  send when there is signal). The SACCO officer sets it up on the member page (PIN shown once). The camera shows the
+  last photo from the same spot faintly, to keep the framing.
+- **Checks on every photo**: refused if taken more than 250 m from the farm; flagged if it is the same picture as one
+  sent before (perceptual hash), if the camera's time or GPS disagrees with the app's, if the GPS fix is weak, or if
+  it was taken long before it was sent. The stored file has no EXIF or GPS in it.
+- **Review**: underwriters (the insurer's agronomists) review at `/uw/photos`: tag and how much of the plot is
+  affected. They decide; an AI "Suggestion" appears only when the farmer agreed to AI photo checks (a separate consent,
+  pending legal review), and only the stripped picture is sent. With no `ANTHROPIC_API_KEY` the queue works without it.
+- **After review** the farmer gets a short advice SMS (with SMS consent; recorded, not sent in development).
+- **Resilience Score**: the "photos on schedule" point is earned when every growth stage was photographed in its window
+  with clean checks, and applies to the next season.
+- **Weather tab** in the app: approved KMD summaries in English and Kiswahili, labelled "Source: KMD". No SMS.
+- **Picture-based rider**: damage report and assessment built, ILLUSTRATIVE, switched off in quotes.
+- Settings: `config/photo.yaml` (not part of pricing). Demo: phone 0712 000 001, PIN 246810 (fictional farmer).
+
 ## Research (task 3b: forecast skill)
 
 `research/` holds analysis that informs the product but is not part of the pricing

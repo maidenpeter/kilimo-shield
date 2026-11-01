@@ -1,0 +1,22 @@
+{% extends "app/_layout.html" %}
+{% block title %}{{ w.damage }}{% endblock %}
+{% block body %}
+<h1>{{ w.damage }}</h1>
+<div class="alert warn"><b>In development.</b> Picture-based cover is not on sale. This screen shows how a damage report
+  would work; any amount shown to a reviewer is illustrative and nothing is paid.</div>
+{% for pol in policies %}
+<form class="stack card" method="post" action="/app/damage">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <input type="hidden" name="policy_id" value="{{ pol.id }}">
+  <h2 class="mt-0">{{ labels[pol.id] }}</h2>
+  <label for="cause-{{ loop.index }}">What caused the damage?</label>
+  <select id="cause-{{ loop.index }}" name="cause">{% for c in causes %}<option value="{{ c }}">{{ c|replace('_', ' ') }}</option>{% endfor %}</select>
+  <fieldset class="choice-group"><legend>Photos of the damage (take them first on the Photos tab)</legend>
+    {% for p in recent[pol.id] %}<label class="choice"><input type="checkbox" name="photo" value="{{ p.ref }}"> {{ p.ref }}, {{ p.taken_at.strftime('%d %b') }}</label>
+    {% else %}<p class="muted">No photos yet.</p>{% endfor %}</fieldset>
+  <label for="note-{{ loop.index }}">What happened <span class="muted">(optional)</span></label>
+  <input id="note-{{ loop.index }}" name="note" type="text" maxlength="500">
+  <p><button class="btn" type="submit">Send report</button></p>
+</form>
+{% else %}<p class="muted">No cover found.</p>{% endfor %}
+{% endblock %}

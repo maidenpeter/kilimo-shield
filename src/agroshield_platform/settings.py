@@ -69,6 +69,7 @@ class Settings:
     mpesa: Mpesa = field(default_factory=Mpesa)
     sms: Sms = field(default_factory=Sms)
     https: bool = False                  # cookies marked Secure (AGROSHIELD_HTTPS=true)
+    photo_dir: Path | None = None        # where crop photos are kept (default var/photos, config/photo.yaml)
     mpesa_recheck_seconds: int = 300
 
 

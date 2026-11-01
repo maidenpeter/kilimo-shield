@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Photo {{ p.ref }}{% endblock %}
+{% block body %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/uw/photos">Photos</a> / {{ p.ref }}</nav>
+<h1>Photo {{ p.ref }}</h1>
+<div class="grid2">
+  <figure class="card m-0">
+    <img src="/uw/photos/{{ p.ref }}.jpg" alt="Crop photo {{ p.ref }}, {{ stages[p.stage].en|lower }} stage" width="{{ p.width }}" height="{{ p.height }}" class="photo-full">
+    {% if prev %}<details class="more"><summary>Last photo from the same spot ({{ prev.taken_at.strftime('%d %b %Y') }})</summary>
+      <img src="/uw/photos/{{ prev.ref }}.jpg" alt="Earlier photo {{ prev.ref }} from the same spot" width="{{ prev.width }}" height="{{ prev.height }}" class="photo-full"></details>{% endif %}
+  </figure>
+  <div>
+    <div class="split">
+      <span>Ward</span><span>{{ ward_label(p.plot.ward_id) }}</span>
+      <span>Stage</span><span>{{ stages[p.stage].en }} ({{ 'on schedule' if p.on_schedule else 'outside ' ~ window[0].strftime('%d %b') ~ ' to ' ~ window[1].strftime('%d %b') }})</span>
+      <span>Taken</span><span>{{ p.taken_at.strftime('%d %b %Y %H:%M') }} UTC</span>
+      <span>Distance from the farm</span><span>{{ (p.distance_m|num ~ ' m') if p.distance_m is not none else 'not known' }}</span>
+      <span>Policy</span><span>{{ pol.policy_no }}, {{ pol.acres|num(1) }} acres</span>
+    </div>
+    <h2>Checks</h2>
+    {% if p.flags %}<ul>{% for f in p.flags %}<li><span class="chip {{ 'crit' if f in fraud else 'warn' }}">{{ flag_words.get(f, f) }}</span></li>{% endfor %}</ul>
+    {% else %}<p><span class="chip ok">All checks passed</span></p>{% endif %}
+
+    <h2>Suggestion</h2>
+    {% if sug and sug.status == 'ok' %}
+    <p><b>{{ tags[sug.tag] }}</b>: {{ sug.reason }}</p>
+    <p class="muted">From an AI service ({{ sug.model }}), sent the picture only. A hint, not a decision.</p>
+    {% elif sug %}<p class="muted">No suggestion: {{ {'no_consent': 'the farmer has not agreed to AI photo checks', 'no_key': 'no AI service is set up',
+      'off': 'AI suggestions are off', 'error': 'the AI service did not answer'}.get(sug.status, sug.status) }}.</p>
+    {% else %}<p class="muted">No suggestion yet.</p>{% endif %}
+
+    {% if rev %}
+    <h2>Decision</h2>
+    <p><b>{{ tags[rev.tag] }}</b>, {{ extents[rev.extent]|lower }}, by {{ rev.reviewer }} on {{ rev.decided_at.strftime('%d %b %Y') }}.
+      {% if rev.note %}{{ rev.note }}{% endif %}</p>
+    {% elif p.status == 'rejected' %}
+    <div class="alert crit">Refused: {{ p.reject_reason }}</div>
+    {% else %}
+    <h2>Your decision</h2>
+    <form class="stack" method="post" action="/uw/photos/{{ p.ref }}/review">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <fieldset class="choice-group"><legend>What do you see?</legend><div class="choice">
+        {% for k, v in tags.items() %}<label><input type="radio" name="tag" value="{{ k }}" required> {{ v }}</label>{% endfor %}</div></fieldset>
+      <label for="extent">How much of the plot is affected?</label>
+      <select id="extent" name="extent">{% for k, v in extents.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+      <label for="note">Note <span class="muted">(optional; no ID or phone numbers)</span></label>
+      <input id="note" name="note" type="text" maxlength="500">
+      {% if p.flags %}<label class="choice"><input type="checkbox" name="clear_flags" value="1"> I checked the warnings above and the photo is genuine</label>{% endif %}
+      <p><button class="btn" type="submit">Save decision</button></p>
+    </form>
+    <p class="muted">The farmer gets a short advice SMS if they agreed to SMS. In development it is recorded, not sent.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -204,6 +204,14 @@ def preview(ctx: Context, s: Session, inp: EnrolmentInput, sacco: Sacco | None =
         kiamis = ctx.kiamis.check(s, clean["national_id"], inp.acreage)
         if kiamis.certified_seed_purchased:
             resilience["certified_seed_verified"] = True   # verified at source
+    if sacco is not None and "national_id" in clean and "year" in clean:
+        # Resilience photo point: every growth stage photographed on schedule last season (photo app), verified
+        # at source like KIAMIS. It only sets an existing Resilience point; the quote itself is unchanged.
+        from . import photos
+        known = s.scalar(select(Farmer).where(Farmer.sacco_id == sacco.id, Farmer.national_id_hash ==
+                                              ctx.vault.lookup_hash(clean["national_id"], "national_id")))
+        if known and photos.earned_for_farmer(s, photos.config(ctx.cfg.root), known, clean["year"], inp.season):
+            resilience[photos.config(ctx.cfg.root)["resilience"]["point_id"]] = True
     q = None
     if not errors:
         try:

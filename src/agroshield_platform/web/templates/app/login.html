@@ -1,0 +1,17 @@
+{% extends "app/_layout.html" %}
+{% block title %}{{ w.sign_in }}{% endblock %}
+{% block body %}
+<h1>{{ w.title }}</h1>
+<p>Send photos of your maize at each growth stage. Your SACCO officer gives you a PIN. /
+  <span lang="sw">Tuma picha za mahindi yako katika kila hatua. Afisa wa SACCO yako atakupa PIN.</span></p>
+{% if error %}<div class="alert crit" role="alert">{{ error }}</div>{% endif %}
+<form class="stack card" method="post" action="/app/login" autocomplete="on">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="phone">Phone number / <span lang="sw">Nambari ya simu</span></label>
+  <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required>
+  <label for="pin">PIN</label>
+  <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" required>
+  <button class="btn big" type="submit">Sign in / <span lang="sw">Ingia</span></button>
+</form>
+<p class="muted">Development: fictional demo farmers only. Pricing is illustrative.</p>
+{% endblock %}

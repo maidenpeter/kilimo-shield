@@ -302,6 +302,8 @@ def _demo(settings, factory) -> int:
         s.flush()
         s.add(Officer(insurer_id=ins.id, username="demo-underwriter", display_name="Demo Underwriter",
                       password_hash=hash_password(DEMO_PASSWORD), role="underwriter"))
+        s.add(Officer(username="demo-ops", display_name="Demo Operations", password_hash=hash_password(DEMO_PASSWORD),
+                      role="ops"))                                      # AgroShield operations: every-SACCO weather
         officer = Officer(sacco_id=sacco.id, username="demo-manager", display_name="Demo Manager",
                           password_hash=hash_password(DEMO_PASSWORD), role="manager")
         s.add_all([officer, Officer(sacco_id=sacco.id, username="demo-officer", display_name="Grace (demo officer)",
@@ -321,14 +323,53 @@ def _demo(settings, factory) -> int:
         s.add(second)
         s.flush()
         services.bulk_commit(ctx, s, second, officer, DEMO2_CSV)
+        _demo_photos(ctx, s, pols[0], officer)
         # One fictional remittance of part of the collected premium, waiting for the underwriter to confirm.
         from . import settlement
         settlement.record(s, officer, "5000", ctx.date().isoformat(), "bank_transfer", "DEMO-BANK-0001",
                           "fictional demo remittance", period=f"{ctx.date().year + 1}-LR", today=ctx.date())
     with transaction(factory) as s:
         sms.send_pending(s, sms.make_sender(settings.sms), ctx.vault)
-    print(f"demo SACCOs with fictional members; sign in as demo-officer, demo-manager or demo-underwriter / {DEMO_PASSWORD}")
+    print(f"demo SACCOs with fictional members; sign in as demo-officer, demo-manager, demo-underwriter or demo-ops / {DEMO_PASSWORD}")
+    print(f"photo app: /app, phone 0712 000 001, PIN {DEMO_PIN} (fictional demo farmer)")
     return 0
+
+
+DEMO_PIN = "246810"         # the photo app PIN of the first demo farmer (development databases only)
+
+
+def _demo_photos(ctx, s, pol, officer) -> None:
+    """The first demo farmer uses the photo app: two generated (not real) field pictures waiting for review, and
+    the AI photo check choice recorded as yes. Sign in at /app with phone 0712 000 001 and PIN DEMO_PIN."""
+    import io
+    import random
+    from datetime import datetime, timedelta, timezone
+
+    from PIL import Image, ImageDraw
+
+    from . import photos as ph
+    from .crypto import hash_password
+    from .services import load_consent_wording
+    user, _ = ph.set_up_user(s, pol.farmer, officer.username)
+    user.pin_hash = hash_password(DEMO_PIN)
+    ph.record_consent(s, pol.farmer, "photo_ai", True, load_consent_wording(ctx.cfg), "portal", officer.username)
+    pcfg, store = ph.config(ctx.cfg.root), REPO / "var" / "photos"
+    for i, stage in enumerate(("emergence", "vegetative")):
+        rnd = random.Random(1000 + i)
+        img = Image.new("RGB", (800, 600), (96, 72, 48))
+        d = ImageDraw.Draw(img)
+        for row in range(8):                                     # rows of green "plants" on brown soil
+            for _ in range(14):
+                x, y = rnd.randrange(800), 40 + row * 70 + rnd.randrange(-8, 8)
+                r = 10 + 12 * i + rnd.randrange(6)
+                d.ellipse([x - r, y - r, x + r, y + r], fill=(40 + rnd.randrange(40), 120 + rnd.randrange(60), 40))
+        buf = io.BytesIO()
+        img.save(buf, "JPEG")
+        start, _ = ph.stage_window(pcfg, ctx.cfg, pol, stage)
+        taken = datetime.combine(start + timedelta(days=3), datetime.min.time(), tzinfo=timezone.utc) + timedelta(hours=7)
+        ph.submit(s, ctx.cfg, pcfg, user, pol.plot_id, buf.getvalue(),
+                  {"client_id": f"demo-photo-{i}", "stage": stage, "taken_at": taken.isoformat(), "accuracy_m": 12},
+                  store, taken + timedelta(hours=1))
 
 
 def _demo_replay(ctx, s, sacco, officer) -> None:

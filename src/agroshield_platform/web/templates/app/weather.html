@@ -1,0 +1,21 @@
+{% extends "app/_layout.html" %}
+{% block title %}{{ w.weather }}{% endblock %}
+{% block body %}
+<h1>{{ w.weather }}</h1>
+<p class="muted">{{ 'Short summaries of Kenya Meteorological Department forecasts, checked and approved by people. They do not change your cover or payouts.'
+  if lg == 'en' else 'Muhtasari mfupi wa utabiri wa Idara ya Hali ya Hewa ya Kenya, uliokaguliwa na kuidhinishwa na watu. Haubadilishi bima wala malipo yako.' }}</p>
+{% for i in items %}
+<article class="card">
+  {% if lg == 'sw' %}
+  <p lang="sw">{{ i.summary_sw }}</p>
+  <details class="more"><summary>English</summary><p lang="en">{{ i.summary_en }}</p></details>
+  {% else %}
+  <p>{{ i.summary_en }}</p>
+  <details class="more"><summary>Kiswahili</summary><p lang="sw">{{ i.summary_sw }}</p></details>
+  {% endif %}
+  <p class="muted">{{ i.source_label }}{% if i.valid_from and i.valid_to %} &middot; {{ i.valid_from.strftime('%d %b') }} to {{ i.valid_to.strftime('%d %b %Y') }}{% endif %}</p>
+</article>
+{% else %}
+<p class="empty">{{ 'No approved weather summary right now.' if lg == 'en' else 'Hakuna muhtasari ulioidhinishwa kwa sasa.' }}</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "app/_layout.html" %}
+{% block body %}
+<h1 class="status-line" id="hello">{{ w.farms }}</h1>
+<section id="farms" aria-live="polite"><p class="muted">{{ 'Loading' if lg == 'en' else 'Inapakia' }}...</p></section>
+
+<section id="camera" class="card fa-camera" hidden aria-labelledby="cam-h">
+  <h2 id="cam-h" class="mt-0">{{ w.take }}: <span id="cam-farm"></span></h2>
+  <label for="stage">{{ w.stage }}</label>
+  <select id="stage">{% for key, st in stages.items() %}<option value="{{ key }}">{{ st[lg] }}</option>{% endfor %}</select>
+  <div class="fa-view" id="view">
+    <video id="video" playsinline muted hidden></video>
+    <img id="ghost" class="fa-ghost" alt="" hidden>
+    <img id="preview" class="fa-preview" alt="" hidden>
+  </div>
+  <p class="hint" id="ghost-note" hidden>{{ 'Line up with the faint last photo from this spot.' if lg == 'en' else 'Panga picha na picha hafifu ya mwisho ya mahali hapa.' }}</p>
+  <div class="actions">
+    <button class="btn big" type="button" id="snap" hidden>{{ w.take }}</button>
+    <label class="btn big" id="pick-label" for="pick">{{ w.take }}</label>
+    <input id="pick" type="file" accept="image/*" capture="environment" class="visually-hidden">
+    <button class="btn ghost small" type="button" id="cancel">{{ 'Cancel' if lg == 'en' else 'Ghairi' }}</button>
+  </div>
+  <p class="muted" id="gps">{{ 'Finding your location' if lg == 'en' else 'Inatafuta mahali ulipo' }}...</p>
+</section>
+
+<section aria-labelledby="q-h">
+  <h2 id="q-h">{{ w.queue }} <span class="chip" id="q-count">0</span></h2>
+  <ul id="queue" class="fa-list"></ul>
+  <h2>{{ w.sent }}</h2>
+  <ul id="sent" class="fa-list"></ul>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/app/photoapp.js" defer></script>{% endblock %}

@@ -67,8 +67,8 @@ from .. import ussd as ussdmod
 from ..crypto import PIIError, Vault, mask_national_id, mask_phone, normalise_national_id, normalise_phone, verify_password
 from ..db import audit, init_db, make_engine, transaction
 from ..kiamis import CsvKiamis
-from ..models import (Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Policy, Refund, Sacco, SmsMessage,
-                      WeatherItem)
+from ..models import (Consent, Farmer, MissedPayoutReport, MpesaRequest, Officer, Payout, Photo, Policy, Refund, Sacco,
+                      SmsMessage, WeatherItem)
 from ..settings import Settings, load_settings
 
 HERE = Path(__file__).parent
@@ -134,7 +134,7 @@ def ward_map(wards, counts: dict[str, int], width: int = 520, height: int = 300)
 
 
 def create_app(settings: Settings | None = None, book: RateBook | None = None, *, today=None,
-               mpesa_client=None, sms_sender=None) -> FastAPI:
+               mpesa_client=None, sms_sender=None, ai_caller=None) -> FastAPI:
     settings = settings or load_settings()
     cfg = load_config(settings.config_dir)
     factory: sessionmaker = init_db(make_engine(settings.database_url))
@@ -663,26 +663,43 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
                 stmt = stmt.where((Farmer.member_no.contains(q)) | (Farmer.full_name.contains(q)))
             return render(request, "members.html", off, rows=s.scalars(stmt.order_by(Farmer.member_no)).all(), query=q)
 
+    def own_farmer(s, off: Officer, farmer_id: str) -> Farmer:
+        f = s.get(Farmer, farmer_id)
+        if f is None or f.sacco_id != off.sacco_id:
+            raise HTTPException(404, "No such member in your SACCO.")
+        return f
+
     @app.get("/members/{farmer_id}", response_class=HTMLResponse)
     def member(request: Request, farmer_id: str):
         with transaction(factory) as s:
             off = require(request, s)
-            f = s.get(Farmer, farmer_id)
-            if f is None or f.sacco_id != off.sacco_id:
-                raise HTTPException(404, "No such member in your SACCO.")
-            consents = s.scalars(select(Consent).where(Consent.farmer_id == f.id).order_by(Consent.captured_at)).all()
-            reqs = s.scalars(select(MpesaRequest).join(Policy).where(Policy.farmer_id == f.id)
-                             .order_by(MpesaRequest.created_at.desc())).all()
-            msgs = s.scalars(select(SmsMessage).where(SmsMessage.farmer_id == f.id)
-                             .order_by(SmsMessage.created_at.desc())).all()
-            pays = s.scalars(select(Payout).join(Policy).where(Policy.farmer_id == f.id).order_by(Payout.id)).all()
-            missed = s.scalars(select(MissedPayoutReport).where(MissedPayoutReport.farmer_id == f.id)
-                               .order_by(MissedPayoutReport.created_at.desc())).all()
-            refunds = s.scalars(select(Refund).join(Policy).where(Policy.farmer_id == f.id).order_by(Refund.paid_on)).all()
-            return render(request, "member.html", off, f=f, consents=consents, policies=f.policies, mpesa_requests=reqs,
-                          messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES, payouts=pays,
-                          missed=missed, refunds=refunds, refund_left={p.id: sv.refund_outstanding(s, p) for p in f.policies},
-                          refund_methods=stl.REFUND_METHODS)
+            return member_page(request, s, off, own_farmer(s, off, farmer_id))
+
+    def member_page(request: Request, s, off: Officer, f: Farmer, status: int = 200, **kw):
+        from .. import photos as ph
+        from ..models import AppAssignment, AppUser
+        consents = s.scalars(select(Consent).where(Consent.farmer_id == f.id).order_by(Consent.captured_at)).all()
+        reqs = s.scalars(select(MpesaRequest).join(Policy).where(Policy.farmer_id == f.id)
+                         .order_by(MpesaRequest.created_at.desc())).all()
+        msgs = s.scalars(select(SmsMessage).where(SmsMessage.farmer_id == f.id)
+                         .order_by(SmsMessage.created_at.desc())).all()
+        pays = s.scalars(select(Payout).join(Policy).where(Policy.farmer_id == f.id).order_by(Payout.id)).all()
+        missed = s.scalars(select(MissedPayoutReport).where(MissedPayoutReport.farmer_id == f.id)
+                           .order_by(MissedPayoutReport.created_at.desc())).all()
+        refunds = s.scalars(select(Refund).join(Policy).where(Policy.farmer_id == f.id).order_by(Refund.paid_on)).all()
+        app_user = s.scalar(select(AppUser).where(AppUser.farmer_id == f.id))
+        assigned = ([a.plot for a in s.scalars(select(AppAssignment).where(AppAssignment.user_id == app_user.id))]
+                    if app_user else [])
+        pcfg = ph.config(cfg.root)
+        photo_status = {p.id: ph.photo_point_earned(s, pcfg, p) for p in f.policies}
+        return render(request, "member.html", off, status=status, f=f, consents=consents, policies=f.policies,
+                      mpesa_requests=reqs, messages=msgs, today=ctx().date(), min_instalment=sv.MIN_INSTALMENT_KES,
+                      payouts=pays, missed=missed, refunds=refunds,
+                      refund_left={p.id: sv.refund_outstanding(s, p) for p in f.policies},
+                      refund_methods=stl.REFUND_METHODS, app_user=app_user, assigned=assigned,
+                      photo_ai=ph.consent_granted(s, f.id, "photo_ai"), photo_status=photo_status,
+                      photo_count=len(s.scalars(select(Photo.id).where(Photo.farmer_id == f.id)).all()),
+                      stages=pcfg["stages"], photo_ai_wording=wording["purposes"]["photo_ai"], **kw)
 
     @app.post("/policies/{policy_id}/refund")
     def policy_refund(request: Request, policy_id: str, amount: str = Form(""), paid_on: str = Form(""),
@@ -1298,6 +1315,13 @@ def create_app(settings: Settings | None = None, book: RateBook | None = None, *
             "officer": None, "csrf": "", "cfg": cfg, "dev_keys": settings.dev_keys, "mpesa_env": state["mpesa"].env,
             "sms_mode": settings.sms.mode, "dev_mode": settings.dev_keys, "flash": None, "code": 500,
             "message": "Something went wrong on our side. It has been logged."}, status_code=500)
+
+    from types import SimpleNamespace
+    from . import photo_app
+    photo_app.register(app, SimpleNamespace(
+        factory=factory, render=render, templates=templates, cfg=cfg, ctx=ctx, require=require, check_csrf=check_csrf,
+        csrf=csrf, vault=vault, settings=settings, flush_sms=flush_sms, own_farmer=own_farmer, member_page=member_page,
+        wording=wording, ai_caller=ai_caller))
 
     app.state.factory = factory
     app.state.vault = vault

@@ -37,3 +37,5 @@ tools/qa/node_modules/
 
 # Personal Claude Code settings
 .claude/settings.local.json
+# Remaining-brief QA crawl screenshots stay local (large); summaries and JSON are committed
+docs/remaining/qa-*/

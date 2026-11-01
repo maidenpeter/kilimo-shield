@@ -1,0 +1,20 @@
+/* Farmer photo app: phone first, large tap targets, works at 320 px. Uses the design tokens only. */
+body.farmer-app { background: var(--bg); color: var(--ink-1); padding-bottom: calc(var(--tap) + var(--sp-4)); }
+.fa-top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); background: var(--surface); }
+.fa-top .brand { display: flex; align-items: center; gap: var(--sp-2); font-weight: 700; color: var(--ink-1); text-decoration: none; }
+.fa-top .brand svg { width: 28px; height: 28px; }
+.fa-main { max-width: 40rem; margin: 0 auto; padding: var(--sp-3); }
+.fa-offline { margin: 0; padding: var(--sp-2) var(--sp-3); background: var(--warn-soft); color: var(--warn); font-size: var(--fs-sm); }
+.fa-tabs { position: fixed; inset: auto 0 0 0; display: flex; background: var(--surface); border-top: 1px solid var(--border); }
+.fa-tabs a { flex: 1; display: flex; align-items: center; justify-content: center; min-height: var(--tap); padding: var(--sp-2);
+  text-align: center; color: var(--ink-1); text-decoration: none; font-size: var(--fs-sm); }
+.fa-tabs a[aria-current="page"] { color: var(--accent); font-weight: 700; box-shadow: inset 0 3px 0 var(--accent); }
+.fa-farm .btn.big, .fa-camera .btn.big { width: 100%; justify-content: center; }
+.fa-stages { list-style: none; padding: 0; margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-1); }
+.fa-view { position: relative; width: 100%; aspect-ratio: 3 / 4; background: var(--surface-2); border-radius: var(--r-md);
+  overflow: hidden; margin: var(--sp-2) 0; }
+.fa-view video, .fa-view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fa-ghost { opacity: .35; pointer-events: none; }
+.fa-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-2); }
+.fa-list li { padding: var(--sp-2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }

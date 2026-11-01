@@ -31,7 +31,9 @@ AXE = REPO / "tools" / "qa" / "node_modules" / "axe-core" / "axe.min.js"
 PORT = 8790
 BASE = f"http://127.0.0.1:{PORT}"
 PASSWORD = "demo-only-change-me"
-ROLES = {"public": None, "officer": "demo-officer", "manager": "demo-manager", "underwriter": "demo-underwriter"}
+ROLES = {"public": None, "officer": "demo-officer", "manager": "demo-manager", "underwriter": "demo-underwriter",
+         "ops": "demo-ops", "farmer": ("0712 000 001", "246810")}      # farmer: the photo app's phone and PIN (demo)
+OUT = REPO / "docs" / "overnight"          # --out docs/remaining for the remaining-brief run
 WIDTHS = [1440, 1024, 768, 375]
 SCHEMES = ["light", "dark"]
 
@@ -42,10 +44,18 @@ ROUTES = {
     "officer": ["/dashboard", "/enrol", "/quote", "/members", "/payouts", "/bulk", "/dev/mpesa"],
     "manager": ["/dashboard", "/enrol", "/quote", "/members", "/payouts", "/reports", "/import", "/weather", "/sms",
                 "/dev/mpesa"],
-    "underwriter": ["/uw", "/uw/triggers", "/uw/money", "/uw/bordereaux", "/uw/pricing", "/uw/reinsurer"],
+    "underwriter": ["/uw", "/uw/triggers", "/uw/money", "/uw/bordereaux", "/uw/pricing", "/uw/reinsurer", "/uw/photos",
+                    "/uw/weather"],
+    "ops": ["/weather"],
+    "farmer": ["/app", "/app/weather", "/app/consent", "/app/damage"],
 }
+OPTIONAL = {"/uw/devices"}                 # pages from branches that may not be merged yet: skipped when they 404
 DISCOVER = {"public": [r"^/learn/[a-z0-9-]+$"], "officer": [r"^/members/[0-9a-f]{32}$"], "manager": [r"^/members/[0-9a-f]{32}$"],
-            "underwriter": [r"^/uw/runs/[^/]+/report\.html$"]}
+            "underwriter": [r"^/uw/runs/[^/]+/report\.html$", r"^/uw/photos/PH-[0-9A-F]+$"]}
+# Words officers and farmers should not meet on their screens (outside "Details" toggles). Underwriter pages may use them.
+JARGON = ["WRSI", "parametric", "dekad", "phenology", "actuarial", "bordereau", "CHIRPS", "basis risk", "loading",
+          "stochastic", "indemnity", "attachment point", "exhaustion point"]
+PLAIN_ROLES = {"officer", "manager", "farmer"}
 SKIP_LINK = re.compile(r"^/(logout|export/|bulk/template|uw/bordereaux/.+\.zip|weather/\d+/pdf)")
 
 PAGE_CHECKS = """() => {
@@ -83,6 +93,12 @@ PAGE_CHECKS = """() => {
     return e.scrollWidth > e.clientWidth + 2 && cs.overflowX === 'visible' && e.clientWidth > 0 && !['TABLE','TBODY','TR','TD','TH','THEAD'].includes(e.tagName) && !(e instanceof SVGElement) && !e.closest('.table-wrap');
   }).slice(0, 5).map(e => e.tagName + '.' + ((e.className && e.className.baseVal !== undefined) ? e.className.baseVal : (e.className || '')).toString().slice(0, 30));
   out.overflowing = overflow;
+  const main = document.querySelector('main');
+  if (main) {
+    const copy = main.cloneNode(true);
+    copy.querySelectorAll('details, script, style, [hidden]').forEach(e => e.remove());
+    out.visibleText = copy.innerText || copy.textContent || '';
+  }
   return out;
 }"""
 
@@ -111,7 +127,14 @@ def slug(path: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]", "-", s)[:60]
 
 
-def login(page, user: str) -> None:
+def login(page, user) -> None:
+    if isinstance(user, tuple):                       # the farmer photo app
+        page.goto(BASE + "/app/login")
+        page.fill("#phone", user[0])
+        page.fill("#pin", user[1])
+        page.click("form.stack button[type=submit]")
+        page.wait_for_load_state("networkidle")
+        return
     page.goto(BASE + "/login")
     page.fill("#username", user)
     page.fill("#password", PASSWORD)
@@ -120,7 +143,7 @@ def login(page, user: str) -> None:
 
 
 def crawl(label: str, widths: list[int], schemes: list[str], roles: list[str], shots: bool) -> dict:
-    out_dir = REPO / "docs" / "overnight" / label
+    out_dir = OUT / label
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
@@ -138,7 +161,10 @@ def crawl(label: str, widths: list[int], schemes: list[str], roles: list[str], s
                     login(pg, ROLES[role])
                 routes = list(ROUTES[role])
                 for path in list(routes):
-                    pg.goto(BASE + path)
+                    r = pg.goto(BASE + path)
+                    if path in OPTIONAL and r and r.status == 404:
+                        routes.remove(path)
+                        continue
                     for href in pg.eval_on_selector_all("a[href]", "els => els.map(e => e.getAttribute('href'))"):
                         if any(re.match(rx, href or "") for rx in DISCOVER.get(role, [])) and href not in routes:
                             routes.append(href)
@@ -186,6 +212,9 @@ def crawl(label: str, widths: list[int], schemes: list[str], roles: list[str], s
                                     window.scrollTo(0, 0); }""")
                                 page.screenshot(path=out_dir / name, full_page=True, type="jpeg", quality=70)
                             checks.pop("links", None)
+                            text = checks.pop("visibleText", "") or ""
+                            checks["jargon"] = sorted({w for w in JARGON if re.search(rf"\b{re.escape(w)}\b", text, re.I)}) \
+                                if role in PLAIN_ROLES else []
                             results.append({"role": role, "path": path, "width": width, "scheme": scheme, "status": status,
                                             "screenshot": name if shots else None, **checks, "axe": axe,
                                             "console_errors": console[console_before:], "failed_requests": failed[failed_before:]})
@@ -195,7 +224,7 @@ def crawl(label: str, widths: list[int], schemes: list[str], roles: list[str], s
         server.terminate()
     data = {"label": label, "widths": widths, "schemes": schemes, "pages": results,
             "links": [{"role": r, "href": h, "status": s} for (r, h), s in sorted(link_status.items())]}
-    (REPO / "docs" / "overnight" / f"{label}.json").write_text(json.dumps(data, indent=1), encoding="utf-8", newline="\n")
+    (OUT / f"{label}.json").write_text(json.dumps(data, indent=1), encoding="utf-8", newline="\n")
     return data
 
 
@@ -238,6 +267,8 @@ def summarise(data: dict) -> str:
                                                           for p in pages for t in (p.get("smallTargets") or [])}))
     section("Elements overflowing their box", sorted({f"- {p['role']} {p['path']} at {p['width']}: {', '.join(p['overflowing'])}"
                                                        for p in pages if p.get("overflowing")}))
+    section("Jargon on officer and farmer screens (outside Details)",
+            sorted({f"- {p['role']} {p['path']}: {', '.join(p['jargon'])}" for p in pages if p.get("jargon")}))
     return "\n".join(lines) + "\n"
 
 
@@ -248,8 +279,10 @@ if __name__ == "__main__":
     ap.add_argument("--schemes", default=",".join(SCHEMES))
     ap.add_argument("--roles", default=",".join(ROLES))
     ap.add_argument("--no-shots", action="store_true")
+    ap.add_argument("--out", default="docs/overnight", help="folder for screenshots, JSON and summary")
     a = ap.parse_args()
+    OUT = REPO / a.out
     data = crawl(a.label, [int(w) for w in a.widths.split(",")], a.schemes.split(","), a.roles.split(","), not a.no_shots)
     report = summarise(data)
-    (REPO / "docs" / "overnight" / f"{a.label}-summary.md").write_text(report, encoding="utf-8", newline="\n")
+    (OUT / f"{a.label}-summary.md").write_text(report, encoding="utf-8", newline="\n")
     print(report[:6000])

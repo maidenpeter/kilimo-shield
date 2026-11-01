@@ -10,7 +10,9 @@
 #   kiswahili: {reviewer: "Name", date: "2026-11-15"}
 # Record a review only together with a new version string (the wording a farmer
 # agreed to is identified by version + SHA-256).
-version: "C-2026-10-29"
+# C-2026-11-01 adds the separate purpose "photo_ai" (milestone 8); the wording of the other purposes is unchanged,
+# so their SHA-256 values (and every earlier consent record) stay valid.
+version: "C-2026-11-01"
 review:
   status: pending legal and Kiswahili review
   legal: null
@@ -43,3 +45,19 @@ purposes:
     sw: >-
       Ninakubali kwamba malipo yoyote ya bima hii yalipe kwanza mkopo wangu wa
       SACCO, na salio lolote nilipwe mimi.
+  photo_ai:
+    required: false
+    # PENDING LEGAL REVIEW of the cross-border transfer (Data Protection Act, 2019, transfers outside Kenya).
+    # Separate from every other purpose; asked only in the photo app or by the officer, never at enrolment.
+    pending: legal review (cross-border transfer)
+    en: >-
+      I agree that my crop photos may be checked by an AI service, which may
+      process them outside Kenya, to suggest what a human reviewer should look
+      at. Only the picture is sent: no name, phone, ID or location. A person
+      always makes the decision. I can stop this at any time.
+    sw: >-
+      Ninakubali picha za mazao yangu zikaguliwe na huduma ya AI, ambayo
+      inaweza kuzichakata nje ya Kenya, ili kupendekeza kile ambacho mkaguzi
+      binadamu aangalie. Picha pekee ndiyo hutumwa: hakuna jina, simu,
+      kitambulisho wala mahali. Binadamu ndiye hufanya uamuzi daima. Ninaweza
+      kusitisha hili wakati wowote.

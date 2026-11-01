@@ -437,3 +437,128 @@ class Refund(Base):
     recorded_by: Mapped[str] = mapped_column(String(60))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     policy: Mapped[Policy] = relationship()
+
+
+# ------------------------------------------------------------------ milestone 8: photo app
+class AppUser(Base):
+    """A farmer (or champion farmer) who signs in to the photo app with their phone number and a PIN the SACCO
+    officer set up. Champion farmers photograph several farmers' plots (AppAssignment)."""
+    __tablename__ = "app_user"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farmer_id: Mapped[str] = mapped_column(ForeignKey("farmer.id"), unique=True)
+    role: Mapped[str] = mapped_column(String(12), default="farmer")        # farmer | champion
+    pin_hash: Mapped[str] = mapped_column(String(200))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    farmer: Mapped[Farmer] = relationship()
+
+
+class AppAssignment(Base):
+    """A plot a champion farmer may photograph for another farmer (same SACCO), set by the SACCO."""
+    __tablename__ = "app_assignment"
+    __table_args__ = (UniqueConstraint("user_id", "plot_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id"), index=True)
+    plot_id: Mapped[str] = mapped_column(ForeignKey("plot.id"))
+    created_by: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    plot: Mapped[Plot] = relationship()
+
+
+class PhotoPoint(Base):
+    """A fixed spot on a plot that is photographed again at each stage, so pictures can be compared."""
+    __tablename__ = "photo_point"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    plot_id: Mapped[str] = mapped_column(ForeignKey("plot.id"), index=True)
+    label: Mapped[str] = mapped_column(String(40))
+    lat: Mapped[float] = mapped_column(Float)
+    lon: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class RiderClaim(Base):
+    """Picture-based rider (ILLUSTRATIVE, not on sale): a damage report with photos, assessed by a reviewer.
+    The assessment is a labelled illustration; it never creates a Payout."""
+    __tablename__ = "rider_claim"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    policy_id: Mapped[str] = mapped_column(ForeignKey("policy.id"), index=True)
+    reported_by: Mapped[int] = mapped_column(ForeignKey("app_user.id"))
+    cause: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(String(12), default="submitted")       # submitted | assessed
+    extent: Mapped[str | None] = mapped_column(String(8))
+    illustrative_amount_kes: Mapped[float | None] = mapped_column(Float)
+    assessed_by: Mapped[str | None] = mapped_column(String(60))
+    assessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    policy: Mapped[Policy] = relationship()
+
+
+class Photo(Base):
+    """One crop photo. The stored file is re-encoded without EXIF or GPS; location and times are kept here.
+    status: rejected (failed a hard check, never reviewed) | in_review | reviewed."""
+    __tablename__ = "photo"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str] = mapped_column(String(12), unique=True)
+    client_id: Mapped[str] = mapped_column(String(64), unique=True)          # offline queue key: retries are harmless
+    plot_id: Mapped[str] = mapped_column(ForeignKey("plot.id"), index=True)
+    farmer_id: Mapped[str] = mapped_column(ForeignKey("farmer.id"), index=True)
+    policy_id: Mapped[str | None] = mapped_column(ForeignKey("policy.id"))
+    photo_point_id: Mapped[int | None] = mapped_column(ForeignKey("photo_point.id"))
+    taken_by: Mapped[int] = mapped_column(ForeignKey("app_user.id"))
+    stage: Mapped[str] = mapped_column(String(16))
+    taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))       # UTC, as the app reported it
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    lat: Mapped[float | None] = mapped_column(Float)
+    lon: Mapped[float | None] = mapped_column(Float)
+    accuracy_m: Mapped[float | None] = mapped_column(Float)
+    distance_m: Mapped[float | None] = mapped_column(Float)                   # from the registered plot point
+    sha256: Mapped[str] = mapped_column(String(64), index=True)                # of the stripped file
+    phash: Mapped[str] = mapped_column(String(16), index=True)                 # 64-bit dHash, hex
+    file_path: Mapped[str] = mapped_column(String(300))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    flags: Mapped[list] = mapped_column(JSON, default=list)                    # e.g. ["duplicate", "time_mismatch"]
+    on_schedule: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(12), default="in_review")
+    reject_reason: Mapped[str | None] = mapped_column(String(200))
+    rider_claim_id: Mapped[int | None] = mapped_column(ForeignKey("rider_claim.id"))
+    plot: Mapped[Plot] = relationship()
+    farmer: Mapped[Farmer] = relationship()
+    point: Mapped[PhotoPoint | None] = relationship()
+
+
+class PhotoSuggestion(Base):
+    """What the AI service suggested for one photo (shown to the reviewer as "Suggestion"), or why it did not.
+    status: ok | no_consent | no_key | off | error. sent_sha256 is the hash of the exact bytes sent (EXIF-free)."""
+    __tablename__ = "photo_suggestion"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    photo_id: Mapped[int] = mapped_column(ForeignKey("photo.id"), index=True)
+    status: Mapped[str] = mapped_column(String(12))
+    tag: Mapped[str | None] = mapped_column(String(20))
+    reason: Mapped[str | None] = mapped_column(String(300))
+    model: Mapped[str | None] = mapped_column(String(40))
+    sent_sha256: Mapped[str | None] = mapped_column(String(64))
+    error: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PhotoReview(Base):
+    """The human agronomist's decision, logged next to the suggestion they saw (if any). The reviewer decides."""
+    __tablename__ = "photo_review"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    photo_id: Mapped[int] = mapped_column(ForeignKey("photo.id"), unique=True)
+    reviewer: Mapped[str] = mapped_column(String(60))
+    tag: Mapped[str] = mapped_column(String(20))           # healthy | drought_stress | pest | disease | flood | other
+    extent: Mapped[str] = mapped_column(String(8))          # none | lt25 | 25_50 | 50_75 | gt75
+    note: Mapped[str | None] = mapped_column(String(500))
+    suggestion_id: Mapped[int | None] = mapped_column(ForeignKey("photo_suggestion.id"))
+    suggestion_tag: Mapped[str | None] = mapped_column(String(20))
+    agreed_with_suggestion: Mapped[bool | None] = mapped_column(Boolean)
+    flags_cleared: Mapped[bool] = mapped_column(Boolean, default=False)       # reviewer judged the flags harmless
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

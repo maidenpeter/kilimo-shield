@@ -112,6 +112,51 @@
 </div>
 {% else %}<p class="muted">No cover yet.</p>{% endfor %}
 
+<div class="card" id="photo-app">
+  <h2 class="mt-0">Crop photo app</h2>
+  {% if new_pin %}<div class="alert ok" role="status"><b>PIN for {{ f.full_name }}: <span class="pin">{{ new_pin }}</span></b>.
+    Read it out to the farmer now. It is not shown again; set up again to make a new one.</div>{% endif %}
+  {% if app_error %}<div class="alert crit" role="alert">{{ app_error }}</div>{% endif %}
+  {% if app_user %}
+  <p>Signed up as a <b>{{ 'champion farmer' if app_user.role == 'champion' else 'farmer' }}</b>{% if app_user.last_login_at %}, last used
+    {{ app_user.last_login_at.strftime('%d %b %Y') }}{% endif %}. {{ photo_count }} photo{{ 's' if photo_count != 1 }} sent.
+    The farmer opens <b>/app</b> on their phone and signs in with their phone number and PIN.</p>
+  {% else %}
+  <p>The farmer sends photos of the crop at each growth stage from their phone, even with weak signal. Photos taken on
+    schedule earn a Resilience point for next season.</p>
+  {% endif %}
+  {% for p in policies %}{% set ps = photo_status[p.id] %}
+  <p class="muted">{{ season_label(p.season, p.year)|capitalize }}: {% for k, done in ps.stages.items() %}{{ stages[k].en }} {{ 'done' if done else 'not yet' }}{{ ', ' if not loop.last }}{% endfor %}.
+    {% if ps.earned %}<span class="chip ok">photo point earned</span>{% endif %}</p>
+  {% endfor %}
+  <form method="post" action="/members/{{ f.id }}/app-user" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label class="visually-hidden" for="app-role">Role in the photo app</label>
+    <select id="app-role" name="role"><option value="farmer" {% if app_user and app_user.role == 'farmer' %}selected{% endif %}>Farmer</option>
+      <option value="champion" {% if app_user and app_user.role == 'champion' %}selected{% endif %}>Champion farmer</option></select>
+    <button class="btn small" type="submit">{{ 'Reset PIN' if app_user else 'Set up the photo app' }}</button>
+  </form>
+  {% if app_user and app_user.role == 'champion' %}
+  <h3>Farms this champion farmer photographs</h3>
+  {% if assigned %}<ul>{% for pl in assigned %}<li>{{ pl.farmer.member_no }}, {{ ward_label(pl.ward_id) }}, {{ pl.acreage|num(1) }} acres</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Only their own farm so far.</p>{% endif %}
+  <form method="post" action="/members/{{ f.id }}/app-assign" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="assign-no">Add a member's farm (member number)</label>
+    <input id="assign-no" name="member_no" type="text" maxlength="40" class="w-sm">
+    <button class="btn ghost small" type="submit">Add</button>
+  </form>
+  {% endif %}
+  <h3>AI photo checks</h3>
+  <p>{{ photo_ai_wording.en }} <span class="chip warn">pending legal review</span></p>
+  <p>Farmer's choice now: <b>{{ 'yes' if photo_ai else 'no' }}</b>. Without it, a person reviews the photos with no AI.</p>
+  <form method="post" action="/members/{{ f.id }}/photo-consent" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <button class="btn ghost small" name="choice" value="yes" type="submit">Record yes</button>
+    <button class="btn ghost small" name="choice" value="no" type="submit">Record no</button>
+  </form>
+</div>
+
 <div class="card">
   <h2 class="mt-0">Crop failed but the payout did not match?</h2>
   <p class="muted">Record it here. It is reviewed and helps improve the cover; it does not change a payout.</p>

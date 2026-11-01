@@ -23,7 +23,7 @@ ROLES = {"public": (None, "/", ["Crops", "Livestock", "How it works", "For insur
          "officer": ("officer", "/dashboard", ["Home", "Enrol a farmer", "Members"]),
          "manager": ("manager", "/dashboard", ["Home", "Enrol a farmer", "Members", "Reports", "Import", "Weather"]),
          "underwriter": ("underwriter", "/uw", ["Portfolio", "Triggers and payouts", "Money", "Bordereaux", "Pricing",
-                                                 "Reinsurer summary", "Weather"])}
+                                                 "Photos", "Reinsurer", "Weather"])}
 
 NAV_STATE = """() => {
   const header = document.querySelector('header.site'), nav = header.querySelector('nav.primary');

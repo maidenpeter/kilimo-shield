@@ -58,6 +58,12 @@ sms:
   payout_calculated: "AgroShield: dry season confirmed in your ward. Payout KES {amount} for {cert} will be paid by {by}."
   payout_paid: "AgroShield: payout KES {amount} for {cert} sent to your M-Pesa, ref {ref}."
   payout_paid_loan: "AgroShield: payout KES {amount} for {cert} paid to your SACCO loan {loan}. The SACCO pays you any balance."
+  photo_healthy: "AgroShield: your crop photo for {cert} was checked. The maize looks healthy. Keep weeding and send the next photo on time."
+  photo_drought_stress: "AgroShield: your photo for {cert} shows drought stress. Mulch to keep the soil moist. Payouts follow the ward rain index."
+  photo_pest: "AgroShield: your photo for {cert} shows signs of pests. Ask your extension officer or agro-dealer which control to use."
+  photo_disease: "AgroShield: your photo for {cert} shows signs of disease. Ask your extension officer before you spray."
+  photo_flood: "AgroShield: your photo for {cert} shows water damage. Open drains if you can. Payouts follow the ward rain index."
+  photo_other: "AgroShield: an agronomist checked your crop photo for {cert}. Your SACCO officer can tell you more."
 
 # Ward rainfall status, as farmers hear it (USSD "Payouts").
 ward:
