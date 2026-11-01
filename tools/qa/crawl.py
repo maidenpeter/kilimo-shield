@@ -79,7 +79,7 @@ PAGE_CHECKS = """() => {
       out.navOverflow = nav.scrollWidth > nav.clientWidth + 1;
     } else { out.navRows = 0; }
   }
-  out.brokenImages = [...document.images].filter(i => i.complete && i.naturalWidth === 0).map(i => i.currentSrc || i.src);
+  out.brokenImages = [...document.images].filter(i => i.getAttribute('src') && i.complete && i.naturalWidth === 0).map(i => i.currentSrc || i.src);
   out.imagesNoAlt = [...document.images].filter(i => !i.hasAttribute('alt')).map(i => i.src);
   out.links = [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
   if (vw <= 400) {

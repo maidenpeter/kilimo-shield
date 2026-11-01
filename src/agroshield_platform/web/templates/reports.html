@@ -51,12 +51,14 @@
       <tr><td>{{ cfg.ward(wid).label }}</td>
         <td>{% if st %}<span class="chip {{ 'warn' if st.level in ('watch', 'alert', 'payout') }}">{{ st.level }}</span>
           {{ season_label(st.season, st.year) }}{% if st.mode == 'replay' %} (replay){% endif %}: {{ ward_line(st) }}
-          <div class="muted">WRSI {{ st.projected_wrsi|num(1) if st.projected_wrsi is not none else 'n/a' }}
-            ({{ 'final' if 'wrsi_final' in st.result.confirmed else 'projected' }}), data to {{ st.data_through|day if st.data_through else 'none' }}</div>
+          <details class="more"><summary>Details</summary><div class="muted">WRSI {{ st.projected_wrsi|num(1) if st.projected_wrsi is not none else 'n/a' }}
+            ({{ 'final' if 'wrsi_final' in st.result.confirmed else 'projected' }}), data to {{ st.data_through|day if st.data_through else 'none' }}</div></details>
           {% else %}<span class="chip">no cover sold</span>{% endif %}</td></tr>
       {% endfor %}
     </tbody></table>
-    <p class="muted">{{ cfg.monitoring.data_note }} <a href="/payouts">Payout Tracker</a></p>
+    <p class="muted">Rainfall figures arrive a few weeks late, so a payout is confirmed after the season's data is in.
+      <a href="/payouts">Payout Tracker</a></p>
+    <details class="more"><summary>Details</summary><p class="muted">{{ cfg.monitoring.data_note }}</p></details>
   </div>
 </div>
 
