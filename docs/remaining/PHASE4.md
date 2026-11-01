@@ -105,3 +105,53 @@ Listed in full in `docs/DECISIONS_LOG.md` under "Phase 4". In short:
 - `335cc0e` device registry, ingestion API (HTTPS, MQTT, LoRaWAN), readings and photos, health, underwriter Devices page
 - `f3ca971` sentinel camera firmware, soil node decoder, device simulator, hardware docs, decisions
 - the commit adding this report
+
+## Review (1 November 2026)
+
+A second pass checked the claims above by running them again from a worktree with the import path pointing at its
+own `src/`.
+
+Reproduced:
+
+- Simulator, `python tools/devices/simulate.py --in-process --days 10` (seed 7, ending 2026-11-01 15:00 UTC): 1,039
+  requests, 1,036 accepted, 2 duplicates, 1 rejected; catch-up of 4 photos (CAM-A-01) and 48 readings (SOIL-A-01);
+  simulated rain 15.5 mm (ward-a) and 55.2 mm (ward-b). Same as above, in about 31 seconds.
+- Firmware, `pio run -e esp32cam -e esp32cam-wifi`: both SUCCESS with the same RAM and flash figures as above.
+- Pricing, index, trigger and payout code, the hashed config files, crypto, services, M-Pesa, settlement,
+  underwriting and migrations 0001 to 0003 are unchanged against 73a377e (`git diff --stat` is empty for them).
+- No em dashes in the new pages, docs, firmware or tools.
+
+Fixed in the commit "Phase 4 review fixes":
+
+- **A LoRaWAN reading resent across midnight UTC was stored twice.** The age field is in whole minutes. A reading
+  measured at 23:59:40 UTC and resent 30.5 minutes later (age 30) got a time just after midnight, and so the next
+  day's message id. A probe showed 10 mm of rain stored as 20 mm. The server now also looks for the same reading
+  under the neighbouring day's id (within 10 minutes) and answers "duplicate". New test:
+  `test_lorawan_resend_across_midnight_is_stored_once`.
+- **The Wi-Fi camera could go to the field without checking the server certificate.** `secrets.example.h` turned on
+  `ALLOW_INSECURE_TLS`, so a `secrets.h` copied from it got past the build's guard. The template no longer sets it.
+  Only the placeholder build (no `secrets.h`) allows it. An unedited copy now stops the `esp32cam-wifi` build with
+  the "Set ROOT_CA_PEM" error (checked by building it). The placeholder build still compiles.
+- The device list said "mm today" for a rolling 24-hour total. It now says "mm in 24 hours". The note under the
+  heading said devices "are hosted" at schools and SACCO offices. It now says "the plan is to host" them, because
+  none are deployed yet.
+- `register --json` now also prints the ward and DevEUI, which `simulate.py --keys` reads. Before, every device fell
+  back to ward-a. The README example's `observed_at` now matches the time in its message id.
+
+Full suite after the fixes: 362 passed in 624.69 s. As noted above, the git-ignored `runs/` folders were copied in
+from the main tree for `test_uw.py::test_pricing_runs_and_reports`.
+
+Still open (not fixed in review):
+
+- **Camera wiring needs a bench check.** GPIO 12 (modem TX) is a boot strapping pin. If the modem side pulls it high
+  at power-on, the ESP32 picks the wrong flash voltage and does not boot. The SIM800L's serial lines run at 2.8 V, so
+  the 3.3 V TX line may need a level shifter. Neither has been tried on a board.
+- **SIM800L TLS.** KNOWN_ISSUES already lists this (no certificate check). Also check on the bench that the module can
+  make a TLS connection the production server accepts at all.
+- **LoRaWAN catch-up rate.** The simulator sends 48 stored soil readings in one burst after an outage. Real node
+  firmware (not written yet) has to spread a backlog over time to stay within the network's duty-cycle and fair-use
+  limits.
+- **Merge note.** The app.css rule that tightens the underwriter nav assumes eight links. If main's Phase 3 changes
+  the underwriter nav, run `tests/test_navbar.py` again after the merge.
+- Decision 4.1 (who sees which devices) still needs owner confirmation, photo retention still needs approval, and
+  TAHMO is still Blocked.
