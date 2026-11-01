@@ -30,7 +30,7 @@ from pathlib import Path
 
 import yaml
 from PIL import ExifTags, Image, ImageOps, UnidentifiedImageError
-from sqlalchemy import select
+from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session
 
 from . import sms
@@ -45,12 +45,25 @@ TAGS = {"healthy": "Healthy", "drought_stress": "Drought stress", "pest": "Pest"
         "flood": "Flood", "other": "Other"}
 EXTENTS = {"none": "No damage", "lt25": "Under a quarter of the plot", "25_50": "A quarter to half",
            "50_75": "Half to three quarters", "gt75": "More than three quarters"}
-FRAUD_FLAGS = {"duplicate", "reused", "time_mismatch", "gps_mismatch", "future_time", "old_photo"}
-FLAG_WORDS = {"duplicate": "Same picture sent before for this plot", "reused": "Same picture as another plot's photo",
-              "time_mismatch": "Camera time and app time disagree", "gps_mismatch": "Camera location and app location disagree",
-              "future_time": "Taken in the future", "old_photo": "Taken long before it was sent",
-              "low_gps_accuracy": "Weak GPS fix", "no_plot_location": "The plot has no recorded location",
-              "no_gps": "No location from the phone"}
+FRAUD_FLAGS = {"duplicate", "reused", "time_mismatch", "gps_mismatch", "future_time", "old_photo", "previously_rejected"}
+# Not fraud, but the photo's place or time could not be confirmed: it is still reviewed, and it counts toward the
+# Resilience photo point only once a reviewer clears it.
+UNVERIFIED_FLAGS = {"no_gps", "no_plot_location", "far_or_low_accuracy", "no_camera_time"}
+FLAG_WORDS = {
+    "en": {"duplicate": "Same picture sent before for this plot", "reused": "Same picture as another plot's photo",
+           "previously_rejected": "Same picture as one refused before", "time_mismatch": "Camera time and app time disagree",
+           "gps_mismatch": "Camera location and app location disagree", "future_time": "Taken in the future",
+           "old_photo": "Taken long before it was sent", "low_gps_accuracy": "Weak GPS fix",
+           "no_plot_location": "The plot has no recorded location", "no_gps": "No location from the phone",
+           "far_or_low_accuracy": "Far from the farm, with a weak GPS fix", "no_camera_time": "Picked from the gallery with no camera time"},
+    "sw": {"duplicate": "Picha ileile imetumwa awali kwa shamba hili", "reused": "Picha ileile ya shamba jingine",
+           "previously_rejected": "Picha ileile iliyokataliwa awali", "time_mismatch": "Saa ya kamera na ya programu hazilingani",
+           "gps_mismatch": "Mahali pa kamera na pa programu hapalingani", "future_time": "Imepigwa siku za usoni",
+           "old_photo": "Ilipigwa muda mrefu kabla ya kutumwa", "low_gps_accuracy": "GPS dhaifu",
+           "no_plot_location": "Shamba halina mahali palipoandikwa", "no_gps": "Simu haikutoa mahali",
+           "far_or_low_accuracy": "Mbali na shamba, GPS dhaifu", "no_camera_time": "Imechaguliwa kwenye picha bila saa ya kamera"},
+}
+MAX_PIXELS = 50_000_000                  # larger uploads are refused before decoding (decompression bombs)
 
 
 class PhotoError(ValueError):
@@ -138,8 +151,10 @@ def process_image(data: bytes, max_side: int) -> Processed:
     """Read EXIF for the checks, then re-encode without any metadata. The stored and sent copies are this one."""
     try:
         img = Image.open(io.BytesIO(data))
+        if img.size[0] * img.size[1] > MAX_PIXELS:
+            raise PhotoError("That photo is too large. Take the photo again.")
         img.load()
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise PhotoError("That file is not a photo we can read. Take the photo again.") from None
     if img.format not in ("JPEG", "PNG", "WEBP"):
         raise PhotoError("Send a JPEG, PNG or WebP photo.")
@@ -148,58 +163,105 @@ def process_image(data: bytes, max_side: int) -> Processed:
     when = _exif_time(exif)
     img = ImageOps.exif_transpose(img).convert("RGB")
     img.thumbnail((max_side, max_side), Image.LANCZOS)
+    jpeg = pixels_only_jpeg(img)
+    return Processed(jpeg, img.width, img.height, dhash(img), when, lat, lon)
+
+
+def pixels_only_jpeg(img: Image.Image) -> bytes:
+    """Rebuild the picture from its pixels, so no EXIF, GPS, comment, XMP or ICC data can ride along."""
+    clean = Image.frombytes("RGB", img.size, img.convert("RGB").tobytes())
     out = io.BytesIO()
-    img.save(out, "JPEG", quality=85, optimize=True)          # no exif= argument: nothing carried over
-    return Processed(out.getvalue(), img.width, img.height, dhash(img), when, lat, lon)
+    clean.save(out, "JPEG", quality=85, optimize=True)
+    return out.getvalue()
 
 
 def has_metadata(jpeg: bytes) -> bool:
-    """True if the bytes still carry EXIF (any tag) or GPS. Checked before anything leaves the server."""
+    """True if the JPEG carries anything but pixels: EXIF or GPS, a comment (COM), or any APP1 to APP15 segment
+    (XMP, MPF, ICC and the like). Only JFIF (APP0) is allowed. Checked before anything leaves the server."""
     img = Image.open(io.BytesIO(jpeg))
-    return bool(img.getexif()) or "exif" in img.info or b"Exif\x00\x00" in jpeg[:65536]
+    if img.getexif() or {"exif", "comment", "icc_profile", "xmp"} & set(img.info):
+        return True
+    i = 2
+    while i + 4 <= len(jpeg) and jpeg[i] == 0xFF:
+        marker = jpeg[i + 1]
+        if marker in (0xD9, 0xDA):                   # end of image, or start of scan: no more metadata segments
+            return False
+        if marker == 0xFE or 0xE1 <= marker <= 0xEF:
+            return True
+        i += 2 + int.from_bytes(jpeg[i + 2:i + 4], "big")
+    return False
 
 
 # ------------------------------------------------------------------ app users (farmers and champions)
 def set_up_user(s: Session, farmer: Farmer, actor: str, role: str = "farmer") -> tuple[AppUser, str]:
-    """Create or reset a farmer's photo app sign-in. Returns the new 6-digit PIN, shown once to read out."""
+    """Create or reset a farmer's photo app sign-in. Returns the new 6-digit PIN, shown once to read out.
+    A reset signs the phone out everywhere (session_version), and a champion who becomes a farmer loses their
+    assigned farms."""
     if role not in ("farmer", "champion"):
         raise PhotoError("Choose farmer or champion farmer.")
     pin = f"{secrets.randbelow(10**6):06d}"
     user = s.scalar(select(AppUser).where(AppUser.farmer_id == farmer.id))
     if user is None:
-        user = AppUser(farmer_id=farmer.id, role=role, pin_hash=hash_password(pin), created_by=actor)
+        user = AppUser(farmer_id=farmer.id, role=role, pin_hash=hash_password(pin), created_by=actor, session_version=0)
         s.add(user)
     else:
+        if user.role == "champion" and role != "champion":
+            for a in s.scalars(select(AppAssignment).where(AppAssignment.user_id == user.id)):
+                audit(s, actor, "app.plot_unassigned", "plot", a.plot_id, champion=user.id)
+                s.delete(a)
         user.role, user.pin_hash, user.active, user.failed_attempts, user.locked_until = role, hash_password(pin), True, 0, None
+        user.session_version = (user.session_version or 0) + 1
     s.flush()
     audit(s, actor, "app.user_set_up", "farmer", farmer.id, role=role, member_no=farmer.member_no)
     return user, pin
 
 
+def disable_user(s: Session, user: AppUser, actor: str) -> None:
+    """Stop a photo app sign-in (a lost phone, a champion who left). Every open session ends at once."""
+    user.active, user.session_version = False, (user.session_version or 0) + 1
+    audit(s, actor, "app.user_disabled", "farmer", user.farmer_id)
+
+
+_DUMMY_HASH = hash_password(secrets.token_hex(8))     # same scrypt cost when the phone is unknown or locked
+
+
 def authenticate(s: Session, vault, phone: str, pin: str, cfg: dict, now: datetime) -> AppUser:
-    """Phone number and PIN. Locked for a while after too many wrong PINs. The error never says which was wrong."""
-    wrong = PhotoError("That phone number and PIN do not match. Ask your SACCO officer if you forgot your PIN.")
+    """Phone number and PIN. The answer and its cost are the same whether the phone is unknown, the PIN is wrong or
+    the account is locked, so the page cannot be used to find out who is registered. The failure counter is
+    raised in the database before the PIN is checked, so parallel guesses cannot get round the limit. Several
+    farmers may share one phone (a household): each keeps their own PIN."""
+    wrong = PhotoError("That phone number and PIN do not match. After several wrong tries, wait 30 minutes or ask "
+                       "your SACCO officer to reset your PIN.")
     try:
         h = vault.lookup_hash(normalise_phone(phone), "phone")
     except PIIError:
+        verify_password(pin or "", _DUMMY_HASH)
         raise wrong from None
-    users = [u for f in s.scalars(select(Farmer).where(Farmer.phone_hash == h))
-             if (u := s.scalar(select(AppUser).where(AppUser.farmer_id == f.id, AppUser.active.is_(True))))]
-    if not users:
-        verify_password(pin or "x", hash_password("timing-equaliser"))     # same work whether or not the phone exists
+    users = list(s.scalars(select(AppUser).join(Farmer, AppUser.farmer_id == Farmer.id)
+                           .where(Farmer.phone_hash == h, AppUser.active.is_(True)).order_by(AppUser.id)))
+    ok, tried = None, 0
+    for u in users:
+        # Count the attempt first, atomically, and only while not locked.
+        n = s.execute(update(AppUser).where(AppUser.id == u.id, or_(AppUser.locked_until.is_(None), AppUser.locked_until <= now))
+                      .values(failed_attempts=AppUser.failed_attempts + 1).execution_options(synchronize_session=False)).rowcount
+        s.flush()
+        if n != 1:
+            continue                                      # locked: not tried
+        tried += 1
+        s.refresh(u)
+        if ok is None and verify_password(pin or "", u.pin_hash):
+            ok = u
+        elif u.failed_attempts >= cfg["app"]["max_pin_attempts"]:
+            u.locked_until, u.failed_attempts = now + timedelta(minutes=cfg["app"]["lockout_minutes"]), 0
+    if tried == 0:
+        verify_password(pin or "", _DUMMY_HASH)
+    if ok is None:
+        for u in users:
+            audit(s, "app", "app.login_failed", "app_user", str(u.id))
         raise wrong
-    user = users[0]
-    if user.locked_until and _utc(user.locked_until) > now:
-        raise PhotoError("Too many wrong PINs. Try again later, or ask your SACCO officer to reset it.")
-    if not verify_password(pin or "", user.pin_hash):
-        user.failed_attempts += 1
-        if user.failed_attempts >= cfg["app"]["max_pin_attempts"]:
-            user.locked_until, user.failed_attempts = now + timedelta(minutes=cfg["app"]["lockout_minutes"]), 0
-        audit(s, "app", "app.login_failed", "app_user", str(user.id))
-        raise wrong
-    user.failed_attempts, user.locked_until, user.last_login_at = 0, None, now
-    audit(s, "app", "app.login", "app_user", str(user.id))
-    return user
+    ok.failed_attempts, ok.locked_until, ok.last_login_at = 0, None, now
+    audit(s, "app", "app.login", "app_user", str(ok.id))
+    return ok
 
 
 def assign(s: Session, champion: AppUser, plot: Plot, actor: str) -> AppAssignment:
@@ -214,6 +276,15 @@ def assign(s: Session, champion: AppUser, plot: Plot, actor: str) -> AppAssignme
         s.flush()
         audit(s, actor, "app.plot_assigned", "plot", plot.id, champion=champion.id)
     return a
+
+
+def unassign(s: Session, champion: AppUser, plot: Plot, actor: str) -> bool:
+    a = s.scalar(select(AppAssignment).where(AppAssignment.user_id == champion.id, AppAssignment.plot_id == plot.id))
+    if a is None:
+        return False
+    s.delete(a)
+    audit(s, actor, "app.plot_unassigned", "plot", plot.id, champion=champion.id)
+    return True
 
 
 def plots_for(s: Session, user: AppUser) -> list[Plot]:
@@ -257,8 +328,9 @@ def stage_window(pcfg: dict, appcfg, policy: Policy, stage: str) -> tuple[date, 
 
 
 def passes_checks(p: Photo, review: PhotoReview | None = None) -> bool:
-    """Not rejected, and no fraud flag unless a reviewer looked and cleared it."""
-    return p.status != "rejected" and (not set(p.flags or []) & FRAUD_FLAGS or bool(review and review.flags_cleared))
+    """Not rejected, place and time confirmed, and no fraud flag; or a reviewer looked and cleared the flags."""
+    blocking = set(p.flags or []) & (FRAUD_FLAGS | UNVERIFIED_FLAGS)
+    return p.status != "rejected" and (not blocking or bool(review and review.flags_cleared))
 
 
 def photo_point_earned(s: Session, pcfg: dict, policy: Policy) -> dict:
@@ -322,13 +394,16 @@ def submit(s: Session, appcfg, pcfg: dict, user: AppUser, plot_id: str, data: by
         taken = _utc(datetime.fromisoformat(str(meta.get("taken_at"))))
     except (TypeError, ValueError):
         raise PhotoError("Missing photo time. Check the phone's date and time.") from None
-    lat, lon, acc = (meta.get(k) for k in ("lat", "lon", "accuracy_m"))
-    lat = float(lat) if lat not in (None, "") else None
-    lon = float(lon) if lon not in (None, "") else None
-    acc = float(acc) if acc not in (None, "") else None
+    lat, lon, acc = (number(meta.get(k), lo, hi) for k, lo, hi in (("lat", -90, 90), ("lon", -180, 180),
+                                                                    ("accuracy_m", 0, 1e6)))
+    if (lat is None) != (lon is None):
+        lat = lon = None
+    source = meta.get("source") if meta.get("source") in ("camera", "picker") else "picker"
 
     img = process_image(data, pcfg["max_side_px"])
     ck, flags = pcfg["checks"], []
+    if source == "picker" and img.exif_time is None:
+        flags.append("no_camera_time")              # a gallery file with no camera time: its date cannot be checked
     dist = None
     if lat is None or lon is None:
         flags.append("no_gps")
@@ -348,10 +423,7 @@ def submit(s: Session, appcfg, pcfg: dict, user: AppUser, plot_id: str, data: by
             distance_m(img.exif_lat, img.exif_lon, lat, lon) > ck["exif_gps_mismatch_m"]:
         flags.append("gps_mismatch")
     sha = hashlib.sha256(img.jpeg).hexdigest()
-    for other in s.scalars(select(Photo).where(Photo.status != "rejected")):
-        if other.sha256 == sha or hamming(other.phash, img.phash) <= ck["duplicate_hamming"]:
-            flags.append("duplicate" if other.plot_id == plot.id else "reused")
-            break
+    flags += _match_flags(s, plot.id, stage, taken, sha, img.phash, ck["duplicate_hamming"])
 
     policy = latest_policy(s, plot)
     on_schedule = False
@@ -367,11 +439,15 @@ def submit(s: Session, appcfg, pcfg: dict, user: AppUser, plot_id: str, data: by
                   policy_id=policy.id if policy else None, taken_by=user.id, stage=stage, taken_at=taken, received_at=now,
                   lat=lat, lon=lon, accuracy_m=acc, distance_m=dist, sha256=sha, phash=img.phash, file_path=str(path),
                   width=img.width, height=img.height, flags=sorted(set(flags)), on_schedule=on_schedule)
-    if dist is not None and dist > ck["max_distance_m"]:
+    if dist is not None and dist - (acc or 0) > ck["max_distance_m"]:
+        # Clearly too far, even allowing for the phone's stated GPS accuracy.
         photo.status = "rejected"
         photo.reject_reason = f"Taken {dist:,.0f} m from the registered farm (the limit is {ck['max_distance_m']} m)."
     else:
-        photo.photo_point_id = (pt.id if (pt := _point(s, plot, lat, lon, ck["photo_point_radius_m"])) else None)
+        if dist is not None and dist > ck["max_distance_m"]:
+            photo.flags = sorted(set(photo.flags) | {"far_or_low_accuracy"})
+        if acc is None or acc <= ck["max_gps_accuracy_m"]:
+            photo.photo_point_id = (pt.id if (pt := _point(s, plot, lat, lon, ck["photo_point_radius_m"])) else None)
     s.add(photo)
     s.flush()
     audit(s, f"app:{user.id}", "photo.received", "photo", photo.ref, plot=plot.id, stage=stage, status=photo.status,
@@ -380,16 +456,50 @@ def submit(s: Session, appcfg, pcfg: dict, user: AppUser, plot_id: str, data: by
 
 
 def ghost(s: Session, plot: Plot, lat: float | None, lon: float | None, radius: float) -> Photo | None:
-    """The newest accepted photo from the photo point nearest to where the farmer stands (or the plot's newest)."""
-    q = select(Photo).where(Photo.plot_id == plot.id, Photo.status != "rejected").order_by(Photo.taken_at.desc())
-    photos = list(s.scalars(q))
+    """The newest clean photo from the photo point nearest to where the farmer stands (else the plot's newest)."""
+    photos = [p for p in s.scalars(select(Photo).where(Photo.plot_id == plot.id, Photo.status != "rejected")
+                                   .order_by(Photo.taken_at.desc())) if not set(p.flags or []) & FRAUD_FLAGS]
     if lat is not None and lon is not None:
-        pts = {pt.id: pt for pt in s.scalars(select(PhotoPoint).where(PhotoPoint.plot_id == plot.id))}
-        for p in photos:
-            pt = pts.get(p.photo_point_id)
-            if pt and distance_m(lat, lon, pt.lat, pt.lon) <= radius:
-                return p
+        pts = list(s.scalars(select(PhotoPoint).where(PhotoPoint.plot_id == plot.id)))
+        near = min(pts, key=lambda pt: distance_m(lat, lon, pt.lat, pt.lon), default=None)
+        if near and distance_m(lat, lon, near.lat, near.lon) <= radius:
+            at = [p for p in photos if p.photo_point_id == near.id]
+            if at:
+                return at[0]
     return photos[0] if photos else None
+
+
+def number(v, lo: float, hi: float) -> float | None:
+    """A coordinate or accuracy from the app: None if missing, else a finite number in range."""
+    if v in (None, ""):
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        raise PhotoError("The phone sent a location we cannot read. Try again.") from None
+    if not math.isfinite(f) or not lo <= f <= hi:
+        raise PhotoError("The phone sent a location we cannot read. Try again.")
+    return f
+
+
+def _match_flags(s: Session, plot_id: str, stage: str, taken: datetime, sha: str, phash: str, wide: int) -> list[str]:
+    """Same plot: "duplicate" only for a true re-send (same bytes, or a near-identical picture of the same stage
+    within two days), because photos lined up with the ghost of the last one are meant to look alike.
+    Another plot: "reused" for any close match. A picture refused before: "previously_rejected"."""
+    out = set()
+    for o in s.scalars(select(Photo)):
+        d = hamming(o.phash, phash)
+        same = o.sha256 == sha
+        if o.status == "rejected":
+            if same or d <= wide:
+                out.add("previously_rejected")
+        elif o.plot_id == plot_id:
+            near_time = abs(_utc(o.taken_at) - taken) <= timedelta(days=2)
+            if same or (d <= 2 and o.stage == stage and near_time):
+                out.add("duplicate")
+        elif same or d <= wide:
+            out.add("reused")
+    return sorted(out)
 
 
 # ------------------------------------------------------------------ AI suggestion for the reviewer
@@ -440,9 +550,7 @@ def suggest(s: Session, pcfg: dict, photo: Photo, caller=None, api_key: str | No
     else:
         img = Image.open(photo.file_path)
         img.thumbnail((ai["max_side_px"], ai["max_side_px"]), Image.LANCZOS)
-        buf = io.BytesIO()
-        img.convert("RGB").save(buf, "JPEG", quality=85)
-        sent = buf.getvalue()
+        sent = pixels_only_jpeg(img)
         if has_metadata(sent):                         # belt and braces: nothing with EXIF ever leaves
             sug.status, sug.error = "error", "refused: image still had metadata"
         else:

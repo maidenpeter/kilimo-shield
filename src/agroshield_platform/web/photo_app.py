@@ -20,6 +20,8 @@ Personal data stays out of URLs (photo refs and plot ids only; positions go in P
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import secrets
 from datetime import datetime, timezone
@@ -43,12 +45,26 @@ WORDS = {
            "farms": "Your farms", "take": "Take a photo", "stage": "Growth stage", "queue": "Waiting to send",
            "sent": "Sent", "offline": "No signal. Photos wait on this phone and send by themselves later.",
            "weather": "Weather", "photos": "Photos", "sign_out": "Sign out", "ai": "AI photo checks",
-           "due": "Due now", "done": "Done", "not_yet": "Not yet", "damage": "Report crop damage"},
+           "due": "Due now", "done": "Done", "not_yet": "Not yet", "damage": "Report crop damage",
+           "acres": "acres", "no_farm": "No farm is linked to you yet. Ask your SACCO officer.",
+           "gps_none": "No GPS on this phone.", "gps_off": "Location is off. Turn it on so the photo can be checked.",
+           "gps_within": "GPS: within {m} m", "remove": "Remove", "not_accepted": "not accepted",
+           "received": "received", "outside": "outside this stage's dates", "to_check": "to check",
+           "could_not_send": "Could not send. It will try again.", "saved": "Saved on this phone. It sends when there is signal.",
+           "sign_in_again": "Sign in again to send your photos.", "hello": "Hello",
+           "unsent_out": "{n} photos have not been sent yet. They stay on this phone and send the next time you sign in. Sign out?"},
     "sw": {"title": "Picha za mazao", "sign_in": "Ingia", "phone": "Nambari ya simu", "pin": "PIN kutoka SACCO yako",
            "farms": "Mashamba yako", "take": "Piga picha", "stage": "Hatua ya ukuaji", "queue": "Zinasubiri kutumwa",
            "sent": "Zimetumwa", "offline": "Hakuna mtandao. Picha zinasubiri kwenye simu na zitatumwa zenyewe baadaye.",
            "weather": "Hali ya hewa", "photos": "Picha", "sign_out": "Toka", "ai": "Ukaguzi wa picha kwa AI",
-           "due": "Wakati wake sasa", "done": "Imekamilika", "not_yet": "Bado", "damage": "Ripoti uharibifu wa mazao"},
+           "due": "Wakati wake sasa", "done": "Imekamilika", "not_yet": "Bado", "damage": "Ripoti uharibifu wa mazao",
+           "acres": "ekari", "no_farm": "Hakuna shamba lililounganishwa nawe bado. Muulize afisa wa SACCO yako.",
+           "gps_none": "Simu hii haina GPS.", "gps_off": "Mahali pamezimwa. Pawashe ili picha ikaguliwe.",
+           "gps_within": "GPS: ndani ya mita {m}", "remove": "Ondoa", "not_accepted": "haikukubaliwa",
+           "received": "imepokelewa", "outside": "nje ya tarehe za hatua hii", "to_check": "ya kukagua",
+           "could_not_send": "Haikutumwa. Itajaribu tena.", "saved": "Imehifadhiwa kwenye simu. Itatumwa kukiwa na mtandao.",
+           "sign_in_again": "Ingia tena ili kutuma picha zako.", "hello": "Habari",
+           "unsent_out": "Picha {n} bado hazijatumwa. Zitabaki kwenye simu na kutumwa utakapoingia tena. Utoke?"},
 }
 
 
@@ -64,9 +80,16 @@ def register(app, d) -> None:
         return d.ctx().now().astimezone(timezone.utc)
 
     def app_user(request: Request, s) -> AppUser | None:
+        """The signed-in farmer, if their sign-in is still valid (a PIN reset or a disable ends every session)."""
         uid = request.session.get("app_user_id")
         u = s.get(AppUser, uid) if uid else None
-        return u if u is not None and u.active else None
+        if u is None or not u.active or request.session.get("app_ver") != (u.session_version or 0):
+            return None
+        return u
+
+    def owner_key(u: AppUser) -> str:
+        """An opaque, stable id for this app user on the phone (tags the offline queue); no personal data."""
+        return hmac.new(settings.session_secret.encode(), f"app-user:{u.id}".encode(), hashlib.sha256).hexdigest()[:20]
 
     def need_user(request: Request, s, api: bool = False) -> AppUser:
         u = app_user(request, s)
@@ -137,6 +160,7 @@ def register(app, d) -> None:
             csrf = request.session.get("csrf")
             request.session.clear()
             request.session["app_user_id"], request.session["csrf"] = u.id, csrf or secrets.token_urlsafe(24)
+            request.session["app_ver"] = u.session_version or 0
         return RedirectResponse("/app", status_code=303)
 
     @app.post("/app/logout")
@@ -164,7 +188,8 @@ def register(app, d) -> None:
                 plots.append({"id": plot.id, "label": plot_label(plot, u), "acres": plot.acreage,
                               "has_location": plot.lat is not None, "season": pol and f"{pol.season} {pol.year}",
                               "stages": stages, "photos": len(s.scalars(select(Photo.id).where(Photo.plot_id == plot.id)).all())})
-            return JSONResponse({"user": {"name": L.first_name(u.farmer.full_name), "role": u.role, "lang": lang(u)},
+            return JSONResponse({"user": {"name": L.first_name(u.farmer.full_name), "role": u.role, "lang": lang(u),
+                                          "key": owner_key(u)},
                                  "csrf": d.csrf(request), "plots": plots, "words": WORDS[lang(u)]},
                                 headers={"Cache-Control": "no-store"})
 
@@ -176,15 +201,22 @@ def register(app, d) -> None:
         try:
             m = json.loads(meta)
         except ValueError:
-            m = {}
+            m = None
+        if not isinstance(m, dict):
+            return JSONResponse({"ok": False, "error": "Update the app and try again."}, status_code=422)
         with transaction(factory) as s:
             u = need_user(request, s, api=True)
             try:
                 p = ph.submit(s, cfg, pcfg, u, plot_id, data, m, store, now())
             except ph.PhotoError as e:
                 return JSONResponse({"ok": False, "error": str(e)}, status_code=422)
-            out = {"ok": True, "ref": p.ref, "status": p.status, "reason": p.reject_reason, "on_schedule": p.on_schedule,
-                   "flags": [ph.FLAG_WORDS.get(f, f) for f in p.flags]}
+            lg = lang(u)
+            reason = p.reject_reason
+            if p.status == "rejected" and lg == "sw" and p.distance_m is not None:
+                reason = (f"Ilipigwa mita {p.distance_m:,.0f} kutoka shamba lililosajiliwa "
+                          f"(kikomo ni mita {pcfg['checks']['max_distance_m']}).")
+            out = {"ok": True, "ref": p.ref, "status": p.status, "reason": reason, "on_schedule": p.on_schedule,
+                   "flags": [ph.FLAG_WORDS[lg].get(f, f) for f in p.flags]}
             pid = p.id
         if out["status"] != "rejected":
             background.add_task(suggest_later, pid)
@@ -203,14 +235,18 @@ def register(app, d) -> None:
             body = await request.json()
         except ValueError:
             body = {}
+        if not isinstance(body, dict):
+            body = {}
+        try:
+            lat, lon = ph.number(body.get("lat"), -90, 90), ph.number(body.get("lon"), -180, 180)
+        except ph.PhotoError as e:
+            return JSONResponse({"error": str(e)}, status_code=422)
         with transaction(factory) as s:
             u = need_user(request, s, api=True)
             plot = s.get(Plot, plot_id)
             if plot is None or plot.id not in {p.id for p in ph.plots_for(s, u)}:
                 raise HTTPException(404)
-            lat, lon = body.get("lat"), body.get("lon")
-            g = ph.ghost(s, plot, float(lat) if lat is not None else None, float(lon) if lon is not None else None,
-                         pcfg["checks"]["photo_point_radius_m"])
+            g = ph.ghost(s, plot, lat, lon, pcfg["checks"]["photo_point_radius_m"])
             return JSONResponse({"url": f"/app/photos/{g.ref}.jpg", "stage": g.stage} if g else {})
 
     @app.get("/app/photos/{ref}.jpg")
@@ -308,6 +344,33 @@ def register(app, d) -> None:
                 request.session["flash"] = ["crit", str(e)]
         return RedirectResponse(f"/members/{farmer_id}#photo-app", status_code=303)
 
+    @app.post("/members/{farmer_id}/app-disable")
+    def officer_app_disable(request: Request, farmer_id: str, csrf_token: str = Form("")):
+        """Turn the photo app off for this member (a lost phone, a champion who left): signs every phone out."""
+        d.check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = d.require(request, s)
+            f = d.own_farmer(s, off, farmer_id)
+            user = s.scalar(select(AppUser).where(AppUser.farmer_id == f.id))
+            if user is not None:
+                ph.disable_user(s, user, off.username)
+        request.session["flash"] = ["ok", "The photo app is turned off for this member. Set it up again to give a new PIN."]
+        return RedirectResponse(f"/members/{farmer_id}#photo-app", status_code=303)
+
+    @app.post("/members/{farmer_id}/app-unassign/{plot_id}")
+    def officer_unassign(request: Request, farmer_id: str, plot_id: str, csrf_token: str = Form("")):
+        d.check_csrf(request, csrf_token)
+        with transaction(factory) as s:
+            off = d.require(request, s)
+            f = d.own_farmer(s, off, farmer_id)
+            user = s.scalar(select(AppUser).where(AppUser.farmer_id == f.id))
+            plot = s.get(Plot, plot_id)
+            if user is None or plot is None or plot.farmer.sacco_id != off.sacco_id:
+                raise HTTPException(404)
+            ph.unassign(s, user, plot, off.username)
+        request.session["flash"] = ["ok", "Farm removed from this champion farmer's list."]
+        return RedirectResponse(f"/members/{farmer_id}#photo-app", status_code=303)
+
     @app.post("/members/{farmer_id}/photo-consent")
     def officer_photo_consent(request: Request, farmer_id: str, choice: str = Form(""), csrf_token: str = Form("")):
         d.check_csrf(request, csrf_token)
@@ -340,8 +403,8 @@ def register(app, d) -> None:
             claims = [c for c in s.scalars(select(RiderClaim).order_by(RiderClaim.created_at.desc()).limit(50)) if c.policy_id in pids]
             sugg = {g.photo_id: g for g in s.scalars(select(PhotoSuggestion).where(PhotoSuggestion.photo_id.in_([p.id for p in queue] or [-1])))}
             return render(request, "uw_photos.html", off, queue=queue, done=done, reviews=reviews, claims=claims,
-                          sugg=sugg, tags=ph.TAGS, extents=ph.EXTENTS, flag_words=ph.FLAG_WORDS, pcfg=pcfg,
-                          rider_on=ph.rider_offered(pcfg))
+                          sugg=sugg, tags=ph.TAGS, extents=ph.EXTENTS, flag_words=ph.FLAG_WORDS["en"], pcfg=pcfg,
+                          rider_on=ph.rider_offered(pcfg), fraud=ph.FRAUD_FLAGS)
 
     @app.get("/uw/photos/{ref}.jpg")
     def uw_photo_file(request: Request, ref: str):
@@ -359,12 +422,13 @@ def register(app, d) -> None:
             rev = s.scalar(select(PhotoReview).where(PhotoReview.photo_id == p.id))
             pol = s.get(Policy, p.policy_id)
             prev = s.scalar(select(Photo).where(Photo.photo_point_id == p.photo_point_id, Photo.id != p.id,
-                                                Photo.photo_point_id.is_not(None), Photo.taken_at < p.taken_at)
+                                                Photo.photo_point_id.is_not(None), Photo.taken_at < p.taken_at,
+                                                Photo.policy_id.in_(insurer_policies(s, off)))
                             .order_by(Photo.taken_at.desc()))
             window = ph.stage_window(pcfg, cfg, pol, p.stage)
             return render(request, "uw_photo.html", off, p=p, sug=sug, rev=rev, pol=pol, prev=prev, window=window,
-                          tags=ph.TAGS, extents=ph.EXTENTS, flag_words=ph.FLAG_WORDS, stages=pcfg["stages"],
-                          fraud=ph.FRAUD_FLAGS)
+                          tags=ph.TAGS, extents=ph.EXTENTS, flag_words=ph.FLAG_WORDS["en"], stages=pcfg["stages"],
+                          fraud=ph.FRAUD_FLAGS, unverified=ph.UNVERIFIED_FLAGS)
 
     @app.post("/uw/photos/{ref}/review")
     def uw_photo_review(request: Request, background: BackgroundTasks, ref: str, tag: str = Form(""),

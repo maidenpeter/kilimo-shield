@@ -14,7 +14,7 @@
     <td><a href="/uw/photos/{{ p.ref }}">{{ p.ref }}</a><div class="muted">{{ ward_label(p.plot.ward_id) }}</div></td>
     <td>{{ pcfg.stages[p.stage].en }}{% if not p.on_schedule %} <span class="chip warn">off schedule</span>{% endif %}</td>
     <td>{{ p.taken_at.strftime('%d %b %Y') }}</td>
-    <td>{% for f in p.flags %}<span class="chip {{ 'crit' if f in ('duplicate','reused','time_mismatch','gps_mismatch','future_time','old_photo') else 'warn' }}">{{ flag_words.get(f, f) }}</span> {% else %}<span class="chip ok">passed</span>{% endfor %}</td>
+    <td>{% for f in p.flags %}<span class="chip {{ 'crit' if f in fraud else 'warn' }}">{{ flag_words.get(f, f) }}</span> {% else %}<span class="chip ok">passed</span>{% endfor %}</td>
     <td>{% set g = sugg.get(p.id) %}{% if g and g.status == 'ok' %}{{ tags[g.tag] }}{% elif g %}<span class="muted">none ({{ g.status|label }})</span>{% else %}<span class="muted">none yet</span>{% endif %}</td>
   </tr>{% endfor %}</tbody>
 </table></div>

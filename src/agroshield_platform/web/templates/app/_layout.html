@@ -19,7 +19,7 @@
 <header class="fa-top">
   <a class="brand" href="/app">{% include "_mark.html" %}<span>{{ w.title }}</span></a>
   {% if u %}
-  <form method="post" action="/app/logout"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <form method="post" action="/app/logout" id="signout" data-unsent="{{ w.unsent_out }}"><input type="hidden" name="csrf_token" value="{{ csrf }}">
     <button class="btn ghost small" type="submit">{{ w.sign_out }}</button></form>
   {% endif %}
 </header>
@@ -41,6 +41,41 @@
 if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/app/sw.js", {scope: "/app"}).catch(function () {}); }
 (function () { var o = document.getElementById("offline"); function s() { o.hidden = navigator.onLine; }
   addEventListener("online", s); addEventListener("offline", s); s(); })();
+</script>
+<script>
+/* Signing out on a shared phone: forget this person's farm list, sent list and cached pages and photos. Their
+   unsent photos stay in the queue, tagged with their key, and send only when they sign in again. */
+(function () {
+  var f = document.getElementById("signout");
+  if (!f) { return; }
+  f.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var key = null;
+    try { key = localStorage.getItem("agroshield-owner"); } catch (e) {}
+    var count = new Promise(function (ok) {
+      try {
+        var r = indexedDB.open("agroshield-photos", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("queue", {keyPath: "client_id"}); };
+        r.onsuccess = function () {
+          var q = r.result.transaction("queue").objectStore("queue").getAll();
+          q.onsuccess = function () { ok(q.result.filter(function (i) { return i.owner === key && !i.error; }).length); };
+          q.onerror = function () { ok(0); };
+        };
+        r.onerror = function () { ok(0); };
+      } catch (e) { ok(0); }
+    });
+    count.then(function (n) {
+      if (n && !confirm(f.getAttribute("data-unsent").replace("{n}", n))) { return; }
+      try { localStorage.removeItem("agroshield-me"); localStorage.removeItem("agroshield-sent:" + key);
+            localStorage.removeItem("agroshield-owner"); } catch (e) {}
+      var done = window.caches ? caches.open("agroshield-app-v2").then(function (c) {
+        return c.keys().then(function (ks) { return Promise.all(ks.filter(function (k) {
+          return new URL(k.url).pathname.indexOf("/app") === 0; }).map(function (k) { return c.delete(k); })); });
+      }).catch(function () {}) : Promise.resolve();
+      done.then(function () { f.submit(); });
+    });
+  });
+})();
 </script>
 {% block scripts %}{% endblock %}
 </body>

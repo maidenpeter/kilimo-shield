@@ -2,6 +2,7 @@
 {% block title %}{{ w.damage }}{% endblock %}
 {% block body %}
 <h1>{{ w.damage }}</h1>
+<div lang="en">
 <div class="alert warn"><b>In development.</b> Picture-based cover is not on sale. This screen shows how a damage report
   would work; any amount shown to a reviewer is illustrative and nothing is paid.</div>
 {% for pol in policies %}
@@ -19,4 +20,5 @@
   <p><button class="btn" type="submit">Send report</button></p>
 </form>
 {% else %}<p class="muted">No cover found.</p>{% endfor %}
+</div>
 {% endblock %}

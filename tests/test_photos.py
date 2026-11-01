@@ -106,7 +106,7 @@ def _submit(app, uid, plot_key="plot_a", data=None, now=None, **meta):
         start, _ = ph.stage_window(pcfg, app.state.ctx.cfg, pol, meta.get("stage", "emergence"))
         when = datetime.combine(start + timedelta(days=2), datetime.min.time(), tzinfo=NAIROBI) + timedelta(hours=9)
         m = {"client_id": meta.pop("client_id", None) or f"cid-{random.random():.12f}", "stage": "emergence",
-             "taken_at": when.isoformat(), "lat": LAT + 0.0002, "lon": LON, "accuracy_m": 8, **meta}
+             "taken_at": when.isoformat(), "lat": LAT + 0.0002, "lon": LON, "accuracy_m": 8, "source": "camera", **meta}
         p = ph.submit(s, app.state.ctx.cfg, pcfg, s.get(AppUser, uid), app.state.ids[plot_key], data or jpeg(1), m,
                       app.state.photo_store, now or (when + timedelta(hours=1)).astimezone(timezone.utc))
         return p.id
@@ -357,8 +357,9 @@ def test_wrong_pins_lock_the_app_for_a_while(world):
     a = TestClient(world)
     for _ in range(5):
         assert _app_login(a, pin="999999" if pin != "999999" else "888888").status_code == 401
-    r = _app_login(a, pin=pin)
-    assert r.status_code == 401 and "Too many wrong PINs" in r.text
+    r = _app_login(a, pin=pin)                                                  # the right PIN, but locked
+    assert r.status_code == 401 and "wait 30 minutes" in r.text
+    assert _app_login(TestClient(world), phone="0799 999 999", pin=pin).text.count("wait 30 minutes") == 1   # same answer
 
 
 def test_upload_over_http_is_idempotent_and_private(world):
@@ -368,7 +369,7 @@ def test_upload_over_http_is_idempotent_and_private(world):
     _app_login(a, pin=pin)
     me = a.get("/app/api/me").json()
     meta = {"client_id": "queue-item-0001", "stage": "emergence", "taken_at": datetime.now(timezone.utc).isoformat(),
-            "lat": LAT, "lon": LON, "accuracy_m": 9}
+            "lat": LAT, "lon": LON, "accuracy_m": 9, "source": "camera"}
     send = lambda: a.post("/app/api/photos", files={"file": ("p.jpg", jpeg(81), "image/jpeg")},  # noqa: E731
                           data={"plot_id": world.state.ids["plot_a"], "meta": json.dumps(meta)},
                           headers={"X-CSRF-Token": me["csrf"]})

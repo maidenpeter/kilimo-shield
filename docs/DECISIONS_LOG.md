@@ -61,3 +61,13 @@ checklist of the run's report. "Pending owner confirmation" means the default is
 | 3.13 | Farmer weather tab | Approved summaries for the farmer's SACCO plus the every-SACCO ones, in the farmer's language first with the other one-tap away, labelled with the source ("Source: KMD"). No SMS of KMD content. | Built (brief) |
 | 3.14 | Photo storage | Re-encoded JPEG without metadata under `var/photos` (git-ignored), named by SHA-256; positions and times in the database. No retention period set yet. | Needs owner approval (retention) |
 | 3.15 | Underwriter navbar | "Photos" added; "Reinsurer summary" shortened to "Reinsurer" in the navbar (the page title is unchanged) so eight links still fit on one row at 1440 px. | Built |
+
+### Phase 3 review fixes (docs/remaining/REVIEW_PHASE3.md)
+
+| # | Decision | Default used | Status |
+|---|---|---|---|
+| 3.16 | Photos without a confirmed place or time | Still accepted and reviewed, but they count toward the Resilience photo point only after a reviewer clears them: no GPS, no plot location, far from the farm with a weak fix, or a gallery file with no camera time. | Built |
+| 3.17 | Coarse GPS | Refused only when the photo is clearly more than 250 m away even allowing for the phone's stated accuracy; otherwise flagged for the reviewer. | Built |
+| 3.18 | Shared phones | Each farmer signs in with their own PIN; the offline queue belongs to whoever took the photo and is sent only when they are signed in. Signing out clears their cached farm list and pages. | Built |
+| 3.19 | Lost phones | The officer can turn the photo app off for a member (every session ends); a PIN reset also signs every phone out. | Built |
+| 3.20 | Sign-in messages | The same message for an unknown phone, a wrong PIN and a locked account, so the page cannot reveal who is registered. | Built |

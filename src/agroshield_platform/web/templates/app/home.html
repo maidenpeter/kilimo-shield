@@ -1,10 +1,12 @@
 {% extends "app/_layout.html" %}
 {% block body %}
 <h1 class="status-line" id="hello">{{ w.farms }}</h1>
+<p class="alert warn" id="signin" hidden>{{ w.sign_in_again }} <a href="/app/login">{{ w.sign_in }}</a></p>
+<p class="visually-hidden" id="status" role="status" aria-live="polite"></p>
 <section id="farms" aria-live="polite"><p class="muted">{{ 'Loading' if lg == 'en' else 'Inapakia' }}...</p></section>
 
 <section id="camera" class="card fa-camera" hidden aria-labelledby="cam-h">
-  <h2 id="cam-h" class="mt-0">{{ w.take }}: <span id="cam-farm"></span></h2>
+  <h2 id="cam-h" class="mt-0" tabindex="-1">{{ w.take }}: <span id="cam-farm"></span></h2>
   <label for="stage">{{ w.stage }}</label>
   <select id="stage">{% for key, st in stages.items() %}<option value="{{ key }}">{{ st[lg] }}</option>{% endfor %}</select>
   <div class="fa-view" id="view">

@@ -134,11 +134,19 @@
     <label class="visually-hidden" for="app-role">Role in the photo app</label>
     <select id="app-role" name="role"><option value="farmer" {% if app_user and app_user.role == 'farmer' %}selected{% endif %}>Farmer</option>
       <option value="champion" {% if app_user and app_user.role == 'champion' %}selected{% endif %}>Champion farmer</option></select>
-    <button class="btn small" type="submit">{{ 'Reset PIN' if app_user else 'Set up the photo app' }}</button>
+    <button class="btn small" type="submit">{{ 'Reset PIN' if app_user and app_user.active else 'Set up the photo app' }}</button>
   </form>
+  {% if app_user and app_user.active %}
+  <form method="post" action="/members/{{ f.id }}/app-disable" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <button class="btn ghost small" type="submit">Turn off the photo app (lost phone)</button>
+  </form>{% elif app_user %}<p class="muted">The photo app is turned off for this member.</p>{% endif %}
   {% if app_user and app_user.role == 'champion' %}
   <h3>Farms this champion farmer photographs</h3>
-  {% if assigned %}<ul>{% for pl in assigned %}<li>{{ pl.farmer.member_no }}, {{ ward_label(pl.ward_id) }}, {{ pl.acreage|num(1) }} acres</li>{% endfor %}</ul>
+  {% if assigned %}<ul>{% for pl in assigned %}<li>{{ pl.farmer.member_no }}, {{ ward_label(pl.ward_id) }}, {{ pl.acreage|num(1) }} acres
+    <form method="post" action="/members/{{ f.id }}/app-unassign/{{ pl.id }}" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <button class="btn ghost small" type="submit" aria-label="Remove member {{ pl.farmer.member_no }}'s farm">Remove</button></form></li>{% endfor %}</ul>
   {% else %}<p class="muted">Only their own farm so far.</p>{% endif %}
   <form method="post" action="/members/{{ f.id }}/app-assign" class="inline-form">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
