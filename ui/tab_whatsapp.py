@@ -115,7 +115,9 @@ def economics_section(burn_cost_pct: float, premium_rate: float) -> None:
     avg_si = c1.slider("Average sum insured (KSh)", 20_000, 150_000, 60_000, 5_000, key="ue_si")
     fee = c2.slider("Platform calculating-agent fee (% of premium)", 2, 20, 10, key="ue_fee")
     saas = c2.slider("SACCO reconciliation fee (KSh per member per month)", 0, 50, 10, key="ue_saas")
-    rate = c3.slider("Premium rate per season (%)", 2.0, 15.0, round(premium_rate * 100, 1), 0.5, key="ue_rate")
+    start_rate = min(max(round(premium_rate * 100, 1), 2.0), 30.0)
+    rate = c3.slider("Premium rate per season (%)", 2.0, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
+                     help="Starts at the selected ward's premium from the backtest tab")
     ceded = c3.slider("Ceded to the treaty reinsurer (%)", 0, 90, 70, 5, key="ue_ceded")
     econ = pilot_economics(PilotInputs(farms=farms, avg_sum_insured=float(avg_si), premium_rate=rate / 100,
                                        agent_fee_rate=fee / 100, saas_fee_member_month=float(saas),

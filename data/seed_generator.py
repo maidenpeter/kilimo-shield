@@ -55,7 +55,9 @@ SAFARICOM_PREFIXES = ["710", "711", "712", "713", "714", "715", "716", "717", "7
                       "797", "798", "799"]
 
 SCENARIO_SHARES = {"clean": 0.531, "mistyped_id": 0.18, "spouse_phone": 0.14, "partial": 0.10}
-FULL_AMOUNTS = ([3_600, 1_800, 2_000, 4_000, 5_000, 7_200], [0.55, 0.20, 0.08, 0.07, 0.06, 0.04])
+# Payments that aim at the premium, as multiples of the member's premium: full, half, a little over half, a
+# little over, a lot over (savings), two seasons at once.
+FULL_MULTIPLES = ([1.0, 0.5, 0.55, 1.1, 1.4, 2.0], [0.55, 0.20, 0.08, 0.07, 0.06, 0.04])
 PARTIAL_AMOUNTS = [150, 300, 500, 1_000]
 
 
@@ -171,8 +173,12 @@ def _time(rng: np.random.Generator) -> pd.Timestamp:
     return day + pd.Timedelta(seconds=int(rng.integers(7 * 3600, 21 * 3600)))
 
 
-def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANSACTIONS):
-    """Return (statement, truth). The statement looks like an M-Pesa organisation paybill export."""
+def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANSACTIONS,
+                       premium_by_ward: dict | None = None):
+    """Return (statement, truth). The statement looks like an M-Pesa organisation paybill export.
+
+    ``premium_by_ward`` sets what members aim to pay (KSh per ward); by default everyone owes KSh 3,600.
+    """
     rng = np.random.default_rng(seed + 1)
     phones = _Phones(rng)
     phones.used |= set(members["phone_254"]) | set(members["spouse_phone_254"])
@@ -191,8 +197,9 @@ def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANS
             "_truth_member_id": None if member is None else member["member_id"], "_scenario": scenario,
         })
 
-    def full_amount():
-        return rng.choice(FULL_AMOUNTS[0], p=FULL_AMOUNTS[1])
+    def full_amount(member):
+        premium = (premium_by_ward or {}).get(member["ward"], PREMIUM_TARGET)
+        return round(premium * rng.choice(FULL_MULTIPLES[0], p=FULL_MULTIPLES[1]) / 50) * 50
 
     def payer_name(member):
         parts = member["full_name"].split()
@@ -200,7 +207,7 @@ def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANS
 
     for _ in range(counts["clean"]):
         m = members.iloc[int(rng.integers(len(members)))]
-        add(m, "clean", m["member_id"], m["phone_254"], payer_name(m), full_amount())
+        add(m, "clean", m["member_id"], m["phone_254"], payer_name(m), full_amount(m))
     for _ in range(counts["mistyped_id"]):
         m = members.iloc[int(rng.integers(len(members)))]
         if rng.random() < 0.35:
@@ -208,12 +215,12 @@ def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANS
         else:
             phone = phones.new()  # a second SIM or an agent's phone
             name = payer_name(m) if rng.random() < 0.5 else f"{rng.choice(CHRISTIAN_M)} {rng.choice(SURNAMES)}"
-        add(m, "mistyped_id", _mistype(m["member_id"], rng), phone, name, full_amount())
+        add(m, "mistyped_id", _mistype(m["member_id"], rng), phone, name, full_amount(m))
     for _ in range(counts["spouse_phone"]):
         m = married.iloc[int(rng.integers(len(married)))]
         roll = rng.random()
         ref = m["national_id"] if roll < 0.45 else _surname_hint(m, rng) if roll < 0.8 else rng.choice(["", "SHAMBA"])
-        add(m, "spouse_phone", ref, m["spouse_phone_254"], m["spouse_name"], full_amount())
+        add(m, "spouse_phone", ref, m["spouse_phone_254"], m["spouse_name"], full_amount(m))
     for _ in range(counts["partial"]):
         m = members.iloc[int(rng.integers(len(members)))]
         ref = m["member_id"] if rng.random() < 0.6 else _mistype(m["member_id"], rng)
@@ -242,9 +249,9 @@ def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANS
     return statement.reset_index(drop=True), truth.reset_index(drop=True)
 
 
-def generate_all(seed: int = SEED) -> SyntheticData:
+def generate_all(seed: int = SEED, premium_by_ward: dict | None = None) -> SyntheticData:
     members = generate_members(seed)
-    statement, truth = generate_statement(members, seed)
+    statement, truth = generate_statement(members, seed, premium_by_ward=premium_by_ward)
     return SyntheticData(members, statement, truth)
 
 

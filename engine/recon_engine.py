@@ -11,7 +11,7 @@ Matching runs in a fixed order and stops at the first rule that finds exactly on
   otherwise                           -> suspense, for a person to review
 
 Allocation waterfall, per member, in time order:
-  Priority 1  seasonal premium up to the target (KSh 3,600): ACTIVE when complete, GRACE_PERIOD from 50%
+  Priority 1  seasonal premium for the member's ward (zone pricing): ACTIVE when complete, GRACE_PERIOD from 50%
   Priority 2  overdue SACCO loan interest
   Priority 3  loan principal, then member savings
 """
@@ -190,6 +190,13 @@ def match_statement(statement: pd.DataFrame, members: pd.DataFrame) -> pd.DataFr
 
 # ----------------------------------------------------------------------------------------- waterfall
 
+def premium_due(members: pd.DataFrame, premium_target) -> pd.Series:
+    """Premium each member owes: one figure for everyone, or a {ward: KSh} map for zone pricing."""
+    if isinstance(premium_target, dict):
+        return members["ward"].map(premium_target).astype(float)
+    return pd.Series(float(premium_target), index=members.index)
+
+
 def checkoff_rows(members: pd.DataFrame, posted: str = "2026-10-31 23:00:00") -> pd.DataFrame:
     """Milk weighbridge check-off: already tied to a member ID by the SACCO's system, so no matching needed."""
     dairy = members[members["milk_checkoff_month"] > 0]
@@ -202,11 +209,15 @@ def checkoff_rows(members: pd.DataFrame, posted: str = "2026-10-31 23:00:00") ->
     })
 
 
-def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_target: float = PREMIUM_TARGET):
-    """Split each matched shilling into premium, overdue interest, principal and savings. Returns (ledger, members)."""
+def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_target=PREMIUM_TARGET):
+    """Split each matched shilling into premium, overdue interest, principal and savings. Returns (ledger, members).
+
+    ``premium_target`` is one KSh figure for every member, or a {ward: KSh} map when premiums are priced per ward.
+    """
     ledger = ledger.sort_values(["completion_time", "receipt_no"], kind="stable").reset_index(drop=True)
-    owed = {mid: {"premium": premium_target, "interest": float(i), "principal": float(p)}
-            for mid, i, p in zip(members["member_id"], members["overdue_interest"], members["loan_balance"])}
+    due = premium_due(members, premium_target)
+    owed = {mid: {"premium": d, "interest": float(i), "principal": float(p)}
+            for mid, d, i, p in zip(members["member_id"], due, members["overdue_interest"], members["loan_balance"])}
     alloc = np.zeros((len(ledger), 4))
     for i, (mid, method, amount) in enumerate(zip(ledger["member_id"], ledger["match_method"],
                                                   ledger["paid_in_ksh"])):
@@ -230,8 +241,10 @@ def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_targ
     for col in ("paid_in_ksh", "to_premium", "to_interest", "to_principal", "to_savings"):
         summary[col] = summary[col].fillna(0.0)
     summary["receipts"] = summary["receipts"].fillna("")
+    summary["premium_due"] = premium_due(summary, premium_target).to_numpy()
     summary["policy_status"] = np.select(
-        [summary["to_premium"] >= premium_target - 1e-6, summary["to_premium"] >= GRACE_SHARE * premium_target],
+        [summary["to_premium"] >= summary["premium_due"] - 1e-6,
+         summary["to_premium"] >= GRACE_SHARE * summary["premium_due"]],
         [ACTIVE, GRACE], PENDING)
     summary["interest_after"] = summary["overdue_interest"] - summary["to_interest"]
     summary["loan_after"] = summary["loan_balance"] - summary["to_principal"]
@@ -258,7 +271,7 @@ class ReconResult:
         return self.ledger[self.ledger["match_method"] != CHECKOFF]
 
 
-def reconcile(statement: pd.DataFrame, members: pd.DataFrame, premium_target: float = PREMIUM_TARGET,
+def reconcile(statement: pd.DataFrame, members: pd.DataFrame, premium_target=PREMIUM_TARGET,
               include_checkoff: bool = True) -> ReconResult:
     started = time.perf_counter()
     matched = match_statement(statement, members)
@@ -300,7 +313,7 @@ def accuracy(result: ReconResult, truth: pd.DataFrame) -> dict:
 # ------------------------------------------------------------------------------------- outputs
 
 def bordereau(summary: pd.DataFrame, wards: dict, season_label: str = "Long rains 2027",
-              sum_insured: float = 60_000.0, premium_target: float = PREMIUM_TARGET) -> pd.DataFrame:
+              sum_insured: float = 60_000.0) -> pd.DataFrame:
     """Premium bordereau for the underwriter: one row per bound (ACTIVE) policy, identifiers masked."""
     active = summary[summary["policy_status"] == ACTIVE].sort_values("member_id")
     return pd.DataFrame({
@@ -311,7 +324,7 @@ def bordereau(summary: pd.DataFrame, wards: dict, season_label: str = "Long rain
         "phone_masked": active["phone"].map(lambda p: mask_phone(normalize_phone(p))),
         "ward": active["ward"].map(lambda k: wards[k].name), "county": active["ward"].map(lambda k: wards[k].county),
         "cover": "Mixed farm: crop inputs, fodder gap, vet and health",
-        "sum_insured_ksh": sum_insured, "premium_due_ksh": premium_target,
+        "sum_insured_ksh": sum_insured, "premium_due_ksh": active["premium_due"],
         "premium_received_ksh": active["to_premium"], "premium_to_remit_ksh": active["to_premium"],
         "policy_status": active["policy_status"], "payment_receipts": active["receipts"],
         "insurer": "Partner insurer (to be named)",

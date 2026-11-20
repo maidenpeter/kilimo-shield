@@ -132,10 +132,28 @@ def test_waterfall_order_and_status():
     assert s.loc["MBR-2", "policy_status"] == rec.GRACE  # 1,900 of 3,600 is more than half
 
 
+def test_zone_premiums_follow_each_members_ward():
+    premiums = {"njoro": 5_100.0, "imenti_north": 6_780.0, "kangundo": 5_880.0, "kimilili": 5_940.0,
+                "bureti": 10_740.0}
+    data = sg.generate_all(premium_by_ward=premiums)
+    result = rec.reconcile(data.statement, data.members, premiums)
+    m = result.members
+    assert (m["premium_due"] == m["ward"].map(premiums)).all()
+    active = m[m["policy_status"] == rec.ACTIVE]
+    assert len(active) > 150
+    assert (active["to_premium"] == active["premium_due"]).all()
+    grace = m[m["policy_status"] == rec.GRACE]
+    assert (grace["to_premium"] >= 0.5 * grace["premium_due"]).all()
+    assert rec.accuracy(result, data.truth)["wrong_member"] == 0
+    b = rec.bordereau(m, WARDS)
+    assert (b["premium_due_ksh"] == b["ward"].map({w.name: premiums[k] for k, w in WARDS.items()})).all()
+
+
 def test_bordereau_lists_only_active_policies(result):
     b = rec.bordereau(result.members, WARDS)
     assert len(b) == (result.members["policy_status"] == rec.ACTIVE).sum()
     assert (b["premium_received_ksh"] == 3_600).all()
+    assert (b["premium_due_ksh"] == 3_600).all()
     assert b["national_id_masked"].str.startswith("****").all()
     assert (b["insurer"] == "Partner insurer (to be named)").all()
 

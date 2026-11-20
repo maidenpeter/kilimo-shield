@@ -11,6 +11,7 @@ read from a satellite.
 from __future__ import annotations
 
 import json
+import math
 import zlib
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -39,6 +40,7 @@ class Ward:
     lat: float
     lon: float
     enterprise: str
+    zone: str
 
     @property
     def label(self) -> str:
@@ -46,11 +48,13 @@ class Ward:
 
 
 WARDS: dict[str, Ward] = {w.key: w for w in (
-    Ward("njoro", "Njoro Ward", "Nakuru", -0.3306, 35.9436, "Maize, beans and dairy"),
-    Ward("imenti_north", "Imenti North", "Meru", 0.0470, 37.6559, "Potatoes, maize and zero-grazing dairy"),
-    Ward("kangundo", "Kangundo", "Machakos", -1.2981, 37.3481, "Maize, pigeon peas, shoats and cattle"),
-    Ward("kimilili", "Kimilili", "Bungoma", 0.7897, 34.7186, "Maize, sugarcane and dairy"),
-    Ward("bureti", "Bureti", "Kericho", -0.6167, 35.2500, "Tea, maize and dairy"),
+    Ward("njoro", "Njoro Ward", "Nakuru", -0.3306, 35.9436, "Maize, beans and dairy", "Transitional"),
+    Ward("imenti_north", "Imenti North", "Meru", 0.0470, 37.6559, "Potatoes, maize and zero-grazing dairy",
+         "Transitional"),
+    Ward("kangundo", "Kangundo", "Machakos", -1.2981, 37.3481, "Maize, pigeon peas, shoats and cattle",
+         "Semi-arid"),
+    Ward("kimilili", "Kimilili", "Bungoma", 0.7897, 34.7186, "Maize, sugarcane and dairy", "High potential (wet)"),
+    Ward("bureti", "Bureti", "Kericho", -0.6167, 35.2500, "Tea, maize and dairy", "Wet highland"),
 )}
 
 # Kenya's two rainy seasons. Each is 92 days, so "day 1" is the first day of the season window.
@@ -64,20 +68,37 @@ FLOWERING_DAYS = (45, 75)
 
 @dataclass(frozen=True)
 class TriggerParams:
-    """Every number that shapes a payout. Defaults follow the ShambaShield 360 specification."""
+    """Every number that shapes a payout or a price. ILLUSTRATIVE defaults, version 2 of the product:
+
+    sub-limits KSh 30,000 crop + 20,000 fodder + 10,000 vet and health under a KSh 50,000 seasonal cap; the
+    fodder layer needs a severe crop loss; the excess-rain line is set per ward; premiums are priced per ward
+    to a target loss ratio instead of one flat rate.
+    """
     sum_insured: float = 60_000.0
-    premium_rate: float = 0.06            # commercial rate per season, share of sum insured
-    crop_share: float = 35_000 / 60_000   # Payout A allocation
-    fodder_share: float = 20_000 / 60_000  # Payout B allocation
-    health_share: float = 5_000 / 60_000   # Payout C flat amount
+    crop_share: float = 30_000 / 60_000    # Payout A sub-limit
+    fodder_share: float = 20_000 / 60_000  # Payout B sub-limit
+    health_share: float = 10_000 / 60_000  # Payout C flat amount
+    aggregate_cap_share: float = 50_000 / 60_000  # most a policy pays in one season, all layers together
     germination_weight: float = 0.35
     flowering_weight: float = 0.65
-    sm_trigger: float = 32.0              # soil moisture index (0-100) below which Payout A starts
+    sm_trigger: float = 32.0              # soil moisture index (50 = normal) below which Payout A starts
     sm_exit: float = 12.0                 # index at or below which Payout A reaches 100%
-    ndvi_trigger: float = 30.0            # pasture NDVI percentile below which Payout B can fire
-    rain10_trigger_mm: float = 180.0      # 10-day rainfall that fires Payout C
+    fodder_gate: float = 0.5              # Payout A must reach this share of its sub-limit before B can pay
+    ndvi_trigger: float = 25.0            # pasture NDVI percentile below which Payout B can fire
+    fodder_ndvi_days: tuple = (61, 92)    # pasture is read from 15 days after the flowering window opens
+    rain10_mode: str = "percentile"       # "percentile": a line per ward; "fixed": rain10_trigger_mm everywhere
+    rain10_percentile: float = 90.0       # percentile of the ward's wettest 10 days in each season
+    rain10_trigger_mm: float = 180.0      # fixed line, used when rain10_mode == "fixed"
     heat_temp_c: float = 31.0             # daily maximum above which a day counts as a heat day
     heat_days: int = 7                    # consecutive heat days that fire Payout C
+    # Pricing
+    pricing_mode: str = "target"          # "target": burn cost / target loss ratio per ward; "flat": premium_rate
+    target_loss_ratio: float = 0.60
+    premium_rate: float = 0.06            # flat commercial rate per season, used when pricing_mode == "flat"
+    subsidy_share: float = 0.0            # share of the premium paid by a subsidy (none is agreed)
+    # WhatsApp verification, for the post-verification basis-risk view
+    amber_band: float = 5.0               # seasons this close to the soil moisture trigger go to verification
+    verifier_accuracy: float = 0.8        # assumed share of verified seasons the photos settle correctly
     # Soil water balance behind the soil moisture proxy (a single root-zone bucket).
     capacity_mm: float = 100.0            # plant-available water held by the root zone
     stress_point: float = 0.5             # below this share of capacity, ET is reduced linearly
@@ -99,8 +120,15 @@ class TriggerParams:
         return self.sum_insured * self.health_share
 
     @property
-    def premium(self) -> float:
-        return self.sum_insured * self.premium_rate
+    def aggregate_cap(self) -> float:
+        return self.sum_insured * self.aggregate_cap_share
+
+
+def commercial_rate(burn_rate: float, params: TriggerParams) -> float:
+    """Premium rate per season. Target pricing rounds up to 0.1% so the loss ratio stays at or under target."""
+    if params.pricing_mode == "flat":
+        return params.premium_rate
+    return math.ceil(burn_rate / params.target_loss_ratio * 1000 - 1e-9) / 1000
 
 
 # --------------------------------------------------------------------------------------------- weather
@@ -290,22 +318,32 @@ def payout_a_fraction(weighted_sm: float, params: TriggerParams) -> float:
     return 0.25 + 0.75 * depth
 
 
-def payout_b_fraction(crop_paid: bool, ndvi_pct: float, tmax_anomaly_c: float, params: TriggerParams) -> float:
-    """Fodder-gap cross-trigger: needs a crop payout AND pasture below the NDVI percentile trigger.
+def payout_b_fraction(crop_fraction: float, ndvi_pct: float, tmax_anomaly_c: float, params: TriggerParams) -> float:
+    """Fodder-gap cross-trigger: needs a SEVERE crop loss AND late pasture below the NDVI percentile trigger.
 
-    Pays 50% at the trigger, rising to 100% as the percentile approaches 0. A hotter-than-usual season (the
-    land surface temperature anomaly, approximated here by the air temperature anomaly) adds severity: each
-    1 degree C above the ward's usual seasonal maximum counts as a quarter of the way to full payment.
+    Severe means Payout A at or above ``fodder_gate`` of its sub-limit, so a mild mid-season dry spell (when
+    maize stover still grows) does not also pay for fodder. Pays 50% at the NDVI trigger, rising to 100% as the
+    percentile approaches 0. A hotter-than-usual season (the land surface temperature anomaly, approximated here
+    by the air temperature anomaly) adds severity: each 1 degree C above the ward's usual seasonal maximum counts
+    as a quarter of the way to full payment.
     """
-    if not crop_paid or ndvi_pct >= params.ndvi_trigger:
+    if crop_fraction <= 0 or crop_fraction < params.fodder_gate or ndvi_pct >= params.ndvi_trigger:
         return 0.0
     ndvi_severity = (params.ndvi_trigger - ndvi_pct) / max(params.ndvi_trigger, 1e-9)
     heat_severity = 0.25 * max(0.0, tmax_anomaly_c)
     return 0.5 + 0.5 * min(1.0, ndvi_severity + heat_severity)
 
 
-def payout_c_fires(max_rain10_mm: float, hot_run_days: int, params: TriggerParams) -> bool:
-    return max_rain10_mm > params.rain10_trigger_mm or hot_run_days >= params.heat_days
+def payout_c_fires(max_rain10_mm: float, hot_run_days: int, rain10_line_mm: float, params: TriggerParams) -> bool:
+    return max_rain10_mm > rain10_line_mm or hot_run_days >= params.heat_days
+
+
+def rain10_line(max_rain10_by_season: pd.Series, params: TriggerParams) -> float:
+    """The excess-rain line for one ward. A fixed 180 mm fires every few seasons in a wet highland and almost never
+    in a dry ward, so by default the line is the ward's own Nth percentile of its wettest 10 days per season."""
+    if params.rain10_mode == "fixed" or max_rain10_by_season.empty:
+        return params.rain10_trigger_mm
+    return float(np.percentile(max_rain10_by_season, params.rain10_percentile))
 
 
 def run_backtest(weather: pd.DataFrame, params: TriggerParams = TriggerParams(), years=YEARS) -> pd.DataFrame:
@@ -327,7 +365,7 @@ def run_backtest(weather: pd.DataFrame, params: TriggerParams = TriggerParams(),
             rows.append({
                 "year": year, "season": season, "rain_mm": w["rain_mm"].sum(),
                 "sm_germination": germ, "sm_flowering": flower, "sm_weighted": weighted,
-                "ndvi_late": _days(w, (46, 92))["ndvi"].mean(), "tmax_mean": w["tmax_c"].mean(),
+                "ndvi_late": _days(w, params.fodder_ndvi_days)["ndvi"].mean(), "tmax_mean": w["tmax_c"].mean(),
                 "max_rain10_mm": rain10, "hot_run_days": hot_run, "wrsi": min(wrsi, 100.0),
             })
     seasons = pd.DataFrame(rows)
@@ -343,15 +381,25 @@ def run_backtest(weather: pd.DataFrame, params: TriggerParams = TriggerParams(),
     a = seasons["sm_weighted"].map(lambda v: payout_a_fraction(v, params))
     seasons["payout_a"] = a * params.crop_allocation
     seasons["payout_b"] = [
-        payout_b_fraction(pa > 0, pct, anom, params) * params.fodder_allocation
-        for pa, pct, anom in zip(seasons["payout_a"], seasons["ndvi_pct"], seasons["tmax_anomaly_c"])
+        payout_b_fraction(fa, pct, anom, params) * params.fodder_allocation
+        for fa, pct, anom in zip(a, seasons["ndvi_pct"], seasons["tmax_anomaly_c"])
     ]
+    line = rain10_line(seasons["max_rain10_mm"], params)
+    seasons["rain10_line_mm"] = line
     seasons["payout_c"] = [
-        params.health_payout if payout_c_fires(r10, hot, params) else 0.0
+        params.health_payout if payout_c_fires(r10, hot, line, params) else 0.0
         for r10, hot in zip(seasons["max_rain10_mm"], seasons["hot_run_days"])
     ]
+    # The seasonal cap scales every layer down together, so the stacked bars still add up to what is paid.
+    seasons["payout_uncapped"] = seasons[["payout_a", "payout_b", "payout_c"]].sum(axis=1)
+    scale = (params.aggregate_cap / seasons["payout_uncapped"].where(seasons["payout_uncapped"] > 0)).clip(upper=1.0)
+    scale = scale.fillna(1.0)
+    for col in ("payout_a", "payout_b", "payout_c"):
+        seasons[col] = seasons[col] * scale
     seasons["payout_total"] = seasons[["payout_a", "payout_b", "payout_c"]].sum(axis=1)
-    seasons["premium"] = params.premium
+    rate = commercial_rate(seasons["payout_total"].mean() / params.sum_insured, params)
+    seasons["premium_rate"] = rate
+    seasons["premium"] = params.sum_insured * rate
     seasons["label"] = seasons["year"].astype(str) + " " + seasons["season"]
     return seasons
 
@@ -359,55 +407,96 @@ def run_backtest(weather: pd.DataFrame, params: TriggerParams = TriggerParams(),
 # --------------------------------------------------------------------------------------------- KPIs
 
 @dataclass
+class BasisRisk:
+    score: float | None            # % fewer mismatched seasons than a rainfall-only trigger; None if undefined
+    mismatches_index: int
+    mismatches_rain_only: int
+    amber_seasons: int             # seasons close enough to the trigger to go to WhatsApp verification
+    mismatches_verified: float     # expected mismatches once those seasons are verified
+    score_verified: float | None
+
+
+@dataclass
 class BacktestKPIs:
     burn_cost_pct: float           # average payout per season, % of sum insured
+    premium_rate_pct: float        # commercial premium rate per season
+    premium_ksh: float
+    farmer_premium_ksh: float      # after any subsidy
     loss_ratio_pct: float          # total payouts / total premiums
     worst_year: int | None
     worst_year_payout: float       # KSh per farm, both seasons
     worst_year_pct: float          # % of the two seasons' sum insured
     seasons_paying: int
     seasons: int
-    basis_risk_score: float | None  # % fewer mismatches than a rainfall-only trigger; None if not defined
-    mismatches_multi: int
-    mismatches_rain_only: int
+    basis: BasisRisk
+    rain10_line_mm: float
 
     def as_dict(self) -> dict:
         return asdict(self)
 
 
-def basis_risk(seasons: pd.DataFrame, wrsi_stress: float = 60.0, rain_only_ratio: float = 0.75):
+def basis_risk(seasons: pd.DataFrame, params: TriggerParams = TriggerParams(), wrsi_stress: float = 60.0,
+               rain_only_ratio: float = 0.75) -> BasisRisk:
     """Compare two triggers against a modelled stress signal and count the seasons where each one is wrong.
 
     The reference is the season's Water Requirement Satisfaction Index (WRSI, FAO) for maize from the same water
-    balance: below 60 is a "poor" or "failed" season on the FEWS NET scale. A season is a mismatch when a trigger pays and the
-    crop was not stressed, or the crop was stressed and it does not pay. The rainfall-only benchmark pays when
-    the season's total rain is below 75% of the ward's average for that season. This is a model-internal check;
-    it needs real yield or loan-default records to become a basis-risk measurement.
+    balance: below 60 is a "poor" or "failed" season on the FEWS NET scale. A season is a mismatch when a trigger
+    pays and the crop was not stressed, or the crop was stressed and it does not pay. The rainfall-only benchmark
+    pays when the season's total rain is below 75% of the ward's average for that season. This is a model-internal
+    check; it needs real yield or loan-default records to become a basis-risk measurement.
+
+    The verified view sends seasons within ``amber_band`` points of the trigger to the WhatsApp photo check and
+    ASSUMES the photos settle a share ``verifier_accuracy`` of them correctly. It is a scenario, not a result: the
+    photo network has not run in the field.
     """
     stressed = seasons["wrsi"] < wrsi_stress
-    multi = seasons["payout_a"] > 0
+    index_pays = seasons["payout_a"] > 0
     rain_only = seasons["rain_vs_mean"] < rain_only_ratio
-    mm_multi = int((multi != stressed).sum())
+    wrong_index = index_pays != stressed
+    mm_index = int(wrong_index.sum())
     mm_rain = int((rain_only != stressed).sum())
-    score = None if mm_rain == 0 else 100.0 * (mm_rain - mm_multi) / mm_rain
-    return score, mm_multi, mm_rain
+    amber = (seasons["sm_weighted"] - params.sm_trigger).abs() <= params.amber_band
+    mm_verified = float(wrong_index[~amber].sum() + (1 - params.verifier_accuracy) * amber.sum())
+
+    def score(mm):
+        return None if mm_rain == 0 else 100.0 * (mm_rain - mm) / mm_rain
+
+    return BasisRisk(score(mm_index), mm_index, mm_rain, int(amber.sum()), mm_verified, score(mm_verified))
 
 
 def kpis(seasons: pd.DataFrame, params: TriggerParams = TriggerParams()) -> BacktestKPIs:
     if seasons.empty:
-        return BacktestKPIs(0, 0, None, 0, 0, 0, 0, None, 0, 0)
+        return BacktestKPIs(0, 0, 0, 0, 0, None, 0, 0, 0, 0, BasisRisk(None, 0, 0, 0, 0, None), 0)
     burn = 100.0 * seasons["payout_total"].mean() / params.sum_insured
+    rate = float(seasons["premium_rate"].iloc[0])
+    premium = params.sum_insured * rate
     loss_ratio = 100.0 * seasons["payout_total"].sum() / max(seasons["premium"].sum(), 1e-9)
     by_year = seasons.groupby("year")["payout_total"].sum()
     worst = int(by_year.idxmax()) if by_year.max() > 0 else None
     worst_amount = float(by_year.max()) if worst else 0.0
-    score, mm_multi, mm_rain = basis_risk(seasons)
     return BacktestKPIs(
-        burn_cost_pct=burn, loss_ratio_pct=loss_ratio, worst_year=worst, worst_year_payout=worst_amount,
+        burn_cost_pct=burn, premium_rate_pct=100.0 * rate, premium_ksh=premium,
+        farmer_premium_ksh=premium * (1 - params.subsidy_share), loss_ratio_pct=loss_ratio,
+        worst_year=worst, worst_year_payout=worst_amount,
         worst_year_pct=100.0 * worst_amount / (2 * params.sum_insured),
         seasons_paying=int((seasons["payout_total"] > 0).sum()), seasons=len(seasons),
-        basis_risk_score=score, mismatches_multi=mm_multi, mismatches_rain_only=mm_rain,
+        basis=basis_risk(seasons, params), rain10_line_mm=float(seasons["rain10_line_mm"].iloc[0]),
     )
+
+
+def zone_pricing(params: TriggerParams = TriggerParams(), loader=load_weather) -> pd.DataFrame:
+    """Price every pilot ward on the same product terms: one row per ward."""
+    rows = []
+    for key, ward in WARDS.items():
+        k = kpis(run_backtest(loader(key)[0], params), params)
+        rows.append({
+            "ward_key": key, "ward": ward.label, "zone": ward.zone, "burn_cost_pct": k.burn_cost_pct,
+            "premium_rate_pct": k.premium_rate_pct, "premium_ksh": k.premium_ksh,
+            "farmer_premium_ksh": k.farmer_premium_ksh, "loss_ratio_pct": k.loss_ratio_pct,
+            "seasons_paying": k.seasons_paying, "rain10_line_mm": k.rain10_line_mm,
+            "basis_score": k.basis.score, "basis_score_verified": k.basis.score_verified,
+        })
+    return pd.DataFrame(rows)
 
 
 def dekadal_trajectory(weather: pd.DataFrame, year: int, season: str,

@@ -26,9 +26,9 @@ with backtest_tab:
     backtest = tab_parametric.render()
 with recon_tab:
     params = backtest["params"]
-    tab_recon.render(premium_target=params.premium, sum_insured=params.sum_insured)
+    tab_recon.render(backtest["zone_farmer_premiums"], sum_insured=params.sum_insured)
 with whatsapp_tab:
-    tab_whatsapp.render(backtest["ward_key"], backtest["kpis"].burn_cost_pct, params.premium_rate)
+    tab_whatsapp.render(backtest["ward_key"], backtest["kpis"].burn_cost_pct, backtest["kpis"].premium_rate_pct / 100)
 
 st.markdown(
     '<div class="ss-footer">Weather data by <a href="https://open-meteo.com/" target="_blank">Open-Meteo.com</a> '

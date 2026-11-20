@@ -15,8 +15,8 @@ METHOD_ORDER = [rec.EXACT_ID, rec.EXACT_PHONE, rec.NATIONAL_ID, rec.FUZZY_REF, r
 
 
 @st.cache_data(show_spinner="Generating synthetic SACCO ledger and M-Pesa statement...")
-def synthetic():
-    return generate_all()
+def synthetic(premium_items: tuple):
+    return generate_all(premium_by_ward=dict(premium_items))
 
 
 def _masked_statement(statement):
@@ -48,12 +48,15 @@ def method_chart(mpesa) -> go.Figure:
     return theme.plot_layout(fig, "How each M-Pesa row was placed", height=380)
 
 
-def render(premium_target: float = rec.PREMIUM_TARGET, sum_insured: float = 60_000.0) -> None:
-    data = synthetic()
+def render(premium_targets: dict, sum_insured: float = 60_000.0) -> None:
+    """``premium_targets``: what a member in each ward owes this season (KSh, after any subsidy)."""
+    premium_items = tuple(sorted((k, round(v, 2)) for k, v in premium_targets.items()))
+    data = synthetic(premium_items)
     st.subheader("ShambaRecon: every shilling matched and allocated")
     theme.note(f"Synthetic data: {N_MEMBERS} fictional SACCO members and a {len(data.statement)}-row M-Pesa paybill "
                "statement with typical errors (mistyped member IDs, spouse phones, micro-payments, duplicate "
-               "exports). Phone numbers and national IDs are masked on screen.")
+               "exports). Each member owes their ward's premium from the backtest tab. Phone numbers and "
+               "national IDs are masked on screen.")
 
     with st.expander("Inputs: member ledger and paybill statement"):
         left, right = st.columns(2)
@@ -65,11 +68,11 @@ def render(premium_target: float = rec.PREMIUM_TARGET, sum_insured: float = 60_0
                         column_config={"paid_in_ksh": MONEY})
 
     if st.button("Run automated reconciliation", type="primary", key="run_recon"):
-        st.session_state["recon"] = (premium_target, rec.reconcile(data.statement, data.members, premium_target))
+        st.session_state["recon"] = (premium_items, rec.reconcile(data.statement, data.members, premium_targets))
         st.session_state.pop("claim_split", None)
     stored = st.session_state.get("recon")
-    if stored is not None and stored[0] != premium_target:
-        st.info(f"The premium is now {theme.ksh(premium_target)} (sidebar). Run the reconciliation again.")
+    if stored is not None and stored[0] != premium_items:
+        st.info("Premiums changed on the backtest tab. Run the reconciliation again.")
         return
     if stored is None:
         st.info("Press the button to match the statement and allocate the money.")
@@ -99,7 +102,7 @@ def render(premium_target: float = rec.PREMIUM_TARGET, sum_insured: float = 60_0
     remit = result.members.loc[result.members["policy_status"] == rec.ACTIVE, "to_premium"].sum()
     s1, s2, s3, s4 = st.columns(4)
     with s1:
-        theme.kpi("Policies ACTIVE", f"{status.get(rec.ACTIVE, 0)}", f"Full {theme.ksh(premium_target)} received")
+        theme.kpi("Policies ACTIVE", f"{status.get(rec.ACTIVE, 0)}", "Full ward premium received")
     with s2:
         theme.kpi("GRACE_PERIOD", f"{status.get(rec.GRACE, 0)}", "At least half the premium paid", "amber")
     with s3:
@@ -151,7 +154,7 @@ def render(premium_target: float = rec.PREMIUM_TARGET, sum_insured: float = 60_0
     })
     st.caption(f"{len(table)} rows shown.")
 
-    bordereau = rec.bordereau(result.members, WARDS, sum_insured=sum_insured, premium_target=premium_target)
+    bordereau = rec.bordereau(result.members, WARDS, sum_insured=sum_insured)
     d1, d2 = st.columns(2)
     d1.download_button(f"Download underwriter bordereau ({len(bordereau)} policies, CSV)",
                        bordereau.to_csv(index=False).encode(), "underwriter_bordereaux.csv", "text/csv")

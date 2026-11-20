@@ -54,6 +54,17 @@ def test_every_ward_and_season_filter_renders(app):
     assert not app.exception, app.exception
 
 
+def test_pricing_and_rain_switches(app):
+    text = " ".join(m.value for m in app.markdown)
+    assert "Commercial premium" in text and "Zone pricing across the pilot wards" in text
+    app.sidebar.radio(key="pricing_mode").set_value("One flat rate for every ward").run()
+    assert not app.exception, app.exception
+    app.sidebar.radio(key="rain_mode").set_value("Fixed mm for every ward").run()
+    assert not app.exception, app.exception
+    app.sidebar.selectbox[0].select("bureti").run()
+    assert not app.exception, app.exception
+
+
 def test_green_vci_disables_verification(app):
     app.slider(key="wa_vci").set_value(60.0).run()
     assert not app.exception, app.exception
