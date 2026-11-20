@@ -1,0 +1,13 @@
+{
+  "source": "Open-Meteo Historical Weather API",
+  "url": "https://archive-api.open-meteo.com/v1/archive?latitude=-0.3306&longitude=35.9436&start_date=2015-01-01&end_date=2024-12-31&daily=precipitation_sum%2Cet0_fao_evapotranspiration%2Ctemperature_2m_max&timezone=Africa%2FNairobi",
+  "licence": "CC BY 4.0",
+  "attribution": "Weather data by Open-Meteo.com",
+  "ward": "Njoro Ward, Nakuru County",
+  "requested_lat": -0.3306,
+  "requested_lon": 35.9436,
+  "grid_lat": -0.31634444,
+  "grid_lon": 35.929688,
+  "elevation_m": 2167.0,
+  "retrieved_at": "2026-11-20T18:56:48+00:00"
+}

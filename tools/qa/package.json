@@ -1,6 +1,0 @@
-{
-  "name": "agroshield-qa",
-  "private": true,
-  "description": "QA tooling only (axe-core for accessibility checks in the Playwright crawl)",
-  "devDependencies": {"axe-core": "4.10.2"}
-}

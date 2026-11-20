@@ -1,45 +1,9 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
 .venv/
+venv/
+__pycache__/
+*.pyc
 .pytest_cache/
-build/
-dist/
-
-# Secrets: only .env.example is committed
 .env
-.env.*
-!.env.example
-
-# Pricing run outputs (reports, results, manifests). The audit log of every run is
-# kept, but the bulky per-run folders are regenerated from committed inputs.
-runs/*
-!runs/.gitkeep
-!runs/audit_log.jsonl
-
-# Operational data (quote audit log etc.) and large re-fetchable research inputs
-var/
-data/raw/research/chirps_monthly_eastern_kenya.nc
-data/raw/research/chirps_monthly_eastern_kenya.npz
-
-# Editors / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Overnight QA artefacts: screenshots stay local (large); summaries and JSON are committed
-docs/overnight/before/
-docs/overnight/after/
-docs/overnight/*/
-tools/qa/node_modules/
-
-# Personal Claude Code settings
+.streamlit/secrets.toml
 .claude/settings.local.json
-# Remaining-brief QA crawl screenshots stay local (large); summaries and JSON are committed
-docs/remaining/qa-*/
-
-# Firmware: PlatformIO build output and per-device secrets
-firmware/**/.pio/
-firmware/**/include/secrets.h
+data/generated/

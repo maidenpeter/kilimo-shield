@@ -1,0 +1,13 @@
+{
+  "source": "Open-Meteo Historical Weather API",
+  "url": "https://archive-api.open-meteo.com/v1/archive?latitude=0.7897&longitude=34.7186&start_date=2015-01-01&end_date=2024-12-31&daily=precipitation_sum%2Cet0_fao_evapotranspiration%2Ctemperature_2m_max&timezone=Africa%2FNairobi",
+  "licence": "CC BY 4.0",
+  "attribution": "Weather data by Open-Meteo.com",
+  "ward": "Kimilili, Bungoma County",
+  "requested_lat": 0.7897,
+  "requested_lon": 34.7186,
+  "grid_lat": 0.80843586,
+  "grid_lon": 34.713276,
+  "elevation_m": 1681.0,
+  "retrieved_at": "2026-11-20T18:57:00+00:00"
+}

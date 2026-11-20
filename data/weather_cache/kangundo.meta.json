@@ -1,0 +1,13 @@
+{
+  "source": "Open-Meteo Historical Weather API",
+  "url": "https://archive-api.open-meteo.com/v1/archive?latitude=-1.2981&longitude=37.3481&start_date=2015-01-01&end_date=2024-12-31&daily=precipitation_sum%2Cet0_fao_evapotranspiration%2Ctemperature_2m_max&timezone=Africa%2FNairobi",
+  "licence": "CC BY 4.0",
+  "attribution": "Weather data by Open-Meteo.com",
+  "ward": "Kangundo, Machakos County",
+  "requested_lat": -1.2981,
+  "requested_lon": 37.3481,
+  "grid_lat": -1.3005272,
+  "grid_lon": 37.322277,
+  "elevation_m": 1601.0,
+  "retrieved_at": "2026-11-20T18:56:56+00:00"
+}
