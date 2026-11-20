@@ -1,1 +1,1 @@
-"""ShambaShield 360 engines: parametric triggers, SACCO reconciliation and the WhatsApp verification loop."""
+"""ShambaShield360 engines: parametric triggers, SACCO reconciliation and the WhatsApp verification loop."""

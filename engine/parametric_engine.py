@@ -1,4 +1,4 @@
-"""ShambaShield 360 parametric engine: weather, derived indices and the three payout layers.
+"""ShambaShield360 parametric engine: weather, derived indices and the three payout layers.
 
 Weather comes from the Open-Meteo Historical Weather API (ERA5-based reanalysis, CC BY 4.0). Each ward's
 2015-2024 record is cached in ``data/weather_cache/`` so the app runs offline. If neither the cache nor the
@@ -85,7 +85,7 @@ class TriggerParams:
     sm_exit: float = 12.0                 # index at or below which Payout A reaches 100%
     fodder_gate: float = 0.5              # Payout A must reach this share of its sub-limit before B can pay
     ndvi_trigger: float = 25.0            # pasture NDVI percentile below which Payout B can fire
-    fodder_ndvi_days: tuple = (61, 92)    # pasture is read from 15 days after the flowering window opens
+    fodder_ndvi_days: tuple = (61, 92)    # pasture is read from day 61, 16 days after flowering opens
     rain10_mode: str = "percentile"       # "percentile": a line per ward; "fixed": rain10_trigger_mm everywhere
     rain10_percentile: float = 90.0       # percentile of the ward's wettest 10 days in each season
     rain10_trigger_mm: float = 180.0      # fixed line, used when rain10_mode == "fixed"
@@ -261,7 +261,9 @@ def daily_indices(weather: pd.DataFrame, params: TriggerParams = TriggerParams()
         w = min(cap, max(0.0, w + rain[i] - aet))
         fraction[i] = w / cap
 
-    doy = np.minimum(weather["date"].dt.day_of_year.to_numpy(), 365)
+    # Day of a 365-day year, so 1 March is day 60 in leap years too (29 February shares 28 February's day).
+    dates = weather["date"].dt
+    doy = dates.day_of_year.to_numpy() - (dates.is_leap_year.to_numpy() & (dates.day_of_year.to_numpy() >= 60))
     mean = np.zeros(366)
     std = np.ones(366)
     for d in range(1, 366):
@@ -292,7 +294,7 @@ def season_window(daily: pd.DataFrame, year: int, season: str) -> pd.DataFrame:
     end = pd.Timestamp(year, *spec["end"])
     window = daily[(daily["date"] >= start) & (daily["date"] <= end)].copy()
     window["day"] = np.arange(1, len(window) + 1)
-    window["dekad"] = (window["day"] - 1) // 10 + 1
+    window["dekad"] = np.minimum((window["day"] - 1) // 10 + 1, 9)  # days 81-92 form the last dekad
     return window
 
 
@@ -311,8 +313,9 @@ def longest_run(flags) -> int:
 # ------------------------------------------------------------------------------------- payout layers
 
 def payout_a_fraction(weighted_sm: float, params: TriggerParams) -> float:
-    """Crop layer: 0 at or above the trigger; 25% just below it, rising linearly to 100% at the exit level."""
-    if weighted_sm >= params.sm_trigger:
+    """Crop layer: 0 at or above the trigger; 25% just below it, rising linearly to 100% at the exit level.
+    A missing reading (NaN) pays nothing: a gap in the data is held for review, never paid in full."""
+    if not math.isfinite(weighted_sm) or weighted_sm >= params.sm_trigger:
         return 0.0
     span = max(params.sm_trigger - params.sm_exit, 1e-9)
     depth = min(1.0, (params.sm_trigger - weighted_sm) / span)
@@ -328,10 +331,12 @@ def payout_b_fraction(crop_fraction: float, ndvi_pct: float, tmax_anomaly_c: flo
     by the air temperature anomaly) adds severity: each 1 degree C above the ward's usual seasonal maximum counts
     as a quarter of the way to full payment.
     """
+    if not (math.isfinite(crop_fraction) and math.isfinite(ndvi_pct)):
+        return 0.0
     if crop_fraction <= 0 or crop_fraction < params.fodder_gate or ndvi_pct >= params.ndvi_trigger:
         return 0.0
     ndvi_severity = (params.ndvi_trigger - ndvi_pct) / max(params.ndvi_trigger, 1e-9)
-    heat_severity = 0.25 * max(0.0, tmax_anomaly_c)
+    heat_severity = 0.25 * max(0.0, tmax_anomaly_c) if math.isfinite(tmax_anomaly_c) else 0.0
     return 0.5 + 0.5 * min(1.0, ndvi_severity + heat_severity)
 
 

@@ -96,9 +96,11 @@ class MemberIndex:
         self.by_id = {mid.upper(): mid for mid in m["member_id"]}
         self.id_choices = {mid.replace("-", "").upper(): mid for mid in m["member_id"]}
         self.by_phone = {normalize_phone(p): mid for p, mid in zip(m["phone"], m["member_id"]) if normalize_phone(p)}
-        self.by_national_id = dict(zip(m["national_id"].astype(str), m["member_id"]))
-        self.names = {mid: name.upper() for mid, name in zip(m["member_id"], m["full_name"])}
-        self.spouses = {mid: s.upper() for mid, s in zip(m["member_id"], m["spouse_name"]) if s}
+        self.by_national_id = {str(n).split(".")[0]: mid for n, mid in zip(m["national_id"], m["member_id"])
+                               if pd.notna(n)}
+        self.names = {mid: str(name).upper() for mid, name in zip(m["member_id"], m["full_name"])}
+        self.spouses = {mid: s.upper() for mid, s in zip(m["member_id"], m["spouse_name"].fillna(""))
+                        if isinstance(s, str) and s.strip()}
         self.surnames = {mid: s.upper().replace("'", "") for mid, s in zip(m["member_id"], m["surname"])}
 
 
@@ -108,13 +110,27 @@ def _surname_support(ref: str, member_id: str, index: MemberIndex) -> float:
     return max((fuzz.partial_ratio(t, surname) for t in tokens), default=0.0)
 
 
-def _name_support(payer: str, member_id: str, index: MemberIndex) -> float:
-    if not payer:
-        return 0.0
-    scores = [fuzz.token_set_ratio(payer, index.names[member_id])]
-    if member_id in index.spouses:
-        scores.append(fuzz.token_set_ratio(payer, index.spouses[member_id]))
-    return max(scores)
+def _same_words(payer: str, name: str) -> bool:
+    return bool(payer) and bool(name) and set(payer.split()) == set(name.split())
+
+
+def _settle_tie(candidates: list[tuple[str, str]], payer: str, ref: str, index: MemberIndex):
+    """Pick one (member_id, record name) from equally close candidates, or None for a person to review.
+
+    Only strong evidence settles a tie, because a wrong credit is worse than a short review queue: the payer's
+    name has exactly the same words as one candidate's record (member or spouse), or the reference names exactly
+    one candidate's surname. A partial name ("STEPHEN OWINO" against "STEPHEN MWANGI OWINO") is not enough when
+    ten member IDs fit the reference equally well.
+    """
+    same = {(mid, name) for mid, name in candidates if _same_words(payer, name)}
+    holders = {mid for mid, name in candidates if payer and set(payer.split()) <= set(name.split())}
+    if len({mid for mid, _ in same}) == 1 and holders == {next(iter(same))[0]}:
+        return next(iter(same))
+    hinted = {mid for mid, _ in candidates if _surname_support(ref, mid, index) >= 85}
+    if len(hinted) == 1:
+        mid = next(iter(hinted))
+        return mid, next(name for m, name in candidates if m == mid)
+    return None
 
 
 def match_row(ref, phone: str, payer: str, index: MemberIndex) -> tuple[str | None, str, float]:
@@ -131,39 +147,38 @@ def match_row(ref, phone: str, payer: str, index: MemberIndex) -> tuple[str | No
 
     cref = canonical_ref(raw)
     if len(cref) >= 4 and any(ch.isdigit() for ch in cref):
-        hits = process.extract(cref, list(index.id_choices), scorer=fuzz.WRatio, limit=3,
+        hits = process.extract(cref, list(index.id_choices), scorer=fuzz.WRatio, limit=None,
                                score_cutoff=FUZZY_THRESHOLD)
         if hits:
             best_score = hits[0][1]
-            tied = [h for h in hits if best_score - h[1] < 2]
+            tied = [index.id_choices[h[0]] for h in hits if best_score - h[1] < 2]
             if len(tied) == 1:
-                return index.id_choices[hits[0][0]], FUZZY_REF, round(best_score, 1)
-            # Several IDs are equally close: the payer's name decides, or a person does.
-            supported = [(h, _name_support(payer, index.id_choices[h[0]], index)) for h in tied]
-            supported = [s for s in supported if s[1] >= 80]
-            if len(supported) == 1:
-                return index.id_choices[supported[0][0][0]], FUZZY_REF, round(supported[0][0][1], 1)
-            return None, AMBIGUOUS, round(best_score, 1)
+                return tied[0], FUZZY_REF, round(best_score, 1)
+            # Several IDs are equally close (a truncated MBR-104 fits ten): only a full-name match settles it.
+            candidates = [(mid, index.names[mid]) for mid in tied] + \
+                         [(mid, index.spouses[mid]) for mid in tied if mid in index.spouses]
+            chosen = _settle_tie(candidates, payer, raw, index)
+            return (chosen[0], FUZZY_REF, round(best_score, 1)) if chosen else (None, AMBIGUOUS, round(best_score, 1))
 
     if payer:
-        hits = process.extract(payer, index.spouses, scorer=fuzz.token_sort_ratio, limit=5,
-                               score_cutoff=FUZZY_THRESHOLD)
-        if hits:
-            if len(hits) > 1:
-                ranked = sorted(hits, key=lambda h: (_surname_support(raw, h[2], index), h[1]), reverse=True)
-                top, runner = ranked[0], ranked[1]
-                if _surname_support(raw, top[2], index) <= _surname_support(raw, runner[2], index) \
-                        and top[1] - runner[1] < 2:
-                    return None, AMBIGUOUS, round(top[1], 1)
-                hits = [top]
-            return hits[0][2], SPOUSE, round(hits[0][1], 1)
-
-        hits = process.extract(payer, index.names, scorer=fuzz.token_sort_ratio, limit=2,
-                               score_cutoff=NAME_THRESHOLD)
-        if len(hits) == 1 or (len(hits) > 1 and hits[0][1] - hits[1][1] >= 5):
-            return hits[0][2], MEMBER_NAME, round(hits[0][1], 1)
-        if hits:
-            return None, AMBIGUOUS, round(hits[0][1], 1)
+        # Name only: no ID and no registered phone, so the name must point at one person without doubt. Member and
+        # spouse names are checked together. A payment is credited only when the payer's name has exactly the
+        # words of one record AND no other member or spouse carries all of those words ("NEKESA WANYAMA" is one
+        # member's full name but also part of "ESTHER NEKESA WANYAMA", so it goes to review). A close but not
+        # exact name ("NEKESA" against "WEKESA") is a person's call, never the matcher's.
+        words = set(payer.split())
+        records = [(mid, name, MEMBER_NAME) for mid, name in index.names.items()] + \
+                  [(mid, name, SPOUSE) for mid, name in index.spouses.items()]
+        same = [(mid, kind) for mid, name, kind in records if _same_words(payer, name)]
+        holders = {mid for mid, name, _ in records if words <= set(name.split())}
+        if len({mid for mid, _ in same}) == 1 and holders == {same[0][0]}:
+            return same[0][0], same[0][1], 100.0
+        near = process.extractOne(payer, index.names, scorer=fuzz.token_sort_ratio, score_cutoff=FUZZY_THRESHOLD)
+        near_spouse = process.extractOne(payer, index.spouses, scorer=fuzz.token_sort_ratio,
+                                         score_cutoff=FUZZY_THRESHOLD)
+        best = max((h[1] for h in (near, near_spouse) if h), default=0.0)
+        if same or best:
+            return None, AMBIGUOUS, round(max(best, 100.0 if same else 0.0), 1)
     return None, UNMATCHED, 0.0
 
 
@@ -318,9 +333,14 @@ def accuracy(result: ReconResult, truth: pd.DataFrame) -> dict:
 # ------------------------------------------------------------------------------------- outputs
 
 def bordereau(summary: pd.DataFrame, wards: dict, season_label: str = "Long rains 2027",
-              sum_insured: float = 60_000.0) -> pd.DataFrame:
-    """Premium bordereau for the underwriter: one row per bound (ACTIVE) policy, identifiers masked."""
+              sum_insured: float = 60_000.0, gross_premium: dict | None = None) -> pd.DataFrame:
+    """Premium bordereau for the underwriter: one row per bound (ACTIVE) policy, identifiers masked.
+
+    ``gross_premium`` ({ward: KSh}) is the full premium; when a subsidy pays part of it, the farmer's share is what
+    the SACCO collected (``premium_due``) and the rest is shown as subsidy due.
+    """
     active = summary[summary["policy_status"] == ACTIVE].sort_values("member_id")
+    gross = active["ward"].map(gross_premium).astype(float) if gross_premium else active["premium_due"]
     return pd.DataFrame({
         "bordereau_period": season_label,
         "policy_number": "SS360-" + active["member_id"].str.replace("MBR-", "", regex=False),
@@ -329,8 +349,9 @@ def bordereau(summary: pd.DataFrame, wards: dict, season_label: str = "Long rain
         "phone_masked": active["phone"].map(lambda p: mask_phone(normalize_phone(p))),
         "ward": active["ward"].map(lambda k: wards[k].name), "county": active["ward"].map(lambda k: wards[k].county),
         "cover": "Mixed farm: crop inputs, fodder gap, vet and health",
-        "sum_insured_ksh": sum_insured, "premium_due_ksh": active["premium_due"],
-        "premium_received_ksh": active["to_premium"], "premium_to_remit_ksh": active["to_premium"],
+        "sum_insured_ksh": sum_insured, "gross_premium_ksh": gross, "premium_due_ksh": active["premium_due"],
+        "premium_received_ksh": active["to_premium"], "subsidy_due_ksh": gross - active["premium_due"],
+        "premium_to_remit_ksh": active["to_premium"],
         "policy_status": active["policy_status"], "payment_receipts": active["receipts"],
         "insurer": "Partner insurer (to be named)",
     })

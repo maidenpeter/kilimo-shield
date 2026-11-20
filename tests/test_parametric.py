@@ -202,6 +202,21 @@ def test_refresh_falls_back_to_cache_when_offline(monkeypatch):
     assert source == pe.SOURCE_CACHE and len(weather) == 3653
 
 
-def test_trajectory_has_ten_dekads(njoro):
+def test_trajectory_has_nine_dekads(njoro):
     traj = pe.dekadal_trajectory(njoro, 2022, "LR")
-    assert list(traj["dekad"]) == list(range(1, 11))
+    assert list(traj["dekad"]) == list(range(1, 10))  # days 81-92 form the last dekad, not a 2-day stub
+
+
+def test_missing_data_never_pays():
+    p = pe.TriggerParams()
+    nan = float("nan")
+    assert pe.payout_a_fraction(nan, p) == 0
+    assert pe.payout_b_fraction(0.8, nan, 0, p) == 0
+    assert pe.payout_b_fraction(nan, 5, 0, p) == 0
+
+
+def test_leap_years_compare_like_with_like(njoro):
+    daily = pe.daily_indices(njoro)
+    march_first = daily[(daily["date"].dt.month == 3) & (daily["date"].dt.day == 1)]
+    # 1 March is compared with the same climatology day in every year, leap or not
+    assert len(march_first) == 10

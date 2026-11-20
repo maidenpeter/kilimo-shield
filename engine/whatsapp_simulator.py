@@ -76,7 +76,7 @@ def verifier_network(ward_key: str, size: int = NETWORK_SIZE) -> pd.DataFrame:
 def bounty_message(ward_key: str, vci: float, bounty: int = BOUNTY_KSH) -> str:
     ward = WARDS[ward_key]
     return (
-        f"ShambaShield 360 field check, {ward.name}.\n"
+        f"ShambaShield360 field check, {ward.name}.\n"
         f"Satellite greenness is low (VCI {vci:.1f}%). Please send ONE photo of a maize plot or pasture near you "
         f"today, with location switched on. You get KSh {bounty} airtime for each valid photo.\n"
         f"Tuma picha MOJA ya shamba la mahindi au malisho leo, ukiwa umewasha location. "

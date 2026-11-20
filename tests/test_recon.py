@@ -147,6 +147,32 @@ def test_zone_premiums_follow_each_members_ward():
     assert rec.accuracy(result, data.truth)["wrong_member"] == 0
     b = rec.bordereau(m, WARDS)
     assert (b["premium_due_ksh"] == b["ward"].map({w.name: premiums[k] for k, w in WARDS.items()})).all()
+    # with a 50% subsidy the SACCO collects half and the bordereau shows the other half as subsidy due
+    half = {k: v / 2 for k, v in premiums.items()}
+    sub = rec.reconcile(data.statement, data.members, half)
+    bs = rec.bordereau(sub.members, WARDS, gross_premium=premiums)
+    assert (bs["gross_premium_ksh"] == bs["premium_due_ksh"] + bs["subsidy_due_ksh"]).all()
+    assert (bs["subsidy_due_ksh"] == bs["premium_due_ksh"]).all()
+
+
+def test_name_only_payments_need_an_unmistakable_name(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    full = m.loc["MBR-1100", "full_name"].upper()   # Esther Nekesa Wanyama
+    assert rec.match_row("SHAMBA", "254700000011", full, index)[:2] == ("MBR-1100", rec.MEMBER_NAME)
+    # two of her names are exactly another member's full name: a person decides
+    assert rec.match_row("SHAMBA", "254700000011", "NEKESA WANYAMA", index)[1] == rec.AMBIGUOUS
+    # one letter off is never credited on a name alone
+    assert rec.match_row("SHAMBA", "254700000011", full.replace("NEKESA", "WEKESA"), index)[0] is None
+
+
+def test_blank_cells_from_a_csv_export(tmp_path):
+    paths = sg.write_csvs(out_dir=tmp_path)
+    members = pd.read_csv(paths[0], dtype={"national_id": str})
+    statement = pd.read_csv(paths[1])
+    assert members["spouse_name"].isna().any()  # blank cells come back as NaN
+    result = rec.reconcile(statement, members)
+    assert rec.accuracy(result, pd.read_csv(paths[2]))["wrong_member"] == 0
 
 
 def test_ward_not_offered_owes_no_premium():
