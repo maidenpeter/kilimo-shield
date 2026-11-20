@@ -26,7 +26,7 @@ with backtest_tab:
     backtest = tab_parametric.render()
 with recon_tab:
     params = backtest["params"]
-    tab_recon.render(backtest["zone_farmer_premiums"], sum_insured=params.sum_insured)
+    tab_recon.render(backtest["offered_premiums"], backtest["zone_farmer_premiums"], sum_insured=params.sum_insured)
 with whatsapp_tab:
     tab_whatsapp.render(backtest["ward_key"], backtest["kpis"].burn_cost_pct, backtest["kpis"].premium_rate_pct / 100)
 

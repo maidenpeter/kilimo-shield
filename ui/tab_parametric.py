@@ -49,6 +49,8 @@ def sidebar_controls() -> tuple[str, TriggerParams]:
         flat_rate = sb.slider("Commercial premium rate (%)", 2.0, 20.0, 6.0, 0.5)
     subsidy = sb.slider("Premium subsidy (%)", 0, 70, 0, 5,
                         help="Share paid by a county or national scheme. None is agreed: illustrative only.")
+    ceiling = sb.slider("Sellable premium ceiling (%)", 6, 25, 12,
+                        help="Wards priced above this are not sold the standard bundle and need a custom tier")
 
     sb.markdown("**Triggers**")
     sm_trigger = sb.slider("Soil moisture trigger (index, 50 = normal)", 15, 50, 32)
@@ -73,7 +75,8 @@ def sidebar_controls() -> tuple[str, TriggerParams]:
         st.session_state["refresh_count"] = st.session_state.get("refresh_count", 0) + 1
     params = TriggerParams(
         sum_insured=float(sum_insured), pricing_mode=mode, target_loss_ratio=target_lr / 100,
-        premium_rate=flat_rate / 100, subsidy_share=subsidy / 100, sm_trigger=float(sm_trigger),
+        premium_rate=flat_rate / 100, subsidy_share=subsidy / 100, max_sellable_rate=ceiling / 100,
+        sm_trigger=float(sm_trigger),
         sm_exit=float(sm_exit), fodder_gate=gate / 100, aggregate_cap_share=cap / 100, ndvi_trigger=float(ndvi_trigger),
         rain10_mode=rain_mode, rain10_percentile=float(rain_pct), rain10_trigger_mm=float(rain_mm),
         heat_temp_c=float(heat_c), heat_days=int(heat_days), capacity_mm=float(capacity),
@@ -137,8 +140,13 @@ def kpi_row(k, params: TriggerParams) -> None:
                   if params.subsidy_share else "")
         how = (f"burn cost at a {params.target_loss_ratio:.0%} target loss ratio" if params.pricing_mode == "target"
                else "flat rate for every ward")
-        theme.kpi("Commercial premium", theme.pct(k.premium_rate_pct, 1),
-                  f"{theme.ksh(k.premium_ksh)} per season, {how}{farmer}", "amber")
+        if k.offered:
+            theme.kpi("Commercial premium", theme.pct(k.premium_rate_pct, 1),
+                      f"{theme.ksh(k.premium_ksh)} per season, {how}{farmer}", "amber")
+        else:
+            theme.kpi("Commercial premium", theme.pct(k.premium_rate_pct, 1),
+                      f"{theme.ksh(k.premium_ksh)} per season: above the {params.max_sellable_rate:.0%} ceiling, "
+                      "so this ward is not sold the standard bundle", "red")
     with c3:
         tone = "red" if k.loss_ratio_pct > 100 else "amber" if k.loss_ratio_pct > 70 else ""
         theme.kpi("Historical loss ratio", theme.pct(k.loss_ratio_pct, 0),
@@ -159,7 +167,8 @@ def kpi_row(k, params: TriggerParams) -> None:
 def zone_table(zones) -> None:
     st.markdown("#### Zone pricing across the pilot wards")
     st.caption("Same product terms in every ward. Priced on 2015-2024 (20 seasons), which is short: add a loading "
-               "for uncertainty before quoting.")
+               "for uncertainty before quoting. A ward above the sellable ceiling is not sold the standard bundle at "
+               "a price farmers will not pay; it is referred for a custom tier built on its own enterprise.")
     st.dataframe(zones.drop(columns=["ward_key"]), hide_index=True, width="stretch", column_config={
         "ward": "Ward", "zone": "Agro-ecological zone",
         "burn_cost_pct": st.column_config.NumberColumn("Burn cost (%)", format="%.2f"),
@@ -171,6 +180,7 @@ def zone_table(zones) -> None:
         "rain10_line_mm": st.column_config.NumberColumn("Excess-rain line (mm)", format="%.0f"),
         "basis_score": st.column_config.NumberColumn("Basis score, index (%)", format="%+.0f"),
         "basis_score_verified": st.column_config.NumberColumn("Basis score, with check (%)", format="%+.0f"),
+        "offered": "Offered",
     })
 
 
@@ -270,6 +280,8 @@ figure sends seasons within {params.amber_band:.0f} points of the trigger to the
 the photos settle {params.verifier_accuracy:.0%} of them correctly; the network has not run in the field, so this is
 a scenario. Both are model checks, not measurements: they need yields or loan-default records from the SACCO.
 """)
+    offered = zones[zones["offered"] == "Yes"]
     return {"ward_key": ward_key, "params": params, "kpis": k,
             "zone_premiums": dict(zip(zones["ward_key"], zones["premium_ksh"])),
-            "zone_farmer_premiums": dict(zip(zones["ward_key"], zones["farmer_premium_ksh"]))}
+            "zone_farmer_premiums": dict(zip(zones["ward_key"], zones["farmer_premium_ksh"])),
+            "offered_premiums": dict(zip(offered["ward_key"], offered["farmer_premium_ksh"]))}

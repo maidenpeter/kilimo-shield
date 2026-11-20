@@ -149,6 +149,20 @@ def test_zone_premiums_follow_each_members_ward():
     assert (b["premium_due_ksh"] == b["ward"].map({w.name: premiums[k] for k, w in WARDS.items()})).all()
 
 
+def test_ward_not_offered_owes_no_premium():
+    premiums = {"njoro": 5_100.0, "imenti_north": 6_780.0, "kangundo": 5_880.0, "kimilili": 5_940.0}  # no bureti
+    data = sg.generate_all(premium_by_ward={**premiums, "bureti": 10_740.0})
+    result = rec.reconcile(data.statement, data.members, premiums)
+    m = result.members
+    bureti = m[m["ward"] == "bureti"]
+    assert len(bureti) > 0
+    assert (bureti["policy_status"] == rec.NOT_OFFERED).all()
+    assert bureti["to_premium"].sum() == 0
+    assert (m.loc[m["ward"] != "bureti", "policy_status"] != rec.NOT_OFFERED).all()
+    assert "Bureti" not in set(rec.bordereau(m, WARDS)["ward"])
+    assert "bureti" not in set(rec.claim_split(m, list(WARDS))["ward"])
+
+
 def test_bordereau_lists_only_active_policies(result):
     b = rec.bordereau(result.members, WARDS)
     assert len(b) == (result.members["policy_status"] == rec.ACTIVE).sum()

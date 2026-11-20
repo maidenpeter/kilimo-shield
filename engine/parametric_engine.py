@@ -96,6 +96,7 @@ class TriggerParams:
     target_loss_ratio: float = 0.60
     premium_rate: float = 0.06            # flat commercial rate per season, used when pricing_mode == "flat"
     subsidy_share: float = 0.0            # share of the premium paid by a subsidy (none is agreed)
+    max_sellable_rate: float = 0.12       # above this commercial rate a ward is not sold the standard bundle
     # WhatsApp verification, for the post-verification basis-risk view
     amber_band: float = 5.0               # seasons this close to the soil moisture trigger go to verification
     verifier_accuracy: float = 0.8        # assumed share of verified seasons the photos settle correctly
@@ -430,6 +431,7 @@ class BacktestKPIs:
     seasons: int
     basis: BasisRisk
     rain10_line_mm: float
+    offered: bool = True           # False when the rate is above the sellable ceiling
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -481,11 +483,17 @@ def kpis(seasons: pd.DataFrame, params: TriggerParams = TriggerParams()) -> Back
         worst_year_pct=100.0 * worst_amount / (2 * params.sum_insured),
         seasons_paying=int((seasons["payout_total"] > 0).sum()), seasons=len(seasons),
         basis=basis_risk(seasons, params), rain10_line_mm=float(seasons["rain10_line_mm"].iloc[0]),
+        offered=rate <= params.max_sellable_rate + 1e-9,
     )
 
 
 def zone_pricing(params: TriggerParams = TriggerParams(), loader=load_weather) -> pd.DataFrame:
-    """Price every pilot ward on the same product terms: one row per ward."""
+    """Price every pilot ward on the same product terms: one row per ward.
+
+    A ward whose commercial rate is above ``max_sellable_rate`` is marked not offered: rather than sell the
+    standard bundle at a price farmers will not pay (or underprice it with a flat rate), it is referred for a
+    custom tier built on its own enterprise (for example tea and dairy in the Kericho highlands).
+    """
     rows = []
     for key, ward in WARDS.items():
         k = kpis(run_backtest(loader(key)[0], params), params)
@@ -495,6 +503,7 @@ def zone_pricing(params: TriggerParams = TriggerParams(), loader=load_weather) -
             "farmer_premium_ksh": k.farmer_premium_ksh, "loss_ratio_pct": k.loss_ratio_pct,
             "seasons_paying": k.seasons_paying, "rain10_line_mm": k.rain10_line_mm,
             "basis_score": k.basis.score, "basis_score_verified": k.basis.score_verified,
+            "offered": "Yes" if k.offered else f"No: above {params.max_sellable_rate:.0%}, needs a custom tier",
         })
     return pd.DataFrame(rows)
 

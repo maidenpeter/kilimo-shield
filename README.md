@@ -26,7 +26,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (67, including a headless run of the whole app that presses every button):
+Tests (69, including a headless run of the whole app that presses every button):
 
 ```
 pip install -r requirements-dev.txt
@@ -80,6 +80,21 @@ does the same for all five wards).
 - Vet and health: KSh 10,000 when the wettest 10 days pass the ward's own 90th percentile line, or after 7 days
   above 31 deg C.
 - Price: each ward's burn cost divided by a 60% target loss ratio, rounded up to 0.1%.
+- Sellable ceiling: a ward priced above 12% is **not offered** the standard bundle. Its members owe no premium, their
+  money goes to loans and savings, and they stay out of the bordereau and the claim split.
+
+## Why Bureti is not offered (an underwriting decision, not a gap)
+
+On 2015-2024, Bureti (Kericho, wet tea-dairy highland) prices at 17.9% (KSh 10,740 a season) on the standard
+bundle: the soil moisture index reads relative dryness against a very wet normal, so the crop layer pays 4 seasons in
+20 even though the maize water-satisfaction index (WRSI) never fell below 60 there. The engine flags it instead of
+selling it at a price farmers will not pay or hiding it inside a flat national rate.
+
+A dairy-and-excess-rain tier without the maize layer (KSh 20,000 fodder plus KSh 10,000 vet and health) was tested
+and does not fix it: KSh 4,900 to 7,900 a season for KSh 30,000 of cover (16% to 26%), because a pasture trigger set at
+a percentile of the ward's own record fires 2 to 4 seasons in 20 in every ward, Bureti included. A highland tier
+needs data the proxies cannot give: milk volumes from dairy co-operatives or green-leaf deliveries from tea
+factories, to price yield-linked or area-yield cover. Frost and hail are not in ERA5-class weather data.
 
 ## Layout
 
@@ -98,8 +113,7 @@ tests/                       engine tests and a headless app test
 ## Before real money moves
 
 - Real SAR soil moisture and NDVI in place of the proxies, and a longer record than 2015-2024 before pricing.
-- Bureti: the crop layer itself pays 4 seasons in 20, so even with a per-ward rain line its premium comes out near
-  18%. Decide whether to offer crop cover there or set its own trigger.
+- A highland tea-dairy tier for Bureti built on co-operative milk or tea-leaf records (see above).
 - Basis-risk testing against SACCO yield or loan-default records.
 - Members' written consent to send part of a claim to their loan, and to share data (Data Protection Act, 2019).
 - Live rails: M-Pesa Daraja C2B and B2C, WhatsApp Business Cloud API, the SACCO core banking export.

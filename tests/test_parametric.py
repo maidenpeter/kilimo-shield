@@ -105,7 +105,7 @@ def test_aggregate_cap_scales_layers_down_together(njoro):
     assert seasons["payout_total"].sum() < uncapped["payout_total"].sum()
 
 
-def test_target_pricing_hits_the_loss_ratio(njoro):
+def test_target_pricing_hits_the_loss_ratio():
     p = pe.TriggerParams()
     for key in pe.WARDS:
         k = pe.kpis(pe.run_backtest(pe.load_weather(key)[0], p), p)
@@ -161,6 +161,16 @@ def test_zone_pricing_covers_every_ward():
     assert list(zones["ward_key"]) == list(pe.WARDS)
     assert zones["premium_rate_pct"].nunique() > 1  # wards are priced differently
     assert set(zones["zone"]) >= {"Semi-arid", "Wet highland", "Transitional"}
+
+
+def test_wards_above_the_ceiling_are_not_offered():
+    zones = pe.zone_pricing().set_index("ward_key")
+    over = zones["premium_rate_pct"] > 12.0 + 1e-9
+    assert (zones.loc[over, "offered"].str.startswith("No")).all()
+    assert (zones.loc[~over, "offered"] == "Yes").all()
+    assert zones.loc["bureti", "offered"].startswith("No")  # the wet tea-dairy highland
+    relaxed = pe.zone_pricing(replace(pe.TriggerParams(), max_sellable_rate=0.25))
+    assert (relaxed["offered"] == "Yes").all()
 
 
 def test_higher_trigger_never_pays_less(njoro):

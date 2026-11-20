@@ -43,6 +43,7 @@ UNMATCHED = "Unmatched (suspense)"
 SUSPENSE_METHODS = (AMBIGUOUS, UNMATCHED)
 
 ACTIVE, GRACE, PENDING = "ACTIVE", "GRACE_PERIOD", "PENDING"
+NOT_OFFERED = "NOT_OFFERED"  # the member's ward is not sold this product, so nothing goes to premium
 
 
 # ------------------------------------------------------------------------------------------ cleaning
@@ -191,9 +192,12 @@ def match_statement(statement: pd.DataFrame, members: pd.DataFrame) -> pd.DataFr
 # ----------------------------------------------------------------------------------------- waterfall
 
 def premium_due(members: pd.DataFrame, premium_target) -> pd.Series:
-    """Premium each member owes: one figure for everyone, or a {ward: KSh} map for zone pricing."""
+    """Premium each member owes: one figure for everyone, or a {ward: KSh} map for zone pricing.
+
+    A ward missing from the map is not offered the product: its members owe no premium.
+    """
     if isinstance(premium_target, dict):
-        return members["ward"].map(premium_target).astype(float)
+        return members["ward"].map(premium_target).fillna(0.0).astype(float)
     return pd.Series(float(premium_target), index=members.index)
 
 
@@ -243,9 +247,10 @@ def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_targ
     summary["receipts"] = summary["receipts"].fillna("")
     summary["premium_due"] = premium_due(summary, premium_target).to_numpy()
     summary["policy_status"] = np.select(
-        [summary["to_premium"] >= summary["premium_due"] - 1e-6,
+        [summary["premium_due"] <= 0,
+         summary["to_premium"] >= summary["premium_due"] - 1e-6,
          summary["to_premium"] >= GRACE_SHARE * summary["premium_due"]],
-        [ACTIVE, GRACE], PENDING)
+        [NOT_OFFERED, ACTIVE, GRACE], PENDING)
     summary["interest_after"] = summary["overdue_interest"] - summary["to_interest"]
     summary["loan_after"] = summary["loan_balance"] - summary["to_principal"]
     summary["savings_after"] = summary["savings_balance"] + summary["to_savings"]

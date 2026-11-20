@@ -15,8 +15,8 @@ METHOD_ORDER = [rec.EXACT_ID, rec.EXACT_PHONE, rec.NATIONAL_ID, rec.FUZZY_REF, r
 
 
 @st.cache_data(show_spinner="Generating synthetic SACCO ledger and M-Pesa statement...")
-def synthetic(premium_items: tuple):
-    return generate_all(premium_by_ward=dict(premium_items))
+def synthetic(payment_items: tuple):
+    return generate_all(premium_by_ward=dict(payment_items))
 
 
 def _masked_statement(statement):
@@ -48,14 +48,16 @@ def method_chart(mpesa) -> go.Figure:
     return theme.plot_layout(fig, "How each M-Pesa row was placed", height=380)
 
 
-def render(premium_targets: dict, sum_insured: float = 60_000.0) -> None:
-    """``premium_targets``: what a member in each ward owes this season (KSh, after any subsidy)."""
+def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_000.0) -> None:
+    """``premium_targets``: what a member owes this season in each ward that is offered the product (KSh, after
+    any subsidy). ``payment_levels``: what members in every ward aim to pay, which shapes the synthetic statement."""
     premium_items = tuple(sorted((k, round(v, 2)) for k, v in premium_targets.items()))
-    data = synthetic(premium_items)
+    data = synthetic(tuple(sorted((k, round(v, 2)) for k, v in payment_levels.items())))
     st.subheader("ShambaRecon: every shilling matched and allocated")
     theme.note(f"Synthetic data: {N_MEMBERS} fictional SACCO members and a {len(data.statement)}-row M-Pesa paybill "
                "statement with typical errors (mistyped member IDs, spouse phones, micro-payments, duplicate "
-               "exports). Each member owes their ward's premium from the backtest tab. Phone numbers and "
+               "exports). Each member owes their ward's premium from the backtest tab; members in a ward that is "
+               "not offered the product owe none, and their money goes to loans and savings. Phone numbers and "
                "national IDs are masked on screen.")
 
     with st.expander("Inputs: member ledger and paybill statement"):
@@ -100,7 +102,7 @@ def render(premium_targets: dict, sum_insured: float = 60_000.0) -> None:
 
     status = result.members["policy_status"].value_counts()
     remit = result.members.loc[result.members["policy_status"] == rec.ACTIVE, "to_premium"].sum()
-    s1, s2, s3, s4 = st.columns(4)
+    s1, s2, s3, s4, s5 = st.columns(5)
     with s1:
         theme.kpi("Policies ACTIVE", f"{status.get(rec.ACTIVE, 0)}", "Full ward premium received")
     with s2:
@@ -108,6 +110,8 @@ def render(premium_targets: dict, sum_insured: float = 60_000.0) -> None:
     with s3:
         theme.kpi("PENDING", f"{status.get(rec.PENDING, 0)}", "Less than half paid, or nothing yet", "red")
     with s4:
+        theme.kpi("NOT_OFFERED", f"{status.get(rec.NOT_OFFERED, 0)}", "Ward above the sellable ceiling")
+    with s5:
         theme.kpi("Premium to remit", theme.ksh(remit), "To the partner insurer for ACTIVE policies")
 
     chart_col, split_col = st.columns([3, 2])
