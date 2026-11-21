@@ -40,7 +40,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (308, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (309, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -156,9 +156,9 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
   and so does a payment for a member whose number is far off.
 - A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`, `MRB 1001 NA 1002`, `1001/02`,
   `MBR-1042 & 41`, or an ID next to another member's national ID or registered phone) goes to review, and so does a
-  phone or national ID that two members share. `&`, `NA`, `AND`, `+`, `,` and `;` always join two members. `/` and
-  `-` also write dates and instalments, so after them a shorthand counts only when it counts up from the first number
-  by at most nine, the way members who join together are numbered: `MBR-1042-10`, `MBR-1042/26` and
+  phone or national ID that two members share. `&`, `NA`, `AND` and `+` always join two members. `/`, `-`, `,` and
+  `;` also write dates and instalments, so after them a shorthand counts only when it counts up from the first number
+  by at most nine, the way members who join together are numbered: `MBR-1042-10`, `MBR-1042/26`, `MBR-1042, 10` and
   `MBR-1042/2026` are not a second member.
 - A mistyped ID (`MBR 1042`, `MBR:1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the
   registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own

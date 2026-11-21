@@ -500,3 +500,16 @@ def test_review_reasons_are_specific(data):
     assert "names two members" in rec.review_reason("MBR-1001/02", "", "", index, 7200.0)
     assert "came from MBR-1008's phone" in rec.review_reason("MBR 1001", m.loc["MBR-1008", "phone_254"], "", index)
     assert "several members" in rec.review_reason("MBR-104", "", "", index)
+
+
+def test_round_seven_reasons_and_comma_suffixes(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000999"
+    reason = rec.review_reason("MBR 1093", unknown, "Esther Nekesa Wanyama", index, 3600.0)
+    assert "is exactly MBR-1100's" in reason and "close" not in reason
+    assert "fits MBR-1003, whose number is close" in rec.review_reason("MBR 1014", unknown, "Mugo Onyango", index)
+    own = m.loc["MBR-1042"]
+    for ref in ("MBR-1042, 10", "MBR-1042; 26"):  # a month or a year after a comma is not a second member
+        assert rec.match_row(ref, own["phone_254"], own["full_name"], index, 3600.0)[0] == "MBR-1042", ref
+    assert rec.match_row("MBR-1041, 2", unknown, "", index, 7200.0)[1] == rec.AMBIGUOUS  # counting up: two members

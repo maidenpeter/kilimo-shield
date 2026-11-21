@@ -343,10 +343,10 @@ def _digits(text: str) -> str:
 def _is_joint(raw: str, index: MemberIndex) -> bool:
     """True when the reference names a second member after the first: "MBR-1001/02", "MRB 1001 NA 1002", "1001/02".
 
-    "&", "AND", "NA", "+", "," and ";" always join two members ("MBR-1042 & 41"). "/" and "-" also write dates,
+    "&", "AND", "NA", "N" and "+" always join two members ("MBR-1042 & 41"). "/", "-", "," and ";" also write dates,
     years and instalments, so after them a shorthand counts only when it counts up from the first number by at most
-    nine, the way members who joined together are numbered ("1001/02", "1041/2"): "MBR-1042-10" or "MBR-1042/26" is
-    a month, a year or an instalment. A number that is not a member's ("MBR-1042/2026") is never a second member, and
+    nine, the way members who joined together are numbered ("1001/02", "1041/2"): "MBR-1042-10", "MBR-1042/26" or
+    "MBR-1042, 10" is a month, a year or an instalment. A number that is not a member's ("MBR-1042/2026") is never a second member, and
     without MBR the first number must itself be a member's.
     """
     for m in _JOINT.finditer(raw):
@@ -355,7 +355,7 @@ def _is_joint(raw: str, index: MemberIndex) -> bool:
             continue
         if len(second) <= 2 < len(first):
             second = first[:len(first) - len(second)] + second
-            if joiner in "/-" and not 0 < int(second) - int(first) <= 9:
+            if joiner in "/-,;" and not 0 < int(second) - int(first) <= 9:
                 continue
         elif len(second) != len(first):
             continue
@@ -471,8 +471,16 @@ def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) 
     if tied:
         return "The reference fits several members equally well (a number cut short?), and nothing settles which."
     if ref_member and _name_points_elsewhere(payer, ref_member, index, near, phone_agrees=phones == {ref_member}):
-        return (f"The reference points at {ref_member}, but the name on the M-Pesa account fits another member with a "
-                "close number: a mistyped number?")
+        # word the branch that fired: a name close to the reference, or a name that is exactly someone else's
+        holders = _holders(payer, index.records)
+        close = sorted(h for h in holders - {ref_member}
+                       if h in near or (len(holders) <= 2 and _digit_gap(h, ref_member) <= 2))
+        if close and len(payer.split()) >= 2 and phones != {ref_member}:
+            return (f"The reference points at {ref_member}, but the name on the M-Pesa account fits {close[0]}, whose "
+                    "number is close to it: a mistyped number?")
+        owner = next((mid for mid, name, _ in index.records if _same_words(payer, name)), None)
+        if owner:
+            return f"The reference points at {ref_member}, but the name on the M-Pesa account is exactly {owner}'s."
     if ref_member and _ref_names_someone_else(raw, ref_member, index, payer):
         return f"The reference points at {ref_member}, but it also names someone else on the register."
     return None
