@@ -486,7 +486,7 @@ def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) 
                        if h in near or (len(holders) <= 2 and _digit_gap(h, ref_member) <= 2))
         if close and len(payer.split()) >= 2 and phones != {ref_member}:
             return (f"The reference points at {ref_member}, but the name on the M-Pesa account fits {close[0]}, whose "
-                    "number is close to it: a mistyped number?")
+                    "number is similar to it: a mistyped number?")
         owner = next((mid for mid, name, _ in index.records if _same_words(payer, name)), None)
         if owner:
             return f"The reference points at {ref_member}, but the name on the M-Pesa account is exactly {owner}'s."
@@ -500,7 +500,7 @@ def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) 
         close = sorted(h for h in holders - {member} if len(holders) <= 2 and _digit_gap(h, member) <= 2)
         if close and len(payer.split()) >= 2 and member not in holders:
             return (f"The money came from {member}'s phone, but the name on the M-Pesa account fits {close[0]}, whose "
-                    "number is close to it.")
+                    "number is similar to it.")
         owner = next((mid for mid, name, _ in index.records if _same_words(payer, name)), None)
         if owner and member not in holders:
             return f"The money came from {member}'s phone, but the name on the M-Pesa account is exactly {owner}'s."

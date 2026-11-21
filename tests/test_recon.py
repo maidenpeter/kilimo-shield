@@ -508,7 +508,7 @@ def test_round_seven_reasons_and_comma_suffixes(data):
     unknown = "254700000999"
     reason = rec.review_reason("MBR 1093", unknown, "Esther Nekesa Wanyama", index, 3600.0)
     assert "is exactly MBR-1100's" in reason and "close" not in reason
-    assert "fits MBR-1003, whose number is close" in rec.review_reason("MBR 1014", unknown, "Mugo Onyango", index)
+    assert "fits MBR-1003, whose number is similar" in rec.review_reason("MBR 1014", unknown, "Mugo Onyango", index)
     own = m.loc["MBR-1042"]
     for ref in ("MBR-1042, 10", "MBR-1042; 26"):  # a month or a year after a comma is not a second member
         assert rec.match_row(ref, own["phone_254"], own["full_name"], index, 3600.0)[0] == "MBR-1042", ref
