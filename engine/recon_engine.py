@@ -641,6 +641,18 @@ def checkoff_rows(members: pd.DataFrame, posted: str = "2026-10-31 23:00:00") ->
     })
 
 
+def split_payment(amount: float, premium_owed: float, interest_owed: float, principal_owed: float) -> dict:
+    """One payment down the waterfall: this season's premium first, then overdue loan interest, then the loan, and
+    anything left to savings. Every shilling lands in exactly one place."""
+    left = max(float(amount), 0.0)
+    out = {}
+    for key, owed in (("premium", premium_owed), ("interest", interest_owed), ("principal", principal_owed)):
+        out[key] = min(left, max(float(owed), 0.0))
+        left -= out[key]
+    out["savings"] = left
+    return out
+
+
 def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_target=PREMIUM_TARGET):
     """Split each matched shilling into premium, overdue interest, principal and savings. Returns (ledger, members).
 
@@ -659,14 +671,12 @@ def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_targ
                                                   ledger["paid_in_ksh"])):
         if mid is None or (isinstance(mid, float) and np.isnan(mid)) or method in SUSPENSE_METHODS + (DUPLICATE,):
             continue
-        left = float(amount)
         bucket = owed[mid]
-        for j, key in enumerate(("premium", "interest", "principal")):
-            take = min(left, bucket[key])
-            bucket[key] -= take
-            alloc[i, j] = take
-            left -= take
-        alloc[i, 3] = left  # savings
+        split = split_payment(float(amount), bucket["premium"], bucket["interest"], bucket["principal"])
+        for j, key in enumerate(("premium", "interest", "principal", "savings")):
+            alloc[i, j] = split[key]
+            if key in bucket:
+                bucket[key] -= split[key]
     ledger[["to_premium", "to_interest", "to_principal", "to_savings"]] = alloc
 
     allocated = ledger[ledger["member_id"].notna() & ~ledger["match_method"].isin(SUSPENSE_METHODS + (DUPLICATE,))]

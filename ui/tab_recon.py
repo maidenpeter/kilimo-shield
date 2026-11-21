@@ -86,8 +86,71 @@ def _examples(members) -> dict:
     return examples
 
 
-def try_payment(data, premium_targets: dict) -> None:
-    """One payment typed by hand, matched with the same rules as the statement, with the reason in plain words."""
+SPLIT_COLOURS = {"premium": theme.GREEN, "interest": "#ca8a04", "principal": "#64748b", "savings": "#2e90fa"}
+SPLIT_NAMES = {"premium": "Premium", "interest": "Loan interest", "principal": "Loan", "savings": "Savings"}
+
+
+def _num(value) -> float:
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return 0.0 if value != value else value  # a blank cell is nothing owed
+
+
+def balances(member_id: str, data, premium_targets: dict, current: rec.ReconResult | None) -> dict:
+    """What the member owes before this payment: after the statement's payments when a current reconciliation
+    exists, otherwise the opening balances."""
+    row = data.members.set_index("member_id").loc[member_id]
+    due = premium_targets.get(row["ward"])
+    if current is not None:
+        s = current.members.set_index("member_id").loc[member_id]
+        paid = _num(s["to_premium"])
+        return {"due": due, "paid_before": paid, "premium": max(_num(due) - paid, 0.0) if due is not None else 0.0,
+                "interest": _num(s["interest_after"]), "principal": _num(s["loan_after"]),
+                "when": "after the payments already on this statement"}
+    return {"due": due, "paid_before": 0.0, "premium": _num(due) if due is not None else 0.0,
+            "interest": _num(row["overdue_interest"]), "principal": _num(row["loan_balance"]),
+            "when": "before any other payment this season"}
+
+
+def policy_line(due, paid: float) -> tuple[str, str]:
+    """The policy's state once ``paid`` of ``due`` has reached the premium, with its chip tone."""
+    if due is None:
+        return "Ward not offered this season: no premium is due.", "AMBER"
+    if paid >= due - 1e-6:
+        return f"Premium paid in full ({theme.ksh(due)}): the policy is active.", "GREEN"
+    if paid >= rec.GRACE_SHARE * due:
+        return (f"{theme.ksh(paid)} of the {theme.ksh(due)} premium paid: half or more, so the policy is in grace "
+                "until the rest arrives.", "AMBER")
+    return f"{theme.ksh(paid)} of the {theme.ksh(due)} premium paid: under half, so the policy is pending.", "RED"
+
+
+def payment_breakdown(amount: float, bal: dict) -> None:
+    """Every shilling of one payment, down the waterfall, the way the quote shows its price."""
+    split = rec.split_payment(amount, bal["premium"], bal["interest"], bal["principal"])
+    theme.ledger([
+        ("Paid in", theme.ksh(amount)),
+        ("This season's premium (ward not offered: none due)" if bal["due"] is None else
+         f"This season's premium ({theme.ksh(bal['premium'])} owed {bal['when']})", theme.ksh(split["premium"]),
+         "" if split["premium"] else "muted"),
+        (f"Overdue loan interest ({theme.ksh(bal['interest'])} owed)", theme.ksh(split["interest"]),
+         "" if split["interest"] else "muted"),
+        (f"Loan ({theme.ksh(bal['principal'])} owed)", theme.ksh(split["principal"]),
+         "" if split["principal"] else "muted"),
+        ("Savings: whatever is left", theme.ksh(split["savings"]), "" if split["savings"] else "muted"),
+        ("Every shilling placed", theme.ksh(sum(split.values())), "total"),
+    ])
+    theme.split_bar([(SPLIT_NAMES[k], v, SPLIT_COLOURS[k]) for k, v in split.items()], "Where this payment goes")
+    text, tone = policy_line(bal["due"], bal["paid_before"] + split["premium"])
+    st.markdown(f"{theme.status('Policy', tone)} {text} Still owed after it: interest "
+                f"{theme.ksh(bal['interest'] - split['interest'])}, loan {theme.ksh(bal['principal'] - split['principal'])}.",
+                unsafe_allow_html=True)
+
+
+def try_payment(data, premium_targets: dict, current: rec.ReconResult | None = None) -> None:
+    """One payment typed by hand, matched with the same rules as the statement, with the reason in plain words and
+    the split of every shilling. It updates as you type, like the quote."""
     members = data.members.set_index("member_id")
     examples = _examples(data.members)
 
@@ -102,66 +165,93 @@ def try_payment(data, premium_targets: dict) -> None:
         ref, phone, name, amount = next(iter(examples.values()))
         st.session_state.update(try_ref=ref, try_phone=phone, try_name=name, try_amount=amount)
     with theme.panel("Try a payment by hand",
-                     "Type a payment the way it would arrive from M-Pesa, or pick an example, and see where the money "
-                     "goes and why. Nothing is saved."):
+                     "Type a payment the way it would arrive from M-Pesa, or pick an example. The result and the split "
+                     "of every shilling update as you type (press Enter after a field). Nothing is saved."):
         st.pills("Examples", list(examples), key="try_example", on_change=fill, label_visibility="collapsed")
-        with st.form("try_payment", border=False):
-            c1, c2 = st.columns(2)
-            ref = c1.text_input("Account reference", key="try_ref",
+        form, answer = st.columns([2, 3], gap="large")
+        with form:
+            ref = st.text_input("Account reference", key="try_ref",
                                 help="What the payer typed as the account: MBR-1042, MBR 1O42, 1042, a name...")
-            phone_key = c1.selectbox(
+            phone_key = st.selectbox(
                 "Paid from", [UNKNOWN_PHONE, *members.index], key="try_phone",
                 format_func=lambda k: "A phone no member registered" if k == UNKNOWN_PHONE else
                 f"{k}'s registered phone ({rec.mask_phone(members.loc[k, 'phone_254'])})")
-            amount = theme.number(c2, "Amount (KSh)", 0, 500_000, 3_600, 100, key="try_amount", unit="KSh",
-                                  in_form=True)
-            name = c2.text_input("Name on the M-Pesa account", key="try_name",
+            name = st.text_input("Name on the M-Pesa account", key="try_name",
                                  help="M-Pesa shows the SIM owner's name. Leave it blank if you do not know it.")
-            checked = st.form_submit_button("Check this payment", type="primary")
-        inputs = (ref, phone_key, name, float(amount))
-        if checked:
-            phone = "" if phone_key == UNKNOWN_PHONE else members.loc[phone_key, "phone_254"]
-            index = rec.MemberIndex(data.members)
-            result = ((None, rec.BAD_AMOUNT, 0.0) if amount <= 0 else
-                      rec.match_row(ref, phone, name, index, float(amount)))
-            if result[1] == rec.AMBIGUOUS:
-                why = rec.review_reason(ref, phone, name, index, float(amount))
-            elif result[1] == rec.EXACT_PHONE:
-                fits = rec.reference_candidates(ref, name, index, float(amount))
-                why = (f"The reference fits {len(fits)} member numbers, {result[0]} among them, and the money came "
-                       f"from {result[0]}'s registered phone, which settles it." if len(fits) > 1 else None)
+            amount = theme.number(st, "Amount (KSh)", 0, 500_000, 3_600, 100, key="try_amount", unit="KSh")
+        phone = "" if phone_key == UNKNOWN_PHONE else members.loc[phone_key, "phone_254"]
+        index = rec.MemberIndex(data.members)
+        member, method, _ = ((None, rec.BAD_AMOUNT, 0.0) if amount <= 0 else
+                             rec.match_row(ref, phone, name, index, float(amount)))
+        why = None
+        if method == rec.AMBIGUOUS:
+            why = rec.review_reason(ref, phone, name, index, float(amount))
+        elif method == rec.EXACT_PHONE:
+            fits = rec.reference_candidates(ref, name, index, float(amount))
+            if len(fits) > 1:
+                why = (f"The reference fits {len(fits)} member numbers, {member} among them, and the money came from "
+                       f"{member}'s registered phone, which settles it.")
+        elif method == rec.UNMATCHED and name.strip():
+            why = ("Neither the reference nor the phone points at a member, and the name on the M-Pesa account is not "
+                   "enough to pick out one, so it waits in suspense until someone claims it.")
+        with answer:
+            if member:
+                row = members.loc[member]
+                st.markdown(f"{theme.status(method, 'GREEN')} **Credited to {member}, {row['full_name']}** "
+                            f"({WARDS[row['ward']].label}). {why or REASONS[method]}", unsafe_allow_html=True)
+                payment_breakdown(float(amount), balances(member, data, premium_targets, current))
             else:
-                why = None
-            st.session_state["try_result"] = (inputs, result, why)
-        stored = st.session_state.get("try_result")
-        if not stored or stored[0] != inputs:
-            st.caption("Press Check this payment to see the result.")
-            return
-        (member, method, _), why = stored[1], stored[2]
-        paid_from = "an unknown phone" if phone_key == UNKNOWN_PHONE else f"{phone_key}'s registered phone"
-        st.caption(f"Result for: reference {ref.strip() or '(blank)'}, paid from {paid_from}, name "
-                   f"{name.strip() or '(blank)'}, {theme.ksh(amount)}. Edit the payment and press Check this payment "
-                   "again for a new result.")
-        if member:
-            row = members.loc[member]
-            ward = row["ward"]
-            st.markdown(f"**Credited to {member}, {row['full_name']}** ({WARDS[ward].label}). {why or REASONS[method]}")
-            due = premium_targets.get(ward)
-            st.markdown(f"{theme.ksh(amount)} goes first to this season's premium "
-                        f"({theme.ksh(due)} owed), then overdue loan interest, then the loan, then savings."
-                        if due is not None else
-                        f"Their ward is not offered this season, so {theme.ksh(amount)} goes to overdue loan "
-                        "interest, then the loan, then savings.")
-        else:
-            verdict = {rec.AMBIGUOUS: "Sent to a person to review.", rec.UNMATCHED: "Held in suspense.",
-                       rec.BAD_AMOUNT: "Held: bad amount."}[method]
-            if method == rec.UNMATCHED and name.strip():
-                why = ("Neither the reference nor the phone points at a member, and the name on the M-Pesa account "
-                       "is not enough to pick out one, so it waits in suspense until someone claims it.")
-            tail = " A wrong credit is worse than a short wait, so a person checks it." if method == rec.AMBIGUOUS else ""
-            st.markdown(f"**{verdict}** {why or REASONS[method]}{tail}")
-        st.markdown(theme.status(method, "GREEN" if member else "RED"),
-                    unsafe_allow_html=True)
+                verdict = {rec.AMBIGUOUS: "Sent to a person to review.", rec.UNMATCHED: "Held in suspense.",
+                           rec.BAD_AMOUNT: "Held: bad amount."}[method]
+                tail = " A wrong credit is worse than a short wait, so a person checks it." \
+                    if method == rec.AMBIGUOUS else ""
+                st.markdown(f"{theme.status(method, 'RED')} **{verdict}** {why or REASONS[method]}{tail}",
+                            unsafe_allow_html=True)
+                theme.ledger([("Paid in", theme.ksh(amount)), ("Credited to any member", theme.ksh(0), "muted"),
+                              ("Held for a person (suspense)", theme.ksh(amount), "total")])
+
+
+def member_breakdown(result: rec.ReconResult) -> None:
+    """One member's season: every payment that reached them and where each shilling went."""
+    summary = result.members.set_index("member_id")
+    credited = result.ledger[result.ledger["member_id"].notna()
+                             & ~result.ledger["match_method"].isin(rec.SUSPENSE_METHODS + (rec.DUPLICATE,))]
+    counts = credited["member_id"].value_counts()
+    order = list(counts.index) + [m for m in summary.index if m not in counts.index]
+    with theme.panel("One member's money",
+                     "Pick a member to see every payment that reached them this season and where each shilling went: "
+                     "premium first, then overdue loan interest, then the loan, then savings."):
+        pick = st.selectbox("Member", order, key="mb_member",
+                            format_func=lambda k: f"{k} · {summary.loc[k, 'full_name']} · "
+                                                  f"{WARDS[summary.loc[k, 'ward']].name} · "
+                                                  f"{int(counts.get(k, 0))} payment{'s' if counts.get(k, 0) != 1 else ''}")
+        s = summary.loc[pick]
+        rows = credited[credited["member_id"] == pick]
+        left, right = st.columns([3, 2], gap="large")
+        with left:
+            view = rows[["completion_time", "receipt_no", "match_method", "paid_in_ksh", "to_premium", "to_interest",
+                         "to_principal", "to_savings"]].copy()
+            view["receipt_no"] = view["receipt_no"].fillna("milk check-off")
+            money = lambda label: st.column_config.NumberColumn(label, format="localized")
+            st.dataframe(view, hide_index=True, width="stretch", column_config={
+                "completion_time": "When", "receipt_no": "Receipt", "match_method": "How it was matched",
+                "paid_in_ksh": money("Paid KSh"), "to_premium": money("Premium"), "to_interest": money("Interest"),
+                "to_principal": money("Loan"), "to_savings": money("Savings")})
+        with right:
+            due = None if s["policy_status"] == rec.NOT_OFFERED else _num(s["premium_due"])
+            theme.ledger([
+                (f"Paid in, {len(rows)} payment{'s' if len(rows) != 1 else ''}", theme.ksh(_num(s["paid_in_ksh"]))),
+                ("To this season's premium", theme.ksh(_num(s["to_premium"]))),
+                ("To overdue loan interest", theme.ksh(_num(s["to_interest"]))),
+                ("To the loan", theme.ksh(_num(s["to_principal"]))),
+                ("To savings", theme.ksh(_num(s["to_savings"]))),
+                ("Interest still owed", theme.ksh(_num(s["interest_after"])), "muted"),
+                ("Loan still owed", theme.ksh(_num(s["loan_after"])), "muted"),
+            ])
+            theme.split_bar([(SPLIT_NAMES[k], _num(s[f"to_{k}"]), SPLIT_COLOURS[k])
+                             for k in ("premium", "interest", "principal", "savings")], "Where this member's money went")
+            text, tone = policy_line(due, _num(s["to_premium"]))
+            st.markdown(f"{theme.status(str(s['policy_status']), tone)} {text}", unsafe_allow_html=True)
 
 
 def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_000.0,
@@ -195,7 +285,8 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         right.markdown("**M-Pesa paybill statement**")
         right.dataframe(_masked_statement(data.statement), hide_index=True, height=260, width="stretch",
                         column_config={"paid_in_ksh": MONEY})
-    try_payment(data, premium_targets)
+    stored = st.session_state.get("recon")
+    try_payment(data, premium_targets, stored[1] if stored and stored[0] == premium_items else None)
 
     stored = st.session_state.get("recon")
     if stored is None or stored[0] != premium_items:
@@ -300,6 +391,8 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         d2.download_button(f"Ledger ({len(table)} rows)", table.to_csv(index=False).encode(),
                            "reconciliation_ledger.csv", "text/csv", icon=":material/download:")
         d3.caption("Bordereau layout is a draft to agree with the partner insurer; identifiers are masked.")
+
+    member_breakdown(result)
 
     with theme.panel("Claim-split settlement",
                      "When a trigger fires, part of each payout can clear the member's SACCO loan. Illustrative: it "

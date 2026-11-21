@@ -127,7 +127,7 @@ def test_a_payment_typed_by_hand(app):
         app.selectbox(key="try_phone").set_value(phone)
         app.text_input(key="try_name").set_value(name)
         app.number_input(key="try_amount").set_value(amount)
-        _button(app, "Check this payment").click().run()
+        app.run()
         assert not app.exception, app.exception
         return _text(app)
 
@@ -158,9 +158,9 @@ def test_name_only_payments_get_a_true_reason(app):
     app.text_input(key="try_ref").set_value("")
     app.selectbox(key="try_phone").set_value("unknown")
     app.text_input(key="try_name").set_value("Gitonga Njagi")
-    _button(app, "Check this payment").click().run()
+    app.run()
     text = _text(app)
-    assert "Two names alone are too common" in text and "Result for: reference (blank)" in text
+    assert "Two names alone are too common" in text
 
 
 def test_loan_share_follows_chapter_three_at_once(app):
@@ -175,17 +175,17 @@ def test_tryout_amount_out_of_range_is_noted(app):
     app.selectbox(key="try_phone").set_value("unknown")
     app.text_input(key="try_name").set_value("")
     app.number_input(key="try_amount").set_value(600_000)
-    _button(app, "Check this payment").click().run()
+    app.run()
     text = _text(app)
     assert "KSh 600,000 is outside the allowed range, so KSh 500,000 is used." in text
-    assert "KSh 500,000." in text  # the result line answers the amount actually checked
+    assert "Paid in</span><span class=\"amt \">KSh 500,000" in text  # the breakdown uses the amount checked
 
 
 def test_one_name_is_not_called_nothing(app):
     app.text_input(key="try_ref").set_value("")
     app.selectbox(key="try_phone").set_value("unknown")
     app.text_input(key="try_name").set_value("Gitonga")
-    _button(app, "Check this payment").click().run()
+    app.run()
     assert "is not enough to pick out one" in _text(app)
 
 
@@ -229,3 +229,21 @@ def test_every_map_measure_renders(app):
         assert not app.exception, (view, app.exception)
         assert VIEW_HELP[view] in _text(app)
     assert "Underwriting profile: Njoro Ward, Nakuru County" in _text(app)
+
+
+def test_payment_breakdown_splits_every_shilling(app):
+    from engine import recon_engine as rec
+    app.text_input(key="try_ref").set_value("MBR-1042")
+    app.selectbox(key="try_phone").set_value("unknown")
+    app.text_input(key="try_name").set_value("")
+    app.number_input(key="try_amount").set_value(9_000).run()
+    assert not app.exception, app.exception
+    text = _text(app)
+    assert "Credited to MBR-1042" in text and "Every shilling placed" in text and "KSh 9,000" in text
+    assert "Where this payment goes" in text
+    _button(app, "Run reconciliation").click().run()
+    assert "One member's money" in _text(app)
+    app.text_input(key="try_ref").set_value("MBR-1202").run()  # a Njoro member: the ward is offered
+    assert "after the payments already on this statement" in _text(app)
+    app.text_input(key="try_ref").set_value("MBR-1042").run()  # Bureti is not offered at the 12% ceiling
+    assert "ward not offered: none due" in _text(app)

@@ -25,7 +25,9 @@ its numbers support:
 3. **Collecting the money.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
    allocates every shilling by waterfall (the ward's premium, then overdue interest, then principal or savings), and
    exports the underwriter bordereau and a 70/30 claim-split settlement. *Try a payment by hand* takes one payment
-   typed in (or picked from five examples) and says where the money goes and why, in plain words.
+   typed in (or picked from five examples) and says where the money goes and why, in plain words, updating as you
+   type like the quote: every shilling down the waterfall (premium, overdue interest, loan, savings), what is still
+   owed and the policy's status. *One member's money* shows every payment that reached a member and its split.
 4. **Trust and the numbers.** When a ward's VCI sits in the 35% to 40% amber zone, lead farmers and agro-vets send
    geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator for the platform,
    the insurer and the reinsurer.
@@ -47,7 +49,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (327, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (332, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```

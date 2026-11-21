@@ -513,3 +513,14 @@ def test_round_seven_reasons_and_comma_suffixes(data):
     for ref in ("MBR-1042, 10", "MBR-1042; 26"):  # a month or a year after a comma is not a second member
         assert rec.match_row(ref, own["phone_254"], own["full_name"], index, 3600.0)[0] == "MBR-1042", ref
     assert rec.match_row("MBR-1041, 2", unknown, "", index, 7200.0)[1] == rec.AMBIGUOUS  # counting up: two members
+
+
+@pytest.mark.parametrize("amount,owed,expected", [
+    (3_600, (5_160, 300, 10_000), {"premium": 3_600, "interest": 0, "principal": 0, "savings": 0}),
+    (6_000, (5_160, 300, 10_000), {"premium": 5_160, "interest": 300, "principal": 540, "savings": 0}),
+    (20_000, (5_160, 300, 10_000), {"premium": 5_160, "interest": 300, "principal": 10_000, "savings": 4_540}),
+    (1_000, (0, 0, 0), {"premium": 0, "interest": 0, "principal": 0, "savings": 1_000}),
+])
+def test_split_payment_follows_the_waterfall(amount, owed, expected):
+    split = rec.split_payment(amount, *owed)
+    assert split == pytest.approx(expected) and sum(split.values()) == pytest.approx(amount)

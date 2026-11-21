@@ -28,22 +28,36 @@ LINE = "#e4e7ec"
 PAGE = "#f5f6f4"
 SURFACE = "#ffffff"
 RADIUS = 10
+HEADER_PX = 76            # the top bar: logo, name and what this is
 LAYER_COLOURS = {"Payout A: crop inputs": GREEN, "Payout B: fodder gap": "#ca8a04", "Payout C: vet and health": "#64748b"}
 
 CSS = f"""
 <style>
   .stApp {{ background: {PAGE}; color: {BODY}; }}
   /* navbar: Streamlit's own header bar carries the logo and the name */
-  header[data-testid="stHeader"] {{ background: {SURFACE}; border-bottom: 1px solid {LINE}; }}
+  header[data-testid="stHeader"] {{ background: {SURFACE}; border-bottom: 1px solid {LINE}; height: {HEADER_PX}px; }}
+  header[data-testid="stHeader"] > div {{ height: 100%; align-items: center; }}
   header[data-testid="stHeader"]::before {{
-      content: "{brand.APP_NAME}"; position: absolute; left: 1.25rem; top: 0; height: 100%; z-index: 1;
-      display: flex; align-items: center; padding-left: 36px; pointer-events: none;
-      background: url("{brand.logo_data_uri()}") no-repeat left center / 27px 27px;
-      font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 1.15rem; color: {INK};
-      letter-spacing: -0.015em; }}
+      content: "{brand.APP_NAME}"; position: absolute; left: 1.4rem; top: 0; height: 100%; z-index: 1;
+      display: flex; align-items: center; padding-left: 50px; pointer-events: none;
+      background: url("{brand.logo_data_uri()}") no-repeat left center / 38px 38px;
+      font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 1.55rem; color: {INK};
+      letter-spacing: -0.02em; }}
+  /* what this is and for whom, on the right of the bar (hidden on phones, where the page line shows it) */
+  header[data-testid="stHeader"]::after {{
+      content: "{brand.TAGLINE} · Illustrative terms, synthetic SACCO data"; position: absolute; right: 4.2rem;
+      top: 0; height: 100%; display: flex; align-items: center; pointer-events: none; color: {MUTED};
+      font-family: "IBM Plex Sans", sans-serif; font-size: 0.86rem; max-width: 46vw; text-align: right; }}
+  @media (max-width: 1100px) {{ header[data-testid="stHeader"]::after {{ display: none; }} }}
+  @media (min-width: 1101px) {{ .ss-context {{ display: none; }} }}
   .stApp:has(section[data-testid="stSidebar"][data-collapsed="true"]) header[data-testid="stHeader"]::before {{
-      left: 3.5rem; }}
-  .block-container {{ padding-top: 4.4rem; padding-bottom: 2.5rem; max-width: 1360px; }}
+      left: 3.6rem; }}
+  .block-container {{ padding: {HEADER_PX + 14}px 2.2rem 1.6rem; max-width: 1640px; }}
+  [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {{ gap: 0.7rem; }}
+  /* the chapter tabs stay in view under the bar while the page scrolls */
+  div[data-testid="stTabs"] [role="tablist"] {{
+      position: sticky !important; top: {HEADER_PX}px; z-index: 990; background: {PAGE}; padding-top: 6px;
+      box-shadow: 0 6px 10px -8px rgba(16, 24, 40, 0.25); }}
   h1, h2, h3, h4 {{ color: {INK}; letter-spacing: -0.01em; text-wrap-style: balance; }}
   h3 {{ font-size: 1.05rem !important; font-weight: 650 !important; margin: 0 0 0.15rem !important;
         padding: 0 !important; }}
@@ -57,7 +71,7 @@ CSS = f"""
 
   /* panels: bordered containers keyed "sspanel-..." */
   div[class*="st-key-sspanel-"] {{ background: {SURFACE}; border: 1px solid {LINE} !important;
-                                   border-radius: {RADIUS}px !important; padding: 18px 20px 14px !important;
+                                   border-radius: {RADIUS}px !important; padding: 14px 18px 10px !important;
                                    margin-bottom: 4px; }}
   .ss-panel-desc {{ color: {MUTED}; font-size: 0.86rem; margin: 0 0 0.6rem; }}
   .stMarkdown p.ss-map-story {{ color: {INK}; font-size: 1.02rem; line-height: 1.5; margin: 4px 0 14px;
@@ -65,7 +79,7 @@ CSS = f"""
 
   /* stat strip */
   .ss-stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); background: {SURFACE};
-               border: 1px solid {LINE}; border-radius: {RADIUS}px; overflow: hidden; margin: 4px 0 14px; }}
+               border: 1px solid {LINE}; border-radius: {RADIUS}px; overflow: hidden; margin: 2px 0 6px; }}
   .ss-stat {{ padding: 14px 16px; border-left: 1px solid {LINE}; margin-left: -1px; }}
   .ss-stat .label {{ color: {MUTED}; font-size: 0.82rem; font-weight: 550; }}
   .ss-stat .value {{ color: {INK}; font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin-top: 2px;
@@ -76,11 +90,11 @@ CSS = f"""
   .ss-stat .note {{ color: {MUTED}; font-size: 0.8rem; margin-top: 4px; line-height: 1.4; }}
 
   /* story: chapter header, ledger, steps, next */
-  .stMarkdown p.ss-eyebrow {{ color: {GREEN}; font-size: 0.85rem; font-weight: 600; margin: 6px 0 2px; }}
+  .stMarkdown p.ss-eyebrow {{ color: {GREEN}; font-size: 0.85rem; font-weight: 600; margin: 2px 0 2px; }}
   .ss-eyebrow span {{ color: {MUTED}; font-weight: 400; }}
   .stMarkdown p.ss-lede {{ color: {INK}; font-size: 1.85rem; line-height: 1.22; font-weight: 650;
                            letter-spacing: -0.015em; margin: 0 0 8px; max-width: 44ch; text-wrap-style: balance; }}
-  .stMarkdown p.ss-sub {{ color: {BODY}; font-size: 1.02rem; margin: 0 0 14px; max-width: 78ch; }}
+  .stMarkdown p.ss-sub {{ color: {BODY}; font-size: 1.02rem; margin: 0 0 6px; max-width: 92ch; }}
   @media (max-width: 640px) {{ .stMarkdown p.ss-lede {{ font-size: 1.4rem; }} }}
   .ss-ledger {{ display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; font-variant-numeric: tabular-nums;
                 margin: 4px 0 8px; }}
@@ -96,7 +110,7 @@ CSS = f"""
                   font-size: 0.9rem; }}
   .ss-steps li::before {{ content: counter(step); display: block; color: {GREEN}; font-weight: 700; font-size: 0.85rem; }}
   .ss-steps li b {{ display: block; color: {INK}; font-size: 0.98rem; margin-bottom: 2px; }}
-  .stMarkdown p.ss-next {{ margin: 18px 0 0; padding: 12px 0 0; border-top: 1px dashed {LINE}; color: {MUTED};
+  .stMarkdown p.ss-next {{ margin: 8px 0 0; padding: 10px 0 0; border-top: 1px dashed {LINE}; color: {MUTED};
                            font-size: 0.92rem; }}
   .ss-next b {{ color: {GREEN}; }}
 
