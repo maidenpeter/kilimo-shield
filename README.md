@@ -13,13 +13,18 @@ its numbers support:
 2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
    price: gross premium, any government share, the Resilience discount, what the farmer pays (also per day of milk
    check-off), who pays the insurer, what the cover would have paid on past weather, and what happens when it pays.
-   Downloadable as text with a quote ID.
+   The price comes first in one sentence, with the full build-up behind *Details*. Downloadable as text with a
+   quote ID.
 3. **Collecting the money.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
    allocates every shilling by waterfall (the ward's premium, then overdue interest, then principal or savings), and
-   exports the underwriter bordereau and a 70/30 claim-split settlement.
+   exports the underwriter bordereau and a 70/30 claim-split settlement. *Try a payment by hand* takes one payment
+   typed in (or picked from five examples) and says where the money goes and why, in plain words.
 4. **Trust and the numbers.** When a ward's VCI sits in the 35% to 40% amber zone, lead farmers and agro-vets send
    geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator for the platform,
    the insurer and the reinsurer.
+
+Every number in the sidebar and the calculators is a box to type into (or step with + and -), with its allowed
+range in the help. *New here?* at the top explains the product in five steps.
 
 No API keys are needed. The weather, the county outlines and the typeface (IBM Plex) ship with the repo, so the demo
 runs offline.
@@ -35,7 +40,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (303, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (308, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -53,7 +58,7 @@ pytest
    Bureti is flagged *not offered* at the 12% ceiling. Drag the ceiling to 18% and it unlocks across the pricing
    table and, after a re-run, the reconciliation. Switch to *One flat rate* to show why a single national rate fails.
 3. **Clear the suspense account.** In chapter 3 press *Run reconciliation*. Each member owes their ward's
-   premium. The unallocated share of rows drops from about 39% (an exact lookup) to about 4%, twelve duplicate
+   premium. The unallocated share of rows drops from about 39% (an exact lookup) to about 5%, twelve duplicate
    rows are held instead of credited twice, and on this demo statement every credited row lands on the right member.
    Filter the ledger by *Spouse Name Match* or *Fuzzy Reference* to show how.
 4. **Quote one farm, then pay its claim.** In chapter 2, quote a Njoro farm (2 acres, 2 cows: KSh 5,160 a
@@ -146,12 +151,15 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
   count as none.
 - An exact member ID, or a national ID standing alone (not inside a longer number), is the payer's instruction and
   decides on its own, unless it is one keying slip (a digit changed or two swapped) from the member whose registered
-  phone or full name made the payment: `MBR-1043` sent from MBR-1042's phone may be a slip or a payment for a
-  neighbour, so a person decides. A payment for a member whose number is far off still goes through. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`,
-  `MRB 1001 NA 1002`, `1001/02`, or an ID next to another member's national ID or registered phone) goes to review,
-  and so does a phone or national ID that two members share. A shorthand counts only when it counts up from the first
-  number by at most nine, the way members who join together are numbered, so a month, a year or an instalment after
-  the ID (`MBR-1042-10`, `MBR-1042/26`, `MBR-1042/2026`) is not a second member.
+  phone or names made the payment: `MBR-1043` sent from MBR-1042's phone, or paid by MBR-1042's two names, may be a
+  slip or a payment for a neighbour, so a person decides. From the typed member's own phone it always goes through,
+  and so does a payment for a member whose number is far off.
+- A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`, `MRB 1001 NA 1002`, `1001/02`,
+  `MBR-1042 & 41`, or an ID next to another member's national ID or registered phone) goes to review, and so does a
+  phone or national ID that two members share. `&`, `NA`, `AND`, `+`, `,` and `;` always join two members. `/` and
+  `-` also write dates and instalments, so after them a shorthand counts only when it counts up from the first number
+  by at most nine, the way members who join together are numbered: `MBR-1042-10`, `MBR-1042/26` and
+  `MBR-1042/2026` are not a second member.
 - A mistyped ID (`MBR 1042`, `MBR:1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the
   registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own
   names, and names after FROM or BY ("FROM PETER"), say who paid, not whom for. Letter-for-digit repairs happen only
@@ -161,8 +169,9 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
   is read as the amount, so the member's own phone still decides; written as an ID (`MBR1200`) it stays an ID.
 - A transposed ID is caught by the payer's name: if two or more of the payer's names fit another member whose number
   is close to the reference or has the same digits in another order (`MBR 1310` paid by NJERI MWANGI when she is
-  MBR-1013), or fit only one member, two digits or fewer away (`MBR 1014` paid by MUGO ONYANGO when only MBR-1003
-  carries both names), it goes to review, unless the member's own registered phone agrees with the reference.
+  MBR-1013), or fit only one or two members, one of them two digits or fewer away (`MBR 1014` paid by MUGO ONYANGO
+  when only MBR-1003 carries both names), it goes to review, unless the member's own registered phone agrees with the
+  reference.
 - When a reference fits several members (a truncated `MBR-104` is as close to two dozen member numbers), a tie is
   settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or,
   when the reference starts with MBR, by a reference that spells exactly one candidate's surname. Close spellings
@@ -175,8 +184,8 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
 - Names are compared without case, punctuation or apostrophes (NDUNG'U and NDUNGU are the same).
 
 On 64 synthetic statements, on every member paid with a truncated reference or only a name
-(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,812 credited
-rows, recall about 97%); about 2.6% of payments go to review.
+(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,702 credited
+rows, recall about 97%); about 3% of payments go to review, each with the reason a person needs to settle it.
 
 ## Layout
 

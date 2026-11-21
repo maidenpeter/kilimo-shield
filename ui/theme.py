@@ -155,6 +155,54 @@ def context_line() -> None:
     )
 
 
+HOW_IT_WORKS = [
+    ("Measure the season. ",
+     "Daily weather for each ward becomes a soil moisture reading (50 is normal for the date) and a pasture "
+     "greenness reading. Chapter 1."),
+    ("Decide the payout. ",
+     "If soil moisture falls below the trigger at planting or flowering, the cover pays for crop inputs. A badly "
+     "failed crop with dry pasture adds money for fodder; a flood of rain or a heatwave adds money for the vet."),
+    ("Price it fairly. ",
+     "The price is what the cover would have paid on average over 2015-2024, divided by the target loss ratio. "
+     "Each ward gets its own price, and a ward priced above the ceiling is not sold. Chapter 2 prices one farm."),
+    ("Collect the money. ",
+     "Farmers pay by M-Pesa or from the milk cheque. ShambaRecon matches each payment to the right member and "
+     "sends anything unclear to a person. Chapter 3."),
+    ("Pay, and check the doubtful cases. ",
+     "Payouts go out by M-Pesa within 10 days of the season's end. When the satellite reading is borderline, "
+     "farmers' photos decide. Chapter 4."),
+]
+
+
+def how_it_works() -> None:
+    """The whole product in five plain steps, for someone opening the app for the first time."""
+    with st.expander("New here? How ShambaShield360 works, in 5 steps", icon=":material/help:"):
+        steps(HOW_IT_WORKS)
+        st.caption("To change a number, type it into its box in the sidebar or press the + and - buttons. "
+                   "Everything recalculates at once.")
+
+
+def _range_text(value, unit: str) -> str:
+    if unit == "KSh":
+        return f"KSh {value:,.0f}"
+    text = f"{value:,.10g}"
+    return f"{text}%" if unit == "%" else f"{text} {unit}".strip()
+
+
+def number(container, label: str, low, high, value, step, *, key=None, help: str | None = None, unit: str = ""):
+    """A box to type an exact number (the + and - buttons move by ``step``). The allowed range is in the help text,
+    and whole numbers stay whole."""
+    whole = all(float(v).is_integer() for v in (low, high, value, step))
+    cast = int if whole else float
+    decimals = 0 if whole else max(len(f"{float(step):g}".partition(".")[2]), 1)
+    span = f"From {_range_text(low, unit)} to {_range_text(high, unit)}."
+    options = dict(min_value=cast(low), max_value=cast(high), step=cast(step), format="%d" if whole else
+                   f"%.{decimals}f", key=key, help=f"{help} {span}" if help else span)
+    if not (key and key in st.session_state):  # a value set from code (an example button) wins over the default
+        options["value"] = cast(value)
+    return container.number_input(label, **options)
+
+
 def footer(text: str) -> None:
     st.markdown(f'<div class="ss-footer">{text}<br><code>{brand.identifier()}</code></div>', unsafe_allow_html=True)
 

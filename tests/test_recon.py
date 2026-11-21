@@ -472,3 +472,31 @@ def test_space_grouped_amounts(text, expected):
 
 def test_badly_grouped_spaces_go_to_a_person():
     assert np.isnan(rec._to_amount("1 0000"))
+
+
+def test_round_six_reference_cases(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000999"
+    # an exact ID a slip from the member whose two names the payer uses
+    for mid in m.index[:60]:
+        two = " ".join(m.loc[mid, "full_name"].split()[-2:])
+        d = mid.split("-")[1]
+        for typed in (f"MBR-{d[:3]}{(int(d[3]) + 1) % 10}", f"MBR-{d[:2]}{(int(d[2]) + 1) % 10}{d[3]}"):
+            if typed in m.index and typed != mid:
+                assert rec.match_row(typed, unknown, two, index, 3600.0)[0] in (None, mid), (typed, mid)
+    # "&", "NA" and "AND" always join two members, counting up or down
+    for ref in ("MBR-1042 & 41", "MBR 1042 NA 41", "MBR1042 AND 43", "MBR1042 & O3"):
+        assert rec.match_row(ref, unknown, "", index, 7200.0)[1] == rec.AMBIGUOUS, ref
+    # a name after the ID is not a second member
+    assert rec.match_row("MBR-1042 & OTIENO", m.loc["MBR-1042", "phone_254"], "", index, 3600.0)[0] == "MBR-1042"
+
+
+def test_review_reasons_are_specific(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    own = m.loc["MBR-1042"]
+    assert "one keying slip" in rec.review_reason("MBR-1043", own["phone_254"], own["full_name"], index, 3600.0)
+    assert "names two members" in rec.review_reason("MBR-1001/02", "", "", index, 7200.0)
+    assert "came from MBR-1008's phone" in rec.review_reason("MBR 1001", m.loc["MBR-1008", "phone_254"], "", index)
+    assert "several members" in rec.review_reason("MBR-104", "", "", index)

@@ -10,6 +10,7 @@ st.set_page_config(page_title=brand.APP_NAME, page_icon=str(brand.LOGO_PNG), lay
                    initial_sidebar_state="auto")
 theme.apply()
 theme.context_line()
+theme.how_it_works()
 
 backtest_tab, quote_tab, recon_tab, whatsapp_tab = st.tabs([
     ":material/monitoring: 1. The risk",

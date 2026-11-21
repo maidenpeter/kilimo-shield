@@ -63,6 +63,22 @@ def subsidy_label(q: qt.Quote) -> str:
     return f"Government share ({q.subsidy_share:.0%}, illustrative: none agreed)"
 
 
+def who_else_pays(q: qt.Quote) -> str:
+    """One sentence on who else pays, as AgroShield's quick price put it; the build-up sits behind Details."""
+    insurer = f"The insurer still receives the full {theme.ksh(q.gross_premium)}."
+    if q.government_share and q.discount:
+        return (f"The government pays {theme.ksh(q.government_share)}, and the Resilience discount takes "
+                f"{theme.ksh(q.discount)} off the farmer's share, paid by the platform. {insurer}")
+    if q.government_share:
+        return f"The government pays the other {theme.ksh(q.government_share)}. {insurer}"
+    if q.discount:
+        return (f"The Resilience discount takes {theme.ksh(q.discount)} off, paid by the platform. {insurer}")
+    if q.subsidy_share and not q.subsidy_eligible:
+        return (f"No government help for this farm: the illustrative subsidy is only for farms of "
+                f"{qt.SUBSIDY_ACRES[0]:g} to {qt.SUBSIDY_ACRES[1]:g} acres. The farmer pays the full premium.")
+    return "No subsidy and no discount: the farmer pays the full premium."
+
+
 def price_panel(q: qt.Quote) -> None:
     with theme.panel("The price"):
         theme.big(theme.ksh(q.farmer_pays), "a season, paid by the farmer")
@@ -71,20 +87,22 @@ def price_panel(q: qt.Quote) -> None:
                        "or one M-Pesa payment to the SACCO paybill with the member number as the account.")
         else:
             st.caption("One M-Pesa payment to the SACCO paybill, with the member number as the account.")
-        theme.ledger([
-            (f"Gross premium, {q.premium_rate:.1%} of {theme.ksh(q.sum_insured)}", theme.ksh(q.gross_premium)),
-            (subsidy_label(q), f"- {theme.ksh(q.government_share)}", "" if q.government_share else "muted"),
-            (f"Resilience discount, {q.resilience_points} points ({q.discount_rate:.0%})", f"- {theme.ksh(q.discount)}",
-             "" if q.discount else "muted"),
-            ("Farmer pays", theme.ksh(q.farmer_pays), "total"),
-        ])
-        st.markdown("**Who pays the insurer**")
-        theme.ledger([
-            ("Farmer", theme.ksh(q.farmer_pays)),
-            ("Government", theme.ksh(q.government_share), "" if q.government_share else "muted"),
-            ("Platform, for the Resilience discount", theme.ksh(q.discount), "" if q.discount else "muted"),
-            ("Partner insurer receives the full premium", theme.ksh(q.gross_premium), "total"),
-        ])
+        st.markdown(who_else_pays(q))
+        with st.expander("Details: how the price is built"):
+            theme.ledger([
+                (f"Gross premium, {q.premium_rate:.1%} of {theme.ksh(q.sum_insured)}", theme.ksh(q.gross_premium)),
+                (subsidy_label(q), f"- {theme.ksh(q.government_share)}", "" if q.government_share else "muted"),
+                (f"Resilience discount, {q.resilience_points} points ({q.discount_rate:.0%})",
+                 f"- {theme.ksh(q.discount)}", "" if q.discount else "muted"),
+                ("Farmer pays", theme.ksh(q.farmer_pays), "total"),
+            ])
+            st.markdown("**Who pays the insurer**")
+            theme.ledger([
+                ("Farmer", theme.ksh(q.farmer_pays)),
+                ("Government", theme.ksh(q.government_share), "" if q.government_share else "muted"),
+                ("Platform, for the Resilience discount", theme.ksh(q.discount), "" if q.discount else "muted"),
+                ("Partner insurer receives the full premium", theme.ksh(q.gross_premium), "total"),
+            ])
         if q.discount_exceeds_fee:
             theme.note(f"The discount ({theme.ksh(q.discount)}) is larger than the platform's fee on this policy "
                        f"({theme.ksh(q.platform_fee)}): the platform would lose money on it.")
@@ -136,7 +154,8 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
     header = st.container()
     left, right = st.columns([2, 3], gap="large")
     with left:
-        with theme.panel("The farm", "Nothing about the farmer is asked or kept: this is a price check."):
+        with theme.panel("The farm", "Type the farm's acres and cows and tick what was verified last season. "
+                                     "Nothing about the farmer is asked or kept: this is a price check."):
             ward_key, season, acres, cows, practices = farm_inputs(default_ward)
     ward = WARDS[ward_key]
     try:

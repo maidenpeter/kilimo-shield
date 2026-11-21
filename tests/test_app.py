@@ -87,7 +87,7 @@ def test_pricing_and_rain_switches(app):
 def test_ceiling_change_asks_for_a_fresh_reconciliation(app):
     _button(app, "Run reconciliation").click().run()
     assert '<div class="label">Not offered</div><div class="value ">77<' in _text(app)  # Bureti members
-    app.sidebar.slider(key="ceiling").set_value(18).run()  # Bureti (17.9%) is now under the ceiling
+    app.sidebar.number_input(key="ceiling").set_value(18).run()  # Bureti (17.9%) is now under the ceiling
     assert not app.exception, app.exception
     assert "Premiums have changed" in _text(app)
     _button(app, "Run reconciliation").click().run()
@@ -109,6 +109,34 @@ def test_quote_chapter(app):
 
 
 def test_green_vci_disables_verification(app):
-    app.slider(key="wa_vci").set_value(60.0).run()
+    app.number_input(key="wa_vci").set_value(60.0).run()
     assert not app.exception, app.exception
     assert _button(app, "Simulate 12 photo replies").disabled
+
+
+def test_every_number_can_be_typed(app):
+    assert not app.sidebar.slider and not app.slider  # no slider left: every number is a box to type into
+    app.sidebar.number_input(key="si").set_value(65_000).run()
+    assert not app.exception, app.exception
+    assert "KSh 65,000" in _text(app)
+
+
+def test_a_payment_typed_by_hand(app):
+    def check(ref, phone, name, amount):
+        app.text_input(key="try_ref").set_value(ref)
+        app.selectbox(key="try_phone").set_value(phone)
+        app.text_input(key="try_name").set_value(name)
+        app.number_input(key="try_amount").set_value(amount)
+        _button(app, "Check this payment").click().run()
+        assert not app.exception, app.exception
+        return _text(app)
+
+    assert "Credited to MBR-1042" in check("MBR-1042", "unknown", "", 3_600)
+    assert "Credited to MBR-1042" in check("mbr 1O42", "MBR-1042", "", 3_600)
+    assert "Sent to a person to review" in check("MBR-1043", "MBR-1042", "", 3_600)
+    assert "Held in suspense" in check("SCHOOL FEES", "unknown", "Upendo Agrovet", 500)
+    assert "Held: bad amount" in check("MBR-1042", "unknown", "", 0)
+
+
+def test_how_it_works_is_there_for_newcomers(app):
+    assert any("How ShambaShield360 works" in e.label for e in app.expander)

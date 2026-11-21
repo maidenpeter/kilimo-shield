@@ -32,54 +32,60 @@ def zone_pricing_for(refresh_count: int, params: TriggerParams):
     return zone_pricing(params, loader=lambda key: weather_for(key, refresh_count))
 
 
-def _ksh_slider(container, label, low, high, step, value, key=None, help=None):
-    return container.select_slider(label, options=list(range(low, high + 1, step)), value=value,
-                                   format_func=lambda v: f"KSh {v:,}", key=key, help=help)
-
-
 def sidebar_controls() -> tuple[str, TriggerParams]:
+    """Every number is a box to type into (or step with + and -), grouped by the question it answers."""
     sb = st.sidebar
-    sb.markdown("#### Ward and cover")
+    num = theme.number
+    sb.markdown("#### 1. Ward and cover")
+    sb.caption("Which pilot ward, and how much one farm is insured for in a season.")
     if "_map_pick" in st.session_state:  # a ward tapped on the risk map
         st.session_state["ward"] = st.session_state.pop("_map_pick")
     ward_key = sb.selectbox("Pilot ward", list(WARDS), format_func=lambda k: WARDS[k].label, key="ward")
-    sum_insured = _ksh_slider(sb, "Sum insured per farm per season", 20_000, 150_000, 5_000, 60_000, key="si")
+    sum_insured = num(sb, "Sum insured per farm per season (KSh)", 20_000, 150_000, 60_000, 5_000, key="si",
+                      unit="KSh", help="The most the cover is worth for one standard farm (2 acres, 2 cows).")
 
-    sb.markdown("#### Pricing")
+    sb.markdown("#### 2. Price")
+    sb.caption("How the premium is set from the ward's payout history.")
     mode = PRICING_MODES[sb.radio("Premium basis", list(PRICING_MODES), key="pricing_mode")]
     target_lr, flat_rate = 60, 6.0
     if mode == "target":
-        target_lr = sb.slider("Target loss ratio (%)", 50, 70, 60,
-                              help="Leaves room for reinsurance, data and expenses, and the insurer's and SACCO's margin")
+        target_lr = num(sb, "Target loss ratio (%)", 50, 70, 60, 1, unit="%",
+                        help="Payouts as a share of premium. The rest pays for reinsurance, data and expenses, and "
+                             "the insurer's and SACCO's margin.")
     else:
-        flat_rate = sb.slider("Commercial premium rate (%)", 2.0, 20.0, 6.0, 0.5)
-    ceiling = sb.slider("Sellable premium ceiling (%)", 6, 25, 12, key="ceiling",
-                        help="Wards priced above this are not sold the standard bundle and need a custom tier")
-    subsidy = sb.slider("Premium subsidy (%)", 0, 70, 0, 5,
-                        help="Share paid by a county or national scheme. None is agreed: illustrative only.")
-    fee = sb.slider("Platform fee (% of premium)", 2, 20, 10, key="platform_fee",
-                    help="The calculating-agent fee. It also funds the Resilience discount in quotes.")
+        flat_rate = num(sb, "Premium rate for every ward (%)", 2.0, 20.0, 6.0, 0.1, unit="%")
+    ceiling = num(sb, "Sellable premium ceiling (%)", 6, 25, 12, 1, key="ceiling", unit="%",
+                  help="A ward priced above this is not sold the standard bundle and needs a custom tier.")
+    subsidy = num(sb, "Premium subsidy (%)", 0, 70, 0, 5, unit="%",
+                  help="Share paid by a county or national scheme. None is agreed: illustrative only.")
+    fee = num(sb, "Platform fee (% of premium)", 2, 20, 10, 1, key="platform_fee", unit="%",
+              help="The calculating-agent fee. It also funds the Resilience discount in quotes.")
 
-    sb.markdown("#### Triggers")
-    sm_trigger = sb.slider("Soil moisture trigger (index, 50 = normal)", 15, 50, 32)
-    ndvi_trigger = sb.slider("Pasture NDVI trigger (percentile)", 10, 50, 25)
+    sb.markdown("#### 3. When it pays")
+    sb.caption("The readings that trigger a payout. Lower numbers mean drier before it pays.")
+    sm_trigger = num(sb, "Soil moisture trigger (50 = normal)", 15, 50, 32, 1,
+                     help="Crop payout starts when the season's soil moisture index falls below this.")
+    ndvi_trigger = num(sb, "Pasture greenness trigger (percentile)", 10, 50, 25, 1,
+                       help="Fodder payout needs late-season pasture greenness below this percentile of the ward's "
+                            "record.")
     with sb.expander("More settings"):
-        sm_exit = st.slider("Soil moisture for 100% crop payout", 0, max(sm_trigger - 1, 1), min(12, sm_trigger - 1))
-        gate = st.slider("Fodder needs a crop payout of at least (% of its limit)", 25, 100, 50, 25)
+        sm_exit = num(st, "Soil moisture for the full crop payout", 0, max(sm_trigger - 1, 1), min(12, sm_trigger - 1),
+                      1, help="At or below this the crop layer pays 100%.")
+        gate = num(st, "Fodder needs a crop payout of at least (% of its limit)", 25, 100, 50, 5, unit="%")
         cap_default = min(sum_insured, round(sum_insured * 5 / 6 / 1_000) * 1_000)
-        cap_ksh = _ksh_slider(st, "Seasonal cap, all layers", 10_000, sum_insured, 1_000, cap_default,
-                              key=f"cap_{sum_insured}", help="KSh 50,000 on a KSh 60,000 sum insured")
+        cap_ksh = num(st, "Most the cover pays in one season (KSh)", 10_000, sum_insured, cap_default, 1_000,
+                      key=f"cap_{sum_insured}", unit="KSh", help="KSh 50,000 on a KSh 60,000 sum insured.")
         rain_mode = RAIN_MODES[st.radio("Excess-rain line", list(RAIN_MODES), key="rain_mode")]
         rain_pct, rain_mm = 90, 180
         if rain_mode == "percentile":
-            rain_pct = st.slider("Percentile of the ward's wettest 10 days per season", 75, 98, 90)
+            rain_pct = num(st, "Percentile of the ward's wettest 10 days per season", 75, 98, 90, 1)
         else:
-            rain_mm = st.slider("Excess rain: 10-day total (mm)", 100, 300, 180, 10)
-        heat_c = st.slider("Heat day: maximum above (deg C)", 26.0, 36.0, 31.0, 0.5)
-        heat_days = st.slider("Heatwave: consecutive heat days", 3, 14, 7)
-        capacity = st.slider("Root-zone water capacity (mm)", 60, 200, 100, 10)
-        accuracy = st.slider("Assumed WhatsApp check accuracy (%)", 50, 100, 80, 5,
-                             help="Used only for the with-check basis-risk figure")
+            rain_mm = num(st, "Excess rain: 10-day total (mm)", 100, 300, 180, 10, unit="mm")
+        heat_c = num(st, "Heat day: maximum above (deg C)", 26.0, 36.0, 31.0, 0.5, unit="deg C")
+        heat_days = num(st, "Heatwave: heat days in a row", 3, 14, 7, 1)
+        capacity = num(st, "Root-zone water capacity (mm)", 60, 200, 100, 10, unit="mm")
+        accuracy = num(st, "Assumed WhatsApp check accuracy (%)", 50, 100, 80, 5, unit="%",
+                       help="Used only for the with-check basis-risk figure.")
         if st.button("Refresh weather from Open-Meteo", help="Download every ward's 2015-2024 record again"):
             st.session_state["refresh_count"] = st.session_state.get("refresh_count", 0) + 1
     params = TriggerParams(

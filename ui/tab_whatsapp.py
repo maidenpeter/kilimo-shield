@@ -69,8 +69,8 @@ def verification_section(default_ward: str) -> None:
         with controls:
             st.selectbox("Ward", list(WARDS), index=list(WARDS).index(default_ward),
                          format_func=lambda k: WARDS[k].label, key=ward_select)
-            st.slider("Vegetation Condition Index, VCI (%)", 0.0, 100.0, 36.5, 0.5, key="wa_vci",
-                      help="Stands in for the satellite reading")
+            theme.number(st, "Vegetation Condition Index, VCI (%)", 0.0, 100.0, 36.5, 0.5, key="wa_vci", unit="%",
+                         help="Stands in for the satellite reading. 35% to 40% is the amber band.")
             zone_text = {"RED": "below the amber band: the index alone pays",
                          "AMBER": "in the amber band: payout on hold until the photos agree",
                          "GREEN": "above the amber band: no action"}[z]
@@ -147,20 +147,20 @@ def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, 
             theme.note(f"{WARDS[ward_key].name} is not offered on the standard bundle. These figures show what a pilot "
                        "there would look like if it were sold at its price.")
         c1, c2, c3 = st.columns(3, gap="large")
-        farms = c1.select_slider("Pilot farms", options=list(range(1_000, 50_001, 500)), value=15_000,
-                                 format_func=lambda v: f"{v:,}", key="ue_farms")
+        farms = theme.number(c1, "Pilot farms", 1_000, 50_000, 15_000, 500, key="ue_farms", unit="farms")
         si_start = int(min(max(round(params.sum_insured / 5_000) * 5_000, 20_000), 150_000))
-        avg_si = c1.select_slider("Average sum insured", options=list(range(20_000, 150_001, 5_000)), value=si_start,
-                                  format_func=lambda v: f"KSh {v:,}", key=f"ue_si_{si_start}")
+        avg_si = theme.number(c1, "Average sum insured (KSh)", 20_000, 150_000, si_start, 5_000,
+                              key=f"ue_si_{si_start}", unit="KSh")
         fee = params.platform_fee_rate * 100
         c2.markdown(f"Platform fee: **{fee:g}% of premium** (sidebar)")
-        saas = c2.slider("SACCO reconciliation fee (KSh per member a month)", 0, 50, 10, key="ue_saas")
-        discount = c2.slider("Average Resilience discount (% of premium)", 0, 15, 5, key="ue_discount",
-                             help="Paid by the platform. A farmer with every practice gets 15%.")
+        saas = theme.number(c2, "SACCO reconciliation fee (KSh per member a month)", 0, 50, 10, 1, key="ue_saas",
+                            unit="KSh")
+        discount = theme.number(c2, "Average Resilience discount (% of premium)", 0, 15, 5, 1, key="ue_discount",
+                                unit="%", help="Paid by the platform. A farmer with every practice gets 15%.")
         start_rate = min(max(round(premium_rate * 100, 1), 0.5), 30.0)
-        rate = c3.slider("Premium rate per season (%)", 0.5, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
-                         help="Starts at the selected ward's premium")
-        ceded = c3.slider("Ceded to the treaty reinsurer (%)", 0, 90, 70, 5, key="ue_ceded")
+        rate = theme.number(c3, "Premium rate per season (%)", 0.5, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
+                            unit="%", help="Starts at the selected ward's premium.")
+        ceded = theme.number(c3, "Ceded to the treaty reinsurer (%)", 0, 90, 70, 5, key="ue_ceded", unit="%")
         econ = pilot_economics(PilotInputs(farms=farms, avg_sum_insured=float(avg_si), premium_rate=rate / 100,
                                            agent_fee_rate=fee / 100, saas_fee_member_month=float(saas),
                                            burn_cost_rate=burn_cost_pct / 100, reinsurer_share=ceded / 100,

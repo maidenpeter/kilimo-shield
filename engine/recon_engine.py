@@ -77,7 +77,7 @@ _ID_RUN = re.compile(_PREFIX + r"[^A-Z0-9]{0,3}([0-9OIL]+)")
 # "MBR-1001/02", "MRB 1001 NA 1002", "MBR1001-02", "1001/02": one reference for two members. The second number is a
 # whole member number or a one- or two-digit shorthand for the end of the first.
 _JOINT = re.compile(r"(?:(" + _PREFIX + r")[^A-Z0-9]{0,3}|(?<![A-Z0-9]))(\d[\dOIL]{2,3})(?![\dOIL])\s*"
-                    r"(?:/|&|\+|,|;|-|\bAND\b|\bNA\b|\bN\b)\s*(?:" + _PREFIX + r"[^A-Z0-9]{0,3})?(\d[\dO]*)(?!\d)")
+                    r"(/|&|\+|,|;|-|\bAND\b|\bNA\b|\bN\b)\s*(?:" + _PREFIX + r"[^A-Z0-9]{0,3})?(O?\d[\dO]*)(?!\d)")
 # Words in a reference that say what the money is for rather than who it is for.
 REFERENCE_WORDS = {"FOR", "ACC", "ACCOUNT", "MILK", "PREMIUM", "SHAMBA", "LOAN", "FEES", "FEE", "PAYMENT", "PAY",
                    "INSURANCE", "DEPOSIT", "SAVINGS", "CHAMA", "TEST", "TERM", "SCHOOL", "MBR", "THE", "AND", "FULL",
@@ -208,7 +208,7 @@ def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex, near:
     - the payer's name has exactly the words of someone's record (member or spouse) and does not fit this member; or
     - two or more of the payer's names fit a member whose number is also close to the reference (in ``near``) but
       do not fit this member: "NJERI MWANGI" paying "MBR 1103" when Njeri Mwangi is MBR-1013 is a transposed ID; or
-    - two or more of the payer's names fit exactly one member, whose number is two digits or fewer from this one:
+    - two or more of the payer's names fit one or two members only, one of them two digits or fewer from this one:
       "MUGO ONYANGO" paying "MBR 1014" when only MBR-1003 carries both names.
     The near cases apply even when the name also fits this member: "MUTHONI OTIENO" typing "MBR 1042" may be MBR-1402
     transposing digits or MBR-1042's spouse, and only a person can tell. They do not apply when the member's own
@@ -218,7 +218,8 @@ def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex, near:
     if len(payer.split()) >= 2 and not phone_agrees:
         if holders & (set(near) - {member_id}):
             return True
-        if len(holders) == 1 and member_id not in holders and _digit_gap(next(iter(holders)), member_id) <= 2:
+        if 1 <= len(holders) <= 2 and member_id not in holders and any(_digit_gap(h, member_id) <= 2
+                                                                         for h in holders):
             return True
     if member_id in holders:
         return False
@@ -311,10 +312,14 @@ def _slip_of_another(member_id: str, phone: str, payer: str, index: MemberIndex)
     a slip or a payment for a neighbour, and only a person can tell. A payment for a member whose number is far off
     still decides."""
     phones = index.phone_members.get(phone, set()) if phone else set()
+    if phones == {member_id}:
+        return False  # the member's own registered phone and their own number: no slip
     others = set(phones) if len(phones) == 1 else set()
     owner = _name_owner(payer, index)
     if owner:
         others.add(owner[0])
+    if len(payer.split()) >= 2:  # two names are enough when they fit the member a slip away ("MAKENA MURIUKI")
+        others |= _holders(payer, index.records)
     fits_typed = _name_fits(payer, member_id, index)
     return any(o != member_id and _one_slip(o, member_id) and (not fits_typed or _name_fits(payer, o, index))
                for o in others)
@@ -338,18 +343,19 @@ def _digits(text: str) -> str:
 def _is_joint(raw: str, index: MemberIndex) -> bool:
     """True when the reference names a second member after the first: "MBR-1001/02", "MRB 1001 NA 1002", "1001/02".
 
-    A shorthand counts only when it counts up from the first number by at most nine, the way members who joined
-    together are numbered ("1001/02", "1041/2"). "MBR-1042-10" or "MBR-1042/26" is a month, a year or an instalment,
-    and a number that is not a member's ("MBR-1042/2026") is not a second member either. Without MBR, the first number
-    must itself be a member's.
+    "&", "AND", "NA", "+", "," and ";" always join two members ("MBR-1042 & 41"). "/" and "-" also write dates,
+    years and instalments, so after them a shorthand counts only when it counts up from the first number by at most
+    nine, the way members who joined together are numbered ("1001/02", "1041/2"): "MBR-1042-10" or "MBR-1042/26" is
+    a month, a year or an instalment. A number that is not a member's ("MBR-1042/2026") is never a second member, and
+    without MBR the first number must itself be a member's.
     """
     for m in _JOINT.finditer(raw):
-        prefix, first, second = m.group(1), _digits(m.group(2)), _digits(m.group(3))
+        prefix, first, joiner, second = m.group(1), _digits(m.group(2)), m.group(3), _digits(m.group(4))
         if not prefix and f"MBR{first}" not in index.id_choices:
             continue
         if len(second) <= 2 < len(first):
             second = first[:len(first) - len(second)] + second
-            if not 0 < int(second) - int(first) <= 9:
+            if joiner in "/-" and not 0 < int(second) - int(first) <= 9:
                 continue
         elif len(second) != len(first):
             continue
@@ -439,6 +445,37 @@ def _weigh(raw: str, prefixed: list[str], phone: str, payer: str, index: MemberI
         if near or owner:
             return None, AMBIGUOUS, round(max(near or [100.0]), 1)
     return None, UNMATCHED, 0.0
+
+
+def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) -> str | None:
+    """For a payment the matcher sent to review: the plainest true reason, or None when it is a mix of signals.
+    Each check below is one of the matcher's own; this only words it for a person."""
+    raw = str(ref if isinstance(ref, str) else "" if ref is None or pd.isna(ref) else ref).strip().upper()
+    payer = normalize_name(payer)
+    if raw in index.by_id and _slip_of_another(index.by_id[raw], phone, payer, index):
+        return (f"{index.by_id[raw]} is one keying slip from the member whose phone or name made this payment: a "
+                "slip, or a payment for a neighbour.")
+    raw = _drop_amount(raw, amount)
+    if _is_joint(raw, index):
+        return "The reference names two members, so a person splits the money."
+    named = {index.id_choices[i] for i in reference_ids(raw) if i in index.id_choices}
+    bare = {index.id_choices[f"MBR{d}"] for d in re.findall(r"(?<!\d)\d{4}(?!\d)", raw) if f"MBR{d}" in index.id_choices}
+    if len(named | bare) > 1:
+        return "The reference names more than one member."
+    phones = index.phone_members.get(phone, set()) if phone else set()
+    if len(phones) > 1:
+        return "This phone is registered to more than one member."
+    ref_member, tied, _, near = _from_reference(raw, payer, index)
+    if ref_member and phones and ref_member not in phones:
+        return f"The reference points at {ref_member}, but the money came from {next(iter(phones))}'s phone."
+    if tied:
+        return "The reference fits several members equally well (a number cut short?), and nothing settles which."
+    if ref_member and _name_points_elsewhere(payer, ref_member, index, near, phone_agrees=phones == {ref_member}):
+        return (f"The reference points at {ref_member}, but the name on the M-Pesa account fits another member with a "
+                "close number: a mistyped number?")
+    if ref_member and _ref_names_someone_else(raw, ref_member, index, payer):
+        return f"The reference points at {ref_member}, but it also names someone else on the register."
+    return None
 
 
 def naive_exact_match(statement: pd.DataFrame, members: pd.DataFrame) -> pd.Series:
