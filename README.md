@@ -40,7 +40,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (314, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (317, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```

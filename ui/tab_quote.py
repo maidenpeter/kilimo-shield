@@ -66,16 +66,20 @@ def subsidy_label(q: qt.Quote) -> str:
 def who_else_pays(q: qt.Quote) -> str:
     """One sentence on who else pays, as AgroShield's quick price put it; the build-up sits behind Details."""
     insurer = f"The insurer still receives the full {theme.ksh(q.gross_premium)}."
+    caveat = "(an illustrative subsidy: none is agreed)"
     if q.government_share and q.discount:
-        return (f"The government pays {theme.ksh(q.government_share)}, and the Resilience discount takes "
+        return (f"The government pays {theme.ksh(q.government_share)} {caveat}, and the Resilience discount takes "
                 f"{theme.ksh(q.discount)} off the farmer's share, paid by the platform. {insurer}")
     if q.government_share:
-        return f"The government pays the other {theme.ksh(q.government_share)}. {insurer}"
+        return f"The government pays the other {theme.ksh(q.government_share)} {caveat}. {insurer}"
     if q.discount:
         return (f"The Resilience discount takes {theme.ksh(q.discount)} off, paid by the platform. {insurer}")
     if q.subsidy_share and not q.subsidy_eligible:
         return (f"No government help for this farm: the illustrative subsidy is only for farms of "
                 f"{qt.SUBSIDY_ACRES[0]:g} to {qt.SUBSIDY_ACRES[1]:g} acres. The farmer pays the full premium.")
+    if q.subsidy_share:
+        return (f"The illustrative {q.subsidy_share:.0%} subsidy comes to less than half a shilling on this small "
+                "premium, so the farmer pays the full premium.")
     return "No subsidy and no discount: the farmer pays the full premium."
 
 
@@ -90,7 +94,8 @@ def price_panel(q: qt.Quote) -> None:
         st.markdown(who_else_pays(q))
         with st.expander("Details: how the price is built"):
             theme.ledger([
-                (f"Gross premium, {q.premium_rate:.1%} of {theme.ksh(q.sum_insured)}", theme.ksh(q.gross_premium)),
+                (f"Gross premium, {qt.rate_text(q.premium_rate)} of {theme.ksh(q.sum_insured)}",
+                 theme.ksh(q.gross_premium)),
                 (subsidy_label(q), f"- {theme.ksh(q.government_share)}", "" if q.government_share else "muted"),
                 (f"Resilience discount, {q.resilience_points} points ({q.discount_rate:.0%})",
                  f"- {theme.ksh(q.discount)}", "" if q.discount else "muted"),
@@ -126,7 +131,7 @@ def cover_panel(q: qt.Quote) -> None:
 def no_quote(header, right, ward, err: qt.QuoteError, params: TriggerParams, zone_rate: float | None) -> None:
     if isinstance(err, qt.WardNotOffered):
         lede = f"{ward.name} is not offered on the standard bundle."
-        sub = (f"Its standard farm prices at {zone_rate:.1f}% a season, above the {params.max_sellable_rate:.0%} "
+        sub = (f"Its standard farm prices at {theme.pct(zone_rate, 1)} a season, above the {params.max_sellable_rate:.0%} "
                "sellable ceiling." if zone_rate is not None else str(err))
         why = ("The engine prices every ward the same way and refuses to sell one above the sellable ceiling"
                + (" rather than hide it inside a flat rate. " if params.pricing_mode == "target" else

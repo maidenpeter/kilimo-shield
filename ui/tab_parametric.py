@@ -232,15 +232,15 @@ def render() -> dict:
     at_minimum = minimum_applies(k_all.burn_cost_pct / 100, params)
     if k.offered:
         if params.pricing_mode == "flat":
-            sub += f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm."
+            sub += f"At the flat {theme.pct(k.premium_rate_pct, 1)} rate it costs {theme.ksh(k.premium_ksh)} on the standard farm."
         elif at_minimum:
             sub += (f"Its {params.target_loss_ratio:.0%} loss-ratio price would be lower, so it is charged the "
                     f"{params.min_premium_rate:.0%} minimum: {theme.ksh(k.premium_ksh)} on the standard farm.")
         else:
-            sub += (f"Priced at a {params.target_loss_ratio:.0%} loss ratio it costs {k.premium_rate_pct:.1f}% a season, "
+            sub += (f"Priced at a {params.target_loss_ratio:.0%} loss ratio it costs {theme.pct(k.premium_rate_pct, 1)} a season, "
                     f"{theme.ksh(k.premium_ksh)} on the standard farm.")
     else:
-        sub += (f"Its price, {k.premium_rate_pct:.1f}%, is above the {params.max_sellable_rate:.0%} ceiling, so the "
+        sub += (f"Its price, {theme.pct(k.premium_rate_pct, 1)}, is above the {params.max_sellable_rate:.0%} ceiling, so the "
                 "standard bundle is not offered here.")
     with header:
         theme.chapter(1, "The risk", f"{ward.label} · {ward.zone} zone", lede, sub)

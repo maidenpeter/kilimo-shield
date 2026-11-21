@@ -192,3 +192,24 @@ def test_minimum_applies_only_when_it_sets_the_price():
     assert pe.commercial_rate(0.003, params) == 0.01 and pe.minimum_applies(0.003, params)
     assert pe.minimum_applies(0.0, params)
     assert not pe.minimum_applies(0.0, pe.TriggerParams(pricing_mode="flat"))
+
+
+def test_rates_read_half_up():
+    assert [qt.rate_text(r) for r in (0.0625, 0.0635, 0.086, 0.179)] == ["6.3%", "6.4%", "8.6%", "17.9%"]
+
+
+def test_who_else_pays_never_states_the_subsidy_as_fact():
+    from ui.tab_quote import who_else_pays
+    weather = pe.load_weather("njoro")[0]
+    subsidised = qt.quote(weather, pe.TriggerParams(subsidy_share=0.5), ward_key="njoro", season="LR", acres=2, cows=2)
+    assert "illustrative subsidy: none is agreed" in who_else_pays(subsidised)
+    tiny = qt.quote(weather, pe.TriggerParams(sum_insured=20_000.0, subsidy_share=0.01, sm_trigger=15.0,
+                                              heat_temp_c=36.0, rain10_mode="fixed", rain10_trigger_mm=300.0),
+                    ward_key="njoro", season="LR", acres=0.5, cows=0)
+    if tiny.government_share == 0 and not tiny.discount:
+        assert "less than half a shilling" in who_else_pays(tiny)
+
+
+def test_cap_is_never_cut_short():
+    assert pe.whole_shillings(pe.TriggerParams(sum_insured=45_000.0, aggregate_cap_share=13_000 / 45_000)
+                              .aggregate_cap) == 13_000

@@ -26,7 +26,7 @@ import math
 import numbers
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from fractions import Fraction
 
 import pandas as pd
@@ -131,6 +131,11 @@ class Quote:
 money = whole_shillings  # one rounding rule for every shilling the product shows
 
 
+def rate_text(rate: float) -> str:
+    """A premium rate to 0.1%, half up like every other figure: 0.0625 reads "6.3%", never Python's "6.2%"."""
+    return f"{Decimal(repr(round(rate * 100, 9))).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}%"
+
+
 def _exact(value: float) -> Fraction:
     """A setting as an exact fraction: shares like 20,000/60,000 come back as 1/3, not 0.3333333333333333. A value
     that is not a simple fraction (a cap share of 0.82004...) is kept exactly as given."""
@@ -230,7 +235,7 @@ def quote(weather: pd.DataFrame, base: TriggerParams, *, ward_key: str, season: 
     burn = kpis(seasons, params).burn_cost_pct / 100
     rate = commercial_rate(burn, params)
     if rate > base.max_sellable_rate + 1e-12:
-        raise FarmAboveCeiling(f"This farm's mix prices at {rate:.1%} a season, above the "
+        raise FarmAboveCeiling(f"This farm's mix prices at {rate_text(rate)} a season, above the "
                                f"{base.max_sellable_rate:.0%} sellable ceiling.", rate)
 
     exact_rate = Decimal(repr(rate))
@@ -289,7 +294,7 @@ def quote_text(q: Quote) -> str:
         f"  Sum insured   KSh {money(q.sum_insured):>9,} (most paid in one season: KSh {money(q.seasonal_cap):,})",
         "",
         "Price",
-        f"  Gross premium            KSh {q.gross_premium:>8,} ({q.premium_rate:.1%})",
+        f"  Gross premium            KSh {q.gross_premium:>8,} ({rate_text(q.premium_rate)})",
         f"  Government share         KSh {-q.government_share:>8,}",
         f"  Resilience discount      KSh {-q.discount:>8,} ({q.resilience_points} points)",
         f"  Farmer pays              KSh {q.farmer_pays:>8,}",

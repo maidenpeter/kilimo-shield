@@ -8,7 +8,7 @@ import streamlit as st
 
 from data.seed_generator import N_MEMBERS, generate_all
 from engine import recon_engine as rec
-from engine.parametric_engine import WARDS
+from engine.parametric_engine import WARDS, whole_shillings
 from ui import theme
 
 MONEY = st.column_config.NumberColumn(format="localized")
@@ -303,7 +303,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         k1, k2, k3, k4 = st.columns([2, 1, 1, 1], vertical_alignment="bottom")
         wards = k1.multiselect("Wards where the drought trigger fired", list(WARDS), default=["kangundo"],
                                format_func=lambda k: WARDS[k].label, key="split_wards")
-        cap = int(seasonal_cap)
+        cap = whole_shillings(seasonal_cap)  # the cap to the shilling, as chapter 2 shows it, never cut short
         payout = k2.number_input("Payout per member (KSh)", 1_000, cap, min(25_000, cap), 1_000,
                                  key=f"split_payout_{cap}", help="At most the seasonal cap of the cover")
         # The share outlives this panel (it is hidden while the reconciliation is stale), and chapter 2 reads it.
