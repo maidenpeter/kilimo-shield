@@ -90,6 +90,6 @@ weather this cover would have paid in {len(paid)} of {len(q.history)} {html.esca
 seasons.</p>
 <div class="warn">Illustrative quotation: not a filed product and not for sale. Terms need actuarial sign-off, the
 partner insurer's agreement and IRA approval. Insurer: Partner insurer (to be named). Calculating agent:
-ShambaShield360.</div>
+KilimoShield.</div>
 <div class="sign"><div>SACCO officer: name, signature, date</div><div>Farmer: name, signature, date</div></div>
 </div></body></html>"""

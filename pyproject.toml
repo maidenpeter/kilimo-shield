@@ -1,7 +1,7 @@
 [project]
-name = "shambashield360"
+name = "kilimoshield"
 version = "2.0.0"
-description = "ShambaShield360: mixed-farm parametric insurance backtest and SACCO reconciliation prototype for Kenya"
+description = "KilimoShield: mixed-farm parametric insurance backtest and SACCO reconciliation prototype for Kenya"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

@@ -102,7 +102,7 @@ def test_history_matches_the_backtest():
 def test_quote_id_is_stable_and_specific():
     assert make().quote_id == make().quote_id
     assert make().quote_id != make(acres=3).quote_id
-    assert make().quote_id.startswith("SS360-Q-")
+    assert make().quote_id.startswith("KS-Q-")
 
 
 def test_money_rounds_half_up_exactly():
@@ -170,7 +170,7 @@ def test_exact_cover_at_any_sum_insured():
 
 def test_quote_ids_are_long_and_include_the_fee():
     q = make(practices={item.id: True for item in qt.RESILIENCE_ITEMS})
-    assert len(q.quote_id) == len("SS360-Q-") + 12
+    assert len(q.quote_id) == len("KS-Q-") + 12
     assert make(practices={item.id: True for item in qt.RESILIENCE_ITEMS},
                 params=replace(P, platform_fee_rate=0.2)).quote_id != q.quote_id
 

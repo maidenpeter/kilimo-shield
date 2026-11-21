@@ -214,7 +214,7 @@ HOW_IT_WORKS = [
      "rounded up to 0.1% and never under 1%. Each ward gets its own price (unless you pick one flat rate), and a "
      "ward priced above the ceiling is not sold. Chapter 2 prices one farm."),
     ("Collect the money. ",
-     "Farmers pay by M-Pesa or from the milk cheque. ShambaRecon matches each payment to the right member and "
+     "Farmers pay by M-Pesa or from the milk cheque. KilimoRecon matches each payment to the right member and "
      "sends anything unclear to a person. Chapter 3."),
     ("Pay, and check the doubtful cases. ",
      "Payouts go out by M-Pesa within 10 days of the season's end. When the satellite reading is borderline, "
@@ -224,7 +224,7 @@ HOW_IT_WORKS = [
 
 def how_it_works() -> None:
     """The whole product in five plain steps, for someone opening the app for the first time."""
-    with st.expander("New here? How ShambaShield360 works, in 5 steps", icon=":material/help:"):
+    with st.expander("New here? How KilimoShield works, in 5 steps", icon=":material/help:"):
         steps(HOW_IT_WORKS)
         st.caption("To change a number, type it into its box and press Enter, or use the + and - buttons. Chapters 1 "
                    "and 2 recalculate at once; chapter 3 asks you to run the reconciliation again, and the "

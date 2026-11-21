@@ -1,4 +1,4 @@
-"""ShambaShield360: parametric backtest, SACCO reconciliation (ShambaRecon) and the WhatsApp trust loop.
+"""KilimoShield: parametric backtest, SACCO reconciliation (KilimoRecon) and the WhatsApp trust loop.
 
     streamlit run app.py
 """

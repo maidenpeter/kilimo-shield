@@ -244,7 +244,7 @@ def zone_table(zones, backtests: dict, params: TriggerParams, members: dict) -> 
                                                                                      "sold)"),
         })
         st.download_button("Download the pricing sheet (CSV)", sheet.to_csv(index=False).encode(),
-                           "shambashield360_pricing_sheet.csv", "text/csv", icon=":material/download:")
+                           "kilimoshield_pricing_sheet.csv", "text/csv", icon=":material/download:")
 
 
 def render() -> dict:

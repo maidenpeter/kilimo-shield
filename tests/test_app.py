@@ -29,7 +29,7 @@ def _text(at):
 
 def test_identity_is_consistent():
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert project["name"] == brand.APP_ID == "shambashield360"
+    assert project["name"] == brand.APP_ID == "kilimoshield"
     assert project["version"] == brand.APP_VERSION
     assert brand.LOGO_SVG.exists() and brand.LOGO_PNG.exists()
     assert brand.logo_data_uri().startswith("data:image/svg+xml;base64,")
@@ -139,7 +139,7 @@ def test_a_payment_typed_by_hand(app):
 
 
 def test_how_it_works_is_there_for_newcomers(app):
-    assert any("How ShambaShield360 works" in e.label for e in app.expander)
+    assert any("How KilimoShield works" in e.label for e in app.expander)
 
 
 def test_typed_numbers_are_used_as_shown_and_kept_in_range(app):

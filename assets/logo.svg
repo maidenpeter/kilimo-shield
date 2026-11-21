@@ -1,19 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ShambaShield360 logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KilimoShield logo">
   <defs>
-    <linearGradient id="ss360-shield" x1="0" y1="0" x2="0.9" y2="1">
+    <linearGradient id="ks-shield" x1="0" y1="0" x2="0.9" y2="1">
       <stop offset="0" stop-color="#1f7a43"/>
       <stop offset="1" stop-color="#14532d"/>
     </linearGradient>
   </defs>
   <!-- shield: protection -->
-  <path d="M32 3 L56 11 V29 C56 45.5 45.6 55.8 32 61 C18.4 55.8 8 45.5 8 29 V11 Z" fill="url(#ss360-shield)"/>
+  <path d="M32 3 L56 11 V29 C56 45.5 45.6 55.8 32 61 C18.4 55.8 8 45.5 8 29 V11 Z" fill="url(#ks-shield)"/>
   <path d="M32 3 L56 11 V29 C56 45.5 45.6 55.8 32 61" fill="none" stroke="#b45309" stroke-width="2.4"
         stroke-linejoin="round"/>
-  <!-- 360 ring: crop, livestock and money, all the way round -->
+  <!-- ring: crop, livestock and money, all the way round -->
   <path d="M44.8 33.3 A13 13 0 1 1 38.5 19.7" fill="none" stroke="#fbbf24" stroke-width="3.2"
         stroke-linecap="round"/>
   <path d="M42.6 22.1 L35.9 22.3 L39.2 16.4 Z" fill="#fbbf24"/>
-  <!-- seedling: the shamba -->
+  <!-- seedling: kilimo, the farm -->
   <path d="M32 39 V25.5" stroke="#f0fdf4" stroke-width="2.4" stroke-linecap="round"/>
   <path d="M32 33 C27.2 33 24.4 30 24.2 26.4 C28.4 26.2 31.7 28.8 32 33 Z" fill="#bbf7d0"/>
   <path d="M32 30 C36.4 30 38.8 27.4 39 24 C35.2 23.8 32.3 26.2 32 30 Z" fill="#f0fdf4"/>

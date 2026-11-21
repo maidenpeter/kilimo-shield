@@ -1,4 +1,4 @@
-"""ShambaShield360 parametric engine: weather, derived indices and the three payout layers.
+"""KilimoShield parametric engine: weather, derived indices and the three payout layers.
 
 Weather comes from the Open-Meteo Historical Weather API (ERA5-based reanalysis, CC BY 4.0). Each ward's
 2015-2024 record is cached in ``data/weather_cache/`` so the app runs offline. If neither the cache nor the

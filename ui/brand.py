@@ -5,8 +5,8 @@ import base64
 from functools import lru_cache
 from pathlib import Path
 
-APP_NAME = "ShambaShield360"
-APP_ID = "shambashield360"
+APP_NAME = "KilimoShield"
+APP_ID = "kilimoshield"
 APP_VERSION = "2.0.0"
 TAGLINE = "Mixed-farm parametric insurance and SACCO reconciliation for Kenya"
 

@@ -1,4 +1,4 @@
-"""ShambaRecon: match M-Pesa paybill rows to SACCO members, allocate every shilling by waterfall, and build the
+"""KilimoRecon: match M-Pesa paybill rows to SACCO members, allocate every shilling by waterfall, and build the
 underwriter bordereau and the claim-split settlement.
 
 Matching weighs every piece of evidence on a row, and a wrong credit is treated as worse than a review:
@@ -780,7 +780,7 @@ def bordereau(summary: pd.DataFrame, wards: dict, season_label: str = "Long rain
     gross = active["ward"].map(gross_premium).astype(float) if gross_premium else active["premium_due"]
     return pd.DataFrame({
         "bordereau_period": season_label,
-        "policy_number": "SS360-" + active["member_id"].str.replace("MBR-", "", regex=False),
+        "policy_number": "KS-" + active["member_id"].str.replace("MBR-", "", regex=False),
         "member_id": active["member_id"], "insured_name": active["full_name"],
         "national_id_masked": active["national_id"].map(mask_id),
         "phone_masked": active["phone"].map(lambda p: mask_phone(normalize_phone(p))),

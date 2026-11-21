@@ -1,9 +1,9 @@
-# ShambaShield360
+# KilimoShield
 
-App ID `shambashield360`, version 2.0.0.
+App ID `kilimoshield`, version 2.0.0.
 
 A pitch-ready prototype for a Kenyan mixed-farm (crop and livestock) parametric insurance calculating agent, with
-automated SACCO reconciliation (ShambaRecon). The app tells one story in four chapters, each opening with the sentence
+automated SACCO reconciliation (KilimoRecon). The app tells one story in four chapters, each opening with the sentence
 its numbers support:
 
 1. **The risk.** Ten years (2015-2024) of daily weather for five pilot wards, three payout layers (crop inputs,

@@ -271,7 +271,7 @@ def quote(weather: pd.DataFrame, base: TriggerParams, *, ward_key: str, season: 
                    "discount": discount, "fee": fee, "history": [round(v, 2) for v in history["payout_total"]]}
     digest = hashlib.sha256(json.dumps(fingerprint, sort_keys=True).encode()).hexdigest()
     return Quote(
-        quote_id=f"SS360-Q-{digest[:12].upper()}", ward_key=ward_key, season=season, acres=acres, cows=cows,
+        quote_id=f"KS-Q-{digest[:12].upper()}", ward_key=ward_key, season=season, acres=acres, cows=cows,
         unit_cover=unit_cover(base), cover=farm_cover(acres, cows, base), sum_insured=float(exact_si),
         seasonal_cap=float(exact_cap), burn_cost_rate=burn, pricing_mode=base.pricing_mode, premium_rate=rate,
         gross_premium=gross, subsidy_share=base.subsidy_share, subsidy_eligible=eligible, government_share=government,
@@ -307,7 +307,7 @@ def quote_text(q: Quote, prepared_for: dict | None = None) -> str:
     ward = WARDS[q.ward_key]
     paid = q.history[q.history["payout_total"] > 0]
     lines = [
-        f"ShambaShield360 quotation {quotation_number(q, prepared_for)} (ILLUSTRATIVE: not a filed product, not for "
+        f"KilimoShield quotation {quotation_number(q, prepared_for)} (ILLUSTRATIVE: not a filed product, not for "
         "sale)",
         f"{ward.label}, {SEASON_WORDS[q.season]} {COVER_YEAR}",
         f"Farm: {farm_words(q.acres, q.cows)}",
@@ -340,6 +340,6 @@ def quote_text(q: Quote, prepared_for: dict | None = None) -> str:
         f"Enrolment closes {long_date(q.enrolment_closes)}; cover starts {long_date(q.cover_starts)}.",
         f"On 2015-2024 weather this cover would have paid in {len(paid)} of {len(q.history)} "
         f"{SEASON_WORDS[q.season]} seasons.",
-        "Insurer: Partner insurer (to be named). Calculating agent: ShambaShield360.",
+        "Insurer: Partner insurer (to be named). Calculating agent: KilimoShield.",
     ]
     return "\n".join(lines) + "\n"

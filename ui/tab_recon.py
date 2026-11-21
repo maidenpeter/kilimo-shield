@@ -1,4 +1,4 @@
-"""Tab 2: SACCO M-Pesa and check-off reconciliation (ShambaRecon)."""
+"""Tab 2: SACCO M-Pesa and check-off reconciliation (KilimoRecon)."""
 from __future__ import annotations
 
 import math
@@ -291,7 +291,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     stored = st.session_state.get("recon")
     if stored is None or stored[0] != premium_items:
         with header:
-            theme.chapter(3, "Collecting the money", "ShambaRecon",
+            theme.chapter(3, "Collecting the money", "KilimoRecon",
                           f"Premiums arrive as messy M-Pesa payments. A clerk's exact lookup would leave "
                           f"{theme.pct(100 * exact_lookup_misses, 0)} of these unallocated.",
                           "Press Run reconciliation to match this statement to members and allocate every shilling.")
@@ -308,9 +308,9 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     acc = rec.accuracy(result, data.truth)
     with header:
         theme.chapter(
-            3, "Collecting the money", "ShambaRecon",
+            3, "Collecting the money", "KilimoRecon",
             f"A clerk's exact lookup leaves {theme.pct(100 * result.before_suspense_rows, 0)} of payments "
-            f"unallocated. ShambaRecon leaves {theme.pct(100 * result.after_suspense_rows, 1)}.",
+            f"unallocated. KilimoRecon leaves {theme.pct(100 * result.after_suspense_rows, 1)}.",
             f"{acc['wrong_member']} payments credited to the wrong member, {result.duplicates_caught} duplicates held, "
             f"and {theme.ksh(result.members.loc[result.members['policy_status'] == rec.ACTIVE, 'to_premium'].sum())} "
             "of premium ready to remit to the partner insurer.")
@@ -320,7 +320,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     theme.stats([
         ("Unallocated, by rows",
          f"{theme.pct(100 * result.before_suspense_rows)} → {theme.pct(100 * result.after_suspense_rows)}",
-         "A clerk's exact lookup, then ShambaRecon", "good"),
+         "A clerk's exact lookup, then KilimoRecon", "good"),
         ("Unallocated, by value",
          f"{theme.pct(100 * result.before_suspense_value)} → {theme.pct(100 * result.after_suspense_value)}",
          f"{theme.ksh(left_for_review)} left for a person to review"),
