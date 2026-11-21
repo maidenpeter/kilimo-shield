@@ -88,3 +88,55 @@ def test_colour_ramp_ends_and_clamps():
 ])
 def test_percentages_round_half_up(value, decimals, expected):
     assert theme.pct(value, decimals) == expected
+
+
+def fake(key, burn, rate=8.0, offered=True, paid=4, worst=50.0, label="Long rains 2017"):
+    return risk_map.WardFigures(key=key, burn_pct=burn, rate_pct=rate, premium_ksh=rate * 600, offered=offered,
+                                paid=paid, seasons=20, worst_pct=worst, worst_label=label if worst else "",
+                                by_season={"2017 LR": worst})
+
+
+def test_stories_name_every_tied_ward():
+    params = TriggerParams()
+    keys = list(WARDS)
+    figures = [fake(keys[0], 2.5), fake(keys[1], 2.5), fake(keys[2], 6.0), fake(keys[3], 6.0), fake(keys[4], 2.5)]
+    text = risk_map.story("Burn cost", figures, params, "seasons")
+    assert text.startswith(f"{risk_map.short(keys[2])} and {risk_map.short(keys[3])} carry the most risk")
+    assert f"{risk_map.short(keys[0])}, {risk_map.short(keys[1])} and {risk_map.short(keys[4])} carry the least" in text
+    same = [fake(k, 3.0) for k in keys]
+    assert risk_map.story("Burn cost", same, params, "seasons").startswith("Every ward has the same burn cost")
+    worst = [fake(k, 3.0, worst=7.0) for k in keys]
+    assert all(risk_map.short(k) in risk_map.story("Worst season", worst, params, "seasons") for k in keys)
+
+
+def test_wards_that_never_paid_are_called_that():
+    params = TriggerParams()
+    keys = list(WARDS)
+    figures = [fake(keys[0], 3.0, paid=3), fake(keys[1], 0.0, paid=0, worst=0.0)] + \
+        [fake(k, 2.0, paid=2) for k in keys[2:]]
+    seasons = risk_map.story("Seasons paid", figures, params, "short rains")
+    assert "was never paid" in seasons and "can cost the same" not in seasons and " in 0" not in seasons
+    assert "would never have been paid" in risk_map.story("Burn cost", figures, params, "short rains")
+
+
+def test_flat_rate_story_respects_the_ceiling_and_burn_costs():
+    keys = list(WARDS)
+    high = TriggerParams(pricing_mode="flat", premium_rate=0.20)
+    blocked = [fake(k, 5.0, rate=20.0, offered=False) for k in keys]
+    assert "not offered in any ward" in risk_map.story("Price", blocked, high, "seasons")
+    low = TriggerParams(pricing_mode="flat", premium_rate=0.02)
+    cheap = [fake(k, 5.0 + i, rate=2.0) for i, k in enumerate(keys)]
+    assert "less than every ward's burn cost" in risk_map.story("Price", cheap, low, "seasons")
+    mid = TriggerParams(pricing_mode="flat", premium_rate=0.06)
+    mixed = [fake(k, b, rate=6.0) for k, b in zip(keys, (5.1, 6.7, 5.9, 5.9, 10.7))]
+    text = risk_map.story("Price", mixed, mid, "seasons")
+    assert f"{risk_map.short(keys[1])} and {risk_map.short(keys[4])} would pay out more than they collect" in text
+
+
+def test_replay_draws_the_crosses_and_ranks_by_seasons_paid(setup):
+    params, zones, backtests = setup
+    figures = risk_map.ward_figures(zones, backtests, ("LR", "SR"), params)
+    fig = risk_map.replay_map(figures, params, "kangundo", "seasons")
+    assert any(getattr(tr.marker, "symbol", None) == "x-thin" for tr in fig.data)
+    paid = [int(row[1].split()[0]) for row in risk_map.ranking("Replay", figures, params, "kangundo")]
+    assert paid == sorted(paid, reverse=True)

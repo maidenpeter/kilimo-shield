@@ -23,6 +23,17 @@ from engine.parametric_engine import WARDS
 
 AMBER_LOW, AMBER_HIGH = 35.0, 40.0
 CONSENSUS_THRESHOLD = 0.60
+
+
+def share_text(share: float, threshold: float = CONSENSUS_THRESHOLD) -> str:
+    """The agreement as a percentage, half up. A whole number that would land on the other side of the rule gets a
+    decimal, so 59.6% never reads as "60%" next to a released hold."""
+    from decimal import ROUND_HALF_UP, Decimal
+    for places in (0, 1, 2):
+        shown = Decimal(repr(round(100 * share, 6))).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
+        if (shown >= Decimal(repr(round(100 * threshold, 6)))) == (share >= threshold):
+            return f"{shown}%"
+    return f"{100 * share:.3f}%"
 BOUNTY_KSH = 100
 NETWORK_SIZE = 15
 SUBMISSIONS = 12
@@ -177,10 +188,12 @@ class AmberZoneMachine:
         share = consensus(self.submissions)
         if share >= self.threshold:
             self.state = State.RED_UNLOCKED
-            self._note(f"{share:.0%} of valid photos confirm stress (at least {self.threshold:.0%}): payout unlocked.")
+            self._note(f"{share_text(share, self.threshold)} of valid photos confirm stress (at least "
+                       f"{self.threshold:.0%}): payout unlocked.")
         else:
             self.state = State.RELEASED
-            self._note(f"Only {share:.0%} confirm stress (below {self.threshold:.0%}): hold released, no payout.")
+            self._note(f"Only {share_text(share, self.threshold)} confirm stress (below {self.threshold:.0%}): hold "
+                       "released, no payout.")
         return self.state
 
     def run(self) -> State:

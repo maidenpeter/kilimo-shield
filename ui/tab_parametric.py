@@ -132,11 +132,20 @@ def trajectory_chart(weather, params: TriggerParams, season: str, year: int, com
     fig.update_xaxes(title="Dekad of the season (10-day blocks)", dtick=1, row=2, col=1)
     fig.update_yaxes(range=[0, 100], row=1, col=1)
     fig.update_annotations(font_size=12)
-    return theme.plot_layout(fig, height=500)
+    fig = theme.plot_layout(fig, height=520)
+    fig.update_layout(margin_t=64)  # room for the legend above the panel titles
+    return fig
 
 
-def _signed(score) -> str:
-    return "n/a" if score is None else f"{score:+.0f}%"
+def basis_cell(b, params: TriggerParams) -> tuple:
+    if b.score is None:  # rainfall alone mismatched no season, so there is no share to compare
+        if b.mismatches_index == 0:
+            return "Basis-risk score", "n/a", "Neither the index nor rainfall alone mismatched a season"
+        return ("Basis-risk score", "Worse", f"The index mismatched {b.mismatches_index} "
+                f"season{'s' if b.mismatches_index != 1 else ''}; rainfall alone none", "bad")
+    return ("Basis-risk score", f"{theme.signed_pct(b.score)} / {theme.signed_pct(b.score_verified)}",
+            f"Index alone / with the WhatsApp check ({params.verifier_accuracy:.0%} assumed)",
+            "bad" if b.score < 0 else "")
 
 
 def stat_row(k, params: TriggerParams) -> None:
@@ -157,9 +166,7 @@ def stat_row(k, params: TriggerParams) -> None:
          "bad" if k.loss_ratio_pct > 100 else "warn" if k.loss_ratio_pct > 70 else ""),
         ("Worst year", str(k.worst_year) if k.worst_year else "None",
          f"{theme.ksh(k.worst_year_payout)} a farm" if k.worst_year else "No season paid"),
-        ("Basis-risk score", f"{_signed(b.score)} / {_signed(b.score_verified)}",
-         f"Index alone / with the WhatsApp check ({params.verifier_accuracy:.0%} assumed)",
-         "bad" if b.score is not None and b.score < 0 else ""),
+        basis_cell(b, params),
     ])
 
 
@@ -215,7 +222,8 @@ def render() -> dict:
     else:
         lede = f"Since 2015 this cover would not have paid {ward.name} farms in any of the {k.seasons} {which}."
         sub = ""
-    at_minimum = minimum_applies(k.burn_cost_pct / 100, params)
+    k_all = kpis(seasons, params)  # the price always uses both seasons, whatever the filter shows
+    at_minimum = minimum_applies(k_all.burn_cost_pct / 100, params)
     if k.offered:
         if params.pricing_mode == "flat":
             sub += f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm."
@@ -316,7 +324,7 @@ model checks: they need yields or loan-default records from the SACCO.
     theme.next_chapter(2, "A farmer's quote", "What one farm pays, and what it would have received.")
     offered = zones[zones["offered"] == "Yes"]
     # Chapters 2 to 4 price a whole year, so they take the figures for both seasons whatever the filter shows here.
-    return {"ward_key": ward_key, "params": params, "kpis": k, "kpis_all": kpis(seasons, params),
+    return {"ward_key": ward_key, "params": params, "kpis": k, "kpis_all": k_all,
             "refresh_count": refresh_count, "offered": bool(zones.set_index("ward_key").loc[ward_key, "offered"] == "Yes"),
             "zone_rates": dict(zip(zones["ward_key"], zones["premium_rate_pct"])),
             "zone_premiums": dict(zip(zones["ward_key"], zones["premium_ksh"])),

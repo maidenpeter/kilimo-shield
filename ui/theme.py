@@ -217,6 +217,14 @@ def pct(value: float, decimals: int = 1) -> str:
     return f"{_half_up(value, decimals)}%"
 
 
+def signed_pct(value: float, decimals: int = 0) -> str:
+    """"+63%" for 62.5 and "-13%" for -12.5: half up, away from zero, with the sign."""
+    if value is None or not math.isfinite(float(value)):
+        return "n/a"
+    shown = _half_up(value, decimals)
+    return f"{'+' if shown > 0 else ''}{shown}%"
+
+
 def chapter(number: int, name: str, context: str, lede: str, sub: str = "") -> None:
     """Open a chapter: where we are, the one sentence the numbers say, and what it means."""
     st.markdown(
@@ -265,12 +273,20 @@ def year_axis(fig, years) -> None:
                      tickangle=0, title="Year")
 
 
+def _has_legend(fig) -> bool:
+    if fig.layout.showlegend is False:
+        return False
+    return sum(1 for tr in fig.data if tr.showlegend is not False) >= 2
+
+
 def plot_layout(fig, height: int = 400):
     """Charts sit inside a titled panel, so they carry no title of their own."""
     fig.update_layout(
         height=height, paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
         font={"color": BODY, "family": "IBM Plex Sans, sans-serif"},
-        margin={"l": 56, "r": 12, "t": 16, "b": 40}, legend={"orientation": "h", "y": -0.16, "x": 0},
+        # The legend sits at the top of the figure, so on a phone it never meets the x-axis title.
+        margin={"l": 56, "r": 12, "t": 44 if _has_legend(fig) else 16, "b": 40},
+        legend={"orientation": "h", "yref": "container", "y": 1, "yanchor": "top", "x": 0, "xanchor": "left"},
         hoverlabel={"bgcolor": SURFACE},
     )
     fig.update_xaxes(gridcolor=LINE, linecolor=LINE, zeroline=False, automargin=True)

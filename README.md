@@ -35,7 +35,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (272, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (303, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -141,14 +141,17 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
 
 - A repeated receipt number is held as a duplicate, comparing receipts without case or spaces; a re-export with the
   receipt column blank is caught by matching the whole row, whichever copy comes first. Amounts written as
-  `5,160.00`, `KES 5,160`, `Ksh5,160`, `5,160/=` or `5.160,00` are read as numbers. A blank, zero, negative,
-  unreadable or two-way amount (`5.160`, `1,0000`) is held as *Bad amount (review)*; blank loan or interest cells
+  `5,160.00`, `5 160`, `KES 5,160`, `Ksh5,160`, `5,160/=` or `5.160,00` are read as numbers. A blank, zero, negative,
+  unreadable or two-way amount (`5.160`, `1,0000`, `1 0000`) is held as *Bad amount (review)*; blank loan or interest cells
   count as none.
 - An exact member ID, or a national ID standing alone (not inside a longer number), is the payer's instruction and
-  decides on its own. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`,
-  `MRB 1001 NA 1002`, or an ID next to another member's national ID or registered phone) goes to review, and so does a
-  phone or national ID that two members share. A number after the ID that is not a member's (`MBR-1042/2026`) does
-  not count as a second member.
+  decides on its own, unless it is one keying slip (a digit changed or two swapped) from the member whose registered
+  phone or full name made the payment: `MBR-1043` sent from MBR-1042's phone may be a slip or a payment for a
+  neighbour, so a person decides. A payment for a member whose number is far off still goes through. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`,
+  `MRB 1001 NA 1002`, `1001/02`, or an ID next to another member's national ID or registered phone) goes to review,
+  and so does a phone or national ID that two members share. A shorthand counts only when it counts up from the first
+  number by at most nine, the way members who join together are numbered, so a month, a year or an instalment after
+  the ID (`MBR-1042-10`, `MBR-1042/26`, `MBR-1042/2026`) is not a second member.
 - A mistyped ID (`MBR 1042`, `MBR:1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the
   registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own
   names, and names after FROM or BY ("FROM PETER"), say who paid, not whom for. Letter-for-digit repairs happen only
@@ -158,7 +161,8 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
   is read as the amount, so the member's own phone still decides; written as an ID (`MBR1200`) it stays an ID.
 - A transposed ID is caught by the payer's name: if two or more of the payer's names fit another member whose number
   is close to the reference or has the same digits in another order (`MBR 1310` paid by NJERI MWANGI when she is
-  MBR-1013), it goes to review, unless the member's own registered phone agrees with the reference.
+  MBR-1013), or fit only one member, two digits or fewer away (`MBR 1014` paid by MUGO ONYANGO when only MBR-1003
+  carries both names), it goes to review, unless the member's own registered phone agrees with the reference.
 - When a reference fits several members (a truncated `MBR-104` is as close to two dozen member numbers), a tie is
   settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or,
   when the reference starts with MBR, by a reference that spells exactly one candidate's surname. Close spellings
@@ -171,8 +175,8 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
 - Names are compared without case, punctuation or apostrophes (NDUNG'U and NDUNGU are the same).
 
 On 64 synthetic statements, on every member paid with a truncated reference or only a name
-(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,942 credited
-rows, recall about 98%); about 2% of payments go to review.
+(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,812 credited
+rows, recall about 97%); about 2.6% of payments go to review.
 
 ## Layout
 

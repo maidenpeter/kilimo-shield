@@ -245,6 +245,7 @@ def replay_map(figures: list[WardFigures], params: TriggerParams, selected: str,
     hovers = [hover(w, which) for w in figures]
     ward_trace(fig, figures, ts, values, hovers, selected)
     ward_index = len(fig.data) - 1
+    not_offered_trace(fig, figures)
     fig.add_scatter(x=[X_RANGE[0] + 0.1], y=[-3.2], mode="text", text=[caption(labels[0])], textposition="middle right",
                     textfont={"size": 13, "color": theme.INK}, hoverinfo="skip", showlegend=False)
     caption_index = len(fig.data) - 1
@@ -281,63 +282,97 @@ def replay_map(figures: list[WardFigures], params: TriggerParams, selected: str,
     return finish(fig, height=600, bottom=78)
 
 
-def story(view: str, figures: list[WardFigures], params: TriggerParams, which: str) -> str:
-    """One sentence that says what the map shows."""
-    def name(w):
-        return short(w.key)
+def _names(group: list[WardFigures]) -> str:
+    names = [short(w.key) for w in group]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
 
+
+def _tied(figures: list[WardFigures], shown) -> tuple[list, list]:
+    """The wards at the top and at the bottom, judged by the value as shown, so equal figures always tie."""
+    hi = max(figures, key=lambda w: shown(w)[0])
+    lo = min(figures, key=lambda w: shown(w)[0])
+    return ([w for w in figures if shown(w)[1] == shown(hi)[1]], [w for w in figures if shown(w)[1] == shown(lo)[1]])
+
+
+def story(view: str, figures: list[WardFigures], params: TriggerParams, which: str) -> str:
+    """One or two sentences that say what the map shows, true for every setting."""
+    nobody = f"With these triggers no ward would have been paid in any of the {which}."
     if view == "Burn cost":
-        hi, lo = max(figures, key=lambda w: w.burn_pct), min(figures, key=lambda w: w.burn_pct)
-        return (f"{name(hi)} carries the most risk: its cover would have paid {theme.pct(hi.burn_pct, 1)} of the sum "
-                f"insured a season on average. {name(lo)} carries the least, {theme.pct(lo.burn_pct, 1)}.")
+        hi, lo = _tied(figures, lambda w: (w.burn_pct, theme.pct(w.burn_pct, 1)))
+        if hi[0].burn_pct == 0:
+            return nobody
+        if len(hi) == len(figures):
+            return f"Every ward has the same burn cost, {theme.pct(hi[0].burn_pct, 1)} of the sum insured a season."
+        one = len(hi) == 1
+        text = (f"{_names(hi)} {'carries' if one else 'carry'} the most risk: {'its' if one else 'their'} cover would "
+                f"have paid {theme.pct(hi[0].burn_pct, 1)} of the sum insured a season on average. ")
+        if lo[0].burn_pct == 0:
+            return text + f"{_names(lo)} would never have been paid."
+        return text + f"{_names(lo)} {'carries' if len(lo) == 1 else 'carry'} the least, {theme.pct(lo[0].burn_pct, 1)}."
     if view == "Price":
         blocked = [w for w in figures if not w.offered]
+        ceiling = f"{params.max_sellable_rate:.0%}"
         if params.pricing_mode == "flat":
-            lo, hi = min(w.burn_pct for w in figures), max(w.burn_pct for w in figures)
-            return (f"On one flat rate every ward pays {theme.pct(figures[0].rate_pct, 1)}, although their burn costs run "
-                    f"from {theme.pct(lo, 1)} to {theme.pct(hi, 1)}. The cheap wards subsidise the risky ones.")
-        text = (f"{len(figures) - len(blocked)} of {len(figures)} wards price at or under the "
-                f"{params.max_sellable_rate:.0%} ceiling.")
+            rate = theme.pct(figures[0].rate_pct, 1)
+            if len(blocked) == len(figures):
+                return (f"One flat rate of {rate} is above the {ceiling} ceiling, so the standard bundle is not "
+                        "offered in any ward (the crosses).")
+            losing = [w for w in figures if w.burn_pct > w.rate_pct + 1e-9]
+            text = f"On one flat rate every ward pays {rate}, although their burn costs run from " \
+                   f"{theme.pct(min(w.burn_pct for w in figures), 1)} to {theme.pct(max(w.burn_pct for w in figures), 1)}."
+            if len(losing) == len(figures):
+                return text + " That is less than every ward's burn cost: the cover would pay out more than it collects."
+            if losing:
+                return text + (f" {_names(losing)} would pay out more than {'it collects' if len(losing) == 1 else 'they collect'}; "
+                               "the other wards make up the difference.")
+            return text + " Every ward's burn cost is below it, so the low-risk wards pay furthest over their risk."
+        text = f"{len(figures) - len(blocked)} of {len(figures)} wards price at or under the {ceiling} ceiling."
         if blocked:
-            text += " " + " and ".join(f"{name(w)} would cost {theme.pct(w.rate_pct, 1)}" for w in blocked) + \
-                ", so the standard bundle is not offered there (the cross)."
+            text += " " + " and ".join(f"{short(w.key)} would cost {theme.pct(w.rate_pct, 1)}" for w in blocked) + \
+                f", so the standard bundle is not offered there (the {'cross' if len(blocked) == 1 else 'crosses'})."
         return text
     if view == "Seasons paid":
         most, least = max(w.paid for w in figures), min(w.paid for w in figures)
+        n = figures[0].seasons
         if most == 0:
-            return f"With these triggers no ward would have been paid in any of the {which}."
-
-        def those(n):
-            names = [name(w) for w in figures if w.paid == n]
-            return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
-
+            return nobody
         if most == least:
-            return f"Every ward would have been paid in {most} of {figures[0].seasons} {which}."
-        return (f"{those(most)} would have been paid in {most} of {figures[0].seasons} {which}; {those(least)} in "
-                f"{least}. Frequent small payouts and rare large ones can cost the same.")
+            return f"Every ward would have been paid in {most} of {n} {which}."
+        top = [w for w in figures if w.paid == most]
+        bottom = [w for w in figures if w.paid == least]
+        if least == 0:
+            return (f"{_names(top)} would have been paid in {most} of {n} {which}; {_names(bottom)} "
+                    f"{'was' if len(bottom) == 1 else 'were'} never paid.")
+        return (f"{_names(top)} would have been paid in {most} of {n} {which}; {_names(bottom)} in {least}. "
+                "Frequent small payouts and rare large ones can cost the same.")
     if view == "Worst season":
-        w = max(figures, key=lambda f: f.worst_pct)
-        if not w.worst_pct:
-            return f"With these triggers no ward would have been paid in any of the {which}."
-        return (f"The worst single season was {w.worst_label} in {name(w)}: the cover would have paid "
-                f"{theme.pct(w.worst_pct, 0)} of the sum insured to every farm.")
+        worst = max(w.worst_pct for w in figures)
+        if not worst:
+            return nobody
+        top = [w for w in figures if theme.pct(w.worst_pct, 0) == theme.pct(worst, 0)]
+        if len(top) == 1:
+            return (f"The worst single season was {top[0].worst_label} in {short(top[0].key)}: the cover would have "
+                    f"paid {theme.pct(worst, 0)} of the sum insured to every farm.")
+        where = "; ".join(f"{short(w.key)} in {w.worst_label}" for w in top)
+        return f"The worst single seasons paid {theme.pct(worst, 0)} of the sum insured to every farm: {where}."
     labels = list(figures[0].by_season)
     counts = {lab: sum(w.by_season.get(lab, 0) > 0 for w in figures) for lab in labels}
     busiest = max(labels, key=lambda lab: (counts[lab], sum(w.by_season.get(lab, 0) for w in figures)))
     if not counts[busiest]:
-        return f"With these triggers no ward would have been paid in any of the {which}. Press Play to check each one."
+        return nobody + " Press Play to check each one."
     return (f"Press Play to run 2015 to 2024 season by season, or drag the slider. A widespread drought shows as "
             f"several circles at once: {_season_name(busiest)} paid in {counts[busiest]} of {len(figures)} wards.")
 
 
 def ranking(view: str, figures: list[WardFigures], params: TriggerParams, selected: str) -> list[tuple]:
-    if view == "Replay":
-        rows = sorted(figures, key=lambda w: -w.burn_pct)
-        return [(short(w.key) + (" (shown below)" if w.key == selected else ""), f"{w.paid} of {w.seasons} paid")
-                for w in rows]
+    def label(w):
+        return short(w.key) + (" (shown below)" if w.key == selected else "")
+
+    if view == "Replay":  # the ward that paid most often first
+        rows = sorted(figures, key=lambda w: (-w.paid, -w.burn_pct))
+        return [(label(w), f"{w.paid} of {w.seasons} paid", "" if w.key == selected else "muted") for w in rows]
     keyed = sorted(figures, key=lambda w: -measure(view, w, params)[0])
-    return [(short(w.key) + (" (shown below)" if w.key == selected else ""), measure(view, w, params)[1],
-             "" if w.key == selected else "muted") for w in keyed]
+    return [(label(w), measure(view, w, params)[1], "" if w.key == selected else "muted") for w in keyed]
 
 
 def render(selected: str, zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams,
@@ -367,7 +402,8 @@ def render(selected: str, zones: pd.DataFrame, backtests: dict, season_keys, par
     points = (event or {}).get("selection", {}).get("points", []) if event else []
     picked = next((p.get("customdata") for p in points if p.get("customdata") in WARDS), None)
     if picked:
-        st.session_state["map_picks"] = picks + 1  # a fresh chart next run, so the old tap is not replayed
+        # Rerun at once on a fresh chart, so the tap is not replayed and the next tap is never lost.
+        st.session_state["map_picks"] = picks + 1
         if picked != selected:
             st.session_state["_map_pick"] = picked
-            st.rerun()
+        st.rerun()

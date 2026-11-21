@@ -12,6 +12,8 @@ from engine.parametric_engine import WARDS, TriggerParams
 from engine.unit_economics import PilotInputs, pilot_economics
 from ui import brand, theme
 
+share_text = wa.share_text
+
 STATE_TONE = {wa.State.GREEN: "GREEN", wa.State.RELEASED: "GREEN", wa.State.AMBER_HOLD: "AMBER",
               wa.State.VERIFYING: "AMBER", wa.State.RED_UNLOCKED: "RED", wa.State.RED_AUTOMATIC: "RED"}
 
@@ -92,9 +94,10 @@ def verification_section(default_ward: str) -> None:
     ward = WARDS[ward_key]
     if machine.submissions is not None:
         share = wa.consensus(machine.submissions)
-        lede = (f"{share:.0%} of the valid photos from {ward.name} confirm stress, so the payout is unlocked."
+        shown = share_text(share)
+        lede = (f"{shown} of the valid photos from {ward.name} confirm stress, so the payout is unlocked."
                 if machine.state == wa.State.RED_UNLOCKED else
-                f"Only {share:.0%} of the valid photos from {ward.name} confirm stress, so the hold is released.")
+                f"Only {shown} of the valid photos from {ward.name} confirm stress, so the hold is released.")
         sub = f"The check cost {theme.ksh(machine.airtime_cost)} in airtime and took one morning."
     elif z == "AMBER":
         lede = f"The satellite reading for {ward.name} is borderline. Farmers on the ground decide."
@@ -116,7 +119,7 @@ def verification_section(default_ward: str) -> None:
             valid = subs[subs["inside_ward"]]
             share = wa.consensus(subs)
             theme.stats([
-                ("Agreement", f"{share:.0%}", f"{int(valid['confirms_stress'].sum())} of {len(valid)} valid photos "
+                ("Agreement", share_text(share), f"{int(valid['confirms_stress'].sum())} of {len(valid)} valid photos "
                  "confirm stress"),
                 ("Needed to unlock", f"{wa.CONSENSUS_THRESHOLD:.0%}", "Of photos taken inside the ward"),
                 ("Excluded", str(int((~subs["inside_ward"]).sum())), "Taken outside the ward area"),
@@ -169,7 +172,8 @@ def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, 
              "bad" if econ.platform_contribution_year < 0 else ""),
             ("Gross premium a season", theme.ksh_short(econ.gross_premium_season),
              f"{farms:,} farms at {rate:.1f}% of {theme.ksh(avg_si)}"),
-            ("Expected loss ratio", f"{econ.loss_ratio:.0%}", f"Burn cost {burn_cost_pct:.2f}% from the backtest",
+            ("Expected loss ratio", theme.pct(100 * econ.loss_ratio, 0),
+             f"Burn cost {theme.pct(burn_cost_pct, 2)} from the backtest",
              "bad" if econ.loss_ratio > 1 else "warn" if econ.loss_ratio > 0.7 else ""),
         ])
         fig = go.Figure(go.Bar(

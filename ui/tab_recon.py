@@ -1,6 +1,8 @@
 """Tab 2: SACCO M-Pesa and check-off reconciliation (ShambaRecon)."""
 from __future__ import annotations
 
+import math
+
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -42,10 +44,10 @@ def method_chart(mpesa) -> go.Figure:
     colours = [theme.RED if m in rec.SUSPENSE_METHODS else theme.AMBER if m == rec.DUPLICATE else theme.GREEN
                for m in counts.index]  # Bad amount is in SUSPENSE_METHODS
     fig = go.Figure(go.Bar(x=counts["rows"], y=counts.index, orientation="h", marker_color=colours,
-                           customdata=counts["value"], text=counts["rows"], textposition="outside",
+                           customdata=counts["value"], text=counts["rows"], textposition="outside", cliponaxis=False,
                            hovertemplate="%{y}: %{x} rows, KSh %{customdata:,.0f}<extra></extra>"))
     fig.update_yaxes(autorange="reversed")
-    fig.update_xaxes(title="Statement rows", range=[0, counts["rows"].max() * 1.15])
+    fig.update_xaxes(title="Statement rows", range=[0, counts["rows"].max() * 1.2])
     return theme.plot_layout(fig, height=340)
 
 
@@ -86,7 +88,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         with header:
             theme.chapter(3, "Collecting the money", "ShambaRecon",
                           f"Premiums arrive as messy M-Pesa payments. A clerk's exact lookup would leave "
-                          f"{exact_lookup_misses:.0%} of these unallocated.",
+                          f"{theme.pct(100 * exact_lookup_misses, 0)} of these unallocated.",
                           "Press Run reconciliation to match this statement to members and allocate every shilling.")
         with theme.panel("No reconciliation yet" if stored is None else "Premiums have changed"):
             st.markdown("Press **Run reconciliation** to match the statement to members and allocate the money."
@@ -100,8 +102,8 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     with header:
         theme.chapter(
             3, "Collecting the money", "ShambaRecon",
-            f"A clerk's exact lookup leaves {result.before_suspense_rows:.0%} of payments unallocated. "
-            f"ShambaRecon leaves {result.after_suspense_rows:.1%}.",
+            f"A clerk's exact lookup leaves {theme.pct(100 * result.before_suspense_rows, 0)} of payments "
+            f"unallocated. ShambaRecon leaves {theme.pct(100 * result.after_suspense_rows, 1)}.",
             f"{acc['wrong_member']} payments credited to the wrong member, {result.duplicates_caught} duplicates held, "
             f"and {theme.ksh(result.members.loc[result.members['policy_status'] == rec.ACTIVE, 'to_premium'].sum())} "
             "of premium ready to remit to the partner insurer.")
@@ -109,13 +111,16 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     st.caption(f"Reconciled {len(mpesa)} M-Pesa rows and {len(result.ledger) - len(mpesa)} milk check-offs "
                f"in {result.seconds:.2f} seconds.")
     theme.stats([
-        ("Unallocated, by rows", f"{result.before_suspense_rows:.1%} → {result.after_suspense_rows:.1%}",
+        ("Unallocated, by rows",
+         f"{theme.pct(100 * result.before_suspense_rows)} → {theme.pct(100 * result.after_suspense_rows)}",
          "A clerk's exact lookup, then ShambaRecon", "good"),
-        ("Unallocated, by value", f"{result.before_suspense_value:.1%} → {result.after_suspense_value:.1%}",
+        ("Unallocated, by value",
+         f"{theme.pct(100 * result.before_suspense_value)} → {theme.pct(100 * result.after_suspense_value)}",
          f"{theme.ksh(left_for_review)} left for a person to review"),
         ("Duplicates held", str(result.duplicates_caught),
          f"{theme.ksh(result.duplicate_value_exact_ref)} of them an exact lookup would credit twice", "warn"),
-        ("Matched to the right member", f"{acc['precision']:.1%}",
+        # rounded down, so one wrong credit in a thousand never shows as 100.0%
+        ("Matched to the right member", f"{math.floor(acc['precision'] * 1000 + 1e-9) / 10:.1f}%",
          f"{acc['correct']} of {acc['credited']} credited rows (synthetic ground truth)"),
     ])
     status = result.members["policy_status"].value_counts()
