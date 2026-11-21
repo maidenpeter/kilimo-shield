@@ -33,7 +33,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (239, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (243, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -50,7 +50,7 @@ pytest
    Bureti is flagged *not offered* at the 12% ceiling. Drag the ceiling to 18% and it unlocks across the pricing
    table and, after a re-run, the reconciliation. Switch to *One flat rate* to show why a single national rate fails.
 3. **Clear the suspense account.** In chapter 3 press *Run reconciliation*. Each member owes their ward's
-   premium. The unallocated share of rows drops from about 39% (an exact lookup) to about 3.5%, twelve duplicate
+   premium. The unallocated share of rows drops from about 39% (an exact lookup) to about 4%, twelve duplicate
    rows are held instead of credited twice, and on this demo statement every credited row lands on the right member.
    Filter the ledger by *Spouse Name Match* or *Fuzzy Reference* to show how.
 4. **Quote one farm, then pay its claim.** In chapter 2, quote a Njoro farm (2 acres, 2 cows: KSh 5,160 a
@@ -135,18 +135,25 @@ factories, to price yield-linked or area-yield cover. Frost and hail are not in 
 A wrong credit is worse than a short review queue, so the matcher weighs all the evidence on a payment and sends it to
 *Ambiguous (review)* whenever the evidence disagrees:
 
-- A repeated receipt number is held as a duplicate, comparing receipts without case or spaces. A blank, zero, negative
-  or unreadable amount is held as *Bad amount (review)*; blank loan or interest cells count as none.
+- A repeated receipt number is held as a duplicate, comparing receipts without case or spaces; a re-export with the
+  receipt column blank is caught by matching the whole row. Amounts written as `5,160.00` or `KES 5,160` are read as
+  numbers. A blank, zero, negative or unreadable amount is held as *Bad amount (review)*; blank loan or interest cells
+  count as none.
 - An exact member ID, or a national ID standing alone (not inside a longer number), is the payer's instruction and
-  decides on its own. A reference that names two members (`MBR-1001/1002`, or an ID next to another member's national
-  ID) goes to review, and so does a phone or national ID that two members share.
-- A mistyped ID (`MBR 1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the registered phone,
-  the payer's name nor a name written in the reference points at someone else. Letter-for-digit repairs happen only
-  inside the number: `MBR-104 OTIENO` is a truncated `MBR-104`, not `MBR-1040`. A bare number with no MBR (`1042`)
-  needs the phone or the payer's name to agree, and never counts when it equals the amount.
+  decides on its own. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`, or an ID next
+  to another member's national ID) goes to review, and so does a phone or national ID that two members share.
+- A mistyped ID (`MBR 1042`, `MBR:1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the
+  registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own names
+  written in the reference ("FROM PETER") are not someone else. Letter-for-digit repairs happen only inside the
+  number: `MBR-104 OTIENO` is a truncated `MBR-104`, not `MBR-1040`. A bare number with no MBR (`1042`) needs the
+  phone or the payer's name to agree. A number equal to the amount (`1200` on a KSh 1,200 payment) is read as the
+  amount, not an ID, so the member's own phone still decides.
+- A transposed ID is caught by the payer's name: if two or more of the payer's names fit another member whose number
+  is also close to the reference (`MBR 1103` paid by NJERI MWANGI when she is MBR-1013), it goes to review.
 - When a reference fits several members (a truncated `MBR-104` is as close to two dozen member numbers), a tie is
-  settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or by
-  a reference that spells exactly one candidate's surname. Close spellings (NEKESA for WEKESA) never count.
+  settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or,
+  when the reference starts with MBR, by a reference that spells exactly one candidate's surname. Close spellings
+  (NEKESA for WEKESA) never count.
 - With no usable reference, a registered phone decides unless the payer's name, or a name in the reference ("FOR
   OTIENO"), belongs to someone else.
 - With only a name, it must have three or more words, in the same order as one member's or spouse's record, and no one
@@ -154,9 +161,9 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
   non-member who has exactly a member's three names cannot be told apart from that member.
 - Names are compared without case, punctuation or apostrophes (NDUNG'U and NDUNGU are the same).
 
-On 64 synthetic statements (31,000+ credited rows), on every member paid with a truncated reference or only a name
-(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits; about 1.5%
-of payments go to review.
+On 64 synthetic statements, on every member paid with a truncated reference or only a name
+(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,856 credited
+rows, recall about 97%); about 2.5% of payments go to review.
 
 ## Layout
 

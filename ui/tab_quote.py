@@ -171,8 +171,16 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
                   else ".")
     else:
         story = f"On 2015-2024 weather this cover would not have paid in any {words} season."
-        story += (" The price comes from both seasons together, so the ward's dry years in the other season still "
-                  "count." if q.pricing_mode == "target" else " The flat rate does not depend on this history.")
+        if q.pricing_mode == "flat":
+            story += " The flat rate does not depend on this history."
+        elif q.burn_cost_rate == 0:
+            story += (f" It would not have paid in the other season either, so the price is the product's "
+                      f"{params.min_premium_rate:.0%} minimum.")
+        elif q.premium_rate <= params.min_premium_rate + 1e-12:
+            story += (f" The other season's payouts price below the {params.min_premium_rate:.0%} minimum, so the "
+                      "minimum applies.")
+        else:
+            story += " The price comes from both seasons together, so the ward's dry years in the other season count."
     with theme.panel("What this cover would have paid", story):
         st.plotly_chart(history_chart(q), width="stretch")
 

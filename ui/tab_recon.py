@@ -36,7 +36,8 @@ def _masked_members(members):
 
 
 def method_chart(mpesa) -> go.Figure:
-    counts = mpesa.groupby("match_method").agg(rows=("receipt_no", "size"), value=("paid_in_ksh", "sum"))
+    counts = mpesa.assign(paid_in_ksh=mpesa["paid_in_ksh"].clip(lower=0)).groupby("match_method").agg(
+        rows=("match_method", "size"), value=("paid_in_ksh", "sum"))
     counts = counts.reindex([m for m in METHOD_ORDER if m in counts.index])
     colours = [theme.RED if m in rec.SUSPENSE_METHODS else theme.AMBER if m == rec.DUPLICATE else theme.GREEN
                for m in counts.index]  # Bad amount is in SUSPENSE_METHODS
@@ -104,7 +105,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
             f"{acc['wrong_member']} payments credited to the wrong member, {result.duplicates_caught} duplicates held, "
             f"and {theme.ksh(result.members.loc[result.members['policy_status'] == rec.ACTIVE, 'to_premium'].sum())} "
             "of premium ready to remit to the partner insurer.")
-    left_for_review = mpesa.loc[mpesa["match_method"].isin(rec.SUSPENSE_METHODS), "paid_in_ksh"].sum()
+    left_for_review = mpesa.loc[mpesa["match_method"].isin(rec.SUSPENSE_METHODS), "paid_in_ksh"].clip(lower=0).sum()
     st.caption(f"Reconciled {len(mpesa)} M-Pesa rows and {len(result.ledger) - len(mpesa)} milk check-offs "
                f"in {result.seconds:.2f} seconds.")
     theme.stats([

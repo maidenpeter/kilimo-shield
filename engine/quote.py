@@ -127,9 +127,9 @@ class Quote:
 
 
 def money(value) -> int:
-    """Whole shillings, half up, from an exact decimal (never Python's round-half-even on a binary float). A float
-    is read to 12 significant digits first, so float noise around a half does not flip the rounding."""
-    exact = value if isinstance(value, Decimal) else Decimal(format(float(value), ".12g"))
+    """Whole shillings, half up, from an exact decimal (never Python's round-half-even on a binary float). Float
+    noise below a millionth of a shilling is removed first, so it cannot flip the rounding of a half."""
+    exact = value if isinstance(value, Decimal) else Decimal(repr(round(float(value), 6)))
     return int(exact.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
 

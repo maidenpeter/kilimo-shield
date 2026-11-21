@@ -180,9 +180,9 @@ def stats(items: list[tuple]) -> None:
 
 
 def _half_up(value: float, decimals: int) -> Decimal:
-    """Money rounds half up (KSh 2.50 shows as KSh 3), not to even as Python's format does. The float is first read
-    to 12 significant digits, so 20,249,999.999999996 (float noise for 20,250,000) is treated as the half it is."""
-    shown = Decimal(format(float(value), ".12g")).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+    """Money rounds half up (KSh 2.50 shows as KSh 3), not to even as Python's format does. Float noise below a
+    millionth is removed first, so 20,249,999.999999996 (noise for 20,250,000) is treated as the whole it is."""
+    shown = Decimal(repr(round(float(value), 6))).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
     return shown + 0 if shown else abs(shown)  # never "KSh -0"
 
 

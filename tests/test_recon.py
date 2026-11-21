@@ -323,3 +323,45 @@ def test_text_amounts_are_numbers(data):
     r = rec.reconcile(statement, data.members)
     assert r.members["paid_in_ksh"].dtype.kind == "f"
     assert (r.ledger["match_method"] == rec.BAD_AMOUNT).sum() == 1
+
+
+def test_round_three_reference_cases(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000001"
+    own_name = m.loc["MBR-1042", "full_name"].upper()
+    for sep in (":", "#", "\u2013", "="):
+        assert rec.match_row(f"MBR{sep}1042", unknown, own_name, index)[0] == "MBR-1042", sep
+    assert rec.match_row("MBR-1001/02", unknown, "", index)[1] == rec.AMBIGUOUS
+    # a number equal to the amount is the amount: the member's own phone still decides
+    phone = m.loc["MBR-1042", "phone_254"]
+    assert rec.match_row("1200", phone, "", index, 1200)[:2] == ("MBR-1042", rec.EXACT_PHONE)
+    assert rec.match_row("MBR-1042 1200", phone, "", index, 1200)[0] == "MBR-1042"
+    # the payer's own first name in the reference is not someone else
+    payer = "PETER " + m.loc["MBR-1042", "surname"].upper().replace("'", "")
+    assert rec.match_row("MBR1042 FROM PETER", unknown, payer, index)[1] != rec.AMBIGUOUS or \
+        rec._name_points_elsewhere(rec.normalize_name(payer), "MBR-1042", index)
+
+
+def test_transposed_ids_never_credit_the_wrong_member(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    for mid in m.index:
+        digits = mid.split("-")[1]
+        swapped = digits[0] + digits[2] + digits[1] + digits[3]
+        if swapped == digits or f"MBR-{swapped}" not in m.index:
+            continue
+        payer = " ".join(m.loc[mid, "full_name"].upper().split()[-2:])
+        assert rec.match_row(f"MBR {swapped}", "254700000009", payer, index)[0] in (None, mid)
+
+
+def test_formatted_amounts_and_receiptless_reexports(data):
+    statement = data.statement.head(10).copy().astype({"paid_in_ksh": object})
+    statement.loc[0, "paid_in_ksh"] = "5,160.00"
+    statement.loc[1, "paid_in_ksh"] = "KES 5,160"
+    statement.loc[2, "paid_in_ksh"] = "KSh 3,600"
+    cleaned = rec.clean_statement(statement)
+    assert list(cleaned["paid_in_ksh"].head(3)) == [5160.0, 5160.0, 3600.0]
+    again = data.statement.head(10).assign(receipt_no=None)
+    r = rec.reconcile(pd.concat([data.statement.head(10), again], ignore_index=True), data.members)
+    assert r.duplicates_caught >= 10

@@ -17,3 +17,8 @@ def test_ksh_rounds_half_up(value, expected):
 ])
 def test_ksh_short_picks_the_unit_after_rounding(value, expected):
     assert theme.ksh_short(value) == expected
+
+
+def test_large_amounts_keep_their_shillings():
+    assert theme.ksh(123_456_789_012.5) == "KSh 123,456,789,013"
+    assert theme.ksh(20_249_999.999999996) == "KSh 20,250,000"

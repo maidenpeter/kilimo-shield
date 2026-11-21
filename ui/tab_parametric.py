@@ -213,10 +213,17 @@ def render() -> dict:
     else:
         lede = f"Since 2015 this cover would not have paid {ward.name} farms in any of the {k.seasons} {which}."
         sub = ""
+    at_minimum = params.pricing_mode == "target" and k.premium_rate_pct <= 100 * params.min_premium_rate + 1e-9 \
+        and k.burn_cost_pct / params.target_loss_ratio < 100 * params.min_premium_rate
     if k.offered:
-        sub += (f"Priced at a {params.target_loss_ratio:.0%} loss ratio it costs {k.premium_rate_pct:.1f}% a season, "
-                f"{theme.ksh(k.premium_ksh)} on the standard farm." if params.pricing_mode == "target" else
-                f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm.")
+        if params.pricing_mode == "flat":
+            sub += f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm."
+        elif at_minimum:
+            sub += (f"Its {params.target_loss_ratio:.0%} loss-ratio price would be lower, so it is charged the "
+                    f"{params.min_premium_rate:.0%} minimum: {theme.ksh(k.premium_ksh)} on the standard farm.")
+        else:
+            sub += (f"Priced at a {params.target_loss_ratio:.0%} loss ratio it costs {k.premium_rate_pct:.1f}% a season, "
+                    f"{theme.ksh(k.premium_ksh)} on the standard farm.")
     else:
         sub += (f"Its price, {k.premium_rate_pct:.1f}%, is above the {params.max_sellable_rate:.0%} ceiling, so the "
                 "standard bundle is not offered here.")
@@ -265,7 +272,8 @@ def render() -> dict:
                      f"season ({k.rain10_line_mm:.0f} mm here)" if params.rain10_mode == "percentile"
                      else f"more than {params.rain10_trigger_mm:.0f} mm")
         price_rule = (f"Each ward's premium is its burn cost divided by the {params.target_loss_ratio:.0%} target loss "
-                      "ratio, rounded up to 0.1%." if params.pricing_mode == "target"
+                      f"ratio, rounded up to 0.1%, with a minimum of {params.min_premium_rate:.0%}."
+                      if params.pricing_mode == "target"
                       else "One flat rate for every ward.")
         st.markdown(f"""
 **Sum insured {theme.ksh(params.sum_insured)} per farm per season**, with sub-limits of {theme.ksh(params.crop_allocation)}
