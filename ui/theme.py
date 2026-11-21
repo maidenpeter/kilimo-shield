@@ -160,11 +160,13 @@ HOW_IT_WORKS = [
      "Daily weather for each ward becomes a soil moisture reading (50 is normal for the date) and a pasture "
      "greenness reading. Chapter 1."),
     ("Decide the payout. ",
-     "If soil moisture falls below the trigger at planting or flowering, the cover pays for crop inputs. A badly "
-     "failed crop with dry pasture adds money for fodder; a flood of rain or a heatwave adds money for the vet."),
+     "If soil moisture through germination and flowering (flowering counts most) averages below the trigger, the "
+     "cover pays for crop inputs. A badly failed crop with dry pasture adds money for fodder; a flood of rain or a "
+     "heatwave adds money for the vet."),
     ("Price it fairly. ",
-     "The price is what the cover would have paid on average over 2015-2024, divided by the target loss ratio. "
-     "Each ward gets its own price, and a ward priced above the ceiling is not sold. Chapter 2 prices one farm."),
+     "The price is what the cover would have paid on average over 2015-2024, divided by the target loss ratio, "
+     "rounded up to 0.1% and never under 1%. Each ward gets its own price (unless you pick one flat rate), and a "
+     "ward priced above the ceiling is not sold. Chapter 2 prices one farm."),
     ("Collect the money. ",
      "Farmers pay by M-Pesa or from the milk cheque. ShambaRecon matches each payment to the right member and "
      "sends anything unclear to a person. Chapter 3."),
@@ -178,8 +180,9 @@ def how_it_works() -> None:
     """The whole product in five plain steps, for someone opening the app for the first time."""
     with st.expander("New here? How ShambaShield360 works, in 5 steps", icon=":material/help:"):
         steps(HOW_IT_WORKS)
-        st.caption("To change a number, type it into its box in the sidebar or press the + and - buttons. "
-                   "Everything recalculates at once.")
+        st.caption("To change a number, type it into its box and press Enter, or use the + and - buttons. Chapters 1 "
+                   "and 2 recalculate at once; chapter 3 asks you to run the reconciliation again, and the "
+                   "simulations wait for their buttons.")
 
 
 def _range_text(value, unit: str) -> str:
@@ -189,18 +192,44 @@ def _range_text(value, unit: str) -> str:
     return f"{text}%" if unit == "%" else f"{text} {unit}".strip()
 
 
-def number(container, label: str, low, high, value, step, *, key=None, help: str | None = None, unit: str = ""):
-    """A box to type an exact number (the + and - buttons move by ``step``). The allowed range is in the help text,
-    and whole numbers stay whole."""
+def _snap(key: str, low, high, decimals: int, cast, unit: str) -> None:
+    """After a number is typed: round it to what the box shows (half up), and bring it into range with a note, so
+    the box and every figure on the page always use the same number."""
+    raw = st.session_state.get(key)
+    if raw is None:
+        return
+    shown = float(_half_up(raw, decimals))
+    fixed = min(max(shown, low), high)
+    if fixed != shown:
+        st.session_state[f"{key}__note"] = (f"{_range_text(shown, unit)} is outside the allowed range, so "
+                                            f"{_range_text(fixed, unit)} is used.")
+    st.session_state[key] = cast(fixed)
+
+
+def number(container, label: str, low, high, value, step, *, key=None, help: str | None = None, unit: str = "",
+           in_form: bool = False):
+    """A box to type an exact number (the + and - buttons move by ``step``). The value is rounded to the decimals the
+    box shows, and a number outside the range is brought into it with a note under the box, never silently dropped.
+    The allowed range is in the help text, and whole numbers stay whole. Inside a form, where Streamlit allows no
+    callbacks, the value is only kept in range."""
     whole = all(float(v).is_integer() for v in (low, high, value, step))
     cast = int if whole else float
     decimals = 0 if whole else max(len(f"{float(step):g}".partition(".")[2]), 1)
+    key = key or "num-" + "".join(ch if ch.isalnum() else "-" for ch in label.lower()).strip("-")
     span = f"From {_range_text(low, unit)} to {_range_text(high, unit)}."
-    options = dict(min_value=cast(low), max_value=cast(high), step=cast(step), format="%d" if whole else
-                   f"%.{decimals}f", key=key, help=f"{help} {span}" if help else span)
-    if not (key and key in st.session_state):  # a value set from code (an example button) wins over the default
+    options = dict(step=cast(step), format="%d" if whole else f"%.{decimals}f", key=key,
+                   help=f"{help} {span}" if help else span)
+    if in_form:
+        options.update(min_value=cast(low), max_value=cast(high))
+    else:
+        options.update(on_change=_snap, args=(key, low, high, decimals, cast, unit))
+    if key not in st.session_state:  # a value set from code (an example button) wins over the default
         options["value"] = cast(value)
-    return container.number_input(label, **options)
+    typed = container.number_input(label, **options)
+    note = st.session_state.pop(f"{key}__note", None)
+    if note:
+        container.caption(note)
+    return cast(min(max(typed, low), high))  # a stale value from a wider range never leaks through
 
 
 def footer(text: str) -> None:

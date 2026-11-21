@@ -205,16 +205,18 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
 
     with theme.panel("If it pays", "No claim form and no farm visit: the index decides, then the money moves."):
         # The loan share is the claim split set in chapter 3 (70/30 unless it was changed there).
-        loan_share = 1 - st.session_state.get("split_share", 70) / 100
+        loan_share = 1 - st.session_state.get("split_share_kept", st.session_state.get("split_share", 70)) / 100
         if len(paid):
             example = float(paid["payout_total"].max())
             within = f"The farmer gets the payout by M-Pesa. In the worst season above: {theme.ksh(example)}."
             loan = (f"Up to {loan_share:.0%} ({theme.ksh(example * loan_share)}) can clear the member's SACCO loan, "
-                    "never more than is owed, and only with written consent.")
+                    "never more than is owed, and only with written consent." if loan_share > 0 else
+                    "With the split set in chapter 3, all of it goes to the farmer and none clears a loan.")
         else:
             within = "The farmer gets the payout by M-Pesa."
             loan = (f"Up to {loan_share:.0%} of it can clear the member's SACCO loan, never more than is owed, and "
-                    "only with written consent.")
+                    "only with written consent." if loan_share > 0 else
+                    "With the split set in chapter 3, all of it goes to the farmer and none clears a loan.")
         theme.steps([
             ("The season ends", "Soil moisture, pasture greenness and rainfall are read from weather data."),
             ("Within 10 days", within),

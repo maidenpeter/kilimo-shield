@@ -148,7 +148,7 @@ def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, 
                        "there would look like if it were sold at its price.")
         c1, c2, c3 = st.columns(3, gap="large")
         farms = theme.number(c1, "Pilot farms", 1_000, 50_000, 15_000, 500, key="ue_farms", unit="farms")
-        si_start = int(min(max(round(params.sum_insured / 5_000) * 5_000, 20_000), 150_000))
+        si_start = int(min(max(params.sum_insured, 20_000), 150_000))  # the sidebar figure exactly, as typed
         avg_si = theme.number(c1, "Average sum insured (KSh)", 20_000, 150_000, si_start, 5_000,
                               key=f"ue_si_{si_start}", unit="KSh")
         fee = params.platform_fee_rate * 100
@@ -157,7 +157,7 @@ def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, 
                             unit="KSh")
         discount = theme.number(c2, "Average Resilience discount (% of premium)", 0, 15, 5, 1, key="ue_discount",
                                 unit="%", help="Paid by the platform. A farmer with every practice gets 15%.")
-        start_rate = min(max(round(premium_rate * 100, 1), 0.5), 30.0)
+        start_rate = min(max(float(theme._half_up(premium_rate * 100, 1)), 0.5), 30.0)
         rate = theme.number(c3, "Premium rate per season (%)", 0.5, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
                             unit="%", help="Starts at the selected ward's premium.")
         ceded = theme.number(c3, "Ceded to the treaty reinsurer (%)", 0, 90, 70, 5, key="ue_ceded", unit="%")

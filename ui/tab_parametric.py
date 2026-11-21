@@ -70,7 +70,7 @@ def sidebar_controls() -> tuple[str, TriggerParams]:
                             "record.")
     with sb.expander("More settings"):
         sm_exit = num(st, "Soil moisture for the full crop payout", 0, max(sm_trigger - 1, 1), min(12, sm_trigger - 1),
-                      1, help="At or below this the crop layer pays 100%.")
+                      1, key=f"sm_exit_{sm_trigger}", help="At or below this the crop layer pays 100%.")
         gate = num(st, "Fodder needs a crop payout of at least (% of its limit)", 25, 100, 50, 5, unit="%")
         cap_default = min(sum_insured, round(sum_insured * 5 / 6 / 1_000) * 1_000)
         cap_ksh = num(st, "Most the cover pays in one season (KSh)", 10_000, sum_insured, cap_default, 1_000,

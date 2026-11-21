@@ -140,3 +140,24 @@ def test_a_payment_typed_by_hand(app):
 
 def test_how_it_works_is_there_for_newcomers(app):
     assert any("How ShambaShield360 works" in e.label for e in app.expander)
+
+
+def test_typed_numbers_are_used_as_shown_and_kept_in_range(app):
+    app.sidebar.radio(key="pricing_mode").set_value("One flat rate for every ward").run()
+    app.sidebar.number_input(key="num-premium-rate-for-every-ward").set_value(6.35).run()
+    assert not app.exception, app.exception
+    assert app.sidebar.number_input(key="num-premium-rate-for-every-ward").value == 6.4
+    text = _text(app)
+    assert "At the flat 6.4% rate it costs KSh 3,840" in text and "6.35" not in text
+    app.sidebar.number_input(key="si").set_value(200_000).run()
+    assert app.sidebar.number_input(key="si").value == 150_000
+    assert "KSh 200,000 is outside the allowed range, so KSh 150,000 is used." in _text(app)
+
+
+def test_name_only_payments_get_a_true_reason(app):
+    app.text_input(key="try_ref").set_value("")
+    app.selectbox(key="try_phone").set_value("unknown")
+    app.text_input(key="try_name").set_value("Gitonga Njagi")
+    _button(app, "Check this payment").click().run()
+    text = _text(app)
+    assert "Two names alone are too common" in text and "Result for: reference (blank)" in text

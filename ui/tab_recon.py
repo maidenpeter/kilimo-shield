@@ -56,12 +56,11 @@ REASONS = {
     rec.NATIONAL_ID: "The account reference is this member's national ID number.",
     rec.FUZZY_REF: "The account reference is this member's number with a slip in it (a missing dash, a letter O for a "
                    "zero, a word around it), and neither the phone nor the name points at anyone else.",
-    rec.EXACT_PHONE: "The money came from this member's registered phone, and nothing in the reference or the name "
+    rec.EXACT_PHONE: "The money came from this member's registered phone, and neither the reference nor the name "
                      "points at anyone else.",
     rec.SPOUSE: "The name on the M-Pesa account is this member's spouse, three names in order, and no one else's.",
     rec.MEMBER_NAME: "The name on the M-Pesa account is this member's, three names in order, and no one else's.",
-    rec.AMBIGUOUS: "The reference, the phone and the name point at different members, or the reference fits more than "
-                   "one. A wrong credit is worse than a short wait, so a person checks it.",
+    rec.AMBIGUOUS: "The reference, the phone and the name do not settle on one member.",
     rec.UNMATCHED: "Nothing in the payment points at a member, so it waits in suspense until someone claims it.",
     rec.BAD_AMOUNT: "The amount is zero, so there is nothing to credit.",
 }
@@ -97,6 +96,7 @@ def try_payment(data, premium_targets: dict) -> None:
         if choice in examples:
             ref, phone, name, amount = examples[choice]
             st.session_state.update(try_ref=ref, try_phone=phone, try_name=name, try_amount=amount)
+        st.session_state["try_example"] = None  # nothing stays selected, so one click always reloads an example
 
     if "try_ref" not in st.session_state:  # start on the first example
         ref, phone, name, amount = next(iter(examples.values()))
@@ -113,7 +113,8 @@ def try_payment(data, premium_targets: dict) -> None:
                 "Paid from", [UNKNOWN_PHONE, *members.index], key="try_phone",
                 format_func=lambda k: "A phone no member registered" if k == UNKNOWN_PHONE else
                 f"{k}'s registered phone ({rec.mask_phone(members.loc[k, 'phone_254'])})")
-            amount = theme.number(c2, "Amount (KSh)", 0, 500_000, 3_600, 100, key="try_amount", unit="KSh")
+            amount = theme.number(c2, "Amount (KSh)", 0, 500_000, 3_600, 100, key="try_amount", unit="KSh",
+                                  in_form=True)
             name = c2.text_input("Name on the M-Pesa account", key="try_name",
                                  help="M-Pesa shows the SIM owner's name. Leave it blank if you do not know it.")
             checked = st.form_submit_button("Check this payment", type="primary")
@@ -121,18 +122,30 @@ def try_payment(data, premium_targets: dict) -> None:
         if checked:
             phone = "" if phone_key == UNKNOWN_PHONE else members.loc[phone_key, "phone_254"]
             index = rec.MemberIndex(data.members)
-            result = (None, rec.BAD_AMOUNT, 0.0) if amount <= 0 else                 rec.match_row(ref, phone, name, index, float(amount))
-            why = rec.review_reason(ref, phone, name, index, float(amount)) if result[1] == rec.AMBIGUOUS else None
+            result = ((None, rec.BAD_AMOUNT, 0.0) if amount <= 0 else
+                      rec.match_row(ref, phone, name, index, float(amount)))
+            if result[1] == rec.AMBIGUOUS:
+                why = rec.review_reason(ref, phone, name, index, float(amount))
+            elif result[1] == rec.EXACT_PHONE:
+                fits = rec.reference_candidates(ref, name, index, float(amount))
+                why = (f"The reference fits {len(fits)} member numbers, {result[0]} among them, and the money came "
+                       f"from {result[0]}'s registered phone, which settles it." if len(fits) > 1 else None)
+            else:
+                why = None
             st.session_state["try_result"] = (inputs, result, why)
         stored = st.session_state.get("try_result")
         if not stored or stored[0] != inputs:
             st.caption("Press Check this payment to see the result.")
             return
         (member, method, _), why = stored[1], stored[2]
+        paid_from = "an unknown phone" if phone_key == UNKNOWN_PHONE else f"{phone_key}'s registered phone"
+        st.caption(f"Result for: reference {ref.strip() or '(blank)'}, paid from {paid_from}, name "
+                   f"{name.strip() or '(blank)'}, {theme.ksh(amount)}. Edit the payment and press Check this payment "
+                   "again for a new result.")
         if member:
             row = members.loc[member]
             ward = row["ward"]
-            st.markdown(f"**Credited to {member}, {row['full_name']}** ({WARDS[ward].label}). {REASONS[method]}")
+            st.markdown(f"**Credited to {member}, {row['full_name']}** ({WARDS[ward].label}). {why or REASONS[method]}")
             due = premium_targets.get(ward)
             st.markdown(f"{theme.ksh(amount)} goes first to this season's premium "
                         f"({theme.ksh(due)} owed), then overdue loan interest, then the loan, then savings."
@@ -142,8 +155,10 @@ def try_payment(data, premium_targets: dict) -> None:
         else:
             verdict = {rec.AMBIGUOUS: "Sent to a person to review.", rec.UNMATCHED: "Held in suspense.",
                        rec.BAD_AMOUNT: "Held: bad amount."}[method]
-            st.markdown(f"**{verdict}** {why + ' ' if why else ''}{REASONS[method]}")
-        st.markdown(theme.status(method, "good" if member else "warn"), unsafe_allow_html=True)
+            tail = " A wrong credit is worse than a short wait, so a person checks it." if method == rec.AMBIGUOUS else ""
+            st.markdown(f"**{verdict}** {why or REASONS[method]}{tail}")
+        st.markdown(theme.status(method, "GREEN" if member else "RED" if method == rec.BAD_AMOUNT else "AMBER"),
+                    unsafe_allow_html=True)
 
 
 def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_000.0,
@@ -291,8 +306,12 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         cap = int(seasonal_cap)
         payout = k2.number_input("Payout per member (KSh)", 1_000, cap, min(25_000, cap), 1_000,
                                  key=f"split_payout_{cap}", help="At most the seasonal cap of the cover")
-        farmer_share = theme.number(k3, "Farmer share by M-Pesa (%)", 50, 100, 70, 5, key="split_share",
-                                    unit="%") / 100
+        # The share outlives this panel (it is hidden while the reconciliation is stale), and chapter 2 reads it.
+        if "split_share" not in st.session_state and "split_share_kept" in st.session_state:
+            st.session_state["split_share"] = st.session_state["split_share_kept"]
+        farmer_pct = theme.number(k3, "Farmer share by M-Pesa (%)", 50, 100, 70, 5, key="split_share", unit="%")
+        st.session_state["split_share_kept"] = farmer_pct
+        farmer_share = farmer_pct / 100
         split_key = (tuple(wards), float(payout), farmer_share, premium_items)
         if k4.button("Simulate payout", key="run_split", width="stretch"):
             st.session_state["claim_split"] = (split_key, rec.claim_split(result.members, wards, float(payout),

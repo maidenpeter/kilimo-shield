@@ -140,3 +140,34 @@ def test_replay_draws_the_crosses_and_ranks_by_seasons_paid(setup):
     assert any(getattr(tr.marker, "symbol", None) == "x-thin" for tr in fig.data)
     paid = [int(row[1].split()[0]) for row in risk_map.ranking("Replay", figures, params, "kangundo")]
     assert paid == sorted(paid, reverse=True)
+
+
+def test_price_story_when_nothing_or_some_is_offered():
+    keys = list(WARDS)
+    params = TriggerParams(max_sellable_rate=0.06)
+    none = [fake(k, 5.0, rate=8.6 + i, offered=False) for i, k in enumerate(keys)]
+    assert "Every ward prices above the 6% ceiling, from 8.6% to 12.6%" in risk_map.story("Price", none, params, "seasons")
+    some = [fake(keys[0], 5.0, rate=5.0)] + [fake(k, 5.0, rate=9.0, offered=False) for k in keys[1:]]
+    text = risk_map.story("Price", some, params, "seasons")
+    assert " and " in text and "would cost" not in text and "in those wards" in text
+
+
+def test_flat_price_story_uses_both_seasons():
+    keys = list(WARDS)
+    params = TriggerParams(pricing_mode="flat", premium_rate=0.08)
+    # long rains alone would put three wards over 8%; on both seasons only the last one is
+    figures = [risk_map.WardFigures(key=k, burn_pct=9.0, rate_pct=8.0, premium_ksh=4_800, offered=True, paid=3,
+                                    seasons=10, worst_pct=50.0, worst_label="Long rains 2017", by_season={},
+                                    burn_pct_all=b) for k, b in zip(keys, (5.1, 6.7, 5.9, 5.9, 10.7))]
+    text = risk_map.story("Price", figures, params, "long rains")
+    assert f"{risk_map.short(keys[4])} would pay out more than it collects" in text
+
+
+def test_replay_story_with_one_ward_a_season():
+    keys = list(WARDS)
+    figures = [risk_map.WardFigures(key=k, burn_pct=1.0, rate_pct=3.0, premium_ksh=1_800, offered=True, paid=1,
+                                    seasons=20, worst_pct=20.0, worst_label="Long rains 2017",
+                                    by_season={f"{2015 + i} LR": (20.0 if j == i else 0.0) for i in range(5)})
+               for j, k in enumerate(keys)]
+    text = risk_map.story("Replay", figures, TriggerParams(), "seasons")
+    assert "never saw a widespread drought" in text and "several circles at once" not in text

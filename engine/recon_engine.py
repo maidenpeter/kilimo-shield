@@ -460,8 +460,17 @@ def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) 
         return "The reference names two members, so a person splits the money."
     named = {index.id_choices[i] for i in reference_ids(raw) if i in index.id_choices}
     bare = {index.id_choices[f"MBR{d}"] for d in re.findall(r"(?<!\d)\d{4}(?!\d)", raw) if f"MBR{d}" in index.id_choices}
-    if len(named | bare) > 1:
-        return "The reference names more than one member."
+    nids = [index.nid_members[d] for d in re.findall(r"(?<!\d)\d{7,8}(?!\d)", raw) if d in index.nid_members]
+    ref_phones = set().union(*(index.phone_members.get(normalize_phone(d), set())
+                               for d in re.findall(r"(?<!\d)\d{9,12}(?!\d)", raw)))
+    if len(named | bare | set().union(*nids) | ref_phones) > 1:
+        return "The reference names more than one member, or an ID that two members share."
+    if nids:
+        return (f"The reference carries {next(iter(nids[0]))}'s national ID, but also names someone else on the "
+                "register.")
+    if ref_phones:
+        return (f"The reference carries {next(iter(ref_phones))}'s registered phone number, but the rest of the "
+                "payment does not settle on that member.")
     phones = index.phone_members.get(phone, set()) if phone else set()
     if len(phones) > 1:
         return "This phone is registered to more than one member."
@@ -483,7 +492,42 @@ def review_reason(ref, phone: str, payer: str, index: MemberIndex, amount=None) 
             return f"The reference points at {ref_member}, but the name on the M-Pesa account is exactly {owner}'s."
     if ref_member and _ref_names_someone_else(raw, ref_member, index, payer):
         return f"The reference points at {ref_member}, but it also names someone else on the register."
+    if ref_member:
+        return None
+    holders = _holders(payer, index.records)
+    if phones:  # the registered phone decides unless the name or the reference points elsewhere
+        member = next(iter(phones))
+        close = sorted(h for h in holders - {member} if len(holders) <= 2 and _digit_gap(h, member) <= 2)
+        if close and len(payer.split()) >= 2 and member not in holders:
+            return (f"The money came from {member}'s phone, but the name on the M-Pesa account fits {close[0]}, whose "
+                    "number is close to it.")
+        owner = next((mid for mid, name, _ in index.records if _same_words(payer, name)), None)
+        if owner and member not in holders:
+            return f"The money came from {member}'s phone, but the name on the M-Pesa account is exactly {owner}'s."
+        if _ref_names_someone_else(raw, member, index, payer):
+            return f"The money came from {member}'s phone, but the reference names someone else on the register."
+        return None
+    if payer:  # only a name to go on
+        owner = _name_owner(payer, index)
+        if owner and _ref_names_someone_else(raw, owner[0], index, payer):
+            return f"The name is {owner[0]}'s, but the reference names someone else on the register."
+        if len(payer.split()) < 3:
+            return "Two names alone are too common to credit a payment, so a person checks which member it is."
+        if any(name == payer for _, name, _ in index.records):
+            return "More than one member or spouse carries all of these names, so the name alone cannot decide."
+        same = next((mid for mid, name, _ in index.records if _same_words(payer, name)), None)
+        if same:
+            return f"The names are {same}'s but in another order, which can be a different person."
+        return "The name on the M-Pesa account is close to a member's but not exactly the same."
     return None
+
+
+def reference_candidates(ref, payer: str, index: MemberIndex, amount=None) -> list[str]:
+    """The members a reference could mean: one when it points at a single member, several when it fits them
+    equally (a number cut short), none when it is not a member number."""
+    raw = _drop_amount(str(ref or "").strip().upper(), amount)
+    member, tied, _, _ = _from_reference(raw, normalize_name(payer), index)
+    return [member] if member else sorted(tied)
 
 
 def naive_exact_match(statement: pd.DataFrame, members: pd.DataFrame) -> pd.Series:

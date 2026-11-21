@@ -74,6 +74,7 @@ class WardFigures:
     worst_pct: float
     worst_label: str
     by_season: dict  # season label -> payout as % of the sum insured
+    burn_pct_all: float | None = None  # both seasons, whatever the filter: the price is set on these
 
 
 def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams) -> list[WardFigures]:
@@ -83,6 +84,7 @@ def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: Trig
     for key in WARDS:
         seasons = backtests[key][backtests[key]["season"].isin(season_keys)]
         k = kpis(seasons, params)
+        both = kpis(backtests[key], params).burn_cost_pct
         share = 100 * seasons["payout_total"] / params.sum_insured
         worst = seasons.loc[share.idxmax()] if len(seasons) and share.max() > 0 else None
         out.append(WardFigures(
@@ -90,7 +92,7 @@ def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: Trig
             premium_ksh=float(zone.loc[key, "premium_ksh"]), offered=zone.loc[key, "offered"] == "Yes",
             paid=k.seasons_paying, seasons=k.seasons, worst_pct=float(share.max()) if worst is not None else 0.0,
             worst_label=_season_name(worst["label"]) if worst is not None else "",
-            by_season=dict(zip(seasons["label"], share)),
+            by_season=dict(zip(seasons["label"], share)), burn_pct_all=both,
         ))
     return out
 
@@ -317,19 +319,27 @@ def story(view: str, figures: list[WardFigures], params: TriggerParams, which: s
             if len(blocked) == len(figures):
                 return (f"One flat rate of {rate} is above the {ceiling} ceiling, so the standard bundle is not "
                         "offered in any ward (the crosses).")
-            losing = [w for w in figures if w.burn_pct > w.rate_pct + 1e-9]
+            burn = {w.key: w.burn_pct if w.burn_pct_all is None else w.burn_pct_all for w in figures}  # both seasons
+            losing = [w for w in figures if burn[w.key] > w.rate_pct + 1e-9]
             text = f"On one flat rate every ward pays {rate}, although their burn costs run from " \
-                   f"{theme.pct(min(w.burn_pct for w in figures), 1)} to {theme.pct(max(w.burn_pct for w in figures), 1)}."
+                   f"{theme.pct(min(burn.values()), 1)} to {theme.pct(max(burn.values()), 1)}."
             if len(losing) == len(figures):
                 return text + " That is less than every ward's burn cost: the cover would pay out more than it collects."
             if losing:
                 return text + (f" {_names(losing)} would pay out more than {'it collects' if len(losing) == 1 else 'they collect'}; "
                                "the other wards make up the difference.")
             return text + " Every ward's burn cost is below it, so the low-risk wards pay furthest over their risk."
+        if len(blocked) == len(figures):
+            rates = [w.rate_pct for w in figures]
+            return (f"Every ward prices above the {ceiling} ceiling, from {theme.pct(min(rates), 1)} to "
+                    f"{theme.pct(max(rates), 1)}, so the standard bundle is not offered anywhere (the crosses).")
         text = f"{len(figures) - len(blocked)} of {len(figures)} wards price at or under the {ceiling} ceiling."
         if blocked:
-            text += " " + " and ".join(f"{short(w.key)} would cost {theme.pct(w.rate_pct, 1)}" for w in blocked) + \
-                f", so the standard bundle is not offered there (the {'cross' if len(blocked) == 1 else 'crosses'})."
+            costs = [f"{short(w.key)} ({theme.pct(w.rate_pct, 1)})" for w in blocked]
+            listed = costs[0] if len(costs) == 1 else ", ".join(costs[:-1]) + " and " + costs[-1]
+            one = len(blocked) == 1
+            text += (f" {listed} {'prices' if one else 'price'} above it, so the standard bundle is not offered "
+                     f"{'there' if one else 'in those wards'} (the {'cross' if one else 'crosses'}).")
         return text
     if view == "Seasons paid":
         most, least = max(w.paid for w in figures), min(w.paid for w in figures)
@@ -360,8 +370,11 @@ def story(view: str, figures: list[WardFigures], params: TriggerParams, which: s
     busiest = max(labels, key=lambda lab: (counts[lab], sum(w.by_season.get(lab, 0) for w in figures)))
     if not counts[busiest]:
         return nobody + " Press Play to check each one."
-    return (f"Press Play to run 2015 to 2024 season by season, or drag the slider. A widespread drought shows as "
-            f"several circles at once: {_season_name(busiest)} paid in {counts[busiest]} of {len(figures)} wards.")
+    play = "Press Play to run 2015 to 2024 season by season, or drag the slider."
+    if counts[busiest] == 1:
+        return f"{play} No season paid more than one ward at once, so these triggers never saw a widespread drought."
+    return (f"{play} A widespread drought shows as several circles at once: {_season_name(busiest)} paid in "
+            f"{counts[busiest]} of {len(figures)} wards.")
 
 
 def ranking(view: str, figures: list[WardFigures], params: TriggerParams, selected: str) -> list[tuple]:
