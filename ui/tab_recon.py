@@ -55,13 +55,12 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     premium_items = tuple(sorted((k, round(v, 2)) for k, v in premium_targets.items()))
     data = synthetic(tuple(sorted((k, round(v, 2)) for k, v in payment_levels.items())))
 
-    head, action = st.columns([3, 1], vertical_alignment="bottom")
-    with head:
-        st.markdown("## Match every shilling, then allocate it")
-        st.caption(f"{N_MEMBERS} fictional SACCO members and a {len(data.statement)}-row M-Pesa paybill statement "
-                   "with the usual errors: mistyped member IDs, spouse phones, micro-payments, duplicate exports. "
-                   "Each member owes their ward's premium from the backtest tab; a ward that is not offered owes "
-                   "none. Phone numbers and national IDs are masked.")
+    header = st.container()
+    head, action = st.columns([3, 1], vertical_alignment="center")
+    head.caption(f"{N_MEMBERS} fictional SACCO members and a {len(data.statement)}-row M-Pesa paybill statement "
+                 "with the usual errors: mistyped member IDs, spouse phones, micro-payments, duplicate exports. Each "
+                 "member owes their ward's premium from chapter 1; a ward that is not offered owes none. Phone "
+                 "numbers and national IDs are masked.")
     if action.button("Run reconciliation", type="primary", key="run_recon", width="stretch"):
         with st.spinner(f"Matching {len(data.statement)} rows..."):
             st.session_state["recon"] = (premium_items, rec.reconcile(data.statement, data.members, premium_targets))
@@ -79,6 +78,10 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
 
     stored = st.session_state.get("recon")
     if stored is None or stored[0] != premium_items:
+        with header:
+            theme.chapter(3, "Collecting the money", "ShambaRecon",
+                          "Premiums arrive as messy M-Pesa payments. Most SACCOs lose track of a third of them.",
+                          "Press Run reconciliation to match this statement to members and allocate every shilling.")
         with theme.panel("No reconciliation yet" if stored is None else "Premiums have changed"):
             st.markdown("Press **Run reconciliation** to match the statement to members and allocate the money."
                         if stored is None else
@@ -88,6 +91,14 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
 
     mpesa = result.mpesa
     acc = rec.accuracy(result, data.truth)
+    with header:
+        theme.chapter(
+            3, "Collecting the money", "ShambaRecon",
+            f"A clerk's exact lookup leaves {result.before_suspense_rows:.0%} of payments unallocated. "
+            f"ShambaRecon leaves {result.after_suspense_rows:.1%}.",
+            f"{acc['wrong_member']} payments credited to the wrong member, {result.duplicates_caught} duplicates held, "
+            f"and {theme.ksh(result.members.loc[result.members['policy_status'] == rec.ACTIVE, 'to_premium'].sum())} "
+            "of premium ready to remit to the partner insurer.")
     left_for_review = mpesa.loc[mpesa["match_method"].isin(rec.SUSPENSE_METHODS), "paid_in_ksh"].sum()
     st.caption(f"Reconciled {len(mpesa)} M-Pesa rows and {len(result.ledger) - len(mpesa)} milk check-offs "
                f"in {result.seconds:.2f} seconds.")
@@ -177,20 +188,23 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         split = st.session_state.get("claim_split")
         if split is None:
             st.caption("Choose the wards and press Simulate payout.")
-            return
-        cleared = int(((split["loan_owed_before_ksh"] > 0) & (split["loan_owed_after_ksh"] <= 0.5)).sum())
-        theme.stats([
-            ("Members paid", f"{len(split)}", "Active policies in the selected wards"),
-            ("To farmers by M-Pesa", theme.ksh_short(split["to_farmer_b2c_ksh"].sum()), "Hay, seed and inputs"),
-            ("To SACCO loans", theme.ksh_short(split["to_sacco_loan_ksh"].sum()), "Capped at what each member owes"),
-            ("Loans cleared", str(cleared), "Owed nothing after the payout"),
-        ])
-        view = split.assign(ward=split["ward"].map(lambda k: WARDS[k].name))
-        money = lambda label: st.column_config.NumberColumn(label, format="localized")
-        st.dataframe(view, hide_index=True, width="stretch", height=300, column_config={
-            "member_id": "Member", "full_name": "Name", "ward": "Ward", "phone_masked": "Phone",
-            "payout_ksh": money("Payout KSh"), "to_farmer_b2c_ksh": money("To farmer KSh"),
-            "to_sacco_loan_ksh": money("To SACCO loan KSh"), "loan_owed_before_ksh": money("Owed before KSh"),
-            "loan_owed_after_ksh": money("Owed after KSh")})
-        st.download_button("Settlement file", split.to_csv(index=False).encode(), "sacco_claim_split_settlement.csv",
-                           "text/csv", icon=":material/download:")
+    if split is not None:
+        with theme.panel("Settlement", "Who gets what from the simulated payout."):
+            cleared = int(((split["loan_owed_before_ksh"] > 0) & (split["loan_owed_after_ksh"] <= 0.5)).sum())
+            theme.stats([
+                ("Members paid", f"{len(split)}", "Active policies in the selected wards"),
+                ("To farmers by M-Pesa", theme.ksh_short(split["to_farmer_b2c_ksh"].sum()), "Hay, seed and inputs"),
+                ("To SACCO loans", theme.ksh_short(split["to_sacco_loan_ksh"].sum()), "Capped at what each member owes"),
+                ("Loans cleared", str(cleared), "Owed nothing after the payout"),
+            ])
+            view = split.assign(ward=split["ward"].map(lambda k: WARDS[k].name))
+            money = lambda label: st.column_config.NumberColumn(label, format="localized")
+            st.dataframe(view, hide_index=True, width="stretch", height=300, column_config={
+                "member_id": "Member", "full_name": "Name", "ward": "Ward", "phone_masked": "Phone",
+                "payout_ksh": money("Payout KSh"), "to_farmer_b2c_ksh": money("To farmer KSh"),
+                "to_sacco_loan_ksh": money("To SACCO loan KSh"), "loan_owed_before_ksh": money("Owed before KSh"),
+                "loan_owed_after_ksh": money("Owed after KSh")})
+            st.download_button("Settlement file", split.to_csv(index=False).encode(), "sacco_claim_split_settlement.csv",
+                               "text/csv", icon=":material/download:")
+    theme.next_chapter(4, "Trust and the numbers", "What happens when the satellite is unsure, and what the pilot "
+                       "earns.")

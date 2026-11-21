@@ -71,6 +71,31 @@ CSS = f"""
   .ss-stat .value.bad {{ color: {RED}; }}
   .ss-stat .note {{ color: {MUTED}; font-size: 0.8rem; margin-top: 4px; line-height: 1.4; }}
 
+  /* story: chapter header, ledger, steps, next */
+  .stMarkdown p.ss-eyebrow {{ color: {GREEN}; font-size: 0.85rem; font-weight: 600; margin: 6px 0 2px; }}
+  .ss-eyebrow span {{ color: {MUTED}; font-weight: 400; }}
+  .stMarkdown p.ss-lede {{ color: {INK}; font-size: 1.85rem; line-height: 1.22; font-weight: 650;
+                           letter-spacing: -0.015em; margin: 0 0 8px; max-width: 44ch; text-wrap-style: balance; }}
+  .stMarkdown p.ss-sub {{ color: {BODY}; font-size: 1.02rem; margin: 0 0 14px; max-width: 78ch; }}
+  @media (max-width: 640px) {{ .stMarkdown p.ss-lede {{ font-size: 1.4rem; }} }}
+  .ss-ledger {{ display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; font-variant-numeric: tabular-nums;
+                margin: 4px 0 8px; }}
+  .ss-ledger .amt {{ text-align: right; color: {INK}; }}
+  .ss-ledger .muted {{ color: {MUTED}; }}
+  .ss-ledger .total {{ border-top: 1px solid {INK}; padding-top: 6px; font-weight: 700; color: {INK}; }}
+  .ss-big {{ font-size: 2.4rem; font-weight: 700; color: {INK}; line-height: 1.1; font-variant-numeric: tabular-nums;
+             letter-spacing: -0.02em; }}
+  .ss-big small {{ font-size: 1rem; font-weight: 500; color: {MUTED}; letter-spacing: 0; }}
+  .ss-steps {{ list-style: none; counter-reset: step; padding: 0; margin: 4px 0 0; display: grid;
+               grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }}
+  .ss-steps li {{ counter-increment: step; border-top: 2px solid {GREEN}; padding-top: 8px; color: {BODY};
+                  font-size: 0.9rem; }}
+  .ss-steps li::before {{ content: counter(step); display: block; color: {GREEN}; font-weight: 700; font-size: 0.85rem; }}
+  .ss-steps li b {{ display: block; color: {INK}; font-size: 0.98rem; margin-bottom: 2px; }}
+  .stMarkdown p.ss-next {{ margin: 18px 0 0; padding: 12px 0 0; border-top: 1px dashed {LINE}; color: {MUTED};
+                           font-size: 0.92rem; }}
+  .ss-next b {{ color: {GREEN}; }}
+
   /* status text and notes */
   .ss-status {{ display: inline-block; padding: 1px 8px; border-radius: 6px; font-weight: 650; font-size: 0.82rem;
                 font-variant-numeric: tabular-nums; }}
@@ -168,12 +193,52 @@ def pct(value: float, decimals: int = 1) -> str:
     return f"{value:.{decimals}f}%"
 
 
+def chapter(number: int, name: str, context: str, lede: str, sub: str = "") -> None:
+    """Open a chapter: where we are, the one sentence the numbers say, and what it means."""
+    st.markdown(
+        f'<p class="ss-eyebrow">Chapter {number}: {html.escape(name)} <span>&middot; {html.escape(context)}</span></p>'
+        f'<p class="ss-lede">{html.escape(lede)}</p>' + (f'<p class="ss-sub">{html.escape(sub)}</p>' if sub else ""),
+        unsafe_allow_html=True,
+    )
+
+
+def next_chapter(number: int, name: str, teaser: str) -> None:
+    st.markdown(f'<p class="ss-next"><b>Next, chapter {number}: {html.escape(name)}.</b> {html.escape(teaser)} '
+                f'Open it in the tabs above.</p>', unsafe_allow_html=True)
+
+
+def ledger(rows: list[tuple]) -> None:
+    """Label and amount rows: (label, amount text[, 'muted' | 'total'])."""
+    cells = []
+    for row in rows:
+        label, amount = row[:2]
+        kind = row[2] if len(row) > 2 else ""
+        cells.append(f'<span class="{kind}">{html.escape(label)}</span><span class="amt {kind}">{html.escape(amount)}</span>')
+    st.markdown(f'<div class="ss-ledger">{"".join(cells)}</div>', unsafe_allow_html=True)
+
+
+def big(value: str, small: str = "") -> None:
+    st.markdown(f'<div class="ss-big">{html.escape(value)} <small>{html.escape(small)}</small></div>',
+                unsafe_allow_html=True)
+
+
+def steps(items: list[tuple[str, str]]) -> None:
+    lis = "".join(f"<li><b>{html.escape(t)}</b>{html.escape(d)}</li>" for t, d in items)
+    st.markdown(f'<ol class="ss-steps">{lis}</ol>', unsafe_allow_html=True)
+
+
 def note(text: str) -> None:
     st.markdown(f'<div class="ss-note">{html.escape(text)}</div>', unsafe_allow_html=True)
 
 
 def status(text: str, tone: str) -> str:
     return f'<span class="ss-status {tone}">{html.escape(text)}</span>'
+
+
+def year_axis(fig, years) -> None:
+    """Two-digit year labels ('15 to '24) so ten years fit a phone-width chart without turning sideways."""
+    fig.update_xaxes(tickmode="array", tickvals=list(years), ticktext=[f"’{y % 100:02d}" for y in years],
+                     tickangle=0, title="Year")
 
 
 def plot_layout(fig, height: int = 400):

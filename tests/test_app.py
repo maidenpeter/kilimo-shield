@@ -35,10 +35,12 @@ def test_identity_is_consistent():
     assert brand.logo_data_uri().startswith("data:image/svg+xml;base64,")
 
 
-def test_app_renders_all_three_tabs(app):
+def test_app_tells_the_story_in_four_chapters(app):
     labels = [t.label for t in app.tabs]
-    assert len(labels) == 3
-    assert "Reinsurer backtest" in labels[0] and "SACCO reconciliation" in labels[1] and "Trust loop" in labels[2]
+    assert len(labels) == 4
+    for number, name in enumerate(("The risk", "A farmer's quote", "Collecting the money", "Trust and the numbers"), 1):
+        assert f"{number}. {name}" in labels[number - 1]
+        assert f"Chapter {number}: {name}" in _text(app).replace("&#x27;", "'")
     text = _text(app)
     assert f'content: "{brand.APP_NAME}"' in text  # the name is drawn into the navbar
     assert brand.identifier() in text
@@ -90,6 +92,20 @@ def test_ceiling_change_asks_for_a_fresh_reconciliation(app):
     assert "Premiums have changed" in _text(app)
     _button(app, "Run reconciliation").click().run()
     assert '<div class="label">Not offered</div><div class="value ">0<' in _text(app)
+
+
+def test_quote_chapter(app):
+    text = _text(app)
+    assert "farm with 2 acres of maize and 2 dairy cows pays KSh 5,160 a season" in text  # Njoro, standard farm
+    app.number_input(key="q_acres").set_value(5.0).run()
+    app.checkbox(key="q_res_certified_seed").check().run()
+    assert not app.exception, app.exception
+    assert "5 acres of maize" in _text(app) and "Resilience discount, 5 points" in _text(app)
+    app.selectbox(key="q_ward").select("bureti").run()
+    assert not app.exception, app.exception
+    assert "Bureti is not offered on the standard bundle" in _text(app)
+    app.segmented_control(key="q_season").set_value("SR").run()
+    assert not app.exception, app.exception
 
 
 def test_green_vci_disables_verification(app):

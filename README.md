@@ -3,17 +3,22 @@
 App ID `shambashield360`, version 2.0.0.
 
 A pitch-ready prototype for a Kenyan mixed-farm (crop and livestock) parametric insurance calculating agent, with
-automated SACCO reconciliation (ShambaRecon). One Streamlit app, three tabs:
+automated SACCO reconciliation (ShambaRecon). The app tells one story in four chapters, each opening with the sentence
+its numbers support:
 
-1. **Reinsurer backtest.** Ten years (2015-2024) of daily weather for five pilot wards, three payout layers (crop
-   inputs, fodder gap, vet and health) under a seasonal cap, burn cost, zone pricing to a target loss ratio with a
-   sellable ceiling, worst year, and a basis-risk check.
-2. **SACCO reconciliation.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
+1. **The risk.** Ten years (2015-2024) of daily weather for five pilot wards, three payout layers (crop inputs,
+   fodder gap, vet and health) under a seasonal cap, burn cost, zone pricing to a target loss ratio with a sellable
+   ceiling, worst year and a basis-risk check.
+2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
+   price: gross premium, any government share, the Resilience discount, what the farmer pays (also per day of milk
+   check-off), who pays the insurer, what the cover would have paid on past weather, and what happens when it pays.
+   Downloadable as text with a quote ID.
+3. **Collecting the money.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
    allocates every shilling by waterfall (the ward's premium, then overdue interest, then principal or savings), and
    exports the underwriter bordereau and a 70/30 claim-split settlement.
-3. **Trust loop and unit economics.** When a ward's VCI sits in the 35% to 40% amber zone, lead farmers and
-   agro-vets send geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator
-   for the platform, the insurer and the reinsurer.
+4. **Trust and the numbers.** When a ward's VCI sits in the 35% to 40% amber zone, lead farmers and agro-vets send
+   geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator for the platform,
+   the insurer and the reinsurer.
 
 No API keys are needed. The weather and the typeface (IBM Plex) ship with the repo, so the demo runs offline.
 
@@ -28,7 +33,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (114, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (138, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -38,21 +43,38 @@ pytest
 
 ## Five-step demo for a reinsurer or a SACCO CEO
 
-1. **Backtest, a known drought.** Pick *Kangundo, Machakos County*. Point at the payout bars, then the trajectory
+1. **Backtest, a known drought.** In chapter 1, pick *Kangundo, Machakos County*. Point at the payout bars, then the trajectory
    chart: long rains 2022 (drought) against 2020 (very wet). In 2022 the soil moisture index sits below the crop
    trigger through the whole flowering window; in 2020 it stays well above normal.
-2. **Price it live.** Show the zone pricing table: the same terms priced per ward to a 60% target loss ratio.
+2. **Price it live.** In chapter 1, show the zone pricing table: the same terms priced per ward to a 60% target loss ratio.
    Bureti is flagged *not offered* at the 12% ceiling. Drag the ceiling to 18% and it unlocks across the pricing
    table and, after a re-run, the reconciliation. Switch to *One flat rate* to show why a single national rate fails.
-3. **Clear the suspense account.** On the SACCO tab press *Run reconciliation*. Each member owes their ward's
+3. **Clear the suspense account.** In chapter 3 press *Run reconciliation*. Each member owes their ward's
    premium. The unallocated share of rows drops from about 39% (an exact lookup) to under 3%, twelve duplicate rows
    are held instead of credited twice, and on this demo statement every credited row lands on the right member.
    Filter the ledger by *Spouse Name Match* or *Fuzzy Reference* to show how.
-4. **Pay a claim through the SACCO.** Download the bordereau, then *Simulate payout* for Kangundo: 70% to the
+4. **Quote one farm, then pay its claim.** In chapter 2, quote a Njoro farm (2 acres, 2 cows: KSh 5,160 a
+   season, about KSh 57 a day of milk check-off) and tick a practice to show the Resilience discount. Then, in chapter
+   3, download the bordereau and *Simulate payout* for Kangundo: 70% to the
    farmer by M-Pesa, 30% to the member's loan, never more than they owe.
-5. **Settle a grey-zone reading on the ground.** On the last tab keep VCI at 36.5% (amber), press
+5. **Settle a grey-zone reading on the ground.** In chapter 4 keep VCI at 36.5% (amber), press
    *Simulate 12 photo replies*, and watch the ward flip from AMBER (HOLD) to RED (PAYOUT UNLOCKED). Finish on the
    unit economics: platform revenue, and how a season's premium splits between the platform, insurer and reinsurer.
+
+## The quote (chapter 2)
+
+Cover follows the farm: KSh 15,000 of crop inputs per acre of maize, and KSh 10,000 of fodder plus KSh 5,000 of vet
+and health cover per dairy cow. The standard farm (2 acres, 2 cows) is the KSh 60,000 package, so its quote equals its
+ward's price in the zone table; other farms are priced by the same engine on their own mix. Then, as in AgroShield:
+
+- **Gross premium** = sum insured x the farm's rate (the risk price; nothing below changes it).
+- **Government share** = the sidebar subsidy x gross, only for farms of 0.5 to 20 acres. No subsidy is agreed.
+- **Resilience discount** = 1% of the farmer's share per point, capped at 15%: certified seed (5), crop photos at every
+  stage (4), stored hay or silage (3), full or partial irrigation (3 or 2, only the higher counts), SACCO member in good
+  standing (2). The platform pays it out of its fee; the quote warns when the discount is larger than that fee.
+- **Farmer pays** = farmer share - discount, about that divided by 90 a day by milk check-off.
+- Enrolment closes 14 days before the season window (15 February 2027 for the long rains). A ward that is not
+  offered gets no quote. The quote ID is a hash of the inputs, so the same farm always gets the same ID.
 
 ## What is real and what is not
 
@@ -119,6 +141,7 @@ engine/parametric_engine.py  Open-Meteo fetch and cache, water balance, indices,
 engine/recon_engine.py       phone and reference cleaning, RapidFuzz matcher, waterfall, bordereau, claim split
 engine/whatsapp_simulator.py amber-zone state machine, verifier network, simulated photos
 engine/unit_economics.py     pilot revenue and premium split
+engine/quote.py              farm quotes: cover, price, subsidy, Resilience discount, payment, history
 data/seed_generator.py       500 members and a 520-row paybill statement with ground truth
 data/weather_cache/          five wards, 2015-2024, with .meta.json
 ui/                          one module per tab, brand.py (name, app ID, version, logo) and theme.py

@@ -101,7 +101,7 @@ def payout_chart(seasons, season_keys) -> go.Figure:
                     line={"color": theme.INK, "dash": "dash", "width": 1.5}, marker={"size": 5},
                     hovertemplate="%{x}: KSh %{y:,.0f}<extra>Premium</extra>")
     fig.update_layout(barmode="stack", bargap=0.35)
-    fig.update_xaxes(dtick=1)
+    theme.year_axis(fig, YEARS)
     fig.update_yaxes(title="KSh per farm", tickformat=",.0f")
     return theme.plot_layout(fig, height=380)
 
@@ -185,14 +185,13 @@ def render() -> dict:
     seasons = backtest_for(ward_key, refresh_count, params)
     zones = zone_pricing_for(refresh_count, params)
 
-    head, pick = st.columns([5, 3], vertical_alignment="bottom")
-    with head:
-        st.markdown(f"## {ward.label}")
-        where = ""
-        if source != SOURCE_FALLBACK and meta.get("grid_lat") is not None:
-            where = (f" Weather: Open-Meteo grid cell {meta['grid_lat']:.3f}, {meta['grid_lon']:.3f} at "
-                     f"{meta.get('elevation_m', 0):,.0f} m, retrieved {str(meta.get('retrieved_at', ''))[:10]}.")
-        st.caption(f"{ward.enterprise}. {ward.zone} zone.{where}")
+    header = st.container()
+    head, pick = st.columns([5, 3], vertical_alignment="center")
+    where = ""
+    if source != SOURCE_FALLBACK and meta.get("grid_lat") is not None:
+        where = (f" Weather: Open-Meteo grid cell {meta['grid_lat']:.3f}, {meta['grid_lon']:.3f} at "
+                 f"{meta.get('elevation_m', 0):,.0f} m, retrieved {str(meta.get('retrieved_at', ''))[:10]}.")
+    head.caption(f"{ward.enterprise}.{where}")
     filter_label = pick.segmented_control("Seasons", list(SEASON_FILTERS), default="Both seasons",
                                           key="season_filter", label_visibility="collapsed") or "Both seasons"
     if source == SOURCE_FALLBACK:
@@ -203,6 +202,23 @@ def render() -> dict:
 
     season_keys = SEASON_FILTERS[filter_label]
     k = kpis(seasons[seasons["season"].isin(season_keys)], params)
+    which = {"Both seasons": "seasons", "Long rains": "long rains", "Short rains": "short rains"}[filter_label]
+    if k.seasons_paying:
+        lede = (f"Since 2015 this cover would have paid {ward.name} farms in {k.seasons_paying} of {k.seasons} "
+                f"{which}.")
+        sub = f"The worst year, {k.worst_year}, would have paid {theme.ksh(k.worst_year_payout)} to each farm. "
+    else:
+        lede = f"Since 2015 this cover would not have paid {ward.name} farms in any of the {k.seasons} {which}."
+        sub = ""
+    if k.offered:
+        sub += (f"Priced at a {params.target_loss_ratio:.0%} loss ratio it costs {k.premium_rate_pct:.1f}% a season, "
+                f"{theme.ksh(k.premium_ksh)} on the standard farm." if params.pricing_mode == "target" else
+                f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm.")
+    else:
+        sub += (f"Its price, {k.premium_rate_pct:.1f}%, is above the {params.max_sellable_rate:.0%} ceiling, so the "
+                "standard bundle is not offered here.")
+    with header:
+        theme.chapter(1, "The risk", f"{ward.label} · {ward.zone} zone", lede, sub)
     stat_row(k, params)
 
     with theme.panel("Payouts per farm, 2015-2024",
@@ -282,8 +298,9 @@ figure sends seasons within {params.amber_band:.0f} points of the trigger to the
 the photos settle {params.verifier_accuracy:.0%} of them correctly; the network has not run in the field. Both are
 model checks: they need yields or loan-default records from the SACCO.
 """)
+    theme.next_chapter(2, "A farmer's quote", "What one farm pays, and what it would have received.")
     offered = zones[zones["offered"] == "Yes"]
-    return {"ward_key": ward_key, "params": params, "kpis": k,
+    return {"ward_key": ward_key, "params": params, "kpis": k, "refresh_count": refresh_count,
             "zone_premiums": dict(zip(zones["ward_key"], zones["premium_ksh"])),
             "zone_farmer_premiums": dict(zip(zones["ward_key"], zones["farmer_premium_ksh"])),
             "offered_premiums": dict(zip(offered["ward_key"], offered["farmer_premium_ksh"]))}

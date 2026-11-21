@@ -49,13 +49,12 @@ def gps_chart(ward_key: str, subs) -> go.Figure:
 
 
 def verification_section(default_ward: str) -> None:
-    head, action = st.columns([3, 1], vertical_alignment="bottom")
-    with head:
-        st.markdown("## Settle a grey-zone reading on the ground")
-        st.caption(f"When a ward's vegetation index sits between {wa.AMBER_LOW:.0f}% and {wa.AMBER_HIGH:.0f}%, the "
-                   f"payout waits for geotagged photos from the ward's lead farmers and agro-vets (KSh "
-                   f"{wa.BOUNTY_KSH} airtime each). {wa.CONSENSUS_THRESHOLD:.0%} agreement unlocks it. Simulated: "
-                   "no message or airtime is sent.")
+    header = st.container()
+    head, action = st.columns([3, 1], vertical_alignment="center")
+    head.caption(f"When a ward's vegetation index sits between {wa.AMBER_LOW:.0f}% and {wa.AMBER_HIGH:.0f}%, the "
+                 f"payout waits for geotagged photos from the ward's lead farmers and agro-vets (KSh "
+                 f"{wa.BOUNTY_KSH} airtime each). {wa.CONSENSUS_THRESHOLD:.0%} agreement unlocks it. Simulated: no "
+                 "message or airtime is sent.")
     ward_key = st.session_state.get("wa_ward", default_ward)
     vci = st.session_state.get("wa_vci", 36.5)
     z = wa.zone(vci)
@@ -89,6 +88,22 @@ def verification_section(default_ward: str) -> None:
         st.toast(f"{WARDS[ward_key].name}: {machine.state.value}")
     stored = st.session_state.get("wa_case")
     machine = stored[1] if stored and stored[0] == key else wa.AmberZoneMachine(ward_key, vci)
+    ward = WARDS[ward_key]
+    if machine.submissions is not None:
+        share = wa.consensus(machine.submissions)
+        lede = (f"{share:.0%} of the photos from {ward.name} confirm stress, so the payout is unlocked."
+                if machine.state == wa.State.RED_UNLOCKED else
+                f"Only {share:.0%} of the photos from {ward.name} confirm stress, so the hold is released.")
+        sub = f"The check cost {theme.ksh(machine.airtime_cost)} in airtime and took one morning."
+    elif z == "AMBER":
+        lede = f"The satellite reading for {ward.name} is borderline. Farmers on the ground decide."
+        sub = f"Press Simulate {wa.SUBMISSIONS} photo replies to ask the ward's lead farmers and agro-vets."
+    else:
+        lede = (f"The satellite reading for {ward.name} is clear, so nobody needs to be asked." if z == "GREEN" else
+                f"The satellite reading for {ward.name} is clearly dry: the payout goes ahead without photos.")
+        sub = f"Move the VCI into the {wa.AMBER_LOW:.0f}% to {wa.AMBER_HIGH:.0f}% band to see the photo check."
+    with header:
+        theme.chapter(4, "Trust and the numbers", "WhatsApp field checks", lede, sub)
 
     with theme.panel("Verification result"):
         st.markdown(f"Ward status: {theme.status(machine.state.value, STATE_TONE[machine.state])}",
@@ -171,3 +186,6 @@ def economics_section(burn_cost_pct: float, premium_rate: float) -> None:
 def render(default_ward: str, burn_cost_pct: float, premium_rate: float) -> None:
     verification_section(default_ward)
     economics_section(burn_cost_pct, premium_rate)
+    st.markdown('<p class="ss-next"><b>That is the whole loop:</b> price the risk, quote the farm, collect and '
+                'reconcile the premium, and let farmers settle the borderline cases. Chapter 1 is in the tabs '
+                'above.</p>', unsafe_allow_html=True)

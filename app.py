@@ -4,21 +4,25 @@
 """
 import streamlit as st
 
-from ui import brand, tab_parametric, tab_recon, tab_whatsapp, theme
+from ui import brand, tab_parametric, tab_quote, tab_recon, tab_whatsapp, theme
 
 st.set_page_config(page_title=brand.APP_NAME, page_icon=str(brand.LOGO_PNG), layout="wide",
                    initial_sidebar_state="auto")
 theme.apply()
 theme.context_line()
 
-backtest_tab, recon_tab, whatsapp_tab = st.tabs([
-    ":material/monitoring: Reinsurer backtest",
-    ":material/account_balance: SACCO reconciliation",
-    ":material/forum: Trust loop and unit economics",
+backtest_tab, quote_tab, recon_tab, whatsapp_tab = st.tabs([
+    ":material/monitoring: 1. The risk",
+    ":material/request_quote: 2. A farmer's quote",
+    ":material/account_balance: 3. Collecting the money",
+    ":material/forum: 4. Trust and the numbers",
 ])
 
 with backtest_tab:
     backtest = tab_parametric.render()
+with quote_tab:
+    tab_quote.render(backtest["ward_key"], backtest["params"], set(backtest["offered_premiums"]),
+                     backtest["refresh_count"])
 with recon_tab:
     params = backtest["params"]
     tab_recon.render(backtest["offered_premiums"], backtest["zone_farmer_premiums"], sum_insured=params.sum_insured,
