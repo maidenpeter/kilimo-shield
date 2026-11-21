@@ -2,13 +2,17 @@
 from __future__ import annotations
 
 import html
+import re
+from datetime import date
 
 import plotly.graph_objects as go
 import streamlit as st
 
 from engine import quote as qt
 from engine.parametric_engine import WARDS, YEARS, TriggerParams, minimum_applies
+from engine.recon_engine import normalize_phone
 from ui import theme
+from ui.quote_doc import quotation_html
 from ui.tab_parametric import weather_for
 
 
@@ -40,6 +44,33 @@ def history_chart(q: qt.Quote) -> go.Figure:
     return theme.plot_layout(fig, height=340)
 
 
+MEMBER_ID = re.compile(r"^MBR-\d{4}$")
+
+
+def prepared_for_inputs() -> dict:
+    """Who the quotation is made out to. Optional, used only on this quote, never saved."""
+    a, b = st.columns(2)
+    details = {
+        "farmer": a.text_input("Farmer's name", key="q_farmer", placeholder="e.g. Grace Wanjiku"),
+        "farm": b.text_input("Farm name", key="q_farm", placeholder="e.g. Kiprono Dairy"),
+        "member": a.text_input("SACCO member number", key="q_member", placeholder="MBR-1042"),
+        "phone": b.text_input("Phone (M-Pesa)", key="q_phone", placeholder="0712 345 678"),
+        "village": st.text_input("Village or location", key="q_village", placeholder="e.g. Mau Narok"),
+    }
+    details = {k: v.strip() for k, v in details.items()}
+    if details["member"] and not MEMBER_ID.match(details["member"].upper()):
+        theme.warn("A SACCO member number looks like MBR-1042: four digits after MBR-.", small=True)
+    elif details["member"]:
+        details["member"] = details["member"].upper()
+    if details["phone"]:
+        phone = normalize_phone(details["phone"])
+        if phone:
+            details["phone"] = "0" + phone[3:6] + " " + phone[6:9] + " " + phone[9:]
+        else:
+            theme.warn("That is not a Kenyan mobile number: use 07XX XXX XXX or 2547XX XXX XXX.", small=True)
+    return details
+
+
 def farm_inputs(default_ward: str) -> tuple:
     wards = list(WARDS)
     ward_key = st.selectbox("Ward", wards, index=wards.index(default_ward), format_func=lambda k: WARDS[k].label,
@@ -49,10 +80,14 @@ def farm_inputs(default_ward: str) -> tuple:
     a, c = st.columns(2)
     acres = a.number_input("Acres of maize", 0.0, qt.MAX_ACRES, 2.0, 0.5, key="q_acres")
     cows = int(c.number_input("Dairy cows", 0, qt.MAX_COWS, 2, 1, key="q_cows"))
-    st.markdown("**Verified last season** (each lowers the farmer's share)")
+    st.markdown("**Verified last season** (each point takes 1% off the farmer's share)")
     practices = tuple((item.id, st.checkbox(f"{item.label} (+{item.points})", key=f"q_res_{item.id}",
                                             help=f"Checked by: {item.verified_by}"))
                       for item in qt.RESILIENCE_ITEMS)
+    points, _ = qt.resilience(dict(practices))
+    rate = min(points * qt.DISCOUNT_PER_POINT, qt.DISCOUNT_CAP)
+    st.caption(f"{points} point{'s' if points != 1 else ''} verified: {rate:.0%} off the farmer's share "
+               f"({qt.DISCOUNT_CAP:.0%} at most). Full and partial irrigation do not add up: the higher counts.")
     return ward_key, season, float(acres), cows, practices
 
 
@@ -140,8 +175,27 @@ def show_change() -> None:
                                 f"({'+' if diff > 0 else '−'}{theme.ksh(abs(diff))}).", "up" if diff > 0 else "down")
 
 
-def price_panel(q: qt.Quote) -> None:
-    with theme.panel("The price"):
+def made_out_to(prepared_for: dict) -> str:
+    who = ", ".join(v for v in (prepared_for["farmer"], prepared_for["farm"]) if v)
+    extra = " · ".join(v for v in (prepared_for["member"], prepared_for["village"], prepared_for["phone"]) if v)
+    return (f"Made out to **{who}**" + (f" · {extra}" if extra else "")) if who or extra else \
+        "A price check, not made out to anyone: fill in *1. Prepared for* to make it a quotation."
+
+
+def price_panel(q: qt.Quote, prepared_for: dict) -> None:
+    number = qt.quotation_number(q, prepared_for)
+    with theme.panel("Quotation"):
+        top, buttons = st.columns([3, 2], vertical_alignment="center")
+        top.markdown(f'<p class="ss-quote-no">{html.escape(number)}</p><p class="ss-quote-dates">Issued '
+                     f'{qt.long_date(date.today())} · valid until enrolment closes on '
+                     f'{qt.long_date(q.enrolment_closes)}</p>', unsafe_allow_html=True)
+        with buttons:
+            st.download_button("Print the quotation", quotation_html(q, prepared_for).encode(), f"{number}.html",
+                               "text/html", icon=":material/print:", width="stretch", type="primary",
+                               help="A branded page to print or save as PDF from the browser")
+            st.download_button("Quote as text", qt.quote_text(q, prepared_for).encode(), f"{number}.txt",
+                               "text/plain", icon=":material/download:", width="stretch")
+        st.markdown(made_out_to(prepared_for))
         theme.big(theme.ksh(q.farmer_pays), "a season, paid by the farmer")
         show_change()
         if q.per_day_checkoff is not None:
@@ -291,8 +345,10 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
     header = st.container()
     left, right = st.columns([2, 3], gap="large")
     with left:
-        with theme.panel("The farm", "Type the farm's acres and cows and tick what was verified last season. "
-                                     "Nothing about the farmer is asked or kept: this is a price check."):
+        with theme.panel("1. Prepared for", "Who the quotation is made out to. Optional: leave it blank for a "
+                                            "price check. Used only on this quote and its downloads, never saved."):
+            prepared_for = prepared_for_inputs()
+        with theme.panel("2. The farm", "Where it is, how big it is, and what was verified last season."):
             ward_key, season, acres, cows, practices = farm_inputs(default_ward)
     ward = WARDS[ward_key]
     snapshot = _snapshot(ward_key, season, acres, cows, practices, params)
@@ -308,13 +364,14 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
     with header:
         theme.chapter(
             2, "A farmer's quote", f"{ward.label} · {ward.zone} zone",
-            f"{article(ward.name)} {ward.name} farm with {qt.farm_words(acres, cows)} pays "
-            f"{theme.ksh(q.farmer_pays)} a season.",
+            (f"{prepared_for['farm']} in {ward.name}, with {qt.farm_words(acres, cows)}, pays "
+             if prepared_for["farm"] else f"{article(ward.name)} {ward.name} farm with {qt.farm_words(acres, cows)} pays ")
+            + f"{theme.ksh(q.farmer_pays)} a season.",
             f"That buys {theme.ksh(q.sum_insured)} of cover for the {qt.SEASON_WORDS[season]} {qt.COVER_YEAR}. "
             f"Enrolment closes {qt.long_date(q.enrolment_closes)}, 14 days before the season starts.")
     track_change(snapshot, q.farmer_pays)
     with right:  # the price, then right under it what moves it
-        price_panel(q)
+        price_panel(q, prepared_for)
         what_moves(q, ward_key, season, acres, cows, practices, params, ward_key in offered_wards, refresh_count)
         cover_panel(q)
 
@@ -368,10 +425,7 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
                                    "(chapter 4)."),
         ])
 
-    meta, action = st.columns([3, 1], vertical_alignment="center")
-    meta.caption(f"Quote {q.quote_id}, valid until enrolment closes on {qt.long_date(q.enrolment_closes)}. "
-                 "Illustrative: not a filed product and not for sale. Insurer: Partner insurer (to be named).")
-    action.download_button("Quote as text", qt.quote_text(q).encode(), f"{q.quote_id}.txt", "text/plain",
-                           icon=":material/download:", width="stretch")
+    st.caption(f"Quotation {qt.quotation_number(q, prepared_for)} is illustrative: not a filed product and not for "
+               "sale. Insurer: Partner insurer (to be named).")
     theme.next_chapter(3, "Collecting the money", "How this premium comes in, by M-Pesa or milk check-off, and "
                        "reaches the right account.")

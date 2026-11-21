@@ -287,14 +287,35 @@ def long_date(d: date) -> str:
     return f"{d.day} {d:%B %Y}"
 
 
-def quote_text(q: Quote) -> str:
-    """A plain-text copy of the quote for the SACCO officer to share or print."""
+PREPARED_FOR = (("farmer", "Farmer"), ("farm", "Farm"), ("member", "SACCO member number"), ("phone", "Phone"),
+                ("village", "Village or location"))
+
+
+def quotation_number(q: Quote, prepared_for: dict | None = None) -> str:
+    """The quote's ID, with a short suffix for the farmer it is made out to, so two farmers' quotations for the
+    same farm terms never share a number."""
+    details = {k: (prepared_for or {}).get(k, "").strip() for k, _ in PREPARED_FOR}
+    if not any(details.values()):
+        return q.quote_id
+    suffix = hashlib.sha256(json.dumps(details, sort_keys=True).encode()).hexdigest()[:4].upper()
+    return f"{q.quote_id}-{suffix}"
+
+
+def quote_text(q: Quote, prepared_for: dict | None = None) -> str:
+    """A plain-text copy of the quote for the SACCO officer to share or print, made out to the farmer when their
+    details are given."""
     ward = WARDS[q.ward_key]
     paid = q.history[q.history["payout_total"] > 0]
     lines = [
-        f"ShambaShield360 quote {q.quote_id} (ILLUSTRATIVE: not a filed product, not for sale)",
+        f"ShambaShield360 quotation {quotation_number(q, prepared_for)} (ILLUSTRATIVE: not a filed product, not for "
+        "sale)",
         f"{ward.label}, {SEASON_WORDS[q.season]} {COVER_YEAR}",
         f"Farm: {farm_words(q.acres, q.cows)}",
+    ]
+    given = [(label, (prepared_for or {}).get(key, "").strip()) for key, label in PREPARED_FOR]
+    if any(value for _, value in given):
+        lines += ["", "Prepared for"] + [f"  {label + ':':<22}{value}" for label, value in given if value]
+    lines += [
         "",
         "Cover",
         f"  Crop inputs   KSh {money(q.cover['crop']):>9,}",

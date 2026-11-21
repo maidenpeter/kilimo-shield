@@ -11,7 +11,9 @@ its numbers support:
    ceiling, worst year and a basis-risk check. A map of Kenya's 47 counties colours the five wards by what an
    underwriter prices on: burn cost, price, frequency, severity, the 1-in-10 season, the worst season, volatility of
    payouts (CV), rain variability (CV) and accumulation (expected payouts of the book, with lines between sold wards
-   that pay in the same seasons). It replays 2015-2024 season by season, shows an underwriting profile of the selected
+   that pay in the same seasons). *Play* and a year slider under the map replay any measure as the record grew
+   (2015 alone, then 2015-2016, up to 2015-2024), with each year's price and which wards would have been sold;
+   *Season payouts* replays what the cover paid in each season. It shows an underwriting profile of the selected
    ward (including headroom to the ceiling and the book in that ward), and opens a ward's story when you tap it. A
    pricing sheet lists every measure for every ward, with each column explained, and downloads as CSV.
 2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
@@ -20,7 +22,9 @@ its numbers support:
    The price comes first in one sentence, with the full build-up behind *Details*. It updates live: a *Last change*
    line says what was changed and how the price moved (red up, green down), and *What changes the price* lists every
    setting with its exact effect on what the farmer pays (one more acre, one more cow, each practice, the season,
-   the ward and the sidebar settings), priced by the same engine as the quote. Downloadable as text with a quote ID.
+   the ward and the sidebar settings), priced by the same engine as the quote. *Prepared for* makes it a quotation:
+   the farmer's name, farm name, SACCO member number, phone and village go on a numbered quotation card (checked as
+   you type, never saved), which prints as a branded one-page quotation (HTML, save as PDF) or downloads as text.
    Warnings across the app are red.
 3. **Collecting the money.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
    allocates every shilling by waterfall (the ward's premium, then overdue interest, then principal or savings), and
@@ -59,7 +63,7 @@ pytest
 
 ## Five-step demo for a reinsurer or a SACCO CEO
 
-1. **Backtest, a known drought.** In chapter 1, open the map's *Replay* and drag to long rains 2017: four of the five
+1. **Backtest, a known drought.** In chapter 1, choose *Season payouts* on the map and drag to long rains 2017: four of the five
    wards pay at once. Then tap Kangundo on the map. Point at the payout bars, then the trajectory
    chart: long rains 2022 (drought) against 2020 (very wet). In 2022 the soil moisture index sits below the crop
    trigger through the whole flowering window; in 2020 it stays well above normal.

@@ -14,7 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from engine.parametric_engine import SEASONS, WARDS, TriggerParams, kpis
+from engine.parametric_engine import SEASONS, WARDS, YEARS, TriggerParams, commercial_rate, kpis, whole_shillings
 from engine.underwriting import PayTogether, WardRisk, pay_together, season_load, ward_risk
 from ui import theme
 
@@ -29,7 +29,7 @@ COUNTY_EDGE = "#ffffff"
 FAINT = "#98a2b3"
 
 VIEWS = ["Burn cost", "Price", "Frequency", "Severity", "1-in-10 season", "Worst season", "Volatility",
-         "Rain variability", "Accumulation", "Replay"]
+         "Rain variability", "Accumulation", "Season payouts"]
 # What each measure is, and why it matters when pricing: shown under the menu.
 VIEW_HELP = {
     "Burn cost": "The average payout a season, as a share of the cover: the expected loss the price is built on.",
@@ -47,7 +47,7 @@ VIEW_HELP = {
                         "product terms.",
     "Accumulation": "Expected payouts a season if every SACCO member in the ward were insured, with lines between "
                     "wards that pay in the same seasons: those losses arrive together.",
-    "Replay": "Every season from 2015 to 2024 in turn: what the cover paid in each ward.",
+    "Season payouts": "Every season from 2015 to 2024 in turn: what the cover paid in each ward that season.",
 }
 TOGETHER = 0.3  # a correlation of payouts at or above this draws a line between two wards
 LABEL_AT = {"njoro": "middle right", "bureti": "bottom left", "kimilili": "top center",
@@ -254,9 +254,22 @@ def ward_trace(fig: go.Figure, figures: list[WardFigures], ts: list[float], valu
     )
 
 
-def not_offered_trace(fig: go.Figure, figures: list[WardFigures]) -> None:
-    """A cross over a ward that is not sold the standard bundle, so the status never rests on colour alone."""
+def cross_sizes(figures: list[WardFigures]) -> list[int]:
+    return [0 if w.offered else 14 for w in figures]
+
+
+def not_offered_trace(fig: go.Figure, figures: list[WardFigures], always: bool = False) -> None:
+    """A cross over a ward that is not sold the standard bundle, so the status never rests on colour alone.
+    ``always`` puts a cross on every ward, hidden (size 0) where the ward is sold, so a replay frame only has to
+    show or hide each one and nothing slides across the map."""
     blocked = [w for w in figures if not w.offered]
+    if always:
+        fig.add_scatter(x=[WARDS[w.key].lon for w in figures], y=[WARDS[w.key].lat for w in figures], mode="markers",
+                        marker={"symbol": "x-thin", "size": cross_sizes(figures),
+                                "line": {"color": theme.SURFACE, "width": 2.5}},
+                        customdata=[w.key for w in figures], hoverinfo="skip", showlegend=False,
+                        selected={"marker": {"opacity": 1}}, unselected={"marker": {"opacity": 1}})
+        return
     if blocked:
         # It sits on top of the circle, so it carries the ward too: a tap on the cross opens that ward.
         fig.add_scatter(x=[WARDS[w.key].lon for w in blocked], y=[WARDS[w.key].lat for w in blocked], mode="markers",
@@ -302,17 +315,84 @@ def together_lines(fig: go.Figure, together: list[PayTogether], which: str) -> N
                         opacity=0.45, hovertemplate=tip + "<extra></extra>", showlegend=False)
 
 
+def figures_through(year: int, zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams,
+                    members: dict | None = None) -> list[WardFigures]:
+    """The wards as the record stood at the end of ``year``: every measure on 2015 to that year, and the price and
+    the offer that record would have set."""
+    cut = {k: f[f["year"] <= year] for k, f in backtests.items()}
+    figures = ward_figures(zones, cut, season_keys, params, members)
+    for w in figures:
+        both = kpis(cut[w.key], params).burn_cost_pct
+        rate = 100 * commercial_rate(both / 100, params)
+        w.rate_pct, w.burn_pct_all = rate, both
+        w.offered = rate <= 100 * params.max_sellable_rate + 1e-9
+        w.premium_ksh = float(whole_shillings(params.sum_insured * rate / 100))
+        w.headroom_pp = 100 * params.max_sellable_rate - rate
+    return figures
+
+
+def _label(view: str, w: WardFigures, params: TriggerParams, top: float) -> tuple[float, str]:
+    t, value = measure(view, w, params, top)
+    return t, f"<b>{short(w.key)}</b><br>{value}" if value else f"<b>{short(w.key)}</b>"
+
+
 def static_map(view: str, figures: list[WardFigures], params: TriggerParams, selected: str, which: str,
-               together: list[PayTogether] | None = None) -> go.Figure:
-    top = max((w.book_ksh for w in figures), default=0.0)
+               together: list[PayTogether] | None = None, through: dict | None = None) -> go.Figure:
+    """The map for one measure. With ``through`` ({year: figures}), Play and a year slider replay the measure as the
+    record grew, 2015 to each year in turn."""
+    tops = [max((w.book_ksh for w in figs), default=0.0) for figs in (through or {}).values()]
+    top = max([max((w.book_ksh for w in figures), default=0.0)] + tops)  # one scale for every year
     pairs = [measure(view, w, params, top) for w in figures]
     fig = base_figure(selected, ring_size(figures, [p[0] for p in pairs], selected))
     if view == "Accumulation" and together:
         together_lines(fig, together, which)
     ward_trace(fig, figures, [p[0] for p in pairs], [p[1] for p in pairs], [hover(w, which) for w in figures], selected)
-    not_offered_trace(fig, figures)
+    ward_index = len(fig.data) - 1
+    not_offered_trace(fig, figures, always=bool(through))
+    cross_index = len(fig.data) - 1
+    def caption(year, figs):
+        span = f"2015-{year}" if year > YEARS[0] else "2015 only"
+        return f"<b>Record {span}</b><br>{sum(w.offered for w in figs)} of {len(figs)} wards sold"
+
+    if through:
+        fig.add_scatter(x=[X_RANGE[0] + 0.1], y=[-3.2], mode="text", textposition="middle right",
+                        text=[caption(max(through), through[max(through)])], hoverinfo="skip", showlegend=False,
+                        textfont={"size": 13, "color": theme.INK})
+        caption_index = len(fig.data) - 1
     colour_bar(fig, *scale(view, params, figures[0].seasons, top))
-    return finish(fig)
+    if not through:
+        return finish(fig)
+
+    frames = []
+    for year, figs in sorted(through.items()):
+        labels = [_label(view, w, params, top) for w in figs]
+        frames.append(go.Frame(name=str(year), traces=[ward_index, cross_index, caption_index], data=[
+            go.Scatter(marker={"size": [size(t) for t, _ in labels], "color": [colour(t) for t, _ in labels],
+                               "line": {"color": theme.SURFACE, "width": 2}},
+                       text=[text for _, text in labels], hovertemplate=[hover(w, which) for w in figs]),
+            go.Scatter(marker={"symbol": "x-thin", "size": cross_sizes(figs),
+                               "line": {"color": theme.SURFACE, "width": 2.5}}),
+            go.Scatter(text=[caption(year, figs)]),
+        ]))
+    fig.frames = frames
+    names = [f.name for f in frames]
+    step = {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 250}}
+    fig.update_layout(
+        updatemenus=[{"type": "buttons", "direction": "left", "x": 0, "y": -0.01, "xanchor": "left", "yanchor": "top",
+                      "pad": {"r": 8, "t": 0}, "showactive": False, "bgcolor": theme.SURFACE, "bordercolor": theme.LINE,
+                      "font": {"size": 12, "color": theme.INK}, "buttons": [
+                          {"label": "Play", "method": "animate", "args": [names, {
+                              "frame": {"duration": 1000, "redraw": False}, "fromcurrent": False,
+                              "transition": {"duration": 450, "easing": "cubic-in-out"}}]},
+                          {"label": "Pause", "method": "animate", "args": [[None], {
+                              "frame": {"duration": 0, "redraw": False}, "mode": "immediate"}]}]}],
+        sliders=[{"active": len(names) - 1, "x": 0.2, "len": 0.8, "y": -0.01, "yanchor": "top",
+                  "pad": {"t": 4, "b": 0}, "currentvalue": {"visible": False}, "bgcolor": theme.LINE,
+                  "bordercolor": theme.LINE, "activebgcolor": theme.GREEN, "tickcolor": theme.LINE,
+                  "font": {"size": 10, "color": theme.MUTED},
+                  "steps": [{"label": n, "method": "animate", "args": [[n], step]} for n in names]}],
+    )
+    return finish(fig, height=600, bottom=78)
 
 
 def replay_map(figures: list[WardFigures], params: TriggerParams, selected: str, which: str) -> go.Figure:
@@ -337,7 +417,7 @@ def replay_map(figures: list[WardFigures], params: TriggerParams, selected: str,
     fig.add_scatter(x=[X_RANGE[0] + 0.1], y=[-3.2], mode="text", text=[caption(labels[0])], textposition="middle right",
                     textfont={"size": 13, "color": theme.INK}, hoverinfo="skip", showlegend=False)
     caption_index = len(fig.data) - 1
-    colour_bar(fig, *scale("Replay", params, len(labels)))
+    colour_bar(fig, *scale("Season payouts", params, len(labels)))
 
     frames = []
     for label in labels:
@@ -523,7 +603,7 @@ def ranking(view: str, figures: list[WardFigures], params: TriggerParams, select
     def label(w):
         return short(w.key) + (" (shown below)" if w.key == selected else "")
 
-    if view == "Replay":  # the ward that paid most often first
+    if view == "Season payouts":  # the ward that paid most often first
         rows = sorted(figures, key=lambda w: (-w.paid, -w.burn_pct))
         return [(label(w), f"{w.paid} of {w.seasons} paid", "" if w.key == selected else "muted") for w in rows]
     keyed = sorted(figures, key=lambda w: -measure(view, w, params, top)[0])
@@ -583,16 +663,18 @@ def render(selected: str, zones: pd.DataFrame, backtests: dict, season_keys, par
     counted = "both seasons" if which == "seasons" else f"the {which} only (the price always uses both)"
     with theme.panel("Where the risk sits",
                      f"The five pilot wards on Kenya's 47 counties, on the same terms, counting {counted}. Circles "
-                     "grow and darken with the measure. Tap a ward to open its story."):
+                     "grow and darken with the measure. Tap a ward to open its story. Play, under the map, replays the "
+                     "measure as the record grew, year by year."):
         pick, why = st.columns([1, 2], vertical_alignment="bottom")
         view = pick.selectbox("Colour the wards by", VIEWS, key="map_measure",
                               help="Each measure is worked out from the same 2015-2024 backtest as the price.")
         why.markdown(f'<p class="ss-panel-desc" style="margin:0 0 0.9rem">{VIEW_HELP[view]}</p>',
                      unsafe_allow_html=True)
         left, right = st.columns([5, 2], gap="medium")
-        fig = replay_map(figures, params, selected, which) if view == "Replay" else \
+        fig = replay_map(figures, params, selected, which) if view == "Season payouts" else \
             static_map(view, figures, params, selected, which,
-                       [p for p in together if p.a in sold and p.b in sold])  # the lines show the book only
+                       [p for p in together if p.a in sold and p.b in sold],  # the lines show the book only
+                       {year: figures_through(year, zones, backtests, season_keys, params, members) for year in YEARS})
         picks = st.session_state.get("map_picks", 0)
         event = left.plotly_chart(fig, width="stretch", key=f"risk_map_{picks}", on_select="rerun",
                                   selection_mode="points", config={"displayModeBar": False, "scrollZoom": False})

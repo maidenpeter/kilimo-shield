@@ -7,3 +7,6 @@ __pycache__/
 .streamlit/secrets.toml
 .claude/settings.local.json
 data/generated/
+
+# pitch deck and video working files (published separately)
+.pitch/

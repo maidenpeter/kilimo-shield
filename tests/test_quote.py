@@ -213,3 +213,21 @@ def test_who_else_pays_never_states_the_subsidy_as_fact():
 def test_cap_is_never_cut_short():
     assert pe.whole_shillings(pe.TriggerParams(sum_insured=45_000.0, aggregate_cap_share=13_000 / 45_000)
                               .aggregate_cap) == 13_000
+
+
+def test_a_quotation_made_out_to_a_farm():
+    from ui.quote_doc import quotation_html
+    q = make()
+    who = {"farmer": "Grace Wanjiku", "farm": "Kiprono Dairy", "member": "MBR-1042", "phone": "0712 345 678",
+           "village": "Mau Narok"}
+    assert qt.quotation_number(q) == q.quote_id
+    number = qt.quotation_number(q, who)
+    assert number.startswith(q.quote_id + "-") and number == qt.quotation_number(q, dict(who))
+    assert number != qt.quotation_number(q, {**who, "farm": "Another Farm"})
+    text = qt.quote_text(q, who)
+    assert number in text and "Grace Wanjiku" in text and "Kiprono Dairy" in text and "MBR-1042" in text
+    page = quotation_html(q, {**who, "farm": "<b>Shamba</b>"}, issued=date(2026, 2, 1))
+    assert "&lt;b&gt;Shamba&lt;/b&gt;" in page and "<b>Shamba</b>" not in page
+    assert "1 February 2026" in page and pe.WARDS["njoro"].label in page
+    assert "price check" in quotation_html(q)
+    assert "—" not in page

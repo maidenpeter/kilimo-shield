@@ -74,6 +74,11 @@ CSS = f"""
                                    border-radius: {RADIUS}px !important; padding: 14px 18px 10px !important;
                                    margin-bottom: 4px; }}
   .ss-panel-desc {{ color: {MUTED}; font-size: 0.86rem; margin: 0 0 0.6rem; }}
+  /* the quotation reads like a document: a green head band, its number and dates */
+  div[class*="st-key-sspanel-quotation"] {{ border-top: 5px solid {GREEN} !important; }}
+  .stMarkdown p.ss-quote-no {{ font-family: "IBM Plex Mono", monospace; font-size: 1.05rem; font-weight: 600;
+                               color: {INK}; margin: 0; letter-spacing: 0.02em; }}
+  .stMarkdown p.ss-quote-dates {{ color: {MUTED}; font-size: 0.82rem; margin: 0; }}
   .stMarkdown p.ss-map-story {{ color: {INK}; font-size: 1.02rem; line-height: 1.5; margin: 4px 0 14px;
     text-wrap: pretty; }}
 

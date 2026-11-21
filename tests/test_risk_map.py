@@ -45,7 +45,7 @@ def test_every_view_draws_and_tells_its_story(setup):
     params, zones, backtests = setup
     figures = risk_map.ward_figures(zones, backtests, ("LR", "SR"), params)
     for view in risk_map.VIEWS:
-        fig = risk_map.replay_map(figures, params, "kangundo", "seasons") if view == "Replay" else \
+        fig = risk_map.replay_map(figures, params, "kangundo", "seasons") if view == "Season payouts" else \
             risk_map.static_map(view, figures, params, "kangundo", "seasons")
         assert len(fig.data) > 47
         text = risk_map.story(view, figures, params, "seasons")
@@ -138,7 +138,7 @@ def test_replay_draws_the_crosses_and_ranks_by_seasons_paid(setup):
     figures = risk_map.ward_figures(zones, backtests, ("LR", "SR"), params)
     fig = risk_map.replay_map(figures, params, "kangundo", "seasons")
     assert any(getattr(tr.marker, "symbol", None) == "x-thin" for tr in fig.data)
-    paid = [int(row[1].split()[0]) for row in risk_map.ranking("Replay", figures, params, "kangundo")]
+    paid = [int(row[1].split()[0]) for row in risk_map.ranking("Season payouts", figures, params, "kangundo")]
     assert paid == sorted(paid, reverse=True)
 
 
@@ -169,5 +169,28 @@ def test_replay_story_with_one_ward_a_season():
                                     seasons=20, worst_pct=20.0, worst_label="Long rains 2017",
                                     by_season={f"{2015 + i} LR": (20.0 if j == i else 0.0) for i in range(5)})
                for j, k in enumerate(keys)]
-    text = risk_map.story("Replay", figures, TriggerParams(), "seasons")
+    text = risk_map.story("Season payouts", figures, TriggerParams(), "seasons")
     assert "never saw a widespread drought" in text and "several circles at once" not in text
+
+
+def test_every_measure_replays_through_the_years(setup):
+    params, zones, backtests = setup
+    seasons = ("LR", "SR")
+    figures = risk_map.ward_figures(zones, backtests, seasons, params)
+    through = {year: risk_map.figures_through(year, zones, backtests, seasons, params) for year in risk_map.YEARS}
+    # the last year is the full record: the same figures the map shows when nothing is playing
+    for now, then in zip(figures, through[max(through)]):
+        assert then.burn_pct == pytest.approx(now.burn_pct) and then.rate_pct == pytest.approx(now.rate_pct)
+        assert then.offered == now.offered and then.premium_ksh == pytest.approx(now.premium_ksh)
+    for year, figs in through.items():
+        for w in figs:
+            cut = backtests[w.key][backtests[w.key]["year"] <= year]
+            assert w.seasons == len(cut)
+            assert w.burn_pct_all == pytest.approx(kpis(cut, params).burn_cost_pct)
+    for view in [v for v in risk_map.VIEWS if v != "Season payouts"]:
+        fig = risk_map.static_map(view, figures, params, "kangundo", "seasons", None, through)
+        assert [f.name for f in fig.frames] == [str(y) for y in risk_map.YEARS]
+        assert fig.layout.updatemenus[0].buttons[0].label == "Play"
+        assert len(fig.layout.sliders[0].steps) == len(risk_map.YEARS)
+        assert "2015 only" in fig.frames[0].data[2].text[0]
+        assert "—" not in fig.frames[-1].data[2].text[0]
