@@ -9,7 +9,7 @@ from engine.parametric_engine import (
     SEASONS, SOURCE_FALLBACK, SOURCE_LIVE, WARDS, YEARS, TriggerParams, dekadal_trajectory, kpis, load_weather,
     run_backtest, zone_pricing,
 )
-from ui import theme
+from ui import risk_map, theme
 
 SEASON_FILTERS = {"Both seasons": ("LR", "SR"), "Long rains": ("LR",), "Short rains": ("SR",)}
 PRICING_MODES = {"Target loss ratio, priced per ward": "target", "One flat rate for every ward": "flat"}
@@ -40,6 +40,8 @@ def _ksh_slider(container, label, low, high, step, value, key=None, help=None):
 def sidebar_controls() -> tuple[str, TriggerParams]:
     sb = st.sidebar
     sb.markdown("#### Ward and cover")
+    if "_map_pick" in st.session_state:  # a ward tapped on the risk map
+        st.session_state["ward"] = st.session_state.pop("_map_pick")
     ward_key = sb.selectbox("Pilot ward", list(WARDS), format_func=lambda k: WARDS[k].label, key="ward")
     sum_insured = _ksh_slider(sb, "Sum insured per farm per season", 20_000, 150_000, 5_000, 60_000, key="si")
 
@@ -230,6 +232,8 @@ def render() -> dict:
     with header:
         theme.chapter(1, "The risk", f"{ward.label} · {ward.zone} zone", lede, sub)
     stat_row(k, params)
+    risk_map.render(ward_key, zones, {key: backtest_for(key, refresh_count, params) for key in WARDS}, season_keys,
+                    params, which)
 
     with theme.panel("Payouts per farm, 2015-2024",
                      "Each bar is what one insured farm would have received that year, by layer. The dashed line is "

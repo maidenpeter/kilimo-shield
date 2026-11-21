@@ -5,6 +5,7 @@ One accent colour (the brand green). Amber and red appear only as status: a warn
 from __future__ import annotations
 
 import html
+import math
 from contextlib import contextmanager
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -59,6 +60,8 @@ CSS = f"""
                                    border-radius: {RADIUS}px !important; padding: 18px 20px 14px !important;
                                    margin-bottom: 4px; }}
   .ss-panel-desc {{ color: {MUTED}; font-size: 0.86rem; margin: 0 0 0.6rem; }}
+  .stMarkdown p.ss-map-story {{ color: {INK}; font-size: 1.02rem; line-height: 1.5; margin: 4px 0 14px;
+    text-wrap: pretty; }}
 
   /* stat strip */
   .ss-stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); background: {SURFACE};
@@ -204,7 +207,10 @@ def ksh_short(value: float) -> str:
 
 
 def pct(value: float, decimals: int = 1) -> str:
-    return f"{value:.{decimals}f}%"
+    """Percentages round half up too: 82.5% at no decimals shows as 83%."""
+    if value is None or not math.isfinite(float(value)):
+        return "n/a"
+    return f"{_half_up(value, decimals)}%"
 
 
 def chapter(number: int, name: str, context: str, lede: str, sub: str = "") -> None:

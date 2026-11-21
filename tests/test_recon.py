@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -365,3 +366,64 @@ def test_formatted_amounts_and_receiptless_reexports(data):
     again = data.statement.head(10).assign(receipt_no=None)
     r = rec.reconcile(pd.concat([data.statement.head(10), again], ignore_index=True), data.members)
     assert r.duplicates_caught >= 10
+
+
+def test_round_four_reference_cases(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000999"
+    # MBR before a phone or national ID number is not a member number
+    for ref in ("MBR 0712345678", "MBR 23456789", "ACC NBR 0712345678"):
+        assert rec.match_row(ref, unknown, "", index, 3600.0)[0] is None, ref
+    # a reference carrying another member's registered phone is not credited to the payer's phone
+    other = m.loc["MBR-1010", "phone_254"]
+    assert rec.match_row("0" + other[3:], m.loc["MBR-1042", "phone_254"], "", index, 3600.0)[1] == rec.AMBIGUOUS
+    # an MBR ID equal to the amount still names that member
+    assert rec.match_row("MBR1001", other, "", index, 1001.0)[1] == rec.AMBIGUOUS
+    # joint references in other spellings
+    for ref in ("MRB-1001/02", "MBR-1001 NA 02", "MBR1001-02", "MBR-1001 / MBR-1O02"):
+        assert rec.match_row(ref, unknown, "", index, 7200.0)[1] == rec.AMBIGUOUS, ref
+    # an amount or a year after the ID is not a second member
+    own = m.loc["MBR-1042"]
+    for ref, amount in (("MBR-1042, 5160", 5160.0), ("MBR-1042/2026", 5160.0)):
+        assert rec.match_row(ref, own["phone_254"], own["full_name"], index, amount)[0] == "MBR-1042", ref
+
+
+def test_own_phone_and_reference_always_credit(data):
+    index = rec.MemberIndex(data.members)
+    for row in data.members.itertuples():
+        digits = row.member_id.split("-")[1]
+        assert rec.match_row(f"MBR {digits}", row.phone_254, row.full_name, index, 3600.0)[0] == row.member_id
+
+
+def test_far_transpositions_never_credit_the_wrong_member(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    for mid in m.index:
+        d = mid.split("-")[1]
+        for swapped in {d[0] + d[3] + d[2] + d[1], d[0] + d[2] + d[3] + d[1], d[2] + d[1] + d[0] + d[3]}:
+            if swapped == d or f"MBR-{swapped}" not in m.index:
+                continue
+            payer = " ".join(m.loc[mid, "full_name"].upper().split()[-2:])
+            assert rec.match_row(f"MBR {swapped}", "254700000009", payer, index, 3600.0)[0] in (None, mid)
+
+
+def test_receiptless_copy_is_held_in_either_order(data):
+    first = data.statement.head(10)
+    copy = first.assign(receipt_no=None)
+    for frame in (pd.concat([first, copy]), pd.concat([copy, first])):
+        r = rec.reconcile(frame.reset_index(drop=True), data.members, include_checkoff=False)
+        assert r.duplicates_caught == 10
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("5,160.00", 5160.0), ("KES 5,160", 5160.0), ("Ksh5,160", 5160.0), ("KSH5160", 5160.0), ("kes5160", 5160.0),
+    ("5,160/=", 5160.0), ("5.160,00", 5160.0), ("5160.", 5160.0), ("Sh 3,600", 3600.0),
+])
+def test_amount_formats(text, expected):
+    assert rec._to_amount(text) == expected
+
+
+@pytest.mark.parametrize("text", ["5.160", "1,0000", "(5,160.00)", "N/A", ""])
+def test_ambiguous_amounts_go_to_a_person(text):
+    assert np.isnan(rec._to_amount(text))

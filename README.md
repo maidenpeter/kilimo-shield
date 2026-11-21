@@ -8,7 +8,8 @@ its numbers support:
 
 1. **The risk.** Ten years (2015-2024) of daily weather for five pilot wards, three payout layers (crop inputs,
    fodder gap, vet and health) under a seasonal cap, burn cost, zone pricing to a target loss ratio with a sellable
-   ceiling, worst year and a basis-risk check.
+   ceiling, worst year and a basis-risk check. A map of Kenya's 47 counties shows the five wards by burn cost, price,
+   seasons paid or worst season, replays 2015-2024 season by season, and opens a ward's story when you tap it.
 2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
    price: gross premium, any government share, the Resilience discount, what the farmer pays (also per day of milk
    check-off), who pays the insurer, what the cover would have paid on past weather, and what happens when it pays.
@@ -20,7 +21,8 @@ its numbers support:
    geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator for the platform,
    the insurer and the reinsurer.
 
-No API keys are needed. The weather and the typeface (IBM Plex) ship with the repo, so the demo runs offline.
+No API keys are needed. The weather, the county outlines and the typeface (IBM Plex) ship with the repo, so the demo
+runs offline.
 
 ## Run it
 
@@ -33,7 +35,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (243, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (272, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -43,7 +45,8 @@ pytest
 
 ## Five-step demo for a reinsurer or a SACCO CEO
 
-1. **Backtest, a known drought.** In chapter 1, pick *Kangundo, Machakos County*. Point at the payout bars, then the trajectory
+1. **Backtest, a known drought.** In chapter 1, open the map's *Replay* and drag to long rains 2017: four of the five
+   wards pay at once. Then tap Kangundo on the map. Point at the payout bars, then the trajectory
    chart: long rains 2022 (drought) against 2020 (very wet). In 2022 the soil moisture index sits below the crop
    trigger through the whole flowering window; in 2020 it stays well above normal.
 2. **Price it live.** In chapter 1, show the zone pricing table: the same terms priced per ward to a 60% target loss ratio.
@@ -87,6 +90,7 @@ their own mix. Then, as in AgroShield:
 
 | Item | Status |
 |---|---|
+| County outlines on the chapter 1 map | **Real**: geoBoundaries gbOpen KEN ADM1 (47 counties, RCMRD), public domain, simplified by `tools/build_kenya_map.py` into `assets/kenya_counties.geojson`. Ward points are the pilot wards' coordinates; a ward is priced on its own weather, not its county's |
 | Daily rainfall, reference ET (FAO-56) and maximum temperature | **Real**: Open-Meteo Historical Weather API (ERA5-based reanalysis), CC BY 4.0, cached in `data/weather_cache/` with request URL, grid cell and retrieval date |
 | Soil moisture index and pasture NDVI | **Synthetic proxies** computed from that weather (a root-zone water balance; the index is relative to each ward's own record, 50 = normal). They stand in for Sentinel-1 SAR and Sentinel-2 until real satellite feeds are connected |
 | WRSI used for the basis-risk check | Model output from the same water balance (FAO maize crop curve); not yields |
@@ -136,20 +140,25 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
 *Ambiguous (review)* whenever the evidence disagrees:
 
 - A repeated receipt number is held as a duplicate, comparing receipts without case or spaces; a re-export with the
-  receipt column blank is caught by matching the whole row. Amounts written as `5,160.00` or `KES 5,160` are read as
-  numbers. A blank, zero, negative or unreadable amount is held as *Bad amount (review)*; blank loan or interest cells
+  receipt column blank is caught by matching the whole row, whichever copy comes first. Amounts written as
+  `5,160.00`, `KES 5,160`, `Ksh5,160`, `5,160/=` or `5.160,00` are read as numbers. A blank, zero, negative,
+  unreadable or two-way amount (`5.160`, `1,0000`) is held as *Bad amount (review)*; blank loan or interest cells
   count as none.
 - An exact member ID, or a national ID standing alone (not inside a longer number), is the payer's instruction and
-  decides on its own. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`, or an ID next
-  to another member's national ID) goes to review, and so does a phone or national ID that two members share.
+  decides on its own. A reference that names two members (`MBR-1001/1002`, the shorthand `MBR-1001/02`,
+  `MRB 1001 NA 1002`, or an ID next to another member's national ID or registered phone) goes to review, and so does a
+  phone or national ID that two members share. A number after the ID that is not a member's (`MBR-1042/2026`) does
+  not count as a second member.
 - A mistyped ID (`MBR 1042`, `MBR:1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the
-  registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own names
-  written in the reference ("FROM PETER") are not someone else. Letter-for-digit repairs happen only inside the
-  number: `MBR-104 OTIENO` is a truncated `MBR-104`, not `MBR-1040`. A bare number with no MBR (`1042`) needs the
-  phone or the payer's name to agree. A number equal to the amount (`1200` on a KSh 1,200 payment) is read as the
-  amount, not an ID, so the member's own phone still decides.
+  registered phone, the payer's name nor a name written in the reference points at someone else. The payer's own
+  names, and names after FROM or BY ("FROM PETER"), say who paid, not whom for. Letter-for-digit repairs happen only
+  inside the number: `MBR-104 OTIENO` is a truncated `MBR-104`, not `MBR-1040`. A bare number with no MBR (`1042`), or
+  MBR with a digit too many, needs the phone or the payer's name to agree; MBR before a phone or ID number
+  (`MBR 0712345678`) is not a member number at all. A bare number equal to the amount (`1200` on a KSh 1,200 payment)
+  is read as the amount, so the member's own phone still decides; written as an ID (`MBR1200`) it stays an ID.
 - A transposed ID is caught by the payer's name: if two or more of the payer's names fit another member whose number
-  is also close to the reference (`MBR 1103` paid by NJERI MWANGI when she is MBR-1013), it goes to review.
+  is close to the reference or has the same digits in another order (`MBR 1310` paid by NJERI MWANGI when she is
+  MBR-1013), it goes to review, unless the member's own registered phone agrees with the reference.
 - When a reference fits several members (a truncated `MBR-104` is as close to two dozen member numbers), a tie is
   settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or,
   when the reference starts with MBR, by a reference that spells exactly one candidate's surname. Close spellings
@@ -162,14 +171,14 @@ A wrong credit is worse than a short review queue, so the matcher weighs all the
 - Names are compared without case, punctuation or apostrophes (NDUNG'U and NDUNGU are the same).
 
 On 64 synthetic statements, on every member paid with a truncated reference or only a name
-(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,856 credited
-rows, recall about 97%); about 2.5% of payments go to review.
+(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits (30,942 credited
+rows, recall about 98%); about 2% of payments go to review.
 
 ## Layout
 
 ```
 app.py                       app shell: top bar, tabs, footer
-assets/                      logo (SVG and 256 px PNG)
+assets/                      logo (SVG and 256 px PNG) and Kenya's 47 county outlines (GeoJSON)
 static/fonts/                IBM Plex Sans and Mono (SIL Open Font License, OFL.txt), served with the app
 engine/parametric_engine.py  Open-Meteo fetch and cache, water balance, indices, payout layers, pricing, KPIs
 engine/recon_engine.py       phone and reference cleaning, RapidFuzz matcher, waterfall, bordereau, claim split
@@ -178,7 +187,8 @@ engine/unit_economics.py     pilot revenue and premium split
 engine/quote.py              farm quotes: cover, price, subsidy, Resilience discount, payment, history
 data/seed_generator.py       500 members and a 520-row paybill statement with ground truth
 data/weather_cache/          five wards, 2015-2024, with .meta.json
-ui/                          one module per tab, brand.py (name, app ID, version, logo) and theme.py
+ui/                          one module per tab, risk_map.py (chapter 1 map), brand.py and theme.py
+tools/build_kenya_map.py     rebuilds the county outlines from the geoBoundaries download
 tests/                       engine tests, an invariant sweep and a headless app test
 ```
 

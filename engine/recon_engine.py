@@ -20,6 +20,7 @@ Allocation waterfall, per member, in time order:
 from __future__ import annotations
 
 import re
+from itertools import permutations
 import time
 from dataclasses import dataclass
 
@@ -71,9 +72,12 @@ def mask_id(national_id: str) -> str:
 
 
 _LETTER_DIGIT = {"O": "0", "I": "1", "L": "1"}
-_ID_RUN = re.compile(r"(?:MBRR|MBR|MRB|BMR|NBR)[^A-Z0-9]{0,3}([0-9OIL]+)")
-# "MBR-1001/02", "MBR 1001 & 1002": one reference for two members.
-_JOINT = re.compile(r"MBR[^A-Z0-9]{0,3}\d{3,4}\s*(?:/|&|\+|,|\bAND\b)\s*(?:MBR[^A-Z0-9]{0,3})?\d{1,4}\b")
+_PREFIX = r"(?:MBRR|MBR|MRB|BMR|NBR)"
+_ID_RUN = re.compile(_PREFIX + r"[^A-Z0-9]{0,3}([0-9OIL]+)")
+# "MBR-1001/02", "MRB 1001 NA 1002", "MBR1001-02": one reference for two members. The second number is a whole member
+# number or a one- or two-digit shorthand for the end of the first.
+_JOINT = re.compile(_PREFIX + r"[^A-Z0-9]{0,3}(\d[\dO]{2,3})(?![\dO])\s*(?:/|&|\+|,|-|\bAND\b|\bNA\b)\s*(?:"
+                    + _PREFIX + r"[^A-Z0-9]{0,3})?(\d[\dO]*)(?!\d)")
 # Words in a reference that say what the money is for rather than who it is for.
 REFERENCE_WORDS = {"FOR", "ACC", "ACCOUNT", "MILK", "PREMIUM", "SHAMBA", "LOAN", "FEES", "FEE", "PAYMENT", "PAY",
                    "INSURANCE", "DEPOSIT", "SAVINGS", "CHAMA", "TEST", "TERM", "SCHOOL", "MBR", "THE", "AND", "FULL",
@@ -156,6 +160,16 @@ class MemberIndex:
         self.records = [(mid, name, MEMBER_NAME) for mid, name in self.names.items()] + \
                        [(mid, name, SPOUSE) for mid, name in self.spouses.items()]
         self.name_words = {word for _, name, _ in self.records for word in name.split()}
+        self.id_lengths = {len(re.sub(r"\D", "", key)) for key in self.id_choices}
+
+    def full_length(self, digits: str) -> bool:
+        """A member number, or one missing its last digit (a truncated "MBR-104")."""
+        return len(digits) in self.id_lengths or len(digits) + 1 in self.id_lengths
+
+    def searchable(self, digits: str) -> bool:
+        """Close enough in length to a member number to be a keying slip of one (a digit dropped or doubled). A phone
+        or national ID number written after "MBR" is not."""
+        return self.full_length(digits) or len(digits) - 1 in self.id_lengths
 
     def words_of(self, member_id: str) -> set:
         return set(self.names.get(member_id, "").split()) | set(self.spouses.get(member_id, "").split())
@@ -180,7 +194,7 @@ def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex, near:
     MBR-1402 transposing digits or MBR-1042's spouse, and only a person can tell. A name that merely fits some member
     somewhere is too common to count against a reference."""
     holders = _holders(payer, index.records)
-    if len(set(payer.split())) >= 2 and holders & (set(near) - {member_id}):
+    if len(payer.split()) >= 2 and holders & (set(near) - {member_id}):
         return True
     if member_id in holders:
         return False
@@ -195,8 +209,9 @@ def _name_fits(payer: str, member_id: str, index: MemberIndex) -> bool:
 
 def _ref_names_someone_else(raw: str, member_id: str, index: MemberIndex, payer: str = "") -> bool:
     """True when the reference spells a name that is on the register but not in this member's or spouse's name. The
-    payer's own names do not count ("MBR1042 FROM PETER" paid by Peter is about who paid, not whom for)."""
-    tokens = {tok for tok in re.split(r"[^A-Z]+", normalize_name(raw)) if len(tok) >= 3} - REFERENCE_WORDS
+    payer's own names, and names after FROM or BY, do not count: "MBR1042 FROM PETER" says who paid, not whom for."""
+    text = re.sub(r"\b(?:FROM|BY)\b(?:(?!\bFOR\b).)*", " ", normalize_name(raw))
+    tokens = {tok for tok in re.split(r"[^A-Z]+", text) if len(tok) >= 3} - REFERENCE_WORDS
     tokens -= set(payer.split())
     return bool((tokens & index.name_words) - index.words_of(member_id))
 
@@ -239,12 +254,16 @@ def _from_reference(raw: str, payer: str, index: MemberIndex):
     """(member_id or None, the tied candidates when none could be chosen, score, every member number close to the
     reference) from a mistyped reference."""
     cref = canonical_ref(raw)
-    if len(cref) < 4 or not any(ch.isdigit() for ch in cref):
+    runs = [run for run in re.findall(r"\d+", cref) if index.searchable(run)]
+    if len(cref) < 4 or not runs:
         return None, [], 0.0, set()
     hits = process.extract(cref, list(index.id_choices), scorer=fuzz.WRatio, limit=None, score_cutoff=FUZZY_THRESHOLD)
     if not hits:
         return None, [], 0.0, set()
+    # Close member numbers, and every member number with the same digits in another order ("1310" for MBR-1013).
     near = {index.id_choices[h[0]] for h in hits}
+    near |= {index.id_choices[f"MBR{p}"] for p in {"".join(p) for p in permutations(runs[0])}
+             if f"MBR{p}" in index.id_choices} if len(runs[0]) <= 5 else set()
     best = round(hits[0][1], 1)
     tied = [index.id_choices[h[0]] for h in hits if hits[0][1] - h[1] < 2]
     if len(tied) == 1:
@@ -261,6 +280,31 @@ def _amount_digits(amount) -> str | None:
     return str(int(value)) if np.isfinite(value) and value.is_integer() else None
 
 
+def _drop_amount(raw: str, amount) -> str:
+    """A bare number equal to the amount is the amount, not a member number ("1200" on a KSh 1,200 payment). A number
+    written as an MBR ID stays: "MBR1001" on a KSh 1,001 payment still names MBR-1001."""
+    digits = _amount_digits(amount)
+    if not digits:
+        return raw
+    inside = [m.span(1) for m in _ID_RUN.finditer(raw)]
+    return re.sub(rf"(?<!\d){digits}(?!\d)",
+                  lambda m: m.group(0) if any(a <= m.start() < b for a, b in inside) else " ", raw).strip()
+
+
+def _is_joint(raw: str, index: MemberIndex) -> bool:
+    """True when the reference names a second member after the first: "MBR-1001/02" or "MRB 1001 NA 1002". A number
+    that is not a member's ("MBR-1042/2026") does not count."""
+    for m in _JOINT.finditer(raw):
+        first, second = (g.replace("O", "0") for g in m.groups())
+        if len(second) <= 2 < len(first):
+            second = first[:len(first) - len(second)] + second
+        elif len(second) != len(first):
+            continue
+        if second != first and f"MBR{second}" in index.id_choices:
+            return True
+    return False
+
+
 def match_row(ref, phone: str, payer: str, index: MemberIndex, amount=None) -> tuple[str | None, str, float]:
     """Return (member_id, method, confidence 0-100) for one statement row.
 
@@ -272,35 +316,46 @@ def match_row(ref, phone: str, payer: str, index: MemberIndex, amount=None) -> t
     payer = normalize_name(payer)
     if raw in index.by_id:
         return index.by_id[raw], EXACT_ID, 100.0
-    if _JOINT.search(raw):
+    raw = _drop_amount(raw, amount)
+    if _is_joint(raw, index):
         return None, AMBIGUOUS, 100.0          # "MBR-1001/02": one payment for two members
 
-    # A number equal to the amount is the amount, not a member number: drop it before reading the reference.
-    amount_digits = _amount_digits(amount)
-    if amount_digits:
-        raw = re.sub(rf"(?<!\d){amount_digits}(?!\d)", " ", raw).strip()
-
-    # Everything in the reference that names a member: MBR IDs, bare member numbers, national IDs.
+    # Everything in the reference that names a member: MBR IDs, bare member numbers, national IDs, registered phones.
     prefixed = reference_ids(raw)
     named = {index.id_choices[i] for i in prefixed if i in index.id_choices}
     bare = {index.id_choices[f"MBR{d}"] for d in re.findall(r"(?<!\d)\d{4}(?!\d)", raw)
             if f"MBR{d}" in index.id_choices}
     nids = [index.nid_members[d] for d in re.findall(r"(?<!\d)\d{7,8}(?!\d)", raw) if d in index.nid_members]
-    if len(named | bare | set().union(*nids)) > 1:
+    ref_phones = set().union(*(index.phone_members.get(normalize_phone(d), set())
+                               for d in re.findall(r"(?<!\d)\d{9,12}(?!\d)", raw)))
+    if len(named | bare | set().union(*nids) | ref_phones) > 1:
         return None, AMBIGUOUS, 100.0          # two members in one reference, or an ID shared by members
     if nids:
         member = next(iter(nids[0]))
         if _ref_names_someone_else(raw, member, index, payer):
             return None, AMBIGUOUS, 100.0
         return member, NATIONAL_ID, 100.0
+    member, method, confidence = _weigh(raw, prefixed, phone, payer, index)
+    if ref_phones and member not in ref_phones:
+        # The reference carries a member's registered phone number: anyone else, or no one, is for a person to check.
+        return None, AMBIGUOUS, 100.0
+    return member, method, confidence
 
+
+def _weigh(raw: str, prefixed: list[str], phone: str, payer: str, index: MemberIndex):
+    """The reference, the registered phone and the payer's name, weighed together (see ``match_row``)."""
     phones = index.phone_members.get(phone, set()) if phone else set()
     phone_member = next(iter(phones)) if len(phones) == 1 else None
     ref_member, tied, score, near = _from_reference(raw, payer, index)
     if ref_member:
+        # The member's own registered phone agreeing with the reference outweighs a name that also fits a member
+        # with a close number.
+        if phones == {ref_member}:
+            near = set()
         conflict = (phones and ref_member not in phones) or _name_points_elsewhere(payer, ref_member, index, near) \
             or _ref_names_someone_else(raw, ref_member, index, payer)
-        if not prefixed:  # a bare number with no MBR is weak evidence: the phone or the payer's name must agree
+        if not any(index.full_length(i[3:]) for i in prefixed):
+            # A bare number, or MBR with a digit too many, is weak evidence: the phone or the payer's name must agree.
             conflict = conflict or not (ref_member in phones or _name_fits(payer, ref_member, index))
         if conflict:
             return None, AMBIGUOUS, score
@@ -356,14 +411,21 @@ def _receipt_key(receipt) -> str | None:
     return key or None
 
 
+_CURRENCY_BEFORE = re.compile(r"^(?:KSHS?|KES|SHS?)\.?")
+_CURRENCY_AFTER = re.compile(r"(?:/=|/-|KSHS?|KES|SHS?\.?)$")
+
+
 def _to_amount(value):
-    """3600, "3600", "5,160.00", "KES 5,160" and "KSh 5,160" are numbers; "N/A" and blanks are not."""
+    """3600, "3600", "5,160.00", "KES 5,160", "Ksh5,160", "5,160/=" and "5.160,00" are numbers. Anything that could be
+    read two ways ("5.160", "1,0000") or not at all ("N/A", blank) is not, so it goes to a person."""
     if isinstance(value, str):
-        text = re.sub(r"(?i)\b(KES|KSHS?|SH)\b\.?|[,\s]", "", value)
-        try:
-            return float(text) if re.fullmatch(r"-?\d+(\.\d+)?", text) else np.nan
-        except ValueError:
-            return np.nan
+        text = re.sub(r"\s+", "", value.upper())
+        text = _CURRENCY_AFTER.sub("", _CURRENCY_BEFORE.sub("", text))
+        if re.fullmatch(r"-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{0,2})?", text):
+            return float(text.replace(",", "").rstrip("."))
+        if re.fullmatch(r"-?\d{1,3}(?:\.\d{3})+,\d{1,2}", text):  # 5.160,00
+            return float(text.replace(".", "").replace(",", "."))
+        return np.nan
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -380,23 +442,29 @@ def clean_statement(statement: pd.DataFrame) -> pd.DataFrame:
 def match_statement(statement: pd.DataFrame, members: pd.DataFrame) -> pd.DataFrame:
     statement = clean_statement(statement)
     index = MemberIndex(members)
-    seen: set = set()
-    seen_rows: set = set()
-    out = []
+    parsed = []
     for row in statement.itertuples(index=False):
         phone, payer = split_other_party(row.other_party_info)
-        receipt = _receipt_key(row.receipt_no)
         # Without a receipt number, the same time, amount, payer and reference can only be the same payment.
         row_key = (str(row.completion_time).strip(), row.paid_in_ksh, phone, payer,
                    re.sub(r"\s+", "", str(row.account_reference or "")).upper())
-        if (receipt is not None and receipt in seen) or (receipt is None and row_key in seen_rows):
+        parsed.append((row, phone, payer, _receipt_key(row.receipt_no), row_key))
+    # A copy without its receipt is held whether it comes before or after the receipted row.
+    receipted = {row_key for *_, receipt, row_key in parsed if receipt is not None}
+    seen: set = set()
+    seen_rows: set = set()
+    out = []
+    for row, phone, payer, receipt, row_key in parsed:
+        duplicate = receipt in seen if receipt is not None else (row_key in receipted or row_key in seen_rows)
+        if duplicate:
             member_id, method, confidence = None, DUPLICATE, 100.0
         elif not _amount_ok(row.paid_in_ksh):
             member_id, method, confidence = None, BAD_AMOUNT, 0.0
         else:
             if receipt is not None:
                 seen.add(receipt)
-            seen_rows.add(row_key)
+            else:
+                seen_rows.add(row_key)
             member_id, method, confidence = match_row(row.account_reference, phone, payer, index, row.paid_in_ksh)
         out.append({"member_id": member_id, "match_method": method, "confidence": confidence,
                     "payer_phone": phone, "payer_name": payer})
