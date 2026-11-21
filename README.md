@@ -13,8 +13,11 @@ its numbers support:
 2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
    price: gross premium, any government share, the Resilience discount, what the farmer pays (also per day of milk
    check-off), who pays the insurer, what the cover would have paid on past weather, and what happens when it pays.
-   The price comes first in one sentence, with the full build-up behind *Details*. Downloadable as text with a
-   quote ID.
+   The price comes first in one sentence, with the full build-up behind *Details*. It updates live: a *Last change*
+   line says what was changed and how the price moved (red up, green down), and *What changes the price* lists every
+   setting with its exact effect on what the farmer pays (one more acre, one more cow, each practice, the season,
+   the ward and the sidebar settings), priced by the same engine as the quote. Downloadable as text with a quote ID.
+   Warnings across the app are red.
 3. **Collecting the money.** Matches a messy M-Pesa paybill statement to SACCO members (exact, then fuzzy),
    allocates every shilling by waterfall (the ward's premium, then overdue interest, then principal or savings), and
    exports the underwriter bordereau and a 70/30 claim-split settlement. *Try a payment by hand* takes one payment
@@ -40,7 +43,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (320, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (322, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```

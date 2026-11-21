@@ -1,6 +1,8 @@
 """Chapter 2: a farmer's quote. Same engine and settings as the backtest; the story of one farm."""
 from __future__ import annotations
 
+import html
+
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -83,15 +85,74 @@ def who_else_pays(q: qt.Quote) -> str:
     return "No subsidy and no discount: the farmer pays the full premium."
 
 
+def _snapshot(ward_key, season, acres, cows, practices, params) -> dict:
+    return {"ward": ward_key, "season": season, "acres": acres, "cows": cows,
+            "practices": tuple(sorted(i for i, on in practices if on)), "params": params}
+
+
+def _what_changed(old: dict, new: dict) -> str:
+    """The inputs that differ between two snapshots, in plain words."""
+    parts = []
+    if old["ward"] != new["ward"]:
+        parts.append(f"ward {WARDS[old['ward']].name} to {WARDS[new['ward']].name}")
+    if old["season"] != new["season"]:
+        parts.append(f"season {qt.SEASON_WORDS[old['season']]} to {qt.SEASON_WORDS[new['season']]}")
+    if old["acres"] != new["acres"]:
+        parts.append(f"acres {old['acres']:g} to {new['acres']:g}")
+    if old["cows"] != new["cows"]:
+        parts.append(f"cows {old['cows']} to {new['cows']}")
+    ticked = [qt.ITEMS[i].label.lower() for i in new["practices"] if i not in old["practices"]]
+    unticked = [qt.ITEMS[i].label.lower() for i in old["practices"] if i not in new["practices"]]
+    if ticked:
+        parts.append("ticked " + " and ".join(ticked))
+    if unticked:
+        parts.append("unticked " + " and ".join(unticked))
+    if old["params"] != new["params"]:
+        parts.append("a sidebar setting")
+    return ", ".join(parts)
+
+
+def track_change(snapshot: dict, farmer_pays: int | None) -> None:
+    """Remember the last change and what it did to the price; it stays on screen until the next change."""
+    previous = st.session_state.get("q_prev")
+    if previous and previous[0] != snapshot:
+        st.session_state["q_change"] = (_what_changed(previous[0], snapshot), previous[1], farmer_pays)
+    st.session_state["q_prev"] = (snapshot, farmer_pays)
+
+
+def show_change() -> None:
+    change = st.session_state.get("q_change")
+    if not change:
+        st.caption("Change anything on the left or in the sidebar: the price, and the effect of every setting, "
+                   "update at once.")
+        return
+    what, old, new = change
+    lead = f"Last change: {what}."
+    if new is None:
+        theme.change_line(lead, "This farm can no longer be quoted.", "up")
+    elif old is None:
+        theme.change_line(lead, f"Now quoted at {theme.ksh(new)} (it could not be quoted before).", "same")
+    elif new == old:
+        theme.change_line(lead, f"The price did not move: still {theme.ksh(new)}.", "same")
+    else:
+        diff = new - old
+        theme.change_line(lead, f"Farmer pays {theme.ksh(old)} → {theme.ksh(new)} "
+                                f"({'+' if diff > 0 else '−'}{theme.ksh(abs(diff))}).", "up" if diff > 0 else "down")
+
+
 def price_panel(q: qt.Quote) -> None:
     with theme.panel("The price"):
         theme.big(theme.ksh(q.farmer_pays), "a season, paid by the farmer")
+        show_change()
         if q.per_day_checkoff is not None:
             st.caption(f"About {theme.ksh(q.per_day_checkoff)} a day off the milk cheque for {qt.CHECKOFF_DAYS} days, "
                        "or one M-Pesa payment to the SACCO paybill with the member number as the account.")
         else:
             st.caption("One M-Pesa payment to the SACCO paybill, with the member number as the account.")
         st.markdown(who_else_pays(q))
+        theme.split_bar([("Farmer", q.farmer_pays, theme.GREEN), ("Government", q.government_share, "#64748b"),
+                         ("Platform discount", q.discount, "#ca8a04")],
+                        f"Who pays the {theme.ksh(q.gross_premium)} premium")
         with st.expander("Details: how the price is built"):
             theme.ledger([
                 (f"Gross premium, {qt.rate_text(q.premium_rate)} of {theme.ksh(q.sum_insured)}",
@@ -109,7 +170,7 @@ def price_panel(q: qt.Quote) -> None:
                 ("Partner insurer receives the full premium", theme.ksh(q.gross_premium), "total"),
             ])
         if q.discount_exceeds_fee:
-            theme.note(f"The discount ({theme.ksh(q.discount)}) is larger than the platform's fee on this policy "
+            theme.warn(f"The discount ({theme.ksh(q.discount)}) is larger than the platform's fee on this policy "
                        f"({theme.ksh(q.platform_fee)}): the platform would lose money on it.")
 
 
@@ -126,6 +187,76 @@ def cover_panel(q: qt.Quote) -> None:
             ("Sum insured", theme.ksh(q.sum_insured), "total"),
             ("Most it pays in one season", theme.ksh(q.seasonal_cap), "muted"),
         ])
+
+
+def _signed(diff: int) -> str:
+    return "no change" if diff == 0 else f"{'+' if diff > 0 else '−'}{theme.ksh(abs(diff))} a season"
+
+
+def _tone(diff: int) -> str:
+    return "up" if diff > 0 else "down" if diff < 0 else ""
+
+
+def what_moves(q: qt.Quote, ward_key: str, season: str, acres: float, cows: int, practices: tuple,
+               params: TriggerParams, offered: bool, refresh_count: int) -> None:
+    """Every setting next to its effect on what the farmer pays, priced by the same engine as the quote."""
+    def nudge(label: str, new_acres: float, new_cows: int) -> tuple[str, str]:
+        try:
+            other = quote_for(ward_key, season, new_acres, new_cows, practices, params, offered, refresh_count)
+        except qt.FarmAboveCeiling:
+            return f"{label} prices this farm above the ceiling.", "up"
+        except qt.QuoteError:
+            return f"{label} cannot be quoted.", ""
+        diff = other.farmer_pays - q.farmer_pays
+        return f"{label}: {_signed(diff)}.", _tone(diff)
+
+    rows: list[tuple] = [("group", "This farm")]
+    if acres + 1 <= qt.MAX_ACRES:
+        rows.append(("Acres of maize", f"{acres:g}", *nudge("One more acre", acres + 1, cows)))
+    if cows + 1 <= qt.MAX_COWS:
+        rows.append(("Dairy cows", f"{cows}", *nudge("One more cow", acres, cows + 1)))
+    chosen = dict(practices)
+    for item in qt.RESILIENCE_ITEMS:
+        flipped = {**chosen, item.id: not chosen.get(item.id, False)}
+        points, _ = qt.resilience(flipped)
+        diff = (q.farmer_share - qt.discount_for(q.farmer_share, points)) - q.farmer_pays
+        on = chosen.get(item.id, False)
+        if diff == 0:
+            why = ("the discount is already at its 15% cap" if q.discount_rate >= qt.DISCOUNT_CAP else
+                   "the higher irrigation item counts instead" if item.group else "no premium to discount")
+            effect, tone = f"No change: {why}.", ""
+        elif on:
+            effect, tone = f"Saves {theme.ksh(diff)} a season now.", "down"
+        else:
+            effect, tone = f"Verifying it: {_signed(diff)}.", _tone(diff)
+        rows.append((f"{item.label} (+{item.points})", "verified" if on else "no", effect, tone))
+    rows.append(("Season", qt.SEASON_WORDS[season], "No effect on the price: it is set on both seasons together. It "
+                 "changes only the history below.", ""))
+    rows.append(("group", "Ward and sidebar settings"))
+    rows.append(("Ward", WARDS[ward_key].name, f"Sets the rate: this farm's mix prices at {qt.rate_text(q.premium_rate)} "
+                 f"of its {theme.ksh(q.sum_insured)} cover here.", ""))
+    rows.append(("Sum insured", theme.ksh(params.sum_insured), f"Sets the cover: {theme.ksh(q.unit_cover['crop'])} an "
+                 f"acre and {theme.ksh(q.unit_cover['fodder'] + q.unit_cover['vet'])} a cow.", ""))
+    if params.pricing_mode == "target":
+        rows.append(("Target loss ratio", f"{params.target_loss_ratio:.0%}", "The rate is this farm's burn cost divided "
+                     "by it, rounded up to 0.1% and at least 1%: a higher ratio, a lower price.", ""))
+    else:
+        rows.append(("Flat rate", qt.rate_text(params.premium_rate), "Every farm pays this rate, whatever its risk.", ""))
+    if q.government_share:
+        subsidy = (f"The government pays −{theme.ksh(q.government_share)} a season (illustrative: none agreed).",
+                   "down")
+    elif q.subsidy_share and not q.subsidy_eligible:
+        subsidy = (f"None for this farm: only farms of {qt.SUBSIDY_ACRES[0]:g} to {qt.SUBSIDY_ACRES[1]:g} acres "
+                   "qualify.", "")
+    else:
+        subsidy = ("None.", "")
+    rows.append(("Subsidy", f"{params.subsidy_share:.0%}", *subsidy))
+    rows.append(("Platform fee", f"{params.platform_fee_rate:.0%}", f"No effect on this price: it is the platform's "
+                 f"share of it, {theme.ksh(q.platform_fee)}.", ""))
+    with theme.panel("What changes the price",
+                     "Live: every setting next to what it does to this farmer's price, worked out by the same "
+                     "engine as the quote. Red raises the price, green lowers it."):
+        theme.drivers([row if row[0] == "group" else (row[0], row[1], html.escape(row[2]), row[3]) for row in rows])
 
 
 def no_quote(header, right, ward, err: qt.QuoteError, params: TriggerParams, zone_rate: float | None) -> None:
@@ -151,7 +282,8 @@ def no_quote(header, right, ward, err: qt.QuoteError, params: TriggerParams, zon
     with header:
         theme.chapter(2, "A farmer's quote", ward.label, lede, sub)
     with right, theme.panel("Why there is no quote"):
-        st.markdown(why)
+        show_change()
+        theme.warn(why)
 
 
 def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh_count: int = 0,
@@ -163,9 +295,11 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
                                      "Nothing about the farmer is asked or kept: this is a price check."):
             ward_key, season, acres, cows, practices = farm_inputs(default_ward)
     ward = WARDS[ward_key]
+    snapshot = _snapshot(ward_key, season, acres, cows, practices, params)
     try:
         q = quote_for(ward_key, season, acres, cows, practices, params, ward_key in offered_wards, refresh_count)
     except qt.QuoteError as err:
+        track_change(snapshot, None)
         no_quote(header, right, ward, err, params, (zone_rates or {}).get(ward_key))
         theme.next_chapter(3, "Collecting the money", "How premiums come in and every shilling reaches the right "
                            "account.")
@@ -178,8 +312,10 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
             f"{theme.ksh(q.farmer_pays)} a season.",
             f"That buys {theme.ksh(q.sum_insured)} of cover for the {qt.SEASON_WORDS[season]} {qt.COVER_YEAR}. "
             f"Enrolment closes {qt.long_date(q.enrolment_closes)}, 14 days before the season starts.")
-    with right:
+    track_change(snapshot, q.farmer_pays)
+    with right:  # the price, then right under it what moves it
         price_panel(q)
+        what_moves(q, ward_key, season, acres, cows, practices, params, ward_key in offered_wards, refresh_count)
         cover_panel(q)
 
     h = q.history

@@ -187,3 +187,36 @@ def test_one_name_is_not_called_nothing(app):
     app.text_input(key="try_name").set_value("Gitonga")
     _button(app, "Check this payment").click().run()
     assert "is not enough to pick out one" in _text(app)
+
+
+def test_quote_shows_what_each_setting_changes_live(app):
+    from engine import parametric_engine as pe
+    from engine import quote as qt
+    weather = pe.load_weather("njoro")[0]
+    params = pe.TriggerParams()
+    base = qt.quote(weather, params, ward_key="njoro", season="LR", acres=2, cows=2)
+    more = qt.quote(weather, params, ward_key="njoro", season="LR", acres=3, cows=2)
+    text = _text(app)
+    assert "What changes the price" in text
+    assert f"One more acre: +{theme_ksh(more.farmer_pays - base.farmer_pays)} a season." in text
+    app.number_input(key="q_acres").set_value(5.0).run()
+    assert not app.exception, app.exception
+    five = qt.quote(weather, params, ward_key="njoro", season="LR", acres=5, cows=2)
+    diff = five.farmer_pays - base.farmer_pays
+    text = _text(app)
+    assert "Last change: acres 2 to 5." in text
+    assert (f'<span class="up">Farmer pays {theme_ksh(base.farmer_pays)} → {theme_ksh(five.farmer_pays)} '
+            f'(+{theme_ksh(diff)}).</span>' in text)  # a rise is red
+    app.checkbox(key="q_res_certified_seed").check().run()
+    text = _text(app)
+    assert "Last change: ticked bought certified maize seed" in text and 'class="down"' in text
+
+
+def theme_ksh(value):
+    from ui import theme
+    return theme.ksh(value)
+
+
+def test_warnings_are_red(app):
+    app.selectbox(key="q_ward_njoro").select("bureti").run()
+    assert 'class="ss-warn"' in _text(app)  # why Bureti has no quote

@@ -71,7 +71,7 @@ CSS = f"""
   .ss-stat .value {{ color: {INK}; font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin-top: 2px;
                      font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }}
   .ss-stat .value.good {{ color: {GREEN}; }}
-  .ss-stat .value.warn {{ color: {AMBER}; }}
+  .ss-stat .value.warn {{ color: {RED}; }}
   .ss-stat .value.bad {{ color: {RED}; }}
   .ss-stat .note {{ color: {MUTED}; font-size: 0.8rem; margin-top: 4px; line-height: 1.4; }}
 
@@ -109,6 +109,33 @@ CSS = f"""
   .ss-note {{ background: #f2f4f7; border-radius: 8px; padding: 9px 12px; color: {BODY}; font-size: 0.86rem;
               margin: 2px 0 10px; }}
   .ss-note b {{ color: {INK}; }}
+  /* warnings are red: something the reader must act on or must not miss */
+  .ss-warn {{ background: {RED_SOFT}; border-left: 3px solid {RED}; border-radius: 6px; padding: 9px 12px;
+              color: #7a271a; font-size: 0.88rem; margin: 2px 0 10px; }}
+  .ss-warn b {{ color: {RED}; }}
+  .ss-warn.small {{ font-size: 0.8rem; padding: 5px 9px; margin: -4px 0 8px; }}
+
+  /* live quote: what changed, what moves the price, who pays */
+  .ss-change {{ font-size: 0.9rem; margin: 2px 0 10px; font-variant-numeric: tabular-nums; color: {BODY}; }}
+  .ss-change .up {{ color: {RED}; font-weight: 650; }}
+  .ss-change .down {{ color: {GREEN}; font-weight: 650; }}
+  .ss-change .same {{ color: {MUTED}; font-weight: 600; }}
+  .ss-drivers {{ display: grid; grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1.6fr); gap: 7px 12px;
+                 font-size: 0.88rem; align-items: baseline; font-variant-numeric: tabular-nums; }}
+  .ss-drivers .head {{ color: {MUTED}; font-size: 0.78rem; font-weight: 600; border-bottom: 1px solid {LINE};
+                       padding-bottom: 3px; }}
+  .ss-drivers .now {{ color: {INK}; font-weight: 600; text-align: right; }}
+  .ss-drivers .eff {{ color: {BODY}; }}
+  .ss-drivers .eff.up {{ color: {RED}; }}
+  .ss-drivers .eff.down {{ color: {GREEN}; }}
+  .ss-drivers .eff b {{ font-weight: 700; }}
+  .ss-drivers .group {{ grid-column: 1 / -1; color: {GREEN}; font-size: 0.78rem; font-weight: 650; margin-top: 6px; }}
+  .ss-bar {{ display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 6px 0 4px; gap: 2px; }}
+  .ss-bar i {{ display: block; height: 100%; }}
+  .ss-bar-key {{ display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: {MUTED};
+                 font-variant-numeric: tabular-nums; margin-bottom: 8px; }}
+  .ss-bar-key span::before {{ content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+                              margin-right: 5px; background: var(--c); vertical-align: -1px; }}
 
   /* WhatsApp preview */
   .ss-wa {{ background: #efeae2; border-radius: {RADIUS}px; overflow: hidden; border: 1px solid {LINE}; }}
@@ -231,7 +258,7 @@ def number(container, label: str, low, high, value, step, *, key=None, help: str
     if in_form and used != typed:
         note = f"{_range_text(typed, unit)} is outside the allowed range, so {_range_text(used, unit)} is used."
     if note:
-        container.caption(note)
+        warn(note, container, small=True)
     return used
 
 
@@ -341,6 +368,42 @@ def steps(items: list[tuple[str, str]]) -> None:
 
 def note(text: str) -> None:
     st.markdown(f'<div class="ss-note">{html.escape(text)}</div>', unsafe_allow_html=True)
+
+
+def warn(text: str, container=None, small: bool = False) -> None:
+    """A warning, in red: something the reader must not miss."""
+    (container or st).markdown(f'<div class="ss-warn{" small" if small else ""}"><b>Warning.</b> '
+                               f'{html.escape(text)}</div>', unsafe_allow_html=True)
+
+
+def change_line(lead: str, amount: str, tone: str) -> None:
+    """The last change and what it did to the price: tone 'up' (red), 'down' (green) or 'same'."""
+    st.markdown(f'<p class="ss-change">{html.escape(lead)} <span class="{tone}">{html.escape(amount)}</span></p>',
+                unsafe_allow_html=True)
+
+
+def drivers(rows: list[tuple]) -> None:
+    """What moves a figure: (setting, value now, effect, tone '' | 'up' | 'down'), or ('group', title) rows."""
+    cells = ['<span class="head">Setting</span><span class="head" style="text-align:right">Now</span>'
+             '<span class="head">Effect on what the farmer pays</span>']
+    for row in rows:
+        if row[0] == "group":
+            cells.append(f'<span class="group">{html.escape(row[1])}</span>')
+            continue
+        setting, now, effect, tone = row
+        cells.append(f'<span>{html.escape(setting)}</span><span class="now">{html.escape(now)}</span>'
+                     f'<span class="eff {tone}">{effect}</span>')  # effect is built from escaped parts
+    st.markdown(f'<div class="ss-drivers">{"".join(cells)}</div>', unsafe_allow_html=True)
+
+
+def split_bar(parts: list[tuple[str, float, str]], total_label: str) -> None:
+    """A bar split into (label, amount, colour) parts, with a key underneath."""
+    total = sum(max(a, 0) for _, a, _ in parts) or 1
+    bars = "".join(f'<i style="width:{100 * a / total:.2f}%;background:{c}" title="{html.escape(l)}"></i>'
+                   for l, a, c in parts if a > 0)
+    key = "".join(f'<span style="--c:{c}">{html.escape(l)} {html.escape(ksh(a))}</span>' for l, a, c in parts if a > 0)
+    st.markdown(f'<div class="ss-bar" role="img" aria-label="{html.escape(total_label)}">{bars}</div>'
+                f'<div class="ss-bar-key">{key}</div>', unsafe_allow_html=True)
 
 
 def status(text: str, tone: str) -> str:

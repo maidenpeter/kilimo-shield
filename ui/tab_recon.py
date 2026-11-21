@@ -160,7 +160,7 @@ def try_payment(data, premium_targets: dict) -> None:
                        "is not enough to pick out one, so it waits in suspense until someone claims it.")
             tail = " A wrong credit is worse than a short wait, so a person checks it." if method == rec.AMBIGUOUS else ""
             st.markdown(f"**{verdict}** {why or REASONS[method]}{tail}")
-        st.markdown(theme.status(method, "GREEN" if member else "RED" if method == rec.BAD_AMOUNT else "AMBER"),
+        st.markdown(theme.status(method, "GREEN" if member else "RED"),
                     unsafe_allow_html=True)
 
 
@@ -205,9 +205,11 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
                           f"{theme.pct(100 * exact_lookup_misses, 0)} of these unallocated.",
                           "Press Run reconciliation to match this statement to members and allocate every shilling.")
         with theme.panel("No reconciliation yet" if stored is None else "Premiums have changed"):
-            st.markdown("Press **Run reconciliation** to match the statement to members and allocate the money."
-                        if stored is None else
-                        "The ward premiums on the backtest tab changed since the last run. Run it again.")
+            if stored is None:
+                st.markdown("Press **Run reconciliation** to match the statement to members and allocate the money.")
+            else:
+                theme.warn("The ward premiums in chapter 1 changed since the last run, so these results are out of "
+                           "date. Press Run reconciliation again.")
         return
     result: rec.ReconResult = stored[1]
 

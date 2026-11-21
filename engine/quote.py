@@ -131,6 +131,16 @@ class Quote:
 money = whole_shillings  # one rounding rule for every shilling the product shows
 
 
+def discount_rate_for(points: int) -> Decimal:
+    """The Resilience discount: 1% of the farmer's share a point, at most 15%."""
+    return min(Decimal(points) * Decimal(repr(DISCOUNT_PER_POINT)), Decimal(repr(DISCOUNT_CAP)))
+
+
+def discount_for(farmer_share: int, points: int) -> int:
+    """The discount in whole shillings, half up: what the quote takes off and what the live panel shows."""
+    return money(Decimal(farmer_share) * discount_rate_for(points))
+
+
 def rate_text(rate: float) -> str:
     """A premium rate to 0.1%, half up like every other figure: 0.0625 reads "6.3%", never Python's "6.2%"."""
     return f"{Decimal(repr(round(rate * 100, 9))).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}%"
@@ -247,9 +257,8 @@ def quote(weather: pd.DataFrame, base: TriggerParams, *, ward_key: str, season: 
     eligible = low <= acres <= high
     government = money(Decimal(gross) * Decimal(repr(base.subsidy_share))) if eligible else 0
     farmer_share = gross - government
-    exact_discount_rate = min(Decimal(points) * Decimal(repr(DISCOUNT_PER_POINT)), Decimal(repr(DISCOUNT_CAP)))
-    discount_rate = float(exact_discount_rate)
-    discount = money(Decimal(farmer_share) * exact_discount_rate)
+    discount_rate = float(discount_rate_for(points))
+    discount = discount_for(farmer_share, points)
     farmer_pays = farmer_share - discount
     fee = money(Decimal(gross) * Decimal(repr(base.platform_fee_rate)))
     closes, starts = season_dates(season)

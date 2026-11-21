@@ -144,7 +144,7 @@ def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, 
                      "premium and a reconciliation fee from the SACCO, and funds the Resilience discounts. Burn cost, "
                      "starting premium, sum insured and fee come from chapter 1 for the selected ward, both seasons."):
         if not offered:
-            theme.note(f"{WARDS[ward_key].name} is not offered on the standard bundle. These figures show what a pilot "
+            theme.warn(f"{WARDS[ward_key].name} is not offered on the standard bundle. These figures show what a pilot "
                        "there would look like if it were sold at its price.")
         c1, c2, c3 = st.columns(3, gap="large")
         farms = theme.number(c1, "Pilot farms", 1_000, 50_000, 15_000, 500, key="ue_farms", unit="farms")

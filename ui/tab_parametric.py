@@ -213,7 +213,7 @@ def render() -> dict:
     filter_label = pick.segmented_control("Seasons", list(SEASON_FILTERS), default="Both seasons",
                                           key="season_filter", label_visibility="collapsed") or "Both seasons"
     if source == SOURCE_FALLBACK:
-        theme.note("No network and no cached copy: these figures use synthetic weather so the demo still runs. "
+        theme.warn("No network and no cached copy: these figures use synthetic weather so the demo still runs. "
                    "They are not this ward's history.")
     elif source == SOURCE_LIVE:
         st.caption("Fresh download from Open-Meteo; the cached copy has been updated.")
