@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from engine.parametric_engine import SEASONS, WARDS, TriggerParams, kpis
+from engine.underwriting import PayTogether, WardRisk, pay_together, season_load, ward_risk
 from ui import theme
 
 GEO_PATH = Path(__file__).resolve().parent.parent / "assets" / "kenya_counties.geojson"
@@ -27,7 +28,28 @@ PILOT_COUNTY = "#dbe6da"
 COUNTY_EDGE = "#ffffff"
 FAINT = "#98a2b3"
 
-VIEWS = ["Burn cost", "Price", "Seasons paid", "Worst season", "Replay"]
+VIEWS = ["Burn cost", "Price", "Frequency", "Severity", "1-in-10 season", "Worst season", "Volatility",
+         "Rain variability", "Accumulation", "Replay"]
+# What each measure is, and why it matters when pricing: shown under the menu.
+VIEW_HELP = {
+    "Burn cost": "The average payout a season, as a share of the cover: the expected loss the price is built on.",
+    "Price": "The premium a season: burn cost divided by the target loss ratio. A cross marks a ward above the "
+             "sellable ceiling, which is not sold.",
+    "Frequency": "How often the cover pays: the share of seasons with any payout. Frequent small payouts keep "
+                 "farmers trusting the product.",
+    "Severity": "How much it pays when it does: the average payout in the seasons that paid, as a share of the cover.",
+    "1-in-10 season": "The payout exceeded in one season in ten (the 90th percentile). The tail, not the average, "
+                      "sizes reinsurance and capital.",
+    "Worst season": "The largest single season in 2015-2024, as a share of the cover: the worst case the record holds.",
+    "Volatility": "How lumpy the payouts are: their standard deviation over their average (CV). The higher it is, "
+                  "the stronger the case for a risk margin above the burn cost.",
+    "Rain variability": "How much the seasonal rain changes from year to year (CV): the hazard itself, before any "
+                        "product terms.",
+    "Accumulation": "Expected payouts a season if every SACCO member in the ward were insured, with lines between "
+                    "wards that pay in the same seasons: those losses arrive together.",
+    "Replay": "Every season from 2015 to 2024 in turn: what the cover paid in each ward.",
+}
+TOGETHER = 0.3  # a correlation of payouts at or above this draws a line between two wards
 LABEL_AT = {"njoro": "middle right", "bureti": "bottom left", "kimilili": "top center",
             "imenti_north": "middle right", "kangundo": "middle right"}
 NEIGHBOURS = [("UGANDA", 34.05, 2.6), ("TANZANIA", 36.2, -4.55), ("SOMALIA", 42.05, 1.6), ("ETHIOPIA", 37.3, 5.05),
@@ -75,9 +97,25 @@ class WardFigures:
     worst_label: str
     by_season: dict  # season label -> payout as % of the sum insured
     burn_pct_all: float | None = None  # both seasons, whatever the filter: the price is set on these
+    risk: WardRisk | None = None       # frequency, severity, tail, volatility and rain for the chosen seasons
+    members: int = 0                   # SACCO members in the ward (the book if every one were insured)
+    sum_insured: float = 0.0
+    headroom_pp: float = 0.0           # sellable ceiling minus the price, in percentage points
+
+    @property
+    def expected_loss_ksh(self) -> float:
+        """Expected payouts a season if every member in the ward were insured on the standard farm (and, for a ward
+        that is not offered, if it were sold)."""
+        return (self.risk.burn_pct if self.risk else self.burn_pct) / 100 * self.sum_insured * self.members
+
+    @property
+    def book_ksh(self) -> float:
+        """Expected payouts a season that the book would actually carry: nothing in a ward that is not sold."""
+        return self.expected_loss_ksh if self.offered else 0.0
 
 
-def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams) -> list[WardFigures]:
+def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams,
+                 members: dict | None = None) -> list[WardFigures]:
     """Per-ward figures for the chosen seasons. The price is the zone price, which always uses both seasons."""
     zone = zones.set_index("ward_key")
     out = []
@@ -93,6 +131,9 @@ def ward_figures(zones: pd.DataFrame, backtests: dict, season_keys, params: Trig
             paid=k.seasons_paying, seasons=k.seasons, worst_pct=float(share.max()) if worst is not None else 0.0,
             worst_label=_season_name(worst["label"]) if worst is not None else "",
             by_season=dict(zip(seasons["label"], share)), burn_pct_all=both,
+            risk=ward_risk(seasons, params.sum_insured), members=int((members or {}).get(key, 0)),
+            sum_insured=params.sum_insured,
+            headroom_pp=100 * params.max_sellable_rate - float(zone.loc[key, "premium_rate_pct"]),
         ))
     return out
 
@@ -103,26 +144,46 @@ def _season_name(label: str) -> str:
     return f"{SEASONS[season]['name'].split(' (')[0]} {year}"
 
 
-def measure(view: str, w: WardFigures, params: TriggerParams) -> tuple[float, str]:
-    """(position on the colour ramp 0-1, the short value shown on the map)."""
+def measure(view: str, w: WardFigures, params: TriggerParams, top: float = 0.0) -> tuple[float, str]:
+    """(position on the colour ramp 0-1, the short value shown on the map). ``top`` is the largest expected loss
+    across the wards, for the Accumulation view, whose scale depends on the book."""
+    r = w.risk
     if view == "Burn cost":
         return w.burn_pct / 12, theme.pct(w.burn_pct, 1)
     if view == "Price":
         return w.rate_pct / (200 * params.max_sellable_rate), theme.pct(w.rate_pct, 1)
-    if view == "Seasons paid":
-        return w.paid / max(w.seasons, 1), f"{w.paid} of {w.seasons}"
+    if view == "Frequency":
+        return w.paid / max(w.seasons, 1) / 0.6, f"{w.paid} of {w.seasons}"
+    if view == "Severity":
+        return r.severity_pct / 100, theme.pct(r.severity_pct, 0) if r.paid else "never paid"
+    if view == "1-in-10 season":
+        return r.p90_pct / 100, theme.pct(r.p90_pct, 0)
+    if view == "Volatility":
+        return ((r.volatility or 0) / 4, f"CV {r.volatility:.1f}" if r.volatility is not None else "never paid")
+    if view == "Rain variability":
+        return r.rain_cv / 0.6, f"CV {r.rain_cv:.2f}"
+    if view == "Accumulation":
+        if not w.offered:
+            return 0.0, "not sold"
+        return (w.book_ksh / top if top else 0.0), theme.ksh_short(w.book_ksh)
     return w.worst_pct / 100, theme.pct(w.worst_pct, 0) if w.worst_pct else "never paid"
 
 
-def scale(view: str, params: TriggerParams, n_seasons: int) -> tuple[str, list, list]:
+def scale(view: str, params: TriggerParams, n_seasons: int, top: float = 0.0) -> tuple[str, list, list]:
     """Colour bar title, tick positions (0-1) and tick labels."""
     if view == "Burn cost":
         return "Burn cost, % of cover", [0, 1 / 3, 2 / 3, 1], ["0%", "4%", "8%", "12%+"]
     if view == "Price":
         c = 100 * params.max_sellable_rate
         return "Premium a season", [0, 0.5, 1], ["0%", f"{c:g}% ceiling", f"{2 * c:g}%+"]
-    if view == "Seasons paid":
-        return "Seasons with a payout", [0, 0.5, 1], ["0", f"{n_seasons // 2}", f"{n_seasons}"]
+    if view == "Frequency":
+        return "Seasons with a payout", [0, 0.5, 1], ["0%", "30%", "60%+"]
+    if view == "Volatility":
+        return "Volatility of payouts (CV)", [0, 0.5, 1], ["0", "2", "4+"]
+    if view == "Rain variability":
+        return "Rain variability (CV)", [0, 0.5, 1], ["0", "0.3", "0.6+"]
+    if view == "Accumulation":
+        return "Expected payouts a season", [0, 1], ["0", theme.ksh_short(top)]
     return "Payout, % of cover", [0, 0.5, 1], ["0%", "50%", "100%"]
 
 
@@ -132,9 +193,17 @@ def hover(w: WardFigures, which: str) -> str:
     if not w.offered:
         price += ", above the ceiling: not offered"
     worst = f"Worst: {w.worst_label}, {theme.pct(w.worst_pct, 0)} of cover" if w.worst_pct else "Never paid"
-    return (f"<b>{ward.label}</b><br>{ward.zone} · {ward.enterprise}<br>{price}<br>"
-            f"Burn cost {theme.pct(w.burn_pct, 2)} · paid in {w.paid} of {w.seasons} {which}<br>{worst}"
-            "<extra></extra>")
+    text = (f"<b>{ward.label}</b><br>{ward.zone} · {ward.enterprise}<br>{price}<br>"
+            f"Burn cost {theme.pct(w.burn_pct, 2)} · paid in {w.paid} of {w.seasons} {which}<br>{worst}")
+    r = w.risk
+    if r:
+        cv = f"{r.volatility:.1f}" if r.volatility is not None else "n/a"
+        text += (f"<br>Severity {theme.pct(r.severity_pct, 0)} · 1-in-10 {theme.pct(r.p90_pct, 0)} · CV {cv}"
+                 f"<br>Rain {r.rain_mean_mm:,.0f} mm a season (CV {r.rain_cv:.2f})")
+    if w.members:
+        text += (f"<br>{w.members} members: expected payouts {theme.ksh_short(w.expected_loss_ksh)} a season if all "
+                 f"were insured{'' if w.offered else ' and the ward were sold'}")
+    return text + "<extra></extra>"
 
 
 def base_figure(selected: str, ring: float) -> go.Figure:
@@ -220,12 +289,29 @@ def finish(fig: go.Figure, height: int = 520, bottom: int = 8) -> go.Figure:
     return fig
 
 
-def static_map(view: str, figures: list[WardFigures], params: TriggerParams, selected: str, which: str) -> go.Figure:
-    pairs = [measure(view, w, params) for w in figures]
+def together_lines(fig: go.Figure, together: list[PayTogether], which: str) -> None:
+    """A line between two wards whose payouts rise and fall together, thicker the closer they move."""
+    for pair in together:
+        if pair.correlation is None or pair.correlation < TOGETHER:
+            continue
+        a, b = WARDS[pair.a], WARDS[pair.b]
+        tip = (f"{short(pair.a)} and {short(pair.b)} paid together in {pair.both_paid} {which} "
+               f"(correlation {pair.correlation:.2f})")
+        fig.add_scatter(x=[a.lon, (a.lon + b.lon) / 2, b.lon], y=[a.lat, (a.lat + b.lat) / 2, b.lat],
+                        mode="lines", line={"color": theme.INK, "width": 1 + 6 * pair.correlation, "dash": "dot"},
+                        opacity=0.45, hovertemplate=tip + "<extra></extra>", showlegend=False)
+
+
+def static_map(view: str, figures: list[WardFigures], params: TriggerParams, selected: str, which: str,
+               together: list[PayTogether] | None = None) -> go.Figure:
+    top = max((w.book_ksh for w in figures), default=0.0)
+    pairs = [measure(view, w, params, top) for w in figures]
     fig = base_figure(selected, ring_size(figures, [p[0] for p in pairs], selected))
+    if view == "Accumulation" and together:
+        together_lines(fig, together, which)
     ward_trace(fig, figures, [p[0] for p in pairs], [p[1] for p in pairs], [hover(w, which) for w in figures], selected)
     not_offered_trace(fig, figures)
-    colour_bar(fig, *scale(view, params, figures[0].seasons))
+    colour_bar(fig, *scale(view, params, figures[0].seasons, top))
     return finish(fig)
 
 
@@ -296,9 +382,63 @@ def _tied(figures: list[WardFigures], shown) -> tuple[list, list]:
     return ([w for w in figures if shown(w)[1] == shown(hi)[1]], [w for w in figures if shown(w)[1] == shown(lo)[1]])
 
 
-def story(view: str, figures: list[WardFigures], params: TriggerParams, which: str) -> str:
+def story(view: str, figures: list[WardFigures], params: TriggerParams, which: str,
+          together: list[PayTogether] | None = None, load: pd.Series | None = None) -> str:
     """One or two sentences that say what the map shows, true for every setting."""
     nobody = f"With these triggers no ward would have been paid in any of the {which}."
+    paying = [w for w in figures if w.risk and w.risk.paid]
+    if view in ("Severity", "1-in-10 season", "Volatility") and not paying:
+        return nobody
+    if view == "Severity":
+        hi, lo = _tied(paying, lambda w: (w.risk.severity_pct, theme.pct(w.risk.severity_pct, 0)))
+        return (f"When it pays, {_names(hi)} {'pays' if len(hi) == 1 else 'pay'} the most: "
+                f"{theme.pct(hi[0].risk.severity_pct, 0)} of the cover on average. {_names(lo)} the least, "
+                f"{theme.pct(lo[0].risk.severity_pct, 0)}. High severity with low frequency means rare, heavy losses.")
+    if view == "1-in-10 season":
+        hi, lo = _tied(figures, lambda w: (w.risk.p90_pct, theme.pct(w.risk.p90_pct, 0)))
+        return (f"In a 1-in-10 season {_names(hi)} would pay {theme.pct(hi[0].risk.p90_pct, 0)} of the cover to every "
+                f"farm, {_names(lo)} {theme.pct(lo[0].risk.p90_pct, 0)}. The tail, not the average, sizes "
+                "reinsurance and capital.")
+    if view == "Volatility":
+        hi, lo = _tied(paying, lambda w: (w.risk.volatility or 0, f"{w.risk.volatility or 0:.1f}"))
+        return (f"{_names(hi)} {'has' if len(hi) == 1 else 'have'} the lumpiest payouts (CV "
+                f"{hi[0].risk.volatility:.1f}): rare, large losses. {_names(lo)} {'is' if len(lo) == 1 else 'are'} "
+                f"the steadiest (CV {lo[0].risk.volatility:.1f}). The price uses only the average, so volatility is "
+                "the case for a risk margin on top.")
+    if view == "Rain variability":
+        hi, lo = _tied(figures, lambda w: (w.risk.rain_cv, f"{w.risk.rain_cv:.2f}"))
+        return (f"{_names(hi)}'s seasonal rain varies most from year to year (CV {hi[0].risk.rain_cv:.2f}, around "
+                f"{hi[0].risk.rain_mean_mm:,.0f} mm a season); {_names(lo)}'s the least ({lo[0].risk.rain_cv:.2f}). "
+                "This is the hazard itself, before any product terms.")
+    if view == "Accumulation":
+        if not any(w.members for w in figures):
+            return "No SACCO register is loaded, so there is no book to add up."
+        total = sum(w.book_ksh for w in figures)
+        unsold = [w for w in figures if not w.offered]
+        text = (f"With every SACCO member in the offered wards insured on the standard farm, the book would expect "
+                f"{theme.ksh_short(total)} of payouts a season")
+        text += (f" ({_names(unsold)} {'is' if len(unsold) == 1 else 'are'} not sold, so left out)." if unsold else ".")
+        if load is not None and len(load) and load.max() > 0:
+            text += (f" Its worst season, {_season_name(load.idxmax())}, would have cost "
+                     f"{theme.ksh_short(load.max())}.")
+        sold = {w.key for w in figures if w.offered}
+        close = sorted((p for p in (together or []) if p.correlation is not None and p.correlation >= TOGETHER),
+                       key=lambda p: -p.correlation)
+        in_book = [p for p in close if p.a in sold and p.b in sold]
+        if in_book:
+            top = in_book[0]
+            text += (f" The lines join sold wards that pay in the same seasons; {short(top.a)} and {short(top.b)} "
+                     f"move most together (correlation {top.correlation:.2f}).")
+        else:
+            text += (" No two sold wards pay together closely (every correlation is below "
+                     f"{TOGETHER:g}): the book is well spread.")
+        outside = [p for p in close if p not in in_book]
+        if outside:
+            p = outside[0]
+            new = p.a if p.a not in sold else p.b
+            text += (f" Selling {short(new)} would add accumulation: it pays together with "
+                     f"{short(p.b if new == p.a else p.a)} (correlation {p.correlation:.2f}).")
+        return text
     if view == "Burn cost":
         hi, lo = _tied(figures, lambda w: (w.burn_pct, theme.pct(w.burn_pct, 1)))
         if hi[0].burn_pct == 0:
@@ -341,7 +481,7 @@ def story(view: str, figures: list[WardFigures], params: TriggerParams, which: s
             text += (f" {listed} {'prices' if one else 'price'} above it, so the standard bundle is not offered "
                      f"{'there' if one else 'in those wards'} (the {'cross' if one else 'crosses'}).")
         return text
-    if view == "Seasons paid":
+    if view == "Frequency":
         most, least = max(w.paid for w in figures), min(w.paid for w in figures)
         n = figures[0].seasons
         if most == 0:
@@ -378,40 +518,100 @@ def story(view: str, figures: list[WardFigures], params: TriggerParams, which: s
 
 
 def ranking(view: str, figures: list[WardFigures], params: TriggerParams, selected: str) -> list[tuple]:
+    top = max((w.book_ksh for w in figures), default=0.0)
+
     def label(w):
         return short(w.key) + (" (shown below)" if w.key == selected else "")
 
     if view == "Replay":  # the ward that paid most often first
         rows = sorted(figures, key=lambda w: (-w.paid, -w.burn_pct))
         return [(label(w), f"{w.paid} of {w.seasons} paid", "" if w.key == selected else "muted") for w in rows]
-    keyed = sorted(figures, key=lambda w: -measure(view, w, params)[0])
-    return [(label(w), measure(view, w, params)[1], "" if w.key == selected else "muted") for w in keyed]
+    keyed = sorted(figures, key=lambda w: -measure(view, w, params, top)[0])
+    return [(label(w), measure(view, w, params, top)[1], "" if w.key == selected else "muted") for w in keyed]
+
+
+def profile_card(w: WardFigures, params: TriggerParams, which: str) -> None:
+    """Everything an underwriter weighs for the selected ward, in one strip."""
+    r = w.risk
+    headroom = w.headroom_pp
+    theme.stats([
+        ("Frequency", theme.pct(r.frequency_pct, 0), f"{r.paid} of {r.seasons} {which} paid"),
+        ("Severity", theme.pct(r.severity_pct, 0) if r.paid else "n/a", "Average payout when it pays, of cover"),
+        ("1-in-10 season", theme.pct(r.p90_pct, 0), "Payout exceeded in one season in ten"),
+        ("Volatility", f"CV {r.volatility:.1f}" if r.volatility is not None else "n/a",
+         "Payouts' standard deviation over their average", "warn" if (r.volatility or 0) > 2.5 else ""),
+        ("Rain", f"{r.rain_mean_mm:,.0f} mm", f"A season; varies by CV {r.rain_cv:.2f}"),
+        ("Headroom to ceiling", f"{'+' if headroom >= 0 else '-'}{abs(headroom):.1f} pts",
+         f"{params.max_sellable_rate:.0%} ceiling minus the {theme.pct(w.rate_pct, 1)} price",
+         "bad" if headroom < 0 else "warn" if headroom < 1 else ""),
+        ("Book in this ward",
+         "n/a" if not w.members else theme.ksh_short(w.members * w.sum_insured) if w.offered else "Not sold",
+         "No SACCO register loaded" if not w.members else
+         f"{w.members} members insured; expected payouts {theme.ksh_short(w.expected_loss_ksh)} a season"
+         if w.offered else
+         f"Would be {theme.ksh_short(w.members * w.sum_insured)} for {w.members} members, expecting "
+         f"{theme.ksh_short(w.expected_loss_ksh)} a season, if it were sold"),
+    ])
+
+
+GLOSSARY = [
+    ("Burn cost", "Average payout a season as a share of the cover. The price is the burn cost divided by the target "
+                  "loss ratio, rounded up to 0.1%, never under 1%."),
+    ("Loss ratio", "Payouts as a share of premium. The target (60% by default) leaves room for reinsurance, data, "
+                   "expenses and margins."),
+    ("Frequency and severity", "How often the cover pays, and how much when it does. Burn cost is roughly the two "
+                               "multiplied."),
+    ("1-in-10 season", "The payout exceeded in one season out of ten (the 90th percentile of 2015-2024)."),
+    ("Volatility (CV)", "Standard deviation of seasonal payouts over their average. Above about 2.5 the payouts are "
+                        "rare and large."),
+    ("Rain variability (CV)", "Standard deviation of seasonal rainfall over its average: the hazard, before any terms."),
+    ("Headroom to ceiling", "Sellable ceiling minus the price, in percentage points. Below zero the ward is not sold."),
+    ("Accumulation", "Wards whose payouts rise and fall together (correlation of seasonal payouts). Their losses "
+                     "arrive in the same season, so they add up for the insurer and the reinsurer."),
+    ("Basis risk", "Seasons where the index and the crop disagree, compared with a rainfall-only trigger (chapter 1 "
+                   "stat strip)."),
+]
 
 
 def render(selected: str, zones: pd.DataFrame, backtests: dict, season_keys, params: TriggerParams,
-           which: str) -> None:
+           which: str, members: dict | None = None) -> None:
     """The map panel. Tapping a ward opens its story: the sidebar ward changes on the next run."""
-    figures = ward_figures(zones, backtests, season_keys, params)
+    figures = ward_figures(zones, backtests, season_keys, params, members)
+    together = pay_together(backtests, season_keys)
+    sold = {w.key for w in figures if w.offered}
+    load = season_load(backtests, season_keys, {k: n for k, n in (members or {}).items() if k in sold})
     counted = "both seasons" if which == "seasons" else f"the {which} only (the price always uses both)"
     with theme.panel("Where the risk sits",
                      f"The five pilot wards on Kenya's 47 counties, on the same terms, counting {counted}. Circles "
                      "grow and darken with the measure. Tap a ward to open its story."):
-        view = st.segmented_control("Map measure", VIEWS, default="Burn cost", key="map_view",
-                                    label_visibility="collapsed") or "Burn cost"
+        pick, why = st.columns([1, 2], vertical_alignment="bottom")
+        view = pick.selectbox("Colour the wards by", VIEWS, key="map_measure",
+                              help="Each measure is worked out from the same 2015-2024 backtest as the price.")
+        why.markdown(f'<p class="ss-panel-desc" style="margin:0 0 0.9rem">{VIEW_HELP[view]}</p>',
+                     unsafe_allow_html=True)
         left, right = st.columns([5, 2], gap="medium")
         fig = replay_map(figures, params, selected, which) if view == "Replay" else \
-            static_map(view, figures, params, selected, which)
+            static_map(view, figures, params, selected, which,
+                       [p for p in together if p.a in sold and p.b in sold])  # the lines show the book only
         picks = st.session_state.get("map_picks", 0)
         event = left.plotly_chart(fig, width="stretch", key=f"risk_map_{picks}", on_select="rerun",
                                   selection_mode="points", config={"displayModeBar": False, "scrollZoom": False})
         with right:
-            st.markdown(f'<p class="ss-map-story">{story(view, figures, params, which)}</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="ss-map-story">{story(view, figures, params, which, together, load)}</p>',
+                        unsafe_allow_html=True)
             theme.ledger(ranking(view, figures, params, selected))
             if any(not w.offered for w in figures):
                 st.caption(f"× marks a ward priced above the {params.max_sellable_rate:.0%} ceiling: the standard "
                            "bundle is not offered there.")
             st.caption("County outlines: geoBoundaries (RCMRD), public domain. A ward is priced on its own "
                        "weather, not its county's.")
+        chosen = next(w for w in figures if w.key == selected)
+        st.markdown(f"**Underwriting profile: {WARDS[selected].label}** ({which} counted; the price always uses "
+                    "both)" if which != "seasons" else f"**Underwriting profile: {WARDS[selected].label}**")
+        profile_card(chosen, params, which)
+        with st.expander("What these measures mean"):
+            for term, meaning in GLOSSARY:
+                st.markdown(f"**{term}.** {meaning}")
     points = (event or {}).get("selection", {}).get("points", []) if event else []
     picked = next((p.get("customdata") for p in points if p.get("customdata") in WARDS), None)
     if picked:

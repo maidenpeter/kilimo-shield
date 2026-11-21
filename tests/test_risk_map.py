@@ -59,7 +59,7 @@ def test_story_names_ties_and_the_blocked_ward(setup):
     params, zones, backtests = setup
     figures = risk_map.ward_figures(zones, backtests, ("LR", "SR"), params)
     most = max(w.paid for w in figures)
-    text = risk_map.story("Seasons paid", figures, params, "seasons")
+    text = risk_map.story("Frequency", figures, params, "seasons")
     for w in figures:
         if w.paid == most:
             assert risk_map.short(w.key) in text.split(" would have been paid")[0]
@@ -114,7 +114,7 @@ def test_wards_that_never_paid_are_called_that():
     keys = list(WARDS)
     figures = [fake(keys[0], 3.0, paid=3), fake(keys[1], 0.0, paid=0, worst=0.0)] + \
         [fake(k, 2.0, paid=2) for k in keys[2:]]
-    seasons = risk_map.story("Seasons paid", figures, params, "short rains")
+    seasons = risk_map.story("Frequency", figures, params, "short rains")
     assert "was never paid" in seasons and "can cost the same" not in seasons and " in 0" not in seasons
     assert "would never have been paid" in risk_map.story("Burn cost", figures, params, "short rains")
 

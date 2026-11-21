@@ -8,8 +8,12 @@ its numbers support:
 
 1. **The risk.** Ten years (2015-2024) of daily weather for five pilot wards, three payout layers (crop inputs,
    fodder gap, vet and health) under a seasonal cap, burn cost, zone pricing to a target loss ratio with a sellable
-   ceiling, worst year and a basis-risk check. A map of Kenya's 47 counties shows the five wards by burn cost, price,
-   seasons paid or worst season, replays 2015-2024 season by season, and opens a ward's story when you tap it.
+   ceiling, worst year and a basis-risk check. A map of Kenya's 47 counties colours the five wards by what an
+   underwriter prices on: burn cost, price, frequency, severity, the 1-in-10 season, the worst season, volatility of
+   payouts (CV), rain variability (CV) and accumulation (expected payouts of the book, with lines between sold wards
+   that pay in the same seasons). It replays 2015-2024 season by season, shows an underwriting profile of the selected
+   ward (including headroom to the ceiling and the book in that ward), and opens a ward's story when you tap it. A
+   pricing sheet lists every measure for every ward, with each column explained, and downloads as CSV.
 2. **A farmer's quote.** Ward, season, acres of maize and dairy cows, and last season's verified practices give the
    price: gross premium, any government share, the Resilience discount, what the farmer pays (also per day of milk
    check-off), who pays the insurer, what the cover would have paid on past weather, and what happens when it pays.
@@ -43,7 +47,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (322, including a headless run of the whole app that presses every button, a sweep of 30 random product
+Tests (327, including a headless run of the whole app that presses every button, a sweep of 30 random product
 settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
@@ -201,6 +205,7 @@ engine/recon_engine.py       phone and reference cleaning, RapidFuzz matcher, wa
 engine/whatsapp_simulator.py amber-zone state machine, verifier network, simulated photos
 engine/unit_economics.py     pilot revenue and premium split
 engine/quote.py              farm quotes: cover, price, subsidy, Resilience discount, payment, history
+engine/underwriting.py       frequency, severity, 1-in-10 season, volatility, rain variability, accumulation
 data/seed_generator.py       500 members and a 520-row paybill statement with ground truth
 data/weather_cache/          five wards, 2015-2024, with .meta.json
 ui/                          one module per tab, risk_map.py (chapter 1 map), brand.py and theme.py

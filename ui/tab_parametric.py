@@ -1,6 +1,7 @@
 """Tab 1: reinsurer and actuarial backtest simulator."""
 from __future__ import annotations
 
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
@@ -9,6 +10,7 @@ from engine.parametric_engine import (
     SEASONS, SOURCE_FALLBACK, SOURCE_LIVE, WARDS, YEARS, TriggerParams, dekadal_trajectory, kpis, load_weather,
     minimum_applies, run_backtest, zone_pricing,
 )
+from engine.underwriting import ward_risk
 from ui import risk_map, theme
 
 SEASON_FILTERS = {"Both seasons": ("LR", "SR"), "Long rains": ("LR",), "Short rains": ("SR",)}
@@ -30,6 +32,13 @@ def backtest_for(ward_key: str, refresh_count: int, params: TriggerParams):
 @st.cache_data(show_spinner="Pricing every ward...")
 def zone_pricing_for(refresh_count: int, params: TriggerParams):
     return zone_pricing(params, loader=lambda key: weather_for(key, refresh_count))
+
+
+@st.cache_data(show_spinner=False)
+def register_counts() -> dict:
+    """SACCO members per ward in the (synthetic) register: the book if every member were insured."""
+    from data.seed_generator import generate_members
+    return generate_members()["ward"].value_counts().to_dict()
 
 
 def sidebar_controls() -> tuple[str, TriggerParams]:
@@ -176,23 +185,66 @@ def stat_row(k, params: TriggerParams) -> None:
     ])
 
 
-def zone_table(zones) -> None:
-    with theme.panel("Zone pricing across the pilot wards",
-                     "Same terms in every ward, priced on 20 seasons (2015-2024). A ward above the sellable ceiling "
-                     "is not sold the standard bundle; it is referred for a custom tier built on its own enterprise."):
-        st.dataframe(zones.drop(columns=["ward_key"]), hide_index=True, width="stretch", column_config={
-            "ward": "Ward", "zone": "Zone",
-            "burn_cost_pct": st.column_config.NumberColumn("Burn cost %", format="%.2f"),
-            "premium_rate_pct": st.column_config.NumberColumn("Premium %", format="%.1f"),
-            "premium_ksh": st.column_config.NumberColumn("Premium KSh", format="localized"),
-            "farmer_premium_ksh": st.column_config.NumberColumn("Farmer pays KSh", format="localized"),
-            "loss_ratio_pct": st.column_config.NumberColumn("Loss ratio %", format="%.0f"),
-            "seasons_paying": st.column_config.NumberColumn("Seasons paid"),
-            "rain10_line_mm": st.column_config.NumberColumn("Rain line mm", format="%.0f"),
-            "basis_score": st.column_config.NumberColumn("Basis, index", format="%+.0f"),
-            "basis_score_verified": st.column_config.NumberColumn("Basis, with check", format="%+.0f"),
-            "offered": "Offered",
+def pricing_sheet(zones, backtests: dict, params: TriggerParams, members: dict):
+    """One row per ward with everything an underwriter prices on, always on both seasons (the price's basis)."""
+    rows = []
+    for _, z in zones.iterrows():
+        r = ward_risk(backtests[z["ward_key"]], params.sum_insured)
+        n = int(members.get(z["ward_key"], 0))
+        rows.append({
+            "ward": z["ward"], "zone": z["zone"], "offered": "Yes" if z["offered"] == "Yes" else "No",
+            "premium_rate_pct": z["premium_rate_pct"], "premium_ksh": z["premium_ksh"],
+            "farmer_premium_ksh": z["farmer_premium_ksh"],
+            "headroom_pts": 100 * params.max_sellable_rate - z["premium_rate_pct"],
+            "burn_cost_pct": z["burn_cost_pct"], "loss_ratio_pct": z["loss_ratio_pct"],
+            "frequency_pct": r.frequency_pct, "severity_pct": r.severity_pct, "p90_pct": r.p90_pct,
+            "worst_pct": r.worst_pct, "volatility_cv": r.volatility, "rain_mm": r.rain_mean_mm, "rain_cv": r.rain_cv,
+            "basis_score": z["basis_score"], "basis_score_verified": z["basis_score_verified"],
+            "rain10_line_mm": z["rain10_line_mm"], "members": n,
+            "expected_payouts_ksh": r.burn_pct / 100 * params.sum_insured * n,
         })
+    return pd.DataFrame(rows)
+
+
+def zone_table(zones, backtests: dict, params: TriggerParams, members: dict) -> None:
+    sheet = pricing_sheet(zones, backtests, params, members)
+    num = st.column_config.NumberColumn
+    with theme.panel("Pricing sheet: every pilot ward",
+                     "Same terms in every ward, priced on 20 seasons (2015-2024), both seasons whatever the filter "
+                     "above. Hover a column name for what it means. A ward above the sellable ceiling is not sold the "
+                     "standard bundle; it is referred for a custom tier built on its own enterprise."):
+        st.dataframe(sheet, hide_index=True, width="stretch", column_config={
+            "ward": st.column_config.TextColumn("Ward", pinned=True), "zone": "Zone",
+            "offered": st.column_config.TextColumn("Offered", help="Sold the standard bundle: priced at or under the "
+                                                                   "sellable ceiling"),
+            "premium_rate_pct": num("Premium %", format="%.1f", help="Burn cost / target loss ratio, rounded up to "
+                                                                      "0.1%, at least 1%"),
+            "premium_ksh": num("Premium KSh", format="localized", help="On the standard farm (2 acres, 2 cows)"),
+            "farmer_premium_ksh": num("Farmer pays KSh", format="localized", help="After any subsidy"),
+            "headroom_pts": num("Headroom pts", format="%+.1f", help="Sellable ceiling minus the premium rate"),
+            "burn_cost_pct": num("Burn cost %", format="%.2f", help="Average payout a season, % of cover"),
+            "loss_ratio_pct": num("Loss ratio %", format="%.0f", help="Payouts / premium over the 20 seasons"),
+            "frequency_pct": num("Frequency %", format="%.0f", help="Share of seasons with any payout"),
+            "severity_pct": num("Severity %", format="%.0f", help="Average payout in the seasons that paid, % of cover"),
+            "p90_pct": num("1-in-10 %", format="%.0f", help="Payout exceeded in one season in ten, % of cover"),
+            "worst_pct": num("Worst %", format="%.0f", help="Largest single season, % of cover"),
+            "volatility_cv": num("Volatility CV", format="%.2f", help="Standard deviation of seasonal payouts over "
+                                                                       "their average"),
+            "rain_mm": num("Rain mm", format="%.0f", help="Average seasonal rainfall"),
+            "rain_cv": num("Rain CV", format="%.2f", help="Year-to-year variability of seasonal rainfall"),
+            "basis_score": num("Basis, index", format="%+.0f", help="% fewer mismatched seasons than a rainfall-only "
+                                                                     "trigger"),
+            "basis_score_verified": num("Basis, with check", format="%+.0f", help="The same with the assumed "
+                                                                                  "WhatsApp check"),
+            "rain10_line_mm": num("Rain line mm", format="%.0f", help="10-day rainfall that triggers the vet layer"),
+            "members": num("Members", help="SACCO members in the ward (synthetic register)"),
+            "expected_payouts_ksh": num("Book payouts KSh", format="localized", help="Expected payouts a season if "
+                                                                                     "every member were insured (for a "
+                                                                                     "ward not offered: if it were "
+                                                                                     "sold)"),
+        })
+        st.download_button("Download the pricing sheet (CSV)", sheet.to_csv(index=False).encode(),
+                           "shambashield360_pricing_sheet.csv", "text/csv", icon=":material/download:")
 
 
 def render() -> dict:
@@ -245,15 +297,16 @@ def render() -> dict:
     with header:
         theme.chapter(1, "The risk", f"{ward.label} · {ward.zone} zone", lede, sub)
     stat_row(k, params)
-    risk_map.render(ward_key, zones, {key: backtest_for(key, refresh_count, params) for key in WARDS}, season_keys,
-                    params, which)
+    backtests = {key: backtest_for(key, refresh_count, params) for key in WARDS}
+    members = register_counts()
+    risk_map.render(ward_key, zones, backtests, season_keys, params, which, members)
 
     with theme.panel("Payouts per farm, 2015-2024",
                      "Each bar is what one insured farm would have received that year, by layer. The dashed line is "
                      "the full premium for that cover, before any subsidy or discount."):
         st.plotly_chart(payout_chart(seasons, season_keys), width="stretch")
 
-    zone_table(zones)
+    zone_table(zones, backtests, params, members)
 
     with theme.panel("Season trajectory",
                      "Soil moisture index (a SAR-style proxy, 50 is normal for the date) and pasture greenness, "

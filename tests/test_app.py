@@ -75,7 +75,7 @@ def test_every_ward_and_season_filter_renders(app):
 
 
 def test_pricing_and_rain_switches(app):
-    assert "Zone pricing across the pilot wards" in _text(app)
+    assert "Pricing sheet: every pilot ward" in _text(app)
     app.sidebar.radio(key="pricing_mode").set_value("One flat rate for every ward").run()
     assert not app.exception, app.exception
     app.sidebar.radio(key="rain_mode").set_value("Fixed mm for every ward").run()
@@ -220,3 +220,12 @@ def theme_ksh(value):
 def test_warnings_are_red(app):
     app.selectbox(key="q_ward_njoro").select("bureti").run()
     assert 'class="ss-warn"' in _text(app)  # why Bureti has no quote
+
+
+def test_every_map_measure_renders(app):
+    from ui.risk_map import VIEWS, VIEW_HELP
+    for view in VIEWS:
+        app.selectbox(key="map_measure").set_value(view).run()
+        assert not app.exception, (view, app.exception)
+        assert VIEW_HELP[view] in _text(app)
+    assert "Underwriting profile: Njoro Ward, Nakuru County" in _text(app)
