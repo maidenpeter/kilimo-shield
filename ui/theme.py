@@ -220,16 +220,19 @@ def number(container, label: str, low, high, value, step, *, key=None, help: str
     options = dict(step=cast(step), format="%d" if whole else f"%.{decimals}f", key=key,
                    help=f"{help} {span}" if help else span)
     if in_form:
-        options.update(min_value=cast(low), max_value=cast(high))
+        pass  # no callback allowed: the value is brought into range below, with the same note
     else:
         options.update(on_change=_snap, args=(key, low, high, decimals, cast, unit))
     if key not in st.session_state:  # a value set from code (an example button) wins over the default
         options["value"] = cast(value)
     typed = container.number_input(label, **options)
     note = st.session_state.pop(f"{key}__note", None)
+    used = cast(min(max(typed, low), high))  # a stale or out-of-range value never leaks through
+    if in_form and used != typed:
+        note = f"{_range_text(typed, unit)} is outside the allowed range, so {_range_text(used, unit)} is used."
     if note:
         container.caption(note)
-    return cast(min(max(typed, low), high))  # a stale value from a wider range never leaks through
+    return used
 
 
 def footer(text: str) -> None:

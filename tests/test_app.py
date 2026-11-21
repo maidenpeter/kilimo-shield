@@ -161,3 +161,29 @@ def test_name_only_payments_get_a_true_reason(app):
     _button(app, "Check this payment").click().run()
     text = _text(app)
     assert "Two names alone are too common" in text and "Result for: reference (blank)" in text
+
+
+def test_loan_share_follows_chapter_three_at_once(app):
+    _button(app, "Run reconciliation").click().run()
+    app.number_input(key="split_share").set_value(55).run()
+    assert not app.exception, app.exception
+    assert "Up to 45%" in _text(app)
+
+
+def test_tryout_amount_out_of_range_is_noted(app):
+    app.text_input(key="try_ref").set_value("MBR-1042")
+    app.selectbox(key="try_phone").set_value("unknown")
+    app.text_input(key="try_name").set_value("")
+    app.number_input(key="try_amount").set_value(600_000)
+    _button(app, "Check this payment").click().run()
+    text = _text(app)
+    assert "KSh 600,000 is outside the allowed range, so KSh 500,000 is used." in text
+    assert "KSh 500,000." in text  # the result line answers the amount actually checked
+
+
+def test_one_name_is_not_called_nothing(app):
+    app.text_input(key="try_ref").set_value("")
+    app.selectbox(key="try_phone").set_value("unknown")
+    app.text_input(key="try_name").set_value("Gitonga")
+    _button(app, "Check this payment").click().run()
+    assert "is not enough to pick out one" in _text(app)

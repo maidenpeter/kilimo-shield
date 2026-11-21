@@ -210,7 +210,9 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
 
     with theme.panel("If it pays", "No claim form and no farm visit: the index decides, then the money moves."):
         # The loan share is the claim split set in chapter 3 (70/30 unless it was changed there).
-        loan_share = 1 - st.session_state.get("split_share_kept", st.session_state.get("split_share", 70)) / 100
+        # the live box first (chapter 3 renders after this one), then the share kept while that box is hidden
+        live = st.session_state.get("split_share", st.session_state.get("split_share_kept", 70))
+        loan_share = 1 - min(max(float(live), 50.0), 100.0) / 100
         if len(paid):
             example = float(paid["payout_total"].max())
             within = f"The farmer gets the payout by M-Pesa. In the worst season above: {theme.ksh(example)}."

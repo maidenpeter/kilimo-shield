@@ -155,6 +155,9 @@ def try_payment(data, premium_targets: dict) -> None:
         else:
             verdict = {rec.AMBIGUOUS: "Sent to a person to review.", rec.UNMATCHED: "Held in suspense.",
                        rec.BAD_AMOUNT: "Held: bad amount."}[method]
+            if method == rec.UNMATCHED and name.strip():
+                why = ("Neither the reference nor the phone points at a member, and the name on the M-Pesa account "
+                       "is not enough to pick out one, so it waits in suspense until someone claims it.")
             tail = " A wrong credit is worse than a short wait, so a person checks it." if method == rec.AMBIGUOUS else ""
             st.markdown(f"**{verdict}** {why or REASONS[method]}{tail}")
         st.markdown(theme.status(method, "GREEN" if member else "RED" if method == rec.BAD_AMOUNT else "AMBER"),
