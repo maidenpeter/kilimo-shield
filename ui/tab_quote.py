@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from engine import quote as qt
-from engine.parametric_engine import WARDS, YEARS, TriggerParams
+from engine.parametric_engine import WARDS, YEARS, TriggerParams, minimum_applies
 from ui import theme
 from ui.tab_parametric import weather_for
 
@@ -176,7 +176,7 @@ def render(default_ward: str, params: TriggerParams, offered_wards: set, refresh
         elif q.burn_cost_rate == 0:
             story += (f" It would not have paid in the other season either, so the price is the product's "
                       f"{params.min_premium_rate:.0%} minimum.")
-        elif q.premium_rate <= params.min_premium_rate + 1e-12:
+        elif minimum_applies(q.burn_cost_rate, params):
             story += (f" The other season's payouts price below the {params.min_premium_rate:.0%} minimum, so the "
                       "minimum applies.")
         else:

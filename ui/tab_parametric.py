@@ -7,7 +7,7 @@ from plotly.subplots import make_subplots
 
 from engine.parametric_engine import (
     SEASONS, SOURCE_FALLBACK, SOURCE_LIVE, WARDS, YEARS, TriggerParams, dekadal_trajectory, kpis, load_weather,
-    run_backtest, zone_pricing,
+    minimum_applies, run_backtest, zone_pricing,
 )
 from ui import risk_map, theme
 
@@ -215,8 +215,7 @@ def render() -> dict:
     else:
         lede = f"Since 2015 this cover would not have paid {ward.name} farms in any of the {k.seasons} {which}."
         sub = ""
-    at_minimum = params.pricing_mode == "target" and k.premium_rate_pct <= 100 * params.min_premium_rate + 1e-9 \
-        and k.burn_cost_pct / params.target_loss_ratio < 100 * params.min_premium_rate
+    at_minimum = minimum_applies(k.burn_cost_pct / 100, params)
     if k.offered:
         if params.pricing_mode == "flat":
             sub += f"At the flat {k.premium_rate_pct:.1f}% rate it costs {theme.ksh(k.premium_ksh)} on the standard farm."

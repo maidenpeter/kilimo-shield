@@ -56,8 +56,13 @@ def test_payout_rules_hold(params, ward):
 
     k = pe.kpis(s, params)
     assert k.burn_cost_pct == pytest.approx(100 * s["payout_total"].mean() / params.sum_insured)
-    assert k.premium_ksh == pytest.approx(params.sum_insured * k.premium_rate_pct / 100)
-    assert k.farmer_premium_ksh == pytest.approx(k.premium_ksh * (1 - params.subsidy_share))
+    # whole shillings, half up, like the quote; the subsidy's share is rounded the same way and the farmer pays
+    # the rest, so each is within half a shilling of exact
+    exact = params.sum_insured * k.premium_rate_pct / 100
+    assert k.premium_ksh == pe.whole_shillings(exact) and abs(k.premium_ksh - exact) <= 0.5 + 1e-9
+    assert k.farmer_premium_ksh == pe.farmer_share(k.premium_ksh, params.subsidy_share)
+    assert abs(k.farmer_premium_ksh - k.premium_ksh * (1 - params.subsidy_share)) <= 0.5 + 1e-9
+    assert float(k.farmer_premium_ksh).is_integer()
     if params.pricing_mode == "target" and k.burn_cost_pct > 0:
         assert k.loss_ratio_pct <= 100 * params.target_loss_ratio + 1e-6
         # rounding up to 0.1% never moves the rate by more than 0.1 point, unless the minimum rate applies

@@ -296,7 +296,7 @@ def story(view: str, figures: list[WardFigures], params: TriggerParams, which: s
             lo, hi = min(w.burn_pct for w in figures), max(w.burn_pct for w in figures)
             return (f"On one flat rate every ward pays {theme.pct(figures[0].rate_pct, 1)}, although their burn costs run "
                     f"from {theme.pct(lo, 1)} to {theme.pct(hi, 1)}. The cheap wards subsidise the risky ones.")
-        text = (f"{len(figures) - len(blocked)} of {len(figures)} wards price under the "
+        text = (f"{len(figures) - len(blocked)} of {len(figures)} wards price at or under the "
                 f"{params.max_sellable_rate:.0%} ceiling.")
         if blocked:
             text += " " + " and ".join(f"{name(w)} would cost {theme.pct(w.rate_pct, 1)}" for w in blocked) + \

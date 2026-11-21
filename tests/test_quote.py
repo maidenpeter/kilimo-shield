@@ -173,3 +173,22 @@ def test_quote_ids_are_long_and_include_the_fee():
     assert len(q.quote_id) == len("SS360-Q-") + 12
     assert make(practices={item.id: True for item in qt.RESILIENCE_ITEMS},
                 params=replace(P, platform_fee_rate=0.2)).quote_id != q.quote_id
+
+
+@pytest.mark.parametrize("sum_insured", [20_000.0, 25_000.0, 45_000.0, 60_000.0, 150_000.0])
+@pytest.mark.parametrize("subsidy", [0.1, 0.25, 0.5, 0.7])
+def test_chapter_one_farmer_share_matches_the_quote(sum_insured, subsidy):
+    params = pe.TriggerParams(sum_insured=sum_insured, target_loss_ratio=0.5, subsidy_share=subsidy)
+    weather = pe.load_weather("njoro")[0]
+    k = pe.kpis(pe.run_backtest(weather, params), params)
+    q = qt.quote(weather, params, ward_key="njoro", season="LR", acres=2, cows=2)
+    assert k.premium_ksh == q.gross_premium
+    assert k.farmer_premium_ksh == q.gross_premium - q.government_share
+
+
+def test_minimum_applies_only_when_it_sets_the_price():
+    params = pe.TriggerParams(target_loss_ratio=0.6)
+    assert pe.commercial_rate(0.00556, params) == 0.01 and not pe.minimum_applies(0.00556, params)  # rounds up to 1%
+    assert pe.commercial_rate(0.003, params) == 0.01 and pe.minimum_applies(0.003, params)
+    assert pe.minimum_applies(0.0, params)
+    assert not pe.minimum_applies(0.0, pe.TriggerParams(pricing_mode="flat"))

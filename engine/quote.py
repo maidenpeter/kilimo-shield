@@ -26,12 +26,14 @@ import math
 import numbers
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from fractions import Fraction
 
 import pandas as pd
 
-from engine.parametric_engine import SEASONS, WARDS, TriggerParams, commercial_rate, kpis, run_backtest
+from engine.parametric_engine import (
+    SEASONS, WARDS, TriggerParams, commercial_rate, kpis, run_backtest, whole_shillings,
+)
 
 STANDARD_ACRES = 2
 STANDARD_COWS = 2
@@ -126,11 +128,7 @@ class Quote:
         return d
 
 
-def money(value) -> int:
-    """Whole shillings, half up, from an exact decimal (never Python's round-half-even on a binary float). Float
-    noise below a millionth of a shilling is removed first, so it cannot flip the rounding of a half."""
-    exact = value if isinstance(value, Decimal) else Decimal(repr(round(float(value), 6)))
-    return int(exact.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+money = whole_shillings  # one rounding rule for every shilling the product shows
 
 
 def _exact(value: float) -> Fraction:

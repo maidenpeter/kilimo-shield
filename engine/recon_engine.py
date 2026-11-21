@@ -74,10 +74,10 @@ def mask_id(national_id: str) -> str:
 _LETTER_DIGIT = {"O": "0", "I": "1", "L": "1"}
 _PREFIX = r"(?:MBRR|MBR|MRB|BMR|NBR)"
 _ID_RUN = re.compile(_PREFIX + r"[^A-Z0-9]{0,3}([0-9OIL]+)")
-# "MBR-1001/02", "MRB 1001 NA 1002", "MBR1001-02": one reference for two members. The second number is a whole member
-# number or a one- or two-digit shorthand for the end of the first.
-_JOINT = re.compile(_PREFIX + r"[^A-Z0-9]{0,3}(\d[\dO]{2,3})(?![\dO])\s*(?:/|&|\+|,|-|\bAND\b|\bNA\b)\s*(?:"
-                    + _PREFIX + r"[^A-Z0-9]{0,3})?(\d[\dO]*)(?!\d)")
+# "MBR-1001/02", "MRB 1001 NA 1002", "MBR1001-02", "1001/02": one reference for two members. The second number is a
+# whole member number or a one- or two-digit shorthand for the end of the first.
+_JOINT = re.compile(r"(?:(" + _PREFIX + r")[^A-Z0-9]{0,3}|(?<![A-Z0-9]))(\d[\dOIL]{2,3})(?![\dOIL])\s*"
+                    r"(?:/|&|\+|,|;|-|\bAND\b|\bNA\b|\bN\b)\s*(?:" + _PREFIX + r"[^A-Z0-9]{0,3})?(\d[\dO]*)(?!\d)")
 # Words in a reference that say what the money is for rather than who it is for.
 REFERENCE_WORDS = {"FOR", "ACC", "ACCOUNT", "MILK", "PREMIUM", "SHAMBA", "LOAN", "FEES", "FEE", "PAYMENT", "PAY",
                    "INSURANCE", "DEPOSIT", "SAVINGS", "CHAMA", "TEST", "TERM", "SCHOOL", "MBR", "THE", "AND", "FULL",
@@ -185,17 +185,41 @@ def _holders(payer: str, records) -> set:
     return {mid for mid, name, *_ in records if words and words <= set(name.split())}
 
 
-def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex, near: set = frozenset()) -> bool:
+def _number(member_id: str) -> str:
+    return re.sub(r"\D", "", member_id)
+
+
+def _digit_gap(a: str, b: str) -> int:
+    """How many digits differ between two member numbers of the same length (99 when the lengths differ)."""
+    x, y = _number(a), _number(b)
+    return sum(p != q for p, q in zip(x, y)) if len(x) == len(y) else 99
+
+
+def _one_slip(a: str, b: str) -> bool:
+    """Two member numbers one keying slip apart: one digit different, or two digits swapped."""
+    x, y = _number(a), _number(b)
+    diff = [i for i in range(len(x)) if len(x) == len(y) and x[i] != y[i]]
+    return len(diff) == 1 or (len(diff) == 2 and x[diff[0]] == y[diff[1]] and x[diff[1]] == y[diff[0]])
+
+
+def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex, near: set = frozenset(),
+                           phone_agrees: bool = False) -> bool:
     """True when the payer's name points at another member than this one:
     - the payer's name has exactly the words of someone's record (member or spouse) and does not fit this member; or
     - two or more of the payer's names fit a member whose number is also close to the reference (in ``near``) but
-      do not fit this member: "NJERI MWANGI" paying "MBR 1103" when Njeri Mwangi is MBR-1013 is a transposed ID.
-    That second case applies even when the name also fits this member: "MUTHONI OTIENO" typing "MBR 1042" may be
-    MBR-1402 transposing digits or MBR-1042's spouse, and only a person can tell. A name that merely fits some member
-    somewhere is too common to count against a reference."""
+      do not fit this member: "NJERI MWANGI" paying "MBR 1103" when Njeri Mwangi is MBR-1013 is a transposed ID; or
+    - two or more of the payer's names fit exactly one member, whose number is two digits or fewer from this one:
+      "MUGO ONYANGO" paying "MBR 1014" when only MBR-1003 carries both names.
+    The near cases apply even when the name also fits this member: "MUTHONI OTIENO" typing "MBR 1042" may be MBR-1402
+    transposing digits or MBR-1042's spouse, and only a person can tell. They do not apply when the member's own
+    registered phone agrees with the reference. A name that merely fits some member somewhere is too common to count
+    against a reference."""
     holders = _holders(payer, index.records)
-    if len(payer.split()) >= 2 and holders & (set(near) - {member_id}):
-        return True
+    if len(payer.split()) >= 2 and not phone_agrees:
+        if holders & (set(near) - {member_id}):
+            return True
+        if len(holders) == 1 and member_id not in holders and _digit_gap(next(iter(holders)), member_id) <= 2:
+            return True
     if member_id in holders:
         return False
     return any(_same_words(payer, name) for _, name, _ in index.records)
@@ -280,6 +304,22 @@ def _amount_digits(amount) -> str | None:
     return str(int(value)) if np.isfinite(value) and value.is_integer() else None
 
 
+def _slip_of_another(member_id: str, phone: str, payer: str, index: MemberIndex) -> bool:
+    """True when a well-formed ID may be a slip of the member who paid: the paying phone is another member's, or the
+    payer's full name is another member's alone, that member's number is one keying slip from the ID, unless the
+    payer's name fits only the ID's member (or spouse), not the one who paid. "MBR-1043" sent from MBR-1042's phone is
+    a slip or a payment for a neighbour, and only a person can tell. A payment for a member whose number is far off
+    still decides."""
+    phones = index.phone_members.get(phone, set()) if phone else set()
+    others = set(phones) if len(phones) == 1 else set()
+    owner = _name_owner(payer, index)
+    if owner:
+        others.add(owner[0])
+    fits_typed = _name_fits(payer, member_id, index)
+    return any(o != member_id and _one_slip(o, member_id) and (not fits_typed or _name_fits(payer, o, index))
+               for o in others)
+
+
 def _drop_amount(raw: str, amount) -> str:
     """A bare number equal to the amount is the amount, not a member number ("1200" on a KSh 1,200 payment). A number
     written as an MBR ID stays: "MBR1001" on a KSh 1,001 payment still names MBR-1001."""
@@ -291,13 +331,26 @@ def _drop_amount(raw: str, amount) -> str:
                   lambda m: m.group(0) if any(a <= m.start() < b for a, b in inside) else " ", raw).strip()
 
 
+def _digits(text: str) -> str:
+    return "".join(_LETTER_DIGIT.get(ch, ch) for ch in text)
+
+
 def _is_joint(raw: str, index: MemberIndex) -> bool:
-    """True when the reference names a second member after the first: "MBR-1001/02" or "MRB 1001 NA 1002". A number
-    that is not a member's ("MBR-1042/2026") does not count."""
+    """True when the reference names a second member after the first: "MBR-1001/02", "MRB 1001 NA 1002", "1001/02".
+
+    A shorthand counts only when it counts up from the first number by at most nine, the way members who joined
+    together are numbered ("1001/02", "1041/2"). "MBR-1042-10" or "MBR-1042/26" is a month, a year or an instalment,
+    and a number that is not a member's ("MBR-1042/2026") is not a second member either. Without MBR, the first number
+    must itself be a member's.
+    """
     for m in _JOINT.finditer(raw):
-        first, second = (g.replace("O", "0") for g in m.groups())
+        prefix, first, second = m.group(1), _digits(m.group(2)), _digits(m.group(3))
+        if not prefix and f"MBR{first}" not in index.id_choices:
+            continue
         if len(second) <= 2 < len(first):
             second = first[:len(first) - len(second)] + second
+            if not 0 < int(second) - int(first) <= 9:
+                continue
         elif len(second) != len(first):
             continue
         if second != first and f"MBR{second}" in index.id_choices:
@@ -315,7 +368,10 @@ def match_row(ref, phone: str, payer: str, index: MemberIndex, amount=None) -> t
     raw = str(ref if isinstance(ref, str) else "" if ref is None or pd.isna(ref) else ref).strip().upper()
     payer = normalize_name(payer)
     if raw in index.by_id:
-        return index.by_id[raw], EXACT_ID, 100.0
+        member = index.by_id[raw]
+        if _slip_of_another(member, phone, payer, index):
+            return None, AMBIGUOUS, 100.0
+        return member, EXACT_ID, 100.0
     raw = _drop_amount(raw, amount)
     if _is_joint(raw, index):
         return None, AMBIGUOUS, 100.0          # "MBR-1001/02": one payment for two members
@@ -350,9 +406,8 @@ def _weigh(raw: str, prefixed: list[str], phone: str, payer: str, index: MemberI
     if ref_member:
         # The member's own registered phone agreeing with the reference outweighs a name that also fits a member
         # with a close number.
-        if phones == {ref_member}:
-            near = set()
-        conflict = (phones and ref_member not in phones) or _name_points_elsewhere(payer, ref_member, index, near) \
+        conflict = (phones and ref_member not in phones) \
+            or _name_points_elsewhere(payer, ref_member, index, near, phone_agrees=phones == {ref_member}) \
             or _ref_names_someone_else(raw, ref_member, index, payer)
         if not any(index.full_length(i[3:]) for i in prefixed):
             # A bare number, or MBR with a digit too many, is weak evidence: the phone or the payer's name must agree.
@@ -411,18 +466,18 @@ def _receipt_key(receipt) -> str | None:
     return key or None
 
 
-_CURRENCY_BEFORE = re.compile(r"^(?:KSHS?|KES|SHS?)\.?")
-_CURRENCY_AFTER = re.compile(r"(?:/=|/-|KSHS?|KES|SHS?\.?)$")
+_CURRENCY_BEFORE = re.compile(r"^(?:KSHS?|KES|SHS?)\.?\s*")
+_CURRENCY_AFTER = re.compile(r"\s*(?:/=|/-|KSHS?|KES|SHS?\.?)$")
 
 
 def _to_amount(value):
     """3600, "3600", "5,160.00", "KES 5,160", "Ksh5,160", "5,160/=" and "5.160,00" are numbers. Anything that could be
     read two ways ("5.160", "1,0000") or not at all ("N/A", blank) is not, so it goes to a person."""
     if isinstance(value, str):
-        text = re.sub(r"\s+", "", value.upper())
-        text = _CURRENCY_AFTER.sub("", _CURRENCY_BEFORE.sub("", text))
-        if re.fullmatch(r"-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{0,2})?", text):
-            return float(text.replace(",", "").rstrip("."))
+        text = _CURRENCY_AFTER.sub("", _CURRENCY_BEFORE.sub("", value.strip().upper())).strip()
+        # thousands grouped by commas or single spaces ("5,160", "5 160"), or not at all
+        if re.fullmatch(r"-?(?:\d{1,3}(?:,\d{3})+|\d{1,3}(?: \d{3})+|\d+)(?:\.\d{0,2})?", text):
+            return float(text.replace(",", "").replace(" ", "").rstrip("."))
         if re.fullmatch(r"-?\d{1,3}(?:\.\d{3})+,\d{1,2}", text):  # 5.160,00
             return float(text.replace(".", "").replace(",", "."))
         return np.nan

@@ -15,6 +15,7 @@ import math
 import zlib
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 from pathlib import Path
 
 import numpy as np
@@ -127,12 +128,38 @@ class TriggerParams:
         return self.sum_insured * self.aggregate_cap_share
 
 
+def loss_ratio_rate(burn_rate: float, params: TriggerParams) -> float:
+    """Burn cost over the target loss ratio, rounded up to 0.1% so the loss ratio stays at or under target."""
+    return math.ceil(burn_rate / params.target_loss_ratio * 1000 - 1e-9) / 1000
+
+
 def commercial_rate(burn_rate: float, params: TriggerParams) -> float:
-    """Premium rate per season. Target pricing rounds up to 0.1% so the loss ratio stays at or under target, and
-    never goes below the minimum rate: ten seasons without a payout do not make the cover free."""
+    """Premium rate per season. Target pricing never goes below the minimum rate: ten seasons without a payout do
+    not make the cover free."""
     if params.pricing_mode == "flat":
         return params.premium_rate
-    return max(math.ceil(burn_rate / params.target_loss_ratio * 1000 - 1e-9) / 1000, params.min_premium_rate)
+    return max(loss_ratio_rate(burn_rate, params), params.min_premium_rate)
+
+
+def minimum_applies(burn_rate: float, params: TriggerParams) -> bool:
+    """True when the minimum rate, not the loss-ratio rule, sets the price: the rounded-up loss-ratio rate is below
+    it. A rate that rounds up to exactly the minimum is set by the rule."""
+    return params.pricing_mode != "flat" and loss_ratio_rate(burn_rate, params) < params.min_premium_rate - 1e-12
+
+
+def whole_shillings(value) -> int:
+    """Whole shillings, half up, from an exact decimal (never Python's round-half-even on a binary float). Float
+    noise below a millionth of a shilling is removed first, so it cannot flip the rounding of a half."""
+    with localcontext() as ctx:
+        ctx.prec = 60
+        exact = value if isinstance(value, Decimal) else Decimal(repr(round(float(value), 6)))
+        return int(exact.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def farmer_share(gross_ksh: int, subsidy_share: float) -> int:
+    """What the farmer pays of a gross premium: the subsidy's share is rounded to whole shillings, half up, and the
+    farmer pays the rest, so the two always add up to the gross."""
+    return gross_ksh - whole_shillings(Decimal(gross_ksh) * Decimal(repr(subsidy_share)))
 
 
 # --------------------------------------------------------------------------------------------- weather
@@ -490,8 +517,8 @@ def kpis(seasons: pd.DataFrame, params: TriggerParams = TriggerParams()) -> Back
     worst = int(by_year.idxmax()) if by_year.max() > 0 else None
     worst_amount = float(by_year.max()) if worst else 0.0
     return BacktestKPIs(
-        burn_cost_pct=burn, premium_rate_pct=100.0 * rate, premium_ksh=premium,
-        farmer_premium_ksh=premium * (1 - params.subsidy_share), loss_ratio_pct=loss_ratio,
+        burn_cost_pct=burn, premium_rate_pct=100.0 * rate, premium_ksh=whole_shillings(premium),
+        farmer_premium_ksh=farmer_share(whole_shillings(premium), params.subsidy_share), loss_ratio_pct=loss_ratio,
         worst_year=worst, worst_year_payout=worst_amount,
         worst_year_pct=100.0 * worst_amount / (2 * params.sum_insured),
         seasons_paying=int((seasons["payout_total"] > 0).sum()), seasons=len(seasons),

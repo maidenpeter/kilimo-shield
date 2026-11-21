@@ -7,7 +7,7 @@ from __future__ import annotations
 import html
 import math
 from contextlib import contextmanager
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 import streamlit as st
 
@@ -185,11 +185,15 @@ def stats(items: list[tuple]) -> None:
 def _half_up(value: float, decimals: int) -> Decimal:
     """Money rounds half up (KSh 2.50 shows as KSh 3), not to even as Python's format does. Float noise below a
     millionth is removed first, so 20,249,999.999999996 (noise for 20,250,000) is treated as the whole it is."""
-    shown = Decimal(repr(round(float(value), 6))).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+    with localcontext() as ctx:
+        ctx.prec = 60
+        shown = Decimal(repr(round(float(value), 6))).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
     return shown + 0 if shown else abs(shown)  # never "KSh -0"
 
 
 def ksh(value: float, decimals: int = 0) -> str:
+    if value is None or not math.isfinite(float(value)):
+        return "KSh n/a"
     return f"KSh {_half_up(value, decimals):,.{decimals}f}"
 
 

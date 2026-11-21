@@ -84,8 +84,11 @@ def test_conflicting_evidence_goes_to_review(data):
     other_phone = m.loc["MBR-1008", "phone_254"]
     # a reference naming one member, paid from another member's registered phone
     assert rec.match_row("MBR 1001", other_phone, "", index)[1] == rec.AMBIGUOUS
-    # but an exact member ID is the payer's instruction and stands on its own
-    assert rec.match_row("MBR-1001", other_phone, "", index)[:2] == ("MBR-1001", rec.EXACT_ID)
+    # but an exact member ID is the payer's instruction and stands on its own, unless it is one keying slip from the
+    # member who paid (MBR-1001 from MBR-1008's phone)
+    far_phone = m.loc[m.index[-1], "phone_254"]
+    assert rec.match_row("MBR-1001", far_phone, "", index)[:2] == ("MBR-1001", rec.EXACT_ID)
+    assert rec.match_row("MBR-1001", other_phone, "", index)[1] == rec.AMBIGUOUS
     # a mistyped ID paid under exactly another member's full name
     two_word = data.members[data.members["full_name"].str.split().str.len() == 2].iloc[0]
     got = rec.match_row("MBR 1100", "254700000004", two_word["full_name"], index)[0]
@@ -427,3 +430,45 @@ def test_amount_formats(text, expected):
 @pytest.mark.parametrize("text", ["5.160", "1,0000", "(5,160.00)", "N/A", ""])
 def test_ambiguous_amounts_go_to_a_person(text):
     assert np.isnan(rec._to_amount(text))
+
+
+def test_round_five_reference_cases(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000999"
+    own = m.loc["MBR-1042"]
+    # an exact ID one slip from the paying member goes to a person; a far-off member's ID is a payment for them
+    assert rec.match_row("MBR-1043", own["phone_254"], own["full_name"], index, 3600.0)[1] == rec.AMBIGUOUS
+    assert rec.match_row("MBR-1024", own["phone_254"], own["full_name"], index, 3600.0)[1] == rec.AMBIGUOUS
+    far = m.index[-1]
+    assert rec.match_row(far, own["phone_254"], own["full_name"], index, 3600.0) == (far, rec.EXACT_ID, 100.0)
+    # months, years and instalments after the ID are not a second member
+    for ref in ("MBR-1042-10", "MBR-1042/11", "MBR-1042/26", "MBR-1042-1", "MBR-1042/2026"):
+        assert rec.match_row(ref, own["phone_254"], own["full_name"], index, 3600.0)[0] == "MBR-1042", ref
+    # joint references in still more spellings
+    for ref in ("MBR 1001 ; 02", "MBR1001 n 02", "MBR-1I01/02", "MBR-1041/2"):
+        assert rec.match_row(ref, unknown, "", index, 7200.0)[1] == rec.AMBIGUOUS, ref
+    assert rec.match_row("1001/02", m.loc["MBR-1001", "phone_254"], "", index, 7200.0)[1] == rec.AMBIGUOUS
+
+
+def test_exact_ids_never_credit_a_one_slip_neighbour(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    for mid in m.index:
+        d = mid.split("-")[1]
+        for i in range(1, 4):
+            for digit in "0123456789":
+                typed = f"MBR-{d[:i]}{digit}{d[i + 1:]}"
+                if typed == mid or typed not in m.index:
+                    continue
+                got = rec.match_row(typed, m.loc[mid, "phone_254"], m.loc[mid, "full_name"], index, 3600.0)[0]
+                assert got in (None, mid), (typed, mid)
+
+
+@pytest.mark.parametrize("text,expected", [("5 160", 5160.0), ("KSh 5 160.00", 5160.0), ("5160 KES", 5160.0)])
+def test_space_grouped_amounts(text, expected):
+    assert rec._to_amount(text) == expected
+
+
+def test_badly_grouped_spaces_go_to_a_person():
+    assert np.isnan(rec._to_amount("1 0000"))
