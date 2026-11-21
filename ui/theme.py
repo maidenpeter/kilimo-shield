@@ -31,23 +31,27 @@ LAYER_COLOURS = {"Payout A: crop inputs": GREEN, "Payout B: fodder gap": "#ca8a0
 CSS = f"""
 <style>
   .stApp {{ background: {PAGE}; color: {BODY}; }}
-  header[data-testid="stHeader"] {{ background: transparent; }}
-  .block-container {{ padding-top: 2.6rem; padding-bottom: 2.5rem; max-width: 1360px; }}
+  /* navbar: Streamlit's own header bar carries the logo and the name */
+  header[data-testid="stHeader"] {{ background: {SURFACE}; border-bottom: 1px solid {LINE}; }}
+  header[data-testid="stHeader"]::before {{
+      content: "{brand.APP_NAME}"; position: absolute; left: 1.25rem; top: 0; height: 100%; z-index: 1;
+      display: flex; align-items: center; padding-left: 36px; pointer-events: none;
+      background: url("{brand.logo_data_uri()}") no-repeat left center / 27px 27px;
+      font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 1.15rem; color: {INK};
+      letter-spacing: -0.015em; }}
+  .stApp:has(section[data-testid="stSidebar"][data-collapsed="true"]) header[data-testid="stHeader"]::before {{
+      left: 3.5rem; }}
+  .block-container {{ padding-top: 4.4rem; padding-bottom: 2.5rem; max-width: 1360px; }}
   h1, h2, h3, h4 {{ color: {INK}; letter-spacing: -0.01em; text-wrap-style: balance; }}
   h3 {{ font-size: 1.05rem !important; font-weight: 650 !important; margin: 0 0 0.15rem !important;
         padding: 0 !important; }}
   .stMarkdown p, .stMarkdown li {{ text-wrap-style: pretty; }}
 
-  /* top bar */
-  .ss-topbar {{ display: flex; align-items: center; gap: 14px; padding: 10px 0 14px; margin-bottom: 4px;
-                border-bottom: 1px solid {LINE}; flex-wrap: wrap; }}
-  .ss-topbar img {{ width: 40px; height: 40px; display: block; }}
-  .ss-topbar .name {{ color: {INK}; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }}
-  .ss-topbar .tagline {{ color: {MUTED}; font-size: 0.9rem; }}
-  .ss-topbar .meta {{ margin-left: auto; text-align: right; color: {MUTED}; font-size: 0.8rem; line-height: 1.5; }}
-  .ss-topbar code, .ss-footer code {{ font-size: 0.78rem; color: {BODY}; background: {SURFACE};
-                                      border: 1px solid {LINE}; border-radius: 4px; padding: 0 4px; }}
-  @media (max-width: 640px) {{ .ss-topbar .meta {{ margin-left: 0; text-align: left; width: 100%; }} }}
+  /* context line under the navbar */
+  .ss-context {{ color: {MUTED}; font-size: 0.85rem; margin: 0 0 2px; }}
+  .ss-context b {{ color: {BODY}; font-weight: 600; }}
+  .ss-footer code {{ font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; color: {BODY};
+                     background: {SURFACE}; border: 1px solid {LINE}; border-radius: 4px; padding: 0 4px; }}
 
   /* panels: bordered containers keyed "sspanel-..." */
   div[class*="st-key-sspanel-"] {{ background: {SURFACE}; border: 1px solid {LINE} !important;
@@ -113,12 +117,11 @@ def apply() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
 
 
-def top_bar() -> None:
+def context_line() -> None:
+    """One quiet line under the navbar: what this is, for whom, and how real the numbers are."""
     st.markdown(
-        f'<div class="ss-topbar"><img src="{brand.logo_data_uri()}" alt="">'
-        f'<div><div class="name">{brand.APP_NAME}</div><div class="tagline">{html.escape(brand.TAGLINE)}</div></div>'
-        f'<div class="meta">Calculating agent for: Partner insurer (to be named)<br>'
-        f'Illustrative terms, synthetic SACCO data &nbsp;<code>{brand.identifier()}</code></div></div>',
+        f'<p class="ss-context">{html.escape(brand.TAGLINE)}. Calculating agent for: <b>Partner insurer (to be '
+        f'named)</b>. Illustrative terms, synthetic SACCO data.</p>',
         unsafe_allow_html=True,
     )
 
@@ -177,7 +180,7 @@ def plot_layout(fig, height: int = 400):
     """Charts sit inside a titled panel, so they carry no title of their own."""
     fig.update_layout(
         height=height, paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
-        font={"color": BODY, "family": "Source Sans Pro, sans-serif"},
+        font={"color": BODY, "family": "IBM Plex Sans, sans-serif"},
         margin={"l": 56, "r": 12, "t": 16, "b": 40}, legend={"orientation": "h", "y": -0.16, "x": 0},
         hoverlabel={"bgcolor": SURFACE},
     )

@@ -15,7 +15,7 @@ automated SACCO reconciliation (ShambaRecon). One Streamlit app, three tabs:
    agro-vets send geotagged photos for KSh 100 airtime; 60% agreement unlocks the payout. Plus a pilot calculator
    for the platform, the insurer and the reinsurer.
 
-No API keys are needed. The weather is cached in the repo, so the demo runs offline.
+No API keys are needed. The weather and the typeface (IBM Plex) ship with the repo, so the demo runs offline.
 
 ## Run it
 
@@ -114,6 +114,7 @@ only a name (`tests/test_matcher_adversarial.py`), it made no wrong credits; abo
 ```
 app.py                       app shell: top bar, tabs, footer
 assets/                      logo (SVG and 256 px PNG)
+static/fonts/                IBM Plex Sans and Mono (SIL Open Font License, OFL.txt), served with the app
 engine/parametric_engine.py  Open-Meteo fetch and cache, water balance, indices, payout layers, pricing, KPIs
 engine/recon_engine.py       phone and reference cleaning, RapidFuzz matcher, waterfall, bordereau, claim split
 engine/whatsapp_simulator.py amber-zone state machine, verifier network, simulated photos

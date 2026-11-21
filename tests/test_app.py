@@ -40,7 +40,8 @@ def test_app_renders_all_three_tabs(app):
     assert len(labels) == 3
     assert "Reinsurer backtest" in labels[0] and "SACCO reconciliation" in labels[1] and "Trust loop" in labels[2]
     text = _text(app)
-    assert brand.APP_NAME in text and brand.identifier() in text
+    assert f'content: "{brand.APP_NAME}"' in text  # the name is drawn into the navbar
+    assert brand.identifier() in text
     assert "Partner insurer (to be named)" in text
     assert "Burn cost" in text and "Basis-risk score" in text
     assert "—" not in text  # plain punctuation in user-facing copy

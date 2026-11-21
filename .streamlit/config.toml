@@ -1,10 +1,49 @@
 [theme]
 base = "light"
 primaryColor = "#14532d"
-backgroundColor = "#f8fafc"
+backgroundColor = "#f5f6f4"
 secondaryBackgroundColor = "#ffffff"
-textColor = "#0f172a"
-font = "sans serif"
+textColor = "#101828"
+# IBM Plex (SIL Open Font License, static/fonts/OFL.txt), served with the app so it works offline.
+font = "IBM Plex Sans, sans-serif"
+headingFont = "IBM Plex Sans, sans-serif"
+codeFont = "IBM Plex Mono, monospace"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/ibm-plex-sans-latin-400-normal.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/ibm-plex-sans-latin-500-normal.woff2"
+weight = 500
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/ibm-plex-sans-latin-600-normal.woff2"
+weight = 600
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fonts/ibm-plex-sans-latin-700-normal.woff2"
+weight = 700
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/ibm-plex-mono-latin-400-normal.woff2"
+weight = 400
+style = "normal"
+
+[[theme.fontFaces]]
+family = "IBM Plex Mono"
+url = "app/static/fonts/ibm-plex-mono-latin-500-normal.woff2"
+weight = 500
+style = "normal"
 
 [client]
 toolbarMode = "viewer"
@@ -14,3 +53,4 @@ gatherUsageStats = false
 
 [server]
 headless = true
+enableStaticServing = true

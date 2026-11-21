@@ -9,7 +9,7 @@ from ui import brand, tab_parametric, tab_recon, tab_whatsapp, theme
 st.set_page_config(page_title=brand.APP_NAME, page_icon=str(brand.LOGO_PNG), layout="wide",
                    initial_sidebar_state="auto")
 theme.apply()
-theme.top_bar()
+theme.context_line()
 
 backtest_tab, recon_tab, whatsapp_tab = st.tabs([
     ":material/monitoring: Reinsurer backtest",
