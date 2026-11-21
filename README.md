@@ -1,6 +1,6 @@
 # KilimoShield
 
-App ID `kilimoshield`, version 2.0.0.
+App ID `kilimoshield`, version 2.0.0. Live demo: https://kilimo-shield.streamlit.app/
 
 A pitch-ready prototype for a Kenyan mixed-farm (crop and livestock) parametric insurance calculating agent, with
 automated SACCO reconciliation (KilimoRecon). The app tells one story in four chapters, each opening with the sentence
