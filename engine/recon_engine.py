@@ -1,14 +1,16 @@
 """ShambaRecon: match M-Pesa paybill rows to SACCO members, allocate every shilling by waterfall, and build the
 underwriter bordereau and the claim-split settlement.
 
-Matching runs in a fixed order and stops at the first rule that finds exactly one member:
-  0. Duplicate receipt number         -> held, never credited twice
-  1. Exact member ID, then exact phone (deterministic)
-  2. National ID in the reference     (deterministic)
-  3. Fuzzy reference (RapidFuzz WRatio >= 82 on a cleaned reference)
-  4. Spouse name match (payer name against the member's recorded spouse, surname hint as tie-break)
-  5. Member name match (payer name against member names, stricter threshold)
-  otherwise                           -> suspense, for a person to review
+Matching weighs every piece of evidence on a row, and a wrong credit is treated as worse than a review:
+  - a repeated receipt number (ignoring case and spaces) is held, never credited twice;
+  - a blank, zero or negative amount is held for review;
+  - an exact member ID, or a national ID standing alone, is the payer's instruction;
+  - a mistyped ID (RapidFuzz WRatio >= 82 on a cleaned reference) counts when it points at one member and nothing on
+    the row points at someone else; equally close IDs are settled only by exact names;
+  - a registered phone decides when there is no usable reference;
+  - a name alone credits only a unique, exact, three-word record;
+  - anything that disagrees (two members in one reference, a shared phone, a reference naming someone else) goes to
+    Ambiguous (review); anything with no evidence stays Unmatched (suspense).
 
 Allocation waterfall, per member, in time order:
   Priority 1  seasonal premium for the member's ward (zone pricing): ACTIVE when complete, GRACE_PERIOD from 50%
@@ -26,7 +28,6 @@ import pandas as pd
 from rapidfuzz import fuzz, process
 
 FUZZY_THRESHOLD = 82
-NAME_THRESHOLD = 90  # payer name alone is weaker evidence than a reference, so the bar is higher
 PREMIUM_TARGET = 3_600.0
 GRACE_SHARE = 0.5
 
@@ -40,7 +41,8 @@ CHECKOFF = "Milk Check-off"
 DUPLICATE = "Duplicate (held)"
 AMBIGUOUS = "Ambiguous (review)"
 UNMATCHED = "Unmatched (suspense)"
-SUSPENSE_METHODS = (AMBIGUOUS, UNMATCHED)
+BAD_AMOUNT = "Bad amount (review)"
+SUSPENSE_METHODS = (AMBIGUOUS, UNMATCHED, BAD_AMOUNT)
 
 ACTIVE, GRACE, PENDING = "ACTIVE", "GRACE_PERIOD", "PENDING"
 NOT_OFFERED = "NOT_OFFERED"  # the member's ward is not sold this product, so nothing goes to premium
@@ -68,21 +70,61 @@ def mask_id(national_id: str) -> str:
     return f"****{str(national_id)[-3:]}" if national_id else ""
 
 
+_LETTER_DIGIT = {"O": "0", "I": "1", "L": "1"}
+_ID_RUN = re.compile(r"(?:MBRR|MBR|MRB|BMR|NBR)[\s\-_./]*([0-9OIL]+)")
+# Words in a reference that say what the money is for rather than who it is for.
+REFERENCE_WORDS = {"FOR", "ACC", "ACCOUNT", "MILK", "PREMIUM", "SHAMBA", "LOAN", "FEES", "FEE", "PAYMENT", "PAY",
+                   "INSURANCE", "DEPOSIT", "SAVINGS", "CHAMA", "TEST", "TERM", "SCHOOL", "MBR", "THE", "AND", "FULL"}
+
+
+def _repair(run: str, after: str) -> str:
+    """Digits of an ID run. O, I and L count as digits only inside the number or where it ends, never when they
+    start the next word ("104OTIENO" is 104 followed by a name)."""
+    digits = []
+    for i, ch in enumerate(run):
+        if ch.isdigit():
+            digits.append(ch)
+            continue
+        nxt = run[i + 1] if i + 1 < len(run) else after
+        if nxt.isdigit() or not nxt.isalpha():
+            digits.append(_LETTER_DIGIT[ch])
+        else:
+            break
+    return "".join(digits)
+
+
+def reference_ids(raw) -> list[str]:
+    """Every MBR-prefixed ID in a reference, repaired, in order: "MBR LOAN mbr-1O42" -> ["MBR1042"]."""
+    text = str(raw or "").upper()
+    ids = []
+    for match in _ID_RUN.finditer(text):
+        digits = _repair(match.group(1), text[match.end(1):match.end(1) + 1])
+        if digits:
+            ids.append("MBR" + digits)
+    return ids
+
+
 def canonical_ref(raw) -> str:
-    """Upper-case letters and digits only, with common keying slips repaired (MRB -> MBR, O -> 0 in numbers)."""
-    ref = re.sub(r"[^A-Z0-9]", "", str(raw or "").upper())
-    ref = re.sub(r"^(MRB|BMR|MBRR|NBR)", "MBR", ref)
-    match = re.match(r"^(.*?MBR)([0-9OIL]{4})(.*)$", ref)
-    if match:
-        digits = match.group(2).replace("O", "0").replace("I", "1").replace("L", "1")
-        ref = "MBR" + digits + match.group(3)
-    return ref
+    """The member-ID part of a reference with keying slips repaired: "mbr 1O42-milk" -> "MBR1042".
+
+    The first MBR word that carries a number counts ("MBR LOAN MBR-1042" -> "MBR1042"). A reference without one comes
+    back as upper-case letters and digits only ("1042", "KAMAUMILK").
+    """
+    ids = reference_ids(raw)
+    return ids[0] if ids else re.sub(r"[^A-Z0-9]", "", str(raw or "").upper())
+
+
+def normalize_name(raw) -> str:
+    """Upper case, letters and single spaces only: "Jane  Wanjiku-Kamau." -> "JANE WANJIKU KAMAU", "Ndung'u" ->
+    "NDUNGU"."""
+    text = re.sub(r"['\u2019`]", "", str(raw or "").upper())
+    return " ".join(re.sub(r"[^A-Z ]", " ", text).split())
 
 
 def split_other_party(info) -> tuple[str, str]:
     """'254712345678 - JANE WANJIKU' -> ('254712345678', 'JANE WANJIKU')."""
     phone, _, name = str(info or "").partition(" - ")
-    return normalize_phone(phone), name.strip()
+    return normalize_phone(phone), normalize_name(name)
 
 
 # ------------------------------------------------------------------------------------------- matching
@@ -95,113 +137,221 @@ class MemberIndex:
         m = self.members
         self.by_id = {mid.upper(): mid for mid in m["member_id"]}
         self.id_choices = {mid.replace("-", "").upper(): mid for mid in m["member_id"]}
-        self.by_phone = {normalize_phone(p): mid for p, mid in zip(m["phone"], m["member_id"]) if normalize_phone(p)}
-        self.by_national_id = {str(n).split(".")[0]: mid for n, mid in zip(m["national_id"], m["member_id"])
-                               if pd.notna(n)}
-        self.names = {mid: str(name).upper() for mid, name in zip(m["member_id"], m["full_name"])}
-        self.spouses = {mid: s.upper() for mid, s in zip(m["member_id"], m["spouse_name"].fillna(""))
-                        if isinstance(s, str) and s.strip()}
-        self.surnames = {mid: s.upper().replace("'", "") for mid, s in zip(m["member_id"], m["surname"])}
+        # A phone or national ID registered to more than one member identifies nobody on its own.
+        self.phone_members: dict[str, set] = {}
+        for p, mid in zip(m["phone"], m["member_id"]):
+            if normalize_phone(p):
+                self.phone_members.setdefault(normalize_phone(p), set()).add(mid)
+        self.nid_members: dict[str, set] = {}
+        for n, mid in zip(m["national_id"], m["member_id"]):
+            if pd.notna(n) and str(n).strip():
+                self.nid_members.setdefault(str(n).split(".")[0].strip(), set()).add(mid)
+        self.names = {mid: normalize_name(name) for mid, name in zip(m["member_id"], m["full_name"])}
+        self.spouses = {mid: normalize_name(s) for mid, s in zip(m["member_id"], m["spouse_name"].fillna(""))
+                        if isinstance(s, str) and normalize_name(s)}
+        self.surnames = {mid: normalize_name(s) for mid, s in zip(m["member_id"], m["surname"])}
+        self.records = [(mid, name, MEMBER_NAME) for mid, name in self.names.items()] + \
+                       [(mid, name, SPOUSE) for mid, name in self.spouses.items()]
+        self.name_words = {word for _, name, _ in self.records for word in name.split()}
 
-
-def _surname_support(ref: str, member_id: str, index: MemberIndex) -> float:
-    tokens = [t for t in re.split(r"[^A-Z]+", str(ref).upper()) if len(t) >= 3]
-    surname = index.surnames[member_id]
-    return max((fuzz.partial_ratio(t, surname) for t in tokens), default=0.0)
+    def words_of(self, member_id: str) -> set:
+        return set(self.names.get(member_id, "").split()) | set(self.spouses.get(member_id, "").split())
 
 
 def _same_words(payer: str, name: str) -> bool:
     return bool(payer) and bool(name) and set(payer.split()) == set(name.split())
 
 
-def _settle_tie(candidates: list[tuple[str, str]], payer: str, ref: str, index: MemberIndex):
-    """Pick one (member_id, record name) from equally close candidates, or None for a person to review.
+def _holders(payer: str, records) -> set:
+    """Members whose own or spouse's name contains every word of the payer's name."""
+    words = set(payer.split())
+    return {mid for mid, name, *_ in records if words and words <= set(name.split())}
 
-    Only strong evidence settles a tie, because a wrong credit is worse than a short review queue: the payer's
-    name has exactly the same words as one candidate's record (member or spouse), or the reference names exactly
-    one candidate's surname. A partial name ("STEPHEN OWINO" against "STEPHEN MWANGI OWINO") is not enough when
-    ten member IDs fit the reference equally well.
+
+def _name_points_elsewhere(payer: str, member_id: str, index: MemberIndex) -> bool:
+    """True when the payer's name is exactly someone's name and does not fit this member: conflicting evidence."""
+    exact = {mid for mid, name, _ in index.records if _same_words(payer, name)}
+    return bool(exact) and member_id not in _holders(payer, index.records)
+
+
+def _name_fits(payer: str, member_id: str, index: MemberIndex) -> bool:
+    """At least two of the payer's names, all found in the member's or the spouse's record."""
+    words = set(payer.split())
+    return len(words) >= 2 and words <= index.words_of(member_id)
+
+
+def _ref_names_someone_else(raw: str, member_id: str, index: MemberIndex) -> bool:
+    """True when the reference spells a name that is on the register but not in this member's or spouse's name."""
+    tokens = {tok for tok in re.split(r"[^A-Z]+", normalize_name(raw)) if len(tok) >= 3} - REFERENCE_WORDS
+    return bool((tokens & index.name_words) - index.words_of(member_id))
+
+
+def _name_owner(payer: str, index: MemberIndex):
+    """(member_id, method) when a name ALONE identifies someone, else None.
+
+    Three or more names, in the same order as one record, and nobody else (member or spouse) carries all of those
+    words. Two names are too common, and reversed names can be different people.
     """
-    same = {(mid, name) for mid, name in candidates if _same_words(payer, name)}
-    holders = {mid for mid, name in candidates if payer and set(payer.split()) <= set(name.split())}
-    if len({mid for mid, _ in same}) == 1 and holders == {next(iter(same))[0]}:
-        return next(iter(same))
-    hinted = {mid for mid, _ in candidates if _surname_support(ref, mid, index) >= 85}
-    if len(hinted) == 1:
-        mid = next(iter(hinted))
-        return mid, next(name for m, name in candidates if m == mid)
+    if len(payer.split()) < 3:
+        return None
+    exact = [(mid, kind) for mid, name, kind in index.records if name == payer]
+    if len({mid for mid, _ in exact}) == 1 and _holders(payer, index.records) == {exact[0][0]}:
+        return exact[0]
     return None
 
 
-def match_row(ref, phone: str, payer: str, index: MemberIndex) -> tuple[str | None, str, float]:
-    """Return (member_id, method, confidence 0-100) for one statement row."""
-    raw = str(ref or "").strip().upper()
+def _settle_tie(tied: list[str], payer: str, ref: str, index: MemberIndex) -> str | None:
+    """Pick one member from equally close reference candidates, or None for a person to review.
+
+    Only exact evidence settles a tie: the payer's name has the same words as one candidate's (or their spouse's)
+    record and no other candidate's record contains those words; or the reference spells exactly one candidate's
+    surname and no other candidate carries that word in any name. "NEKESA" never stands in for "WEKESA".
+    """
+    candidates = [(mid, index.names[mid]) for mid in tied] + [(mid, index.spouses[mid]) for mid in tied
+                                                               if mid in index.spouses]
+    same = {mid for mid, name in candidates if _same_words(payer, name)}
+    if len(same) == 1 and _holders(payer, candidates) == same:
+        return next(iter(same))
+    tokens = {tok for tok in re.split(r"[^A-Z]+", normalize_name(ref)) if len(tok) >= 3}
+    hinted = {mid for mid in tied if index.surnames[mid] in tokens}
+    carriers = {mid for mid, name in candidates if tokens & set(name.split())}
+    if len(hinted) == 1 and carriers == hinted:
+        return next(iter(hinted))
+    return None
+
+
+def _from_reference(raw: str, payer: str, index: MemberIndex):
+    """(member_id or None, the tied candidates when none could be chosen, score) from a mistyped reference."""
+    cref = canonical_ref(raw)
+    if len(cref) < 4 or not any(ch.isdigit() for ch in cref):
+        return None, [], 0.0
+    hits = process.extract(cref, list(index.id_choices), scorer=fuzz.WRatio, limit=None, score_cutoff=FUZZY_THRESHOLD)
+    if not hits:
+        return None, [], 0.0
+    best = round(hits[0][1], 1)
+    tied = [index.id_choices[h[0]] for h in hits if hits[0][1] - h[1] < 2]
+    if len(tied) == 1:
+        return tied[0], [], best
+    chosen = _settle_tie(tied, payer, raw, index)
+    return (chosen, [], best) if chosen else (None, tied, best)
+
+
+def match_row(ref, phone: str, payer: str, index: MemberIndex, amount=None) -> tuple[str | None, str, float]:
+    """Return (member_id, method, confidence 0-100) for one statement row.
+
+    The account reference is the payer's instruction, so an exact member ID or a national ID decides on its own.
+    Anything weaker is weighed with the other evidence, and when the reference, the registered phone and the payer's
+    name point at different members, a person decides: a wrong credit is worse than a short review queue.
+    """
+    raw = str(ref if isinstance(ref, str) else "" if ref is None or pd.isna(ref) else ref).strip().upper()
+    payer = normalize_name(payer)
     if raw in index.by_id:
         return index.by_id[raw], EXACT_ID, 100.0
-    if phone and phone in index.by_phone:
-        return index.by_phone[phone], EXACT_PHONE, 100.0
 
-    for digits in re.findall(r"\d{7,8}", raw):
-        if digits in index.by_national_id:
-            return index.by_national_id[digits], NATIONAL_ID, 100.0
+    # Everything in the reference that names a member: MBR IDs, bare member numbers, national IDs.
+    named = {index.id_choices[i] for i in reference_ids(raw) if i in index.id_choices}
+    bare = {index.id_choices[f"MBR{d}"] for d in re.findall(r"(?<!\d)\d{4}(?!\d)", raw)
+            if f"MBR{d}" in index.id_choices}
+    nids = [index.nid_members[d] for d in re.findall(r"(?<!\d)\d{7,8}(?!\d)", raw) if d in index.nid_members]
+    if len(named | bare | set().union(*nids)) > 1:
+        return None, AMBIGUOUS, 100.0          # two members in one reference, or an ID shared by members
+    if nids:
+        member = next(iter(nids[0]))
+        if _ref_names_someone_else(raw, member, index):
+            return None, AMBIGUOUS, 100.0
+        return member, NATIONAL_ID, 100.0
 
-    cref = canonical_ref(raw)
-    if len(cref) >= 4 and any(ch.isdigit() for ch in cref):
-        hits = process.extract(cref, list(index.id_choices), scorer=fuzz.WRatio, limit=None,
-                               score_cutoff=FUZZY_THRESHOLD)
-        if hits:
-            best_score = hits[0][1]
-            tied = [index.id_choices[h[0]] for h in hits if best_score - h[1] < 2]
-            if len(tied) == 1:
-                return tied[0], FUZZY_REF, round(best_score, 1)
-            # Several IDs are equally close (a truncated MBR-104 fits ten): only a full-name match settles it.
-            candidates = [(mid, index.names[mid]) for mid in tied] + \
-                         [(mid, index.spouses[mid]) for mid in tied if mid in index.spouses]
-            chosen = _settle_tie(candidates, payer, raw, index)
-            return (chosen[0], FUZZY_REF, round(best_score, 1)) if chosen else (None, AMBIGUOUS, round(best_score, 1))
-
+    phones = index.phone_members.get(phone, set()) if phone else set()
+    phone_member = next(iter(phones)) if len(phones) == 1 else None
+    ref_member, tied, score = _from_reference(raw, payer, index)
+    if ref_member:
+        conflict = (phones and ref_member not in phones) or _name_points_elsewhere(payer, ref_member, index) \
+            or _ref_names_someone_else(raw, ref_member, index)
+        if not named:  # a bare number is weak evidence: it may be the amount, or another number altogether
+            digits = re.sub(r"\D", "", raw)
+            is_amount = amount is not None and digits and float(digits) == float(amount)
+            backed = ref_member in phones or _name_fits(payer, ref_member, index)
+            conflict = conflict or is_amount or not backed
+        if conflict:
+            return None, AMBIGUOUS, score
+        return ref_member, FUZZY_REF, score
+    if tied:
+        both = set(tied) & phones
+        if len(both) == 1:
+            member = next(iter(both))
+            if not _name_points_elsewhere(payer, member, index) and not _ref_names_someone_else(raw, member, index):
+                return member, EXACT_PHONE, 100.0
+        return None, AMBIGUOUS, score
+    if phones:
+        if phone_member is None or _name_points_elsewhere(payer, phone_member, index) \
+                or _ref_names_someone_else(raw, phone_member, index):
+            return None, AMBIGUOUS, 100.0
+        return phone_member, EXACT_PHONE, 100.0
     if payer:
-        # Name only: no ID and no registered phone, so the name must point at one person without doubt. Member and
-        # spouse names are checked together. A payment is credited only when the payer's name has exactly the
-        # words of one record AND no other member or spouse carries all of those words ("NEKESA WANYAMA" is one
-        # member's full name but also part of "ESTHER NEKESA WANYAMA", so it goes to review). A close but not
-        # exact name ("NEKESA" against "WEKESA") is a person's call, never the matcher's.
-        words = set(payer.split())
-        records = [(mid, name, MEMBER_NAME) for mid, name in index.names.items()] + \
-                  [(mid, name, SPOUSE) for mid, name in index.spouses.items()]
-        same = [(mid, kind) for mid, name, kind in records if _same_words(payer, name)]
-        holders = {mid for mid, name, _ in records if words <= set(name.split())}
-        if len({mid for mid, _ in same}) == 1 and holders == {same[0][0]}:
-            return same[0][0], same[0][1], 100.0
-        near = process.extractOne(payer, index.names, scorer=fuzz.token_sort_ratio, score_cutoff=FUZZY_THRESHOLD)
-        near_spouse = process.extractOne(payer, index.spouses, scorer=fuzz.token_sort_ratio,
-                                         score_cutoff=FUZZY_THRESHOLD)
-        best = max((h[1] for h in (near, near_spouse) if h), default=0.0)
-        if same or best:
-            return None, AMBIGUOUS, round(max(best, 100.0 if same else 0.0), 1)
+        owner = _name_owner(payer, index)
+        if owner and not _ref_names_someone_else(raw, owner[0], index):
+            return owner[0], owner[1], 100.0
+        near = [h[1] for h in (process.extractOne(payer, index.names, scorer=fuzz.token_sort_ratio,
+                                                  score_cutoff=FUZZY_THRESHOLD),
+                               process.extractOne(payer, index.spouses, scorer=fuzz.token_sort_ratio,
+                                                  score_cutoff=FUZZY_THRESHOLD)) if h]
+        if near or owner:
+            return None, AMBIGUOUS, round(max(near or [100.0]), 1)
     return None, UNMATCHED, 0.0
 
 
 def naive_exact_match(statement: pd.DataFrame, members: pd.DataFrame) -> pd.Series:
     """What a clerk's exact lookup does: the account reference must equal a member ID character for character."""
     ids = set(members["member_id"])
-    return statement["account_reference"].fillna("").str.strip().isin(ids)
+    return statement["account_reference"].fillna("").astype(str).str.strip().isin(ids)
+
+
+MATCH_COLUMNS = ["member_id", "match_method", "confidence", "payer_phone", "payer_name"]
+
+
+def _amount_ok(amount) -> bool:
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        return False
+    return value > 0 and np.isfinite(value)
+
+
+def _receipt_key(receipt) -> str | None:
+    """Receipts compare without case or spaces, so an export that changed either cannot credit a payment twice."""
+    if not isinstance(receipt, str):
+        return None if receipt is None or pd.isna(receipt) else str(receipt).strip().upper() or None
+    key = re.sub(r"\s+", "", receipt).upper()
+    return key or None
+
+
+def clean_statement(statement: pd.DataFrame) -> pd.DataFrame:
+    """Amounts as numbers (text such as "3600" or "N/A" from a CSV becomes 3600.0 or NaN)."""
+    statement = statement.copy()
+    statement["paid_in_ksh"] = pd.to_numeric(statement["paid_in_ksh"], errors="coerce")
+    return statement
 
 
 def match_statement(statement: pd.DataFrame, members: pd.DataFrame) -> pd.DataFrame:
+    statement = clean_statement(statement)
     index = MemberIndex(members)
-    seen: set[str] = set()
+    seen: set = set()
     out = []
     for row in statement.itertuples(index=False):
         phone, payer = split_other_party(row.other_party_info)
-        if row.receipt_no in seen:
+        receipt = _receipt_key(row.receipt_no)
+        if receipt is not None and receipt in seen:
             member_id, method, confidence = None, DUPLICATE, 100.0
+        elif not _amount_ok(row.paid_in_ksh):
+            member_id, method, confidence = None, BAD_AMOUNT, 0.0
         else:
-            seen.add(row.receipt_no)
-            member_id, method, confidence = match_row(row.account_reference, phone, payer, index)
+            if receipt is not None:
+                seen.add(receipt)
+            member_id, method, confidence = match_row(row.account_reference, phone, payer, index, row.paid_in_ksh)
         out.append({"member_id": member_id, "match_method": method, "confidence": confidence,
                     "payer_phone": phone, "payer_name": payer})
-    return pd.concat([statement.reset_index(drop=True), pd.DataFrame(out)], axis=1)
+    matched = pd.DataFrame(out, columns=MATCH_COLUMNS)
+    return pd.concat([statement.reset_index(drop=True), matched], axis=1)
 
 
 # ----------------------------------------------------------------------------------------- waterfall
@@ -209,10 +359,11 @@ def match_statement(statement: pd.DataFrame, members: pd.DataFrame) -> pd.DataFr
 def premium_due(members: pd.DataFrame, premium_target) -> pd.Series:
     """Premium each member owes: one figure for everyone, or a {ward: KSh} map for zone pricing.
 
-    A ward missing from the map is not offered the product: its members owe no premium.
+    A ward missing from the map is not offered the product: its members get NaN (no premium, status NOT_OFFERED).
+    A ward priced at zero is offered and owes nothing.
     """
     if isinstance(premium_target, dict):
-        return members["ward"].map(premium_target).fillna(0.0).astype(float)
+        return members["ward"].map(premium_target).astype(float)
     return pd.Series(float(premium_target), index=members.index)
 
 
@@ -233,9 +384,13 @@ def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_targ
 
     ``premium_target`` is one KSh figure for every member, or a {ward: KSh} map when premiums are priced per ward.
     """
-    ledger = ledger.sort_values(["completion_time", "receipt_no"], kind="stable").reset_index(drop=True)
+    ledger = ledger.sort_values(["completion_time", "receipt_no"], kind="stable", na_position="last")
+    ledger = ledger.reset_index(drop=True)
+    members = members.copy()
+    for col in ("loan_balance", "overdue_interest", "savings_balance"):
+        members[col] = pd.to_numeric(members[col], errors="coerce").fillna(0.0)  # a blank cell means none
     due = premium_due(members, premium_target)
-    owed = {mid: {"premium": d, "interest": float(i), "principal": float(p)}
+    owed = {mid: {"premium": 0.0 if pd.isna(d) else float(d), "interest": float(i), "principal": float(p)}
             for mid, d, i, p in zip(members["member_id"], due, members["overdue_interest"], members["loan_balance"])}
     alloc = np.zeros((len(ledger), 4))
     for i, (mid, method, amount) in enumerate(zip(ledger["member_id"], ledger["match_method"],
@@ -255,17 +410,19 @@ def allocate_waterfall(ledger: pd.DataFrame, members: pd.DataFrame, premium_targ
     allocated = ledger[ledger["member_id"].notna() & ~ledger["match_method"].isin(SUSPENSE_METHODS + (DUPLICATE,))]
     sums = allocated.groupby("member_id")[["paid_in_ksh", "to_premium", "to_interest", "to_principal",
                                            "to_savings"]].sum()
-    receipts = allocated[allocated["match_method"] != CHECKOFF].groupby("member_id")["receipt_no"].agg(";".join)
+    receipts = allocated[allocated["match_method"] != CHECKOFF].groupby("member_id")["receipt_no"].agg(
+        lambda s: ";".join(s.dropna().astype(str)))
     summary = members.set_index("member_id").join(sums).join(receipts.rename("receipts")).reset_index()
     for col in ("paid_in_ksh", "to_premium", "to_interest", "to_principal", "to_savings"):
         summary[col] = summary[col].fillna(0.0)
     summary["receipts"] = summary["receipts"].fillna("")
-    summary["premium_due"] = premium_due(summary, premium_target).to_numpy()
+    due = premium_due(summary, premium_target)
     summary["policy_status"] = np.select(
-        [summary["premium_due"] <= 0,
-         summary["to_premium"] >= summary["premium_due"] - 1e-6,
-         summary["to_premium"] >= GRACE_SHARE * summary["premium_due"]],
+        [due.isna().to_numpy(),
+         summary["to_premium"] >= due - 1e-6,
+         summary["to_premium"] >= GRACE_SHARE * due],
         [NOT_OFFERED, ACTIVE, GRACE], PENDING)
+    summary["premium_due"] = due.fillna(0.0).to_numpy()  # not offered: nothing due
     summary["interest_after"] = summary["overdue_interest"] - summary["to_interest"]
     summary["loan_after"] = summary["loan_balance"] - summary["to_principal"]
     summary["savings_after"] = summary["savings_balance"] + summary["to_savings"]
@@ -284,6 +441,7 @@ class ReconResult:
     after_suspense_value: float
     duplicates_caught: int
     duplicate_value: float
+    duplicate_value_exact_ref: float  # duplicates an exact lookup would have credited twice (exact member ID)
     seconds: float
 
     @property
@@ -294,23 +452,30 @@ class ReconResult:
 def reconcile(statement: pd.DataFrame, members: pd.DataFrame, premium_target=PREMIUM_TARGET,
               include_checkoff: bool = True) -> ReconResult:
     started = time.perf_counter()
+    statement = clean_statement(statement)
     matched = match_statement(statement, members)
     naive = naive_exact_match(statement, members)
     ledger = pd.concat([matched, checkoff_rows(members)], ignore_index=True) if include_checkoff else matched
     ledger, summary = allocate_waterfall(ledger, members, premium_target)
     elapsed = time.perf_counter() - started
 
-    total_rows = len(statement)
-    total_value = statement["paid_in_ksh"].sum()
-    suspense = matched["match_method"].isin(SUSPENSE_METHODS)
-    dupes = matched["match_method"] == DUPLICATE
+    amounts = pd.to_numeric(statement["paid_in_ksh"], errors="coerce").fillna(0.0).clip(lower=0)
+    total_rows, total_value = len(statement), float(amounts.sum())
+    suspense = matched["match_method"].isin(SUSPENSE_METHODS).to_numpy()
+    dupes = (matched["match_method"] == DUPLICATE).to_numpy()
+
+    def share(mask, of_value: bool) -> float:
+        if of_value:
+            return float(amounts[mask].sum() / total_value) if total_value else 0.0
+        return float(mask.sum() / total_rows) if total_rows else 0.0
+
+    not_placed = ~naive.to_numpy()
     return ReconResult(
         ledger=ledger, members=summary,
-        before_suspense_rows=float((~naive).sum() / total_rows),
-        before_suspense_value=float(statement.loc[~naive, "paid_in_ksh"].sum() / total_value),
-        after_suspense_rows=float(suspense.sum() / total_rows),
-        after_suspense_value=float(matched.loc[suspense, "paid_in_ksh"].sum() / total_value),
-        duplicates_caught=int(dupes.sum()), duplicate_value=float(matched.loc[dupes, "paid_in_ksh"].sum()),
+        before_suspense_rows=share(not_placed, False), before_suspense_value=share(not_placed, True),
+        after_suspense_rows=share(suspense, False), after_suspense_value=share(suspense, True),
+        duplicates_caught=int(dupes.sum()), duplicate_value=float(amounts[dupes].sum()),
+        duplicate_value_exact_ref=float(amounts[dupes & naive.to_numpy()].sum()),
         seconds=elapsed,
     )
 

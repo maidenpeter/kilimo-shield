@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import html
 from contextlib import contextmanager
+from decimal import ROUND_HALF_UP, Decimal
 
 import streamlit as st
 
@@ -178,15 +179,28 @@ def stats(items: list[tuple]) -> None:
     st.markdown(f'<div class="ss-stats">{"".join(cells)}</div>', unsafe_allow_html=True)
 
 
+def _half_up(value: float, decimals: int) -> Decimal:
+    """Money rounds half up (KSh 2.50 shows as KSh 3), not to even as Python's format does. The float is first read
+    to 12 significant digits, so 20,249,999.999999996 (float noise for 20,250,000) is treated as the half it is."""
+    shown = Decimal(format(float(value), ".12g")).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+    return shown + 0 if shown else abs(shown)  # never "KSh -0"
+
+
 def ksh(value: float, decimals: int = 0) -> str:
-    return f"KSh {value:,.{decimals}f}"
+    return f"KSh {_half_up(value, decimals):,.{decimals}f}"
 
 
 def ksh_short(value: float) -> str:
-    for size, suffix in ((1e9, "bn"), (1e6, "m"), (1e3, "k")):
+    """KSh 1.2m style. The unit is chosen after rounding, so 999,950 shows as KSh 1.0m, not KSh 1,000.0k."""
+    units = ((1e9, "bn"), (1e6, "m"), (1e3, "k"))
+    for i, (size, suffix) in enumerate(units):
         if abs(value) >= size:
-            return f"KSh {value / size:,.1f}{suffix}"
-    return f"KSh {value:,.0f}"
+            shown = _half_up(value / size, 1)
+            if abs(shown) >= 1000 and i > 0:  # rounding carried it into the next unit
+                size, suffix = units[i - 1]
+                shown = _half_up(value / size, 1)
+            return f"KSh {shown:,.1f}{suffix}"
+    return ksh(value)
 
 
 def pct(value: float, decimals: int = 1) -> str:

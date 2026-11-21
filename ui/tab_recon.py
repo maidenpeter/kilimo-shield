@@ -11,7 +11,7 @@ from ui import theme
 
 MONEY = st.column_config.NumberColumn(format="localized")
 METHOD_ORDER = [rec.EXACT_ID, rec.EXACT_PHONE, rec.NATIONAL_ID, rec.FUZZY_REF, rec.SPOUSE, rec.MEMBER_NAME,
-                rec.CHECKOFF, rec.DUPLICATE, rec.AMBIGUOUS, rec.UNMATCHED]
+                rec.CHECKOFF, rec.DUPLICATE, rec.BAD_AMOUNT, rec.AMBIGUOUS, rec.UNMATCHED]
 
 
 @st.cache_data(show_spinner="Generating synthetic SACCO ledger and M-Pesa statement...")
@@ -39,7 +39,7 @@ def method_chart(mpesa) -> go.Figure:
     counts = mpesa.groupby("match_method").agg(rows=("receipt_no", "size"), value=("paid_in_ksh", "sum"))
     counts = counts.reindex([m for m in METHOD_ORDER if m in counts.index])
     colours = [theme.RED if m in rec.SUSPENSE_METHODS else theme.AMBER if m == rec.DUPLICATE else theme.GREEN
-               for m in counts.index]
+               for m in counts.index]  # Bad amount is in SUSPENSE_METHODS
     fig = go.Figure(go.Bar(x=counts["rows"], y=counts.index, orientation="h", marker_color=colours,
                            customdata=counts["value"], text=counts["rows"], textposition="outside",
                            hovertemplate="%{y}: %{x} rows, KSh %{customdata:,.0f}<extra></extra>"))
@@ -49,23 +49,27 @@ def method_chart(mpesa) -> go.Figure:
 
 
 def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_000.0,
-           gross_premiums: dict | None = None) -> None:
+           gross_premiums: dict | None = None, seasonal_cap: float = 50_000.0) -> None:
     """``premium_targets``: what a member owes this season in each ward that is offered the product (KSh, after
     any subsidy). ``payment_levels``: what members in every ward aim to pay, which shapes the synthetic statement."""
-    premium_items = tuple(sorted((k, round(v, 2)) for k, v in premium_targets.items()))
-    data = synthetic(tuple(sorted((k, round(v, 2)) for k, v in payment_levels.items())))
+    payment_items = tuple(sorted((k, round(v, 2)) for k, v in payment_levels.items()))
+    # A run is only valid for the premiums it charged AND the statement it read; either changing makes it stale.
+    premium_items = (tuple(sorted((k, round(v, 2)) for k, v in premium_targets.items())), payment_items)
+    data = synthetic(payment_items)
 
     header = st.container()
     head, action = st.columns([3, 1], vertical_alignment="center")
     head.caption(f"{N_MEMBERS} fictional SACCO members and a {len(data.statement)}-row M-Pesa paybill statement "
                  "with the usual errors: mistyped member IDs, spouse phones, micro-payments, duplicate exports. Each "
-                 "member owes their ward's premium from chapter 1; a ward that is not offered owes none. Phone "
+                 "member owes their ward's premium from chapter 1, less any subsidy; a ward that is not offered "
+                 "owes none. Phone "
                  "numbers and national IDs are masked.")
     if action.button("Run reconciliation", type="primary", key="run_recon", width="stretch"):
         with st.spinner(f"Matching {len(data.statement)} rows..."):
             st.session_state["recon"] = (premium_items, rec.reconcile(data.statement, data.members, premium_targets))
         st.session_state.pop("claim_split", None)
         st.toast("Reconciliation finished")
+    exact_lookup_misses = float((~rec.naive_exact_match(data.statement, data.members)).mean())
 
     with st.expander("Inputs: member ledger and paybill statement"):
         left, right = st.columns(2)
@@ -80,7 +84,8 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
     if stored is None or stored[0] != premium_items:
         with header:
             theme.chapter(3, "Collecting the money", "ShambaRecon",
-                          "Premiums arrive as messy M-Pesa payments. Most SACCOs lose track of a third of them.",
+                          f"Premiums arrive as messy M-Pesa payments. A clerk's exact lookup would leave "
+                          f"{exact_lookup_misses:.0%} of these unallocated.",
                           "Press Run reconciliation to match this statement to members and allocate every shilling.")
         with theme.panel("No reconciliation yet" if stored is None else "Premiums have changed"):
             st.markdown("Press **Run reconciliation** to match the statement to members and allocate the money."
@@ -108,7 +113,7 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         ("Unallocated, by value", f"{result.before_suspense_value:.1%} → {result.after_suspense_value:.1%}",
          f"{theme.ksh(left_for_review)} left for a person to review"),
         ("Duplicates held", str(result.duplicates_caught),
-         f"{theme.ksh(result.duplicate_value)} an exact lookup would credit twice", "warn"),
+         f"{theme.ksh(result.duplicate_value_exact_ref)} of them an exact lookup would credit twice", "warn"),
         ("Matched to the right member", f"{acc['precision']:.1%}",
          f"{acc['correct']} of {acc['credited']} credited rows (synthetic ground truth)"),
     ])
@@ -181,13 +186,19 @@ def render(premium_targets: dict, payment_levels: dict, sum_insured: float = 60_
         k1, k2, k3, k4 = st.columns([2, 1, 1, 1], vertical_alignment="bottom")
         wards = k1.multiselect("Wards where the drought trigger fired", list(WARDS), default=["kangundo"],
                                format_func=lambda k: WARDS[k].label, key="split_wards")
-        payout = k2.number_input("Payout per member (KSh)", 1_000, 60_000, 25_000, 1_000, key="split_payout")
+        cap = int(seasonal_cap)
+        payout = k2.number_input("Payout per member (KSh)", 1_000, cap, min(25_000, cap), 1_000,
+                                 key=f"split_payout_{cap}", help="At most the seasonal cap of the cover")
         farmer_share = k3.slider("Farmer share by M-Pesa (%)", 50, 100, 70, 5, key="split_share") / 100
+        split_key = (tuple(wards), float(payout), farmer_share, premium_items)
         if k4.button("Simulate payout", key="run_split", width="stretch"):
-            st.session_state["claim_split"] = rec.claim_split(result.members, wards, float(payout), farmer_share)
-        split = st.session_state.get("claim_split")
+            st.session_state["claim_split"] = (split_key, rec.claim_split(result.members, wards, float(payout),
+                                                                          farmer_share))
+        stored_split = st.session_state.get("claim_split")
+        split = stored_split[1] if stored_split and stored_split[0] == split_key else None
         if split is None:
-            st.caption("Choose the wards and press Simulate payout.")
+            st.caption("Choose the wards and press Simulate payout." if not stored_split else
+                       "The wards, payout or share changed. Press Simulate payout again.")
     if split is not None:
         with theme.panel("Settlement", "Who gets what from the simulated payout."):
             cleared = int(((split["loan_owed_before_ksh"] > 0) & (split["loan_owed_after_ksh"] <= 0.5)).sum())

@@ -199,7 +199,12 @@ def generate_statement(members: pd.DataFrame, seed: int = SEED, n: int = N_TRANS
 
     def full_amount(member):
         premium = (premium_by_ward or {}).get(member["ward"], PREMIUM_TARGET)
-        return round(premium * rng.choice(FULL_MULTIPLES[0], p=FULL_MULTIPLES[1]) / 50) * 50
+        if not premium or premium <= 0:
+            premium = PREMIUM_TARGET  # members never send KSh 0
+        multiple = rng.choice(FULL_MULTIPLES[0], p=FULL_MULTIPLES[1])
+        if multiple in (1.0, 2.0):  # paying the premium (or two seasons) means paying it exactly
+            return round(premium * multiple, 2)
+        return round(premium * multiple / 50) * 50
 
     def payer_name(member):
         parts = member["full_name"].split()

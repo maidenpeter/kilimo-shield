@@ -33,8 +33,8 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests (138, including a headless run of the whole app that presses every button, a sweep of 30 random product
-settings, money-conservation checks on several synthetic statements, and adversarial matcher tests):
+Tests (239, including a headless run of the whole app that presses every button, a sweep of 30 random product
+settings, 60 random farm quotes, money-conservation checks on several synthetic statements, and adversarial matcher tests):
 
 ```
 pip install -r requirements-dev.txt
@@ -50,8 +50,8 @@ pytest
    Bureti is flagged *not offered* at the 12% ceiling. Drag the ceiling to 18% and it unlocks across the pricing
    table and, after a re-run, the reconciliation. Switch to *One flat rate* to show why a single national rate fails.
 3. **Clear the suspense account.** In chapter 3 press *Run reconciliation*. Each member owes their ward's
-   premium. The unallocated share of rows drops from about 39% (an exact lookup) to under 3%, twelve duplicate rows
-   are held instead of credited twice, and on this demo statement every credited row lands on the right member.
+   premium. The unallocated share of rows drops from about 39% (an exact lookup) to about 3.5%, twelve duplicate
+   rows are held instead of credited twice, and on this demo statement every credited row lands on the right member.
    Filter the ledger by *Spouse Name Match* or *Fuzzy Reference* to show how.
 4. **Quote one farm, then pay its claim.** In chapter 2, quote a Njoro farm (2 acres, 2 cows: KSh 5,160 a
    season, about KSh 57 a day of milk check-off) and tick a practice to show the Resilience discount. Then, in chapter
@@ -63,18 +63,25 @@ pytest
 
 ## The quote (chapter 2)
 
-Cover follows the farm: KSh 15,000 of crop inputs per acre of maize, and KSh 10,000 of fodder plus KSh 5,000 of vet
-and health cover per dairy cow. The standard farm (2 acres, 2 cows) is the KSh 60,000 package, so its quote equals its
-ward's price in the zone table; other farms are priced by the same engine on their own mix. Then, as in AgroShield:
+Cover follows the farm. The standard farm (2 acres of maize, 2 dairy cows) gets the product's sum insured: KSh 60,000 by
+default, which is KSh 15,000 of crop inputs per acre and KSh 10,000 of fodder plus KSh 5,000 of vet and health cover
+per cow. Change the sum insured in the sidebar and every per-acre and per-cow amount scales with it, so a standard
+farm's quote always equals its ward's price in the zone table, with the cap from chapter 1's terms. Other farms are priced by the same engine on
+their own mix. Then, as in AgroShield:
 
 - **Gross premium** = sum insured x the farm's rate (the risk price; nothing below changes it).
 - **Government share** = the sidebar subsidy x gross, only for farms of 0.5 to 20 acres. No subsidy is agreed.
 - **Resilience discount** = 1% of the farmer's share per point, capped at 15%: certified seed (5), crop photos at every
   stage (4), stored hay or silage (3), full or partial irrigation (3 or 2, only the higher counts), SACCO member in good
-  standing (2). The platform pays it out of its fee; the quote warns when the discount is larger than that fee.
-- **Farmer pays** = farmer share - discount, about that divided by 90 a day by milk check-off.
-- Enrolment closes 14 days before the season window (15 February 2027 for the long rains). A ward that is not
-  offered gets no quote. The quote ID is a hash of the inputs, so the same farm always gets the same ID.
+  standing (2). The platform pays it out of its fee (the sidebar's platform fee, 10% by default); the quote and its
+  text copy warn when the discount is larger than that fee.
+- **Farmer pays** = farmer share - discount. For a farm with cows, that divided by 90 is shown as a daily milk
+  check-off.
+- Money is whole shillings, rounded half up from exact decimals.
+- Enrolment closes 14 days before the season window (15 February 2027 for the long rains). No quote is given for a
+  ward that is not offered, for a farm whose own mix prices above the sellable ceiling (a dairy-only farm can), or for
+  a farm outside 0 to 20 acres and 0 to 20 cows. The quote ID fingerprints the quote's content (farm, cover, price and
+  the payout history behind it), so the same quote always gets the same ID and any change gets a new one.
 
 ## What is real and what is not
 
@@ -101,9 +108,10 @@ Open-Meteo* (sidebar, *More settings*) downloads the record again and updates th
   25%, rising in a straight line to 100% at 12.
 - Fodder: only after a severe crop loss (crop payout at least 50% of its limit) and when pasture greenness from
   day 61 is below the ward's 25th percentile.
-- Vet and health: KSh 10,000 when the wettest 10 days pass the ward's own 90th percentile line, or after 7 days
-  above 31 deg C.
-- Price: each ward's burn cost divided by a 60% target loss ratio, rounded up to 0.1%. On 2015-2024 that gives Njoro
+- Vet and health: KSh 10,000 when the wettest 10 days pass the ward's own 90th percentile line, or after 7 days in a
+  row above 31 deg C.
+- Price: each ward's burn cost divided by a 60% target loss ratio, rounded up to 0.1%, and never below 1% (ten
+  seasons without a payout do not make the cover free). On 2015-2024 that gives Njoro
   8.6%, Kangundo 9.8%, Kimilili 10.0%, Imenti North 11.3% and Bureti 17.9%.
 - Sellable ceiling: a ward priced above 12% is **not offered** the standard bundle. Its members owe no premium, their
   money goes to loans and savings, and they stay out of the bordereau and the claim split.
@@ -116,7 +124,7 @@ bundle: the soil moisture index reads relative dryness against a very wet normal
 flags it instead of selling it at a price farmers will not pay or hiding it inside a flat national rate.
 
 A dairy-and-excess-rain tier for Bureti without the maize layer (KSh 20,000 fodder plus KSh 10,000 vet and health)
-was tested and does not fix it: KSh 4,900 to 7,900 a season for KSh 30,000 of cover (16% to 26%), depending on the
+was tested and does not fix it: roughly KSh 5,000 to 8,000 a season for KSh 30,000 of cover (16% to 26%), depending on the
 pasture trigger. A pasture trigger set at a percentile of the ward's own record fires in a fixed share of seasons by
 construction (4 in 20 at the 25th percentile, 2 in 20 at the 15th), in a wet ward as in a dry one. A highland tier
 needs data the proxies cannot give: milk volumes from dairy co-operatives or green-leaf deliveries from tea
@@ -124,12 +132,31 @@ factories, to price yield-linked or area-yield cover. Frost and hail are not in 
 
 ## How the matcher protects the money
 
-A wrong credit is worse than a short review queue, so the matcher only credits a payment on clear evidence: an exact
-member ID, a registered phone, a national ID in the reference, or a mistyped ID that points at one member. When a
-reference fits several members (a truncated `MBR-104` fits ten), or the only clue is a name, it credits only a name
-with exactly the words of one record that no other member or spouse also carries; anything else goes to *Ambiguous
-(review)*. On 64 synthetic statements (31,000+ credited rows), and on every member paid with a truncated reference or
-only a name (`tests/test_matcher_adversarial.py`), it made no wrong credits; about 1% of payments go to review.
+A wrong credit is worse than a short review queue, so the matcher weighs all the evidence on a payment and sends it to
+*Ambiguous (review)* whenever the evidence disagrees:
+
+- A repeated receipt number is held as a duplicate, comparing receipts without case or spaces. A blank, zero, negative
+  or unreadable amount is held as *Bad amount (review)*; blank loan or interest cells count as none.
+- An exact member ID, or a national ID standing alone (not inside a longer number), is the payer's instruction and
+  decides on its own. A reference that names two members (`MBR-1001/1002`, or an ID next to another member's national
+  ID) goes to review, and so does a phone or national ID that two members share.
+- A mistyped ID (`MBR 1042`, `mbr-1O42-milk`) counts only if it points at one member and neither the registered phone,
+  the payer's name nor a name written in the reference points at someone else. Letter-for-digit repairs happen only
+  inside the number: `MBR-104 OTIENO` is a truncated `MBR-104`, not `MBR-1040`. A bare number with no MBR (`1042`)
+  needs the phone or the payer's name to agree, and never counts when it equals the amount.
+- When a reference fits several members (a truncated `MBR-104` is as close to two dozen member numbers), a tie is
+  settled only by a payer name with exactly the words of one candidate's record that no other candidate carries, or by
+  a reference that spells exactly one candidate's surname. Close spellings (NEKESA for WEKESA) never count.
+- With no usable reference, a registered phone decides unless the payer's name, or a name in the reference ("FOR
+  OTIENO"), belongs to someone else.
+- With only a name, it must have three or more words, in the same order as one member's or spouse's record, and no one
+  else may carry all of them. Two names are too common; reversed names can be different people. Known limit: a
+  non-member who has exactly a member's three names cannot be told apart from that member.
+- Names are compared without case, punctuation or apostrophes (NDUNG'U and NDUNGU are the same).
+
+On 64 synthetic statements (31,000+ credited rows), on every member paid with a truncated reference or only a name
+(`tests/test_matcher_adversarial.py`), and on the cases in `tests/test_recon.py`, it made no wrong credits; about 1.5%
+of payments go to review.
 
 ## Layout
 

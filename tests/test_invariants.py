@@ -60,8 +60,10 @@ def test_payout_rules_hold(params, ward):
     assert k.farmer_premium_ksh == pytest.approx(k.premium_ksh * (1 - params.subsidy_share))
     if params.pricing_mode == "target" and k.burn_cost_pct > 0:
         assert k.loss_ratio_pct <= 100 * params.target_loss_ratio + 1e-6
-        # rounding up to 0.1% never moves the rate by more than 0.1 point
-        assert k.premium_rate_pct - k.burn_cost_pct / params.target_loss_ratio < 0.1 + 1e-9
+        # rounding up to 0.1% never moves the rate by more than 0.1 point, unless the minimum rate applies
+        unfloored = k.burn_cost_pct / params.target_loss_ratio
+        assert k.premium_rate_pct - unfloored < 0.1 + 1e-9 or k.premium_rate_pct == pytest.approx(
+            100 * params.min_premium_rate)
     else:
         assert k.premium_rate_pct == pytest.approx(100 * params.premium_rate if params.pricing_mode == "flat" else 0)
     assert k.offered == (k.premium_rate_pct <= 100 * params.max_sellable_rate + 1e-9)

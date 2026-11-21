@@ -1,13 +1,12 @@
 """Farm quotes: what one farmer pays for a season, and who pays the rest. ILLUSTRATIVE.
 
-Cover follows the farm. The standard farm (2 acres of maize, 2 dairy cows) is the KSh 60,000 package:
-
-    crop inputs   KSh 15,000 per acre of maize
-    fodder gap    KSh 10,000 per dairy cow
-    vet & health  KSh  5,000 per dairy cow
+Cover follows the farm. The standard farm is 2 acres of maize and 2 dairy cows, and its sum insured is the product's
+(KSh 60,000 by default: KSh 15,000 of crop inputs per acre, KSh 10,000 of fodder and KSh 5,000 of vet and health
+cover per cow). A bigger product sum insured scales every per-acre and per-cow amount with it.
 
 The quote prices this farm's own mix with the same engine and the same product settings as the backtest, so a
-standard farm's rate equals its ward's rate in the zone pricing table. Then it splits who pays, as AgroShield did:
+standard farm's rate, premium and cap equal its ward's in the zone pricing table. Then it splits who pays, as
+AgroShield did:
 
     gross premium      = sum insured x commercial rate (the risk price; never changed by what follows)
     government share   = subsidy share x gross, if the farm has 0.5 to 20 acres (no subsidy is agreed)
@@ -15,26 +14,30 @@ standard farm's rate equals its ward's rate in the zone pricing table. Then it s
     Resilience         = min(15%, 1% per point) x farmer share, paid by the platform out of its fee
     farmer pays        = farmer share - Resilience discount
 
-The insurer always receives the full gross premium. A ward the engine does not offer gets no quote.
+Money is rounded to whole shillings, half up, from exact decimal arithmetic. The insurer always receives the full
+gross premium. A ward the engine does not offer gets no quote, and neither does a farm whose own mix prices above
+the sellable ceiling.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import math
+import numbers
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+from fractions import Fraction
 
 import pandas as pd
 
 from engine.parametric_engine import SEASONS, WARDS, TriggerParams, commercial_rate, kpis, run_backtest
 
-CROP_PER_ACRE = 15_000.0
-FODDER_PER_COW = 10_000.0
-VET_PER_COW = 5_000.0
+STANDARD_ACRES = 2
+STANDARD_COWS = 2
 MAX_ACRES = 20.0
 MAX_COWS = 20
 SUBSIDY_ACRES = (0.5, 20.0)
-PLATFORM_FEE_RATE = 0.10           # calculating-agent fee, share of gross premium
 DISCOUNT_PER_POINT = 0.01
 DISCOUNT_CAP = 0.15
 DISCOUNT_FUNDER = "platform"
@@ -68,6 +71,22 @@ class QuoteError(ValueError):
     """A farm the product cannot quote."""
 
 
+class WardNotOffered(QuoteError):
+    """The ward's standard bundle is above the sellable ceiling."""
+
+
+class FarmNotValid(QuoteError):
+    """The farm's inputs are outside what the product covers."""
+
+
+class FarmAboveCeiling(QuoteError):
+    """This farm's own mix prices above the sellable ceiling."""
+
+    def __init__(self, message: str, rate: float):
+        super().__init__(message)
+        self.rate = rate
+
+
 @dataclass
 class Quote:
     quote_id: str
@@ -75,23 +94,26 @@ class Quote:
     season: str
     acres: float
     cows: int
+    unit_cover: dict             # KSh per acre (crop) and per cow (fodder, vet)
     cover: dict                  # layer name -> KSh sum insured
     sum_insured: float
     seasonal_cap: float
     burn_cost_rate: float
+    pricing_mode: str
     premium_rate: float
-    gross_premium: float
+    gross_premium: int
+    subsidy_share: float
     subsidy_eligible: bool
-    government_share: float
-    farmer_share: float
+    government_share: int
+    farmer_share: int
     resilience_points: int
     resilience_counted: list
     discount_rate: float
-    discount: float
-    farmer_pays: float
-    platform_fee: float
+    discount: int
+    farmer_pays: int
+    platform_fee: int
     discount_exceeds_fee: bool
-    per_day_checkoff: float
+    per_day_checkoff: float | None   # None for a farm without cows: no milk cheque to deduct from
     enrolment_closes: date
     cover_starts: date
     history: pd.DataFrame = field(repr=False)   # this farm's payouts, per season of the chosen type
@@ -104,16 +126,58 @@ class Quote:
         return d
 
 
-def farm_cover(acres: float, cows: int) -> dict:
-    return {"crop": acres * CROP_PER_ACRE, "fodder": cows * FODDER_PER_COW, "vet": cows * VET_PER_COW}
+def money(value) -> int:
+    """Whole shillings, half up, from an exact decimal (never Python's round-half-even on a binary float). A float
+    is read to 12 significant digits first, so float noise around a half does not flip the rounding."""
+    exact = value if isinstance(value, Decimal) else Decimal(format(float(value), ".12g"))
+    return int(exact.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def _exact(value: float) -> Fraction:
+    """A setting as an exact fraction: shares like 20,000/60,000 come back as 1/3, not 0.3333333333333333. A value
+    that is not a simple fraction (a cap share of 0.82004...) is kept exactly as given."""
+    simple = Fraction(value).limit_denominator(10_000)
+    return simple if abs(float(simple) - value) < 1e-12 else Fraction(value)
+
+
+def _exact_units(base: TriggerParams) -> dict:
+    si = _exact(base.sum_insured)
+    return {"crop": si * _exact(base.crop_share) / STANDARD_ACRES,
+            "fodder": si * _exact(base.fodder_share) / STANDARD_COWS,
+            "vet": si * _exact(base.health_share) / STANDARD_COWS}
+
+
+def _exact_cover(acres: float, cows: int, base: TriggerParams) -> dict:
+    unit = _exact_units(base)
+    return {"crop": _exact(acres) * unit["crop"], "fodder": cows * unit["fodder"], "vet": cows * unit["vet"]}
+
+
+def unit_cover(base: TriggerParams) -> dict:
+    """KSh per acre of maize and per dairy cow, so that the standard farm gets exactly the product's sum insured."""
+    return {k: float(v) for k, v in _exact_units(base).items()}
+
+
+def farm_cover(acres: float, cows: int, base: TriggerParams = TriggerParams()) -> dict:
+    return {k: float(v) for k, v in _exact_cover(acres, cows, base).items()}
 
 
 def farm_params(base: TriggerParams, acres: float, cows: int) -> TriggerParams:
     """The product settings, resized to this farm's cover. The cap stays the same share of the sum insured."""
-    cover = farm_cover(acres, cows)
+    cover = _exact_cover(acres, cows, base)
     total = sum(cover.values())
-    return replace(base, sum_insured=total, crop_share=cover["crop"] / total, fodder_share=cover["fodder"] / total,
-                   health_share=cover["vet"] / total)
+    return replace(base, sum_insured=float(total), crop_share=float(cover["crop"] / total),
+                   fodder_share=float(cover["fodder"] / total), health_share=float(cover["vet"] / total))
+
+
+def _decimal(value: Fraction) -> Decimal:
+    """An exact fraction as a decimal, to well past the shilling (cover amounts can be thirds of a shilling)."""
+    return Decimal(value.numerator) / Decimal(value.denominator)
+
+
+def farm_words(acres: float, cows: int) -> str:
+    maize = f"{acres:g} acre{'' if acres == 1 else 's'} of maize" if acres else "no maize"
+    dairy = f"{cows} dairy cow{'' if cows == 1 else 's'}" if cows else "no dairy cows"
+    return f"{maize} and {dairy}"
 
 
 def resilience(selected: dict) -> tuple[int, list[dict]]:
@@ -127,8 +191,8 @@ def resilience(selected: dict) -> tuple[int, list[dict]]:
         if item.group and (item.group not in best_in_group or best_in_group[item.group].points < item.points):
             best_in_group[item.group] = item
     counted = [i for i in chosen if i.group is None or best_in_group[i.group] is i]
-    return sum(i.points for i in counted), [{"label": i.label, "points": i.points, "verified_by": i.verified_by}
-                                           for i in counted]
+    return sum(i.points for i in counted), [{"id": i.id, "label": i.label, "points": i.points,
+                                             "verified_by": i.verified_by} for i in counted]
 
 
 def season_dates(season: str, year: int = COVER_YEAR) -> tuple[date, date]:
@@ -137,9 +201,18 @@ def season_dates(season: str, year: int = COVER_YEAR) -> tuple[date, date]:
     return date.fromordinal(starts.toordinal() - CLOSE_DAYS_BEFORE_SEASON), starts
 
 
-def _id(payload: dict) -> str:
-    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
-    return f"SS360-Q-{digest[:8].upper()}"
+def _validate(acres, cows) -> tuple[float, int]:
+    if isinstance(acres, bool) or not isinstance(acres, numbers.Real) or not math.isfinite(acres):
+        raise FarmNotValid("Acres of maize must be a number.")
+    if isinstance(cows, bool) or not isinstance(cows, numbers.Real) or not math.isfinite(cows) \
+            or not float(cows).is_integer():
+        raise FarmNotValid("Dairy cows must be a whole number.")
+    acres, cows = float(acres), int(cows)
+    if not (0 <= acres <= MAX_ACRES) or not (0 <= cows <= MAX_COWS):
+        raise FarmNotValid(f"The product covers 0 to {MAX_ACRES:g} acres of maize and 0 to {MAX_COWS} dairy cows.")
+    if acres < 0.5 and cows < 1:
+        raise FarmNotValid("A farm needs at least half an acre of maize or one dairy cow.")
+    return acres, cows
 
 
 def quote(weather: pd.DataFrame, base: TriggerParams, *, ward_key: str, season: str, acres: float, cows: int,
@@ -148,40 +221,53 @@ def quote(weather: pd.DataFrame, base: TriggerParams, *, ward_key: str, season: 
         raise QuoteError(f"unknown ward {ward_key!r}")
     if season not in SEASONS:
         raise QuoteError(f"unknown season {season!r}")
+    acres, cows = _validate(acres, cows)
+    points, counted = resilience(practices or {})
     if not ward_offered:
-        raise QuoteError(f"{WARDS[ward_key].label} is not offered on the standard bundle: its price is above the "
-                         f"{base.max_sellable_rate:.0%} sellable ceiling. It needs a custom tier.")
-    if not (0 <= acres <= MAX_ACRES) or not (0 <= cows <= MAX_COWS):
-        raise QuoteError(f"acres must be 0 to {MAX_ACRES:g} and cows 0 to {MAX_COWS}")
-    if acres < 0.5 and cows < 1:
-        raise QuoteError("a farm needs at least half an acre of maize or one dairy cow")
+        raise WardNotOffered(f"{WARDS[ward_key].label} is not offered on the standard bundle: its price is above "
+                             f"the {base.max_sellable_rate:.0%} sellable ceiling.")
 
     params = farm_params(base, acres, cows)
     seasons = run_backtest(weather, params)
-    k = kpis(seasons, params)
-    rate = commercial_rate(k.burn_cost_pct / 100, params)
-    gross = round(params.sum_insured * rate)
+    burn = kpis(seasons, params).burn_cost_pct / 100
+    rate = commercial_rate(burn, params)
+    if rate > base.max_sellable_rate + 1e-12:
+        raise FarmAboveCeiling(f"This farm's mix prices at {rate:.1%} a season, above the "
+                               f"{base.max_sellable_rate:.0%} sellable ceiling.", rate)
+
+    exact_rate = Decimal(repr(rate))
+    exact_cover = _exact_cover(acres, cows, base)
+    exact_si = sum(exact_cover.values())
+    gross = money(_decimal(exact_si) * exact_rate)
+    exact_cap = _decimal(exact_si * _exact(base.aggregate_cap_share))
     low, high = SUBSIDY_ACRES
     eligible = low <= acres <= high
-    government = round(gross * base.subsidy_share) if eligible else 0
+    government = money(Decimal(gross) * Decimal(repr(base.subsidy_share))) if eligible else 0
     farmer_share = gross - government
-    points, counted = resilience(practices or {})
-    discount_rate = min(DISCOUNT_CAP, points * DISCOUNT_PER_POINT)
-    discount = round(farmer_share * discount_rate)
+    exact_discount_rate = min(Decimal(points) * Decimal(repr(DISCOUNT_PER_POINT)), Decimal(repr(DISCOUNT_CAP)))
+    discount_rate = float(exact_discount_rate)
+    discount = money(Decimal(farmer_share) * exact_discount_rate)
     farmer_pays = farmer_share - discount
-    fee = round(gross * PLATFORM_FEE_RATE)
+    fee = money(Decimal(gross) * Decimal(repr(base.platform_fee_rate)))
     closes, starts = season_dates(season)
-    payload = {"ward": ward_key, "season": season, "acres": acres, "cows": cows, "practices": practices or {},
-               "params": asdict(params)}
+    history = seasons[seasons["season"] == season].reset_index(drop=True)
+    # The ID fingerprints everything the quote says (48 bits of SHA-256), so the same quote gets the same ID and any
+    # change gets a new one.
+    fingerprint = {"ward": ward_key, "season": season, "acres": acres, "cows": cows,
+                   "practices": sorted(i["id"] for i in counted), "sum_insured": str(exact_si),
+                   "cap": str(exact_cap), "rate": rate, "gross": gross, "government": government,
+                   "discount": discount, "fee": fee, "history": [round(v, 2) for v in history["payout_total"]]}
+    digest = hashlib.sha256(json.dumps(fingerprint, sort_keys=True).encode()).hexdigest()
     return Quote(
-        quote_id=_id(payload), ward_key=ward_key, season=season, acres=acres, cows=cows,
-        cover=farm_cover(acres, cows), sum_insured=params.sum_insured, seasonal_cap=params.aggregate_cap,
-        burn_cost_rate=k.burn_cost_pct / 100, premium_rate=rate, gross_premium=gross, subsidy_eligible=eligible,
-        government_share=government, farmer_share=farmer_share, resilience_points=points, resilience_counted=counted,
-        discount_rate=discount_rate, discount=discount, farmer_pays=farmer_pays, platform_fee=fee,
+        quote_id=f"SS360-Q-{digest[:12].upper()}", ward_key=ward_key, season=season, acres=acres, cows=cows,
+        unit_cover=unit_cover(base), cover=farm_cover(acres, cows, base), sum_insured=float(exact_si),
+        seasonal_cap=float(exact_cap), burn_cost_rate=burn, pricing_mode=base.pricing_mode, premium_rate=rate,
+        gross_premium=gross, subsidy_share=base.subsidy_share, subsidy_eligible=eligible, government_share=government,
+        farmer_share=farmer_share, resilience_points=points, resilience_counted=counted, discount_rate=discount_rate,
+        discount=discount, farmer_pays=farmer_pays, platform_fee=fee,
         discount_exceeds_fee=DISCOUNT_FUNDER == "platform" and discount > fee,
-        per_day_checkoff=farmer_pays / CHECKOFF_DAYS, enrolment_closes=closes, cover_starts=starts,
-        history=seasons[seasons["season"] == season].reset_index(drop=True),
+        per_day_checkoff=farmer_pays / CHECKOFF_DAYS if cows else None,
+        enrolment_closes=closes, cover_starts=starts, history=history,
     )
 
 
@@ -195,21 +281,28 @@ def quote_text(q: Quote) -> str:
     paid = q.history[q.history["payout_total"] > 0]
     lines = [
         f"ShambaShield360 quote {q.quote_id} (ILLUSTRATIVE: not a filed product, not for sale)",
-        f"{ward.label}, {SEASONS[q.season]['name']} {COVER_YEAR}",
-        f"Farm: {q.acres:g} acres of maize, {q.cows} dairy cows",
+        f"{ward.label}, {SEASON_WORDS[q.season]} {COVER_YEAR}",
+        f"Farm: {farm_words(q.acres, q.cows)}",
         "",
         "Cover",
-        f"  Crop inputs   KSh {q.cover['crop']:>9,.0f}",
-        f"  Fodder gap    KSh {q.cover['fodder']:>9,.0f}",
-        f"  Vet & health  KSh {q.cover['vet']:>9,.0f}",
-        f"  Sum insured   KSh {q.sum_insured:>9,.0f} (most paid in one season: KSh {q.seasonal_cap:,.0f})",
+        f"  Crop inputs   KSh {money(q.cover['crop']):>9,}",
+        f"  Fodder gap    KSh {money(q.cover['fodder']):>9,}",
+        f"  Vet & health  KSh {money(q.cover['vet']):>9,}",
+        f"  Sum insured   KSh {money(q.sum_insured):>9,} (most paid in one season: KSh {money(q.seasonal_cap):,})",
         "",
         "Price",
-        f"  Gross premium            KSh {q.gross_premium:>8,.0f} ({q.premium_rate:.1%})",
-        f"  Government share         KSh {-q.government_share:>8,.0f}",
-        f"  Resilience discount      KSh {-q.discount:>8,.0f} ({q.resilience_points} points)",
-        f"  Farmer pays              KSh {q.farmer_pays:>8,.0f}",
-        f"  or about KSh {q.per_day_checkoff:,.0f} a day by milk check-off over {CHECKOFF_DAYS} days",
+        f"  Gross premium            KSh {q.gross_premium:>8,} ({q.premium_rate:.1%})",
+        f"  Government share         KSh {-q.government_share:>8,}",
+        f"  Resilience discount      KSh {-q.discount:>8,} ({q.resilience_points} points)",
+        f"  Farmer pays              KSh {q.farmer_pays:>8,}",
+    ]
+    if q.per_day_checkoff is not None:
+        lines.append(f"  or about KSh {money(q.per_day_checkoff):,} a day by milk check-off over {CHECKOFF_DAYS} days")
+    if q.government_share:
+        lines.append("  The government share is illustrative: no subsidy is agreed.")
+    if q.discount_exceeds_fee:
+        lines.append(f"  Note: the discount is larger than the platform fee on this policy (KSh {q.platform_fee:,}).")
+    lines += [
         "",
         f"Enrolment closes {long_date(q.enrolment_closes)}; cover starts {long_date(q.cover_starts)}.",
         f"On 2015-2024 weather this cover would have paid in {len(paid)} of {len(q.history)} "

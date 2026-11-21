@@ -22,13 +22,15 @@ with backtest_tab:
     backtest = tab_parametric.render()
 with quote_tab:
     tab_quote.render(backtest["ward_key"], backtest["params"], set(backtest["offered_premiums"]),
-                     backtest["refresh_count"])
+                     backtest["refresh_count"], backtest["zone_rates"])
 with recon_tab:
     params = backtest["params"]
     tab_recon.render(backtest["offered_premiums"], backtest["zone_farmer_premiums"], sum_insured=params.sum_insured,
-                     gross_premiums=backtest["zone_premiums"])
+                     gross_premiums=backtest["zone_premiums"], seasonal_cap=params.aggregate_cap)
 with whatsapp_tab:
-    tab_whatsapp.render(backtest["ward_key"], backtest["kpis"].burn_cost_pct, backtest["kpis"].premium_rate_pct / 100)
+    year = backtest["kpis_all"]  # a pilot runs both seasons, so not the season filter of chapter 1
+    tab_whatsapp.render(backtest["ward_key"], year.burn_cost_pct, year.premium_rate_pct / 100, params,
+                        backtest["offered"])
 
 theme.footer(
     'Weather data by <a href="https://open-meteo.com/" target="_blank">Open-Meteo.com</a> (CC BY 4.0, ERA5-based '

@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from engine import whatsapp_simulator as wa
-from engine.parametric_engine import WARDS
+from engine.parametric_engine import WARDS, TriggerParams
 from engine.unit_economics import PilotInputs, pilot_economics
 from ui import brand, theme
 
@@ -55,7 +55,8 @@ def verification_section(default_ward: str) -> None:
                  f"payout waits for geotagged photos from the ward's lead farmers and agro-vets (KSh "
                  f"{wa.BOUNTY_KSH} airtime each). {wa.CONSENSUS_THRESHOLD:.0%} agreement unlocks it. Simulated: no "
                  "message or airtime is sent.")
-    ward_key = st.session_state.get("wa_ward", default_ward)
+    ward_select = f"wa_ward_{default_ward}"  # follows the sidebar ward until changed here
+    ward_key = st.session_state.get(ward_select, default_ward)
     vci = st.session_state.get("wa_vci", 36.5)
     z = wa.zone(vci)
     run = action.button(f"Simulate {wa.SUBMISSIONS} photo replies", type="primary", disabled=z != "AMBER",
@@ -65,7 +66,7 @@ def verification_section(default_ward: str) -> None:
         controls, preview = st.columns([3, 2], gap="large")
         with controls:
             st.selectbox("Ward", list(WARDS), index=list(WARDS).index(default_ward),
-                         format_func=lambda k: WARDS[k].label, key="wa_ward")
+                         format_func=lambda k: WARDS[k].label, key=ward_select)
             st.slider("Vegetation Condition Index, VCI (%)", 0.0, 100.0, 36.5, 0.5, key="wa_vci",
                       help="Stands in for the satellite reading")
             zone_text = {"RED": "below the amber band: the index alone pays",
@@ -91,9 +92,9 @@ def verification_section(default_ward: str) -> None:
     ward = WARDS[ward_key]
     if machine.submissions is not None:
         share = wa.consensus(machine.submissions)
-        lede = (f"{share:.0%} of the photos from {ward.name} confirm stress, so the payout is unlocked."
+        lede = (f"{share:.0%} of the valid photos from {ward.name} confirm stress, so the payout is unlocked."
                 if machine.state == wa.State.RED_UNLOCKED else
-                f"Only {share:.0%} of the photos from {ward.name} confirm stress, so the hold is released.")
+                f"Only {share:.0%} of the valid photos from {ward.name} confirm stress, so the hold is released.")
         sub = f"The check cost {theme.ksh(machine.airtime_cost)} in airtime and took one morning."
     elif z == "AMBER":
         lede = f"The satellite reading for {ward.name} is borderline. Farmers on the ground decide."
@@ -133,29 +134,39 @@ def verification_section(default_ward: str) -> None:
                 st.markdown(f"- {line}")
 
 
-def economics_section(burn_cost_pct: float, premium_rate: float) -> None:
+def economics_section(ward_key: str, burn_cost_pct: float, premium_rate: float, params: TriggerParams,
+                      offered: bool) -> None:
     with theme.panel("Pilot unit economics",
                      "Illustrative. The platform carries no insurance risk: it earns a calculating-agent fee on "
-                     "premium and a reconciliation fee from the SACCO. Burn cost and starting premium come from the "
-                     "ward selected on the backtest tab."):
+                     "premium and a reconciliation fee from the SACCO, and funds the Resilience discounts. Burn cost, "
+                     "starting premium, sum insured and fee come from chapter 1 for the selected ward, both seasons."):
+        if not offered:
+            theme.note(f"{WARDS[ward_key].name} is not offered on the standard bundle. These figures show what a pilot "
+                       "there would look like if it were sold at its price.")
         c1, c2, c3 = st.columns(3, gap="large")
         farms = c1.select_slider("Pilot farms", options=list(range(1_000, 50_001, 500)), value=15_000,
                                  format_func=lambda v: f"{v:,}", key="ue_farms")
-        avg_si = c1.select_slider("Average sum insured", options=list(range(20_000, 150_001, 5_000)), value=60_000,
-                                  format_func=lambda v: f"KSh {v:,}", key="ue_si")
-        fee = c2.slider("Calculating-agent fee (% of premium)", 2, 20, 10, key="ue_fee")
+        si_start = int(min(max(round(params.sum_insured / 5_000) * 5_000, 20_000), 150_000))
+        avg_si = c1.select_slider("Average sum insured", options=list(range(20_000, 150_001, 5_000)), value=si_start,
+                                  format_func=lambda v: f"KSh {v:,}", key=f"ue_si_{si_start}")
+        fee = params.platform_fee_rate * 100
+        c2.markdown(f"Platform fee: **{fee:g}% of premium** (sidebar)")
         saas = c2.slider("SACCO reconciliation fee (KSh per member a month)", 0, 50, 10, key="ue_saas")
-        start_rate = min(max(round(premium_rate * 100, 1), 2.0), 30.0)
-        rate = c3.slider("Premium rate per season (%)", 2.0, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
+        discount = c2.slider("Average Resilience discount (% of premium)", 0, 15, 5, key="ue_discount",
+                             help="Paid by the platform. A farmer with every practice gets 15%.")
+        start_rate = min(max(round(premium_rate * 100, 1), 0.5), 30.0)
+        rate = c3.slider("Premium rate per season (%)", 0.5, 30.0, start_rate, 0.1, key=f"ue_rate_{start_rate}",
                          help="Starts at the selected ward's premium")
         ceded = c3.slider("Ceded to the treaty reinsurer (%)", 0, 90, 70, 5, key="ue_ceded")
         econ = pilot_economics(PilotInputs(farms=farms, avg_sum_insured=float(avg_si), premium_rate=rate / 100,
                                            agent_fee_rate=fee / 100, saas_fee_member_month=float(saas),
-                                           burn_cost_rate=burn_cost_pct / 100, reinsurer_share=ceded / 100))
+                                           burn_cost_rate=burn_cost_pct / 100, reinsurer_share=ceded / 100,
+                                           resilience_discount_rate=discount / 100))
         theme.stats([
             ("Platform revenue a season", theme.ksh_short(econ.platform_revenue_season), "Agent fee plus SACCO fee"),
             ("Contribution a year", theme.ksh_short(econ.platform_contribution_year),
-             "Two seasons of revenue, less airtime bounties"),
+             "Two seasons of revenue, less airtime and Resilience discounts",
+             "bad" if econ.platform_contribution_year < 0 else ""),
             ("Gross premium a season", theme.ksh_short(econ.gross_premium_season),
              f"{farms:,} farms at {rate:.1f}% of {theme.ksh(avg_si)}"),
             ("Expected loss ratio", f"{econ.loss_ratio:.0%}", f"Burn cost {burn_cost_pct:.2f}% from the backtest",
@@ -172,10 +183,11 @@ def economics_section(burn_cost_pct: float, premium_rate: float) -> None:
         right.markdown("**A season, line by line**")
         right.dataframe({
             "Line": ["Gross premium", "Expected claims", "Platform fee", "SACCO fee", "Airtime bounties",
-                     "Insurer net premium", "Insurer expected claims", "Reinsurer net premium",
+                     "Resilience discounts", "Insurer net premium", "Insurer expected claims", "Reinsurer net premium",
                      "Reinsurer expected claims"],
             "KSh": [round(v) for v in (econ.gross_premium_season, econ.expected_claims_season, econ.platform_fee_season,
                                         econ.saas_revenue_season, econ.verification_cost_season,
+                                        econ.resilience_discount_season,
                                         econ.insurer_retained_premium_season, econ.insurer_expected_claims_season,
                                         econ.reinsurer_ceded_premium_season, econ.reinsurer_expected_claims_season)],
         }, hide_index=True, width="stretch", column_config={"KSh": st.column_config.NumberColumn(format="localized")})
@@ -183,9 +195,10 @@ def economics_section(burn_cost_pct: float, premium_rate: float) -> None:
                       "net premiums equals gross premium. Airtime assumes 3 ward checks a season.")
 
 
-def render(default_ward: str, burn_cost_pct: float, premium_rate: float) -> None:
+def render(default_ward: str, burn_cost_pct: float, premium_rate: float, params: TriggerParams,
+           offered: bool = True) -> None:
     verification_section(default_ward)
-    economics_section(burn_cost_pct, premium_rate)
+    economics_section(default_ward, burn_cost_pct, premium_rate, params, offered)
     st.markdown('<p class="ss-next"><b>That is the whole loop:</b> price the risk, quote the farm, collect and '
                 'reconcile the premium, and let farmers settle the borderline cases. Chapter 1 is in the tabs '
                 'above.</p>', unsafe_allow_html=True)

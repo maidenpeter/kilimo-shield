@@ -63,7 +63,9 @@ def test_pilot_economics_defaults():
     assert e.platform_fee_season == pytest.approx(e.gross_premium_season * 0.10)
     assert e.saas_revenue_season == pytest.approx(15_000 * 10 * 6)
     assert e.platform_revenue_season == pytest.approx(e.platform_fee_season + e.saas_revenue_season)
-    assert e.platform_contribution_year == pytest.approx(2 * (e.platform_revenue_season - e.verification_cost_season))
+    assert e.resilience_discount_season == pytest.approx(0.05 * e.gross_premium_season)
+    assert e.platform_contribution_year == pytest.approx(
+        2 * (e.platform_revenue_season - e.verification_cost_season - e.resilience_discount_season))
     # fee plus both net premiums is the whole gross premium, no more
     assert e.platform_fee_season + e.insurer_retained_premium_season + e.reinsurer_ceded_premium_season ==         pytest.approx(e.gross_premium_season)
     assert e.insurer_retained_premium_season == pytest.approx(0.3 * 0.9 * e.gross_premium_season)

@@ -46,4 +46,7 @@ def test_no_wrong_credits(variant):
             cases.append(("SHAMBA", m.spouse_name.upper(), m.member_id))
     right, wrong = _outcomes(cases)
     assert wrong == [], wrong[:5]
-    assert right > 0
+    if variant == "last_two_junk_ref":
+        assert right == 0  # two names alone never credit anyone: they all go to review
+    else:
+        assert right > 0

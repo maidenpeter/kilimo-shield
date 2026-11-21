@@ -101,7 +101,7 @@ def test_quote_chapter(app):
     app.checkbox(key="q_res_certified_seed").check().run()
     assert not app.exception, app.exception
     assert "5 acres of maize" in _text(app) and "Resilience discount, 5 points" in _text(app)
-    app.selectbox(key="q_ward").select("bureti").run()
+    app.selectbox(key="q_ward_njoro").select("bureti").run()
     assert not app.exception, app.exception
     assert "Bureti is not offered on the standard bundle" in _text(app)
     app.segmented_control(key="q_season").set_value("SR").run()

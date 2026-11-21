@@ -55,6 +55,8 @@ def sidebar_controls() -> tuple[str, TriggerParams]:
                         help="Wards priced above this are not sold the standard bundle and need a custom tier")
     subsidy = sb.slider("Premium subsidy (%)", 0, 70, 0, 5,
                         help="Share paid by a county or national scheme. None is agreed: illustrative only.")
+    fee = sb.slider("Platform fee (% of premium)", 2, 20, 10, key="platform_fee",
+                    help="The calculating-agent fee. It also funds the Resilience discount in quotes.")
 
     sb.markdown("#### Triggers")
     sm_trigger = sb.slider("Soil moisture trigger (index, 50 = normal)", 15, 50, 32)
@@ -81,6 +83,7 @@ def sidebar_controls() -> tuple[str, TriggerParams]:
     params = TriggerParams(
         sum_insured=float(sum_insured), pricing_mode=mode, target_loss_ratio=target_lr / 100,
         premium_rate=flat_rate / 100, subsidy_share=subsidy / 100, max_sellable_rate=ceiling / 100,
+        platform_fee_rate=fee / 100,
         sm_trigger=float(sm_trigger), sm_exit=float(sm_exit), fodder_gate=gate / 100,
         aggregate_cap_share=cap_ksh / sum_insured, ndvi_trigger=float(ndvi_trigger), rain10_mode=rain_mode,
         rain10_percentile=float(rain_pct), rain10_trigger_mm=float(rain_mm), heat_temp_c=float(heat_c),
@@ -223,7 +226,7 @@ def render() -> dict:
 
     with theme.panel("Payouts per farm, 2015-2024",
                      "Each bar is what one insured farm would have received that year, by layer. The dashed line is "
-                     "the premium it would have paid."):
+                     "the full premium for that cover, before any subsidy or discount."):
         st.plotly_chart(payout_chart(seasons, season_keys), width="stretch")
 
     zone_table(zones)
@@ -278,8 +281,8 @@ pay more than the cap, each is scaled down by the same share.
   {params.ndvi_trigger:.0f}th percentile of this ward's record. Pays 50% to 100% of the sub-limit; a
   hotter-than-usual season raises the share.
 - **Payout C, vet and health.** A flat {theme.ksh(params.health_payout)} when any 10 days bring {rain_rule}
-  (disease and flood risk), or the daily maximum stays above {params.heat_temp_c:.0f} deg C for {params.heat_days}
-  days or more (dairy heat stress).
+  (disease and flood risk), or the daily maximum stays above {params.heat_temp_c:g} deg C for {params.heat_days}
+  days in a row or more (dairy heat stress).
 
 **Price.** {price_rule} A ward above the {params.max_sellable_rate:.0%} sellable ceiling is not offered. The subsidy
 slider only shows what a farmer would pay if a scheme covered part of the premium; no subsidy is agreed.
@@ -292,15 +295,19 @@ follows soil water with a lag. Both are **synthetic proxies** for Sentinel-1 SAR
 
 **Basis-risk score.** Each season is checked against the maize Water Requirement Satisfaction Index (WRSI, FAO crop
 curve, same water balance); below 60 counts as a poor or failed season (FEWS NET scale). A mismatch is a payout
-without a poor season, or a poor season without a payout. The score is how many fewer mismatches the crop index has
-than a rainfall-only trigger (season rain below 75% of average); negative means rainfall-only did better. The second
+without a poor season, or a poor season without a payout. The score is the percentage by which the crop index cuts
+mismatches compared with a rainfall-only trigger (season rain below 75% of average); negative means rainfall-only did
+better. The second
 figure sends seasons within {params.amber_band:.0f} points of the trigger to the WhatsApp photo check and **assumes**
 the photos settle {params.verifier_accuracy:.0%} of them correctly; the network has not run in the field. Both are
 model checks: they need yields or loan-default records from the SACCO.
 """)
     theme.next_chapter(2, "A farmer's quote", "What one farm pays, and what it would have received.")
     offered = zones[zones["offered"] == "Yes"]
-    return {"ward_key": ward_key, "params": params, "kpis": k, "refresh_count": refresh_count,
+    # Chapters 2 to 4 price a whole year, so they take the figures for both seasons whatever the filter shows here.
+    return {"ward_key": ward_key, "params": params, "kpis": k, "kpis_all": kpis(seasons, params),
+            "refresh_count": refresh_count, "offered": bool(zones.set_index("ward_key").loc[ward_key, "offered"] == "Yes"),
+            "zone_rates": dict(zip(zones["ward_key"], zones["premium_rate_pct"])),
             "zone_premiums": dict(zip(zones["ward_key"], zones["premium_ksh"])),
             "zone_farmer_premiums": dict(zip(zones["ward_key"], zones["farmer_premium_ksh"])),
             "offered_premiums": dict(zip(offered["ward_key"], offered["farmer_premium_ksh"]))}

@@ -22,6 +22,7 @@ class PilotInputs:
     saas_fee_member_month: float = 10.0      # SACCO reconciliation fee, KSh per member per month
     burn_cost_rate: float = 0.03             # expected payouts per season, share of sum insured (from the backtest)
     reinsurer_share: float = 0.70            # quota share ceded to the treaty reinsurer
+    resilience_discount_rate: float = 0.05   # average Resilience discount, share of premium, paid by the platform
     amber_checks_per_season: int = 3         # ward verifications expected per season (an assumption)
     photos_per_check: int = 12
     bounty_ksh: float = 100.0
@@ -35,7 +36,8 @@ class PilotEconomics:
     saas_revenue_season: float
     platform_revenue_season: float           # fee plus SACCO fee
     verification_cost_season: float          # airtime bounties the platform pays
-    platform_contribution_season: float      # revenue less airtime
+    resilience_discount_season: float        # Resilience discounts the platform funds
+    platform_contribution_season: float      # revenue less airtime and discounts
     platform_contribution_year: float
     insurer_retained_premium_season: float   # insurer's share of premium, net of its share of the platform fee
     reinsurer_ceded_premium_season: float    # reinsurer's share, net of its share of the platform fee
@@ -54,13 +56,15 @@ def pilot_economics(inputs: PilotInputs = PilotInputs()) -> PilotEconomics:
     fee = gwp * inputs.agent_fee_rate
     saas_season = inputs.farms * inputs.saas_fee_member_month * MONTHS_PER_YEAR / SEASONS_PER_YEAR
     verification = inputs.amber_checks_per_season * inputs.photos_per_check * inputs.bounty_ksh
-    contribution = fee + saas_season - verification
+    discounts = gwp * inputs.resilience_discount_rate
+    contribution = fee + saas_season - verification - discounts
     retained = 1.0 - inputs.reinsurer_share
     net = gwp - fee
     return PilotEconomics(
         gross_premium_season=gwp, expected_claims_season=claims, platform_fee_season=fee,
         saas_revenue_season=saas_season, platform_revenue_season=fee + saas_season,
-        verification_cost_season=verification, platform_contribution_season=contribution,
+        verification_cost_season=verification, resilience_discount_season=discounts,
+        platform_contribution_season=contribution,
         platform_contribution_year=contribution * SEASONS_PER_YEAR,
         insurer_retained_premium_season=net * retained, reinsurer_ceded_premium_season=net * inputs.reinsurer_share,
         insurer_expected_claims_season=claims * retained, reinsurer_expected_claims_season=claims * inputs.reinsurer_share,

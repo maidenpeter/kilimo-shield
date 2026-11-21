@@ -220,3 +220,11 @@ def test_leap_years_compare_like_with_like(njoro):
     march_first = daily[(daily["date"].dt.month == 3) & (daily["date"].dt.day == 1)]
     # 1 March is compared with the same climatology day in every year, leap or not
     assert len(march_first) == 10
+
+
+def test_minimum_premium_rate():
+    p = replace(pe.TriggerParams(), sm_trigger=15, rain10_mode="fixed", rain10_trigger_mm=300, heat_temp_c=36,
+                heat_days=14)
+    zones = pe.zone_pricing(p)
+    assert (zones["premium_rate_pct"] >= 1.0 - 1e-9).all()
+    assert pe.commercial_rate(0.0, pe.TriggerParams()) == 0.01

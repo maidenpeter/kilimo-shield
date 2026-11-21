@@ -45,7 +45,9 @@ def test_normalize_phone(raw, expected):
 
 @pytest.mark.parametrize("raw,expected", [
     ("MBR-1042", "MBR1042"), ("mbr 1042", "MBR1042"), ("MRB-1042", "MBR1042"), ("MBR-1O42", "MBR1042"),
-    ("MBR-1042-MILK", "MBR1042MILK"), ("ACC MBR-1042", "MBR1042"), ("KAMAU MILK", "KAMAUMILK"),
+    ("MBR-1042-MILK", "MBR1042"), ("ACC MBR-1042", "MBR1042"), ("KAMAU MILK", "KAMAUMILK"),
+    ("MBR-104 OTIENO", "MBR104"), ("MBR-104OTIENO", "MBR104"), ("MBR-104O", "MBR1040"), ("MBR LOAN", "MBRLOAN"),
+    ("MBR LOAN MBR-1042", "MBR1042"),
 ])
 def test_canonical_ref(raw, expected):
     assert rec.canonical_ref(raw) == expected
@@ -73,6 +75,63 @@ def test_spouse_payment_matches_through_the_spouse_name(data):
     married = data.members[data.members["spouse_name"] != ""].iloc[0]
     member, method, _ = rec.match_row("", "254700000002", married["spouse_name"].upper(), index)
     assert (member, method) == (married["member_id"], rec.SPOUSE)
+
+
+def test_conflicting_evidence_goes_to_review(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    other_phone = m.loc["MBR-1008", "phone_254"]
+    # a reference naming one member, paid from another member's registered phone
+    assert rec.match_row("MBR 1001", other_phone, "", index)[1] == rec.AMBIGUOUS
+    # but an exact member ID is the payer's instruction and stands on its own
+    assert rec.match_row("MBR-1001", other_phone, "", index)[:2] == ("MBR-1001", rec.EXACT_ID)
+    # a mistyped ID paid under exactly another member's full name
+    two_word = data.members[data.members["full_name"].str.split().str.len() == 2].iloc[0]
+    got = rec.match_row("MBR 1100", "254700000004", two_word["full_name"], index)[0]
+    assert got != two_word["member_id"] and (got is None or two_word["member_id"] == "MBR-1100")
+
+
+def test_names_compare_without_case_or_punctuation(data):
+    index = rec.MemberIndex(data.members)
+    married = data.members[data.members["spouse_name"] != ""].iloc[3]
+    messy = married["spouse_name"].lower() + "."
+    assert rec.match_row("", "254700000005", messy, index)[:2] == (married["member_id"], rec.SPOUSE)
+
+
+def test_national_id_must_stand_alone(data):
+    index = rec.MemberIndex(data.members)
+    nid = data.members["national_id"].iloc[10]
+    assert rec.match_row(nid, "254700000006", "", index)[1] == rec.NATIONAL_ID
+    assert rec.match_row("2547" + nid, "254700000006", "", index)[1] != rec.NATIONAL_ID
+
+
+def test_bad_rows_never_corrupt_the_waterfall(data):
+    statement = data.statement.head(40).copy()
+    statement.loc[0, "paid_in_ksh"] = float("nan")
+    statement.loc[1, "paid_in_ksh"] = -500
+    statement.loc[2, "receipt_no"] = None
+    members = data.members.copy()
+    members.loc[members.index[:50], "overdue_interest"] = float("nan")
+    r = rec.reconcile(statement, members)
+    bad = r.ledger[r.ledger["match_method"] == rec.BAD_AMOUNT]
+    assert len(bad) == 2 and bad[["to_premium", "to_interest", "to_principal", "to_savings"]].to_numpy().sum() == 0
+    credited = r.ledger[~r.ledger["match_method"].isin(rec.SUSPENSE_METHODS + (rec.DUPLICATE,))]
+    alloc = credited[["to_premium", "to_interest", "to_principal", "to_savings"]].sum(axis=1)
+    assert (alloc - credited["paid_in_ksh"]).abs().max() < 1e-6
+    assert r.members[["interest_after", "loan_after"]].notna().all().all()
+
+
+def test_empty_statement(data):
+    r = rec.reconcile(data.statement.iloc[0:0], data.members)
+    assert r.after_suspense_rows == 0 and r.duplicates_caught == 0
+
+
+def test_a_ward_priced_at_zero_is_still_offered(data):
+    premiums = {"njoro": 0.0, "kangundo": 5_880.0}
+    r = rec.reconcile(data.statement, data.members, premiums)
+    status = r.members.set_index("ward")["policy_status"]
+    assert (status.loc["njoro"] == rec.ACTIVE).all()
+    assert (status.loc["bureti"] == rec.NOT_OFFERED).all()
 
 
 def test_truncated_reference_is_not_guessed(data):
@@ -213,3 +272,54 @@ def test_include_checkoff_changes_status(data):
     without = rec.reconcile(data.statement, data.members, include_checkoff=False)
     active = lambda r: (r.members["policy_status"] == rec.ACTIVE).sum()
     assert active(with_checkoff) >= active(without)
+
+
+def test_round_two_reference_cases(data):
+    index = rec.MemberIndex(data.members)
+    m = data.members.set_index("member_id")
+    unknown = "254700000001"
+    for two in ("MBR1001 MBR1002", "MBR-1001 & MBR-1002", "MBR-1001/1002"):
+        assert rec.match_row(two, unknown, "", index)[1] == rec.AMBIGUOUS, two
+    # a bare number that is the amount is never a member number
+    assert rec.match_row("1200", unknown, "UPENDO AGROVET", index, 1200)[0] is None
+    # a bare number from an unknown payer with no other support goes to review
+    assert rec.match_row("1042", unknown, "SOMEONE ELSE", index, 3600)[0] is None
+    # the first MBR word that carries a number counts
+    assert rec.match_row("MBR LOAN MBR-1042", unknown, m.loc["MBR-1042", "full_name"], index)[0] == "MBR-1042"
+    # a member ID next to another member's national ID
+    assert rec.match_row(f"MBR 1251 {m.loc['MBR-1001', 'national_id']}", unknown, "", index)[1] == rec.AMBIGUOUS
+    assert rec.normalize_name("Ndung'u  Kamau.") == "NDUNGU KAMAU"
+
+
+def test_reference_naming_someone_else_overrides_the_phone(data):
+    index = rec.MemberIndex(data.members)
+    member = data.members.iloc[0]
+    other_surname = next(s for s in data.members["surname"].str.upper().str.replace("'", "")
+                         if s not in index.words_of(member["member_id"]))
+    assert rec.match_row(f"FOR {other_surname}", member["phone_254"], "", index)[1] == rec.AMBIGUOUS
+    assert rec.match_row("SHAMBA", member["phone_254"], "", index)[:2] == (member["member_id"], rec.EXACT_PHONE)
+
+
+def test_shared_phone_or_national_id_never_decides(data):
+    members = data.members.copy()
+    members.loc[1, "phone"] = members.loc[0, "phone"]
+    members.loc[3, "national_id"] = members.loc[2, "national_id"]
+    index = rec.MemberIndex(members)
+    assert rec.match_row("", rec.normalize_phone(members.loc[0, "phone"]), "", index)[1] == rec.AMBIGUOUS
+    assert rec.match_row(members.loc[2, "national_id"], "254700000001", "", index)[1] == rec.AMBIGUOUS
+
+
+def test_receipt_duplicates_ignore_case_and_spaces(data):
+    head = data.statement.head(20)
+    tripled = pd.concat([head, head.assign(receipt_no=head["receipt_no"] + " "),
+                         head.assign(receipt_no=head["receipt_no"].str.lower())], ignore_index=True)
+    r = rec.reconcile(tripled, data.members)
+    assert r.duplicates_caught == len(tripled) - head["receipt_no"].nunique()
+
+
+def test_text_amounts_are_numbers(data):
+    statement = data.statement.head(10).astype({"paid_in_ksh": str})
+    statement.loc[0, "paid_in_ksh"] = "N/A"
+    r = rec.reconcile(statement, data.members)
+    assert r.members["paid_in_ksh"].dtype.kind == "f"
+    assert (r.ledger["match_method"] == rec.BAD_AMOUNT).sum() == 1

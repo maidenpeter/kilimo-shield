@@ -74,7 +74,7 @@ class TriggerParams:
     fodder layer needs a severe crop loss; the excess-rain line is set per ward; premiums are priced per ward
     to a target loss ratio instead of one flat rate.
     """
-    sum_insured: float = 60_000.0
+    sum_insured: float = 60_000.0          # the standard farm: 2 acres of maize and 2 dairy cows
     crop_share: float = 30_000 / 60_000    # Payout A sub-limit
     fodder_share: float = 20_000 / 60_000  # Payout B sub-limit
     health_share: float = 10_000 / 60_000  # Payout C flat amount
@@ -94,8 +94,10 @@ class TriggerParams:
     # Pricing
     pricing_mode: str = "target"          # "target": burn cost / target loss ratio per ward; "flat": premium_rate
     target_loss_ratio: float = 0.60
+    min_premium_rate: float = 0.01        # target pricing never goes below this, even if history never paid
     premium_rate: float = 0.06            # flat commercial rate per season, used when pricing_mode == "flat"
     subsidy_share: float = 0.0            # share of the premium paid by a subsidy (none is agreed)
+    platform_fee_rate: float = 0.10       # calculating-agent fee, share of gross premium
     max_sellable_rate: float = 0.12       # above this commercial rate a ward is not sold the standard bundle
     # WhatsApp verification, for the post-verification basis-risk view
     amber_band: float = 5.0               # seasons this close to the soil moisture trigger go to verification
@@ -126,10 +128,11 @@ class TriggerParams:
 
 
 def commercial_rate(burn_rate: float, params: TriggerParams) -> float:
-    """Premium rate per season. Target pricing rounds up to 0.1% so the loss ratio stays at or under target."""
+    """Premium rate per season. Target pricing rounds up to 0.1% so the loss ratio stays at or under target, and
+    never goes below the minimum rate: ten seasons without a payout do not make the cover free."""
     if params.pricing_mode == "flat":
         return params.premium_rate
-    return math.ceil(burn_rate / params.target_loss_ratio * 1000 - 1e-9) / 1000
+    return max(math.ceil(burn_rate / params.target_loss_ratio * 1000 - 1e-9) / 1000, params.min_premium_rate)
 
 
 # --------------------------------------------------------------------------------------------- weather
@@ -166,6 +169,8 @@ def _clean(frame: pd.DataFrame) -> pd.DataFrame:
         frame[col] = pd.to_numeric(frame[col], errors="coerce").interpolate(limit_direction="both")
     frame["rain_mm"] = frame["rain_mm"].clip(lower=0)
     frame["et0_mm"] = frame["et0_mm"].clip(lower=0)
+    if frame[["rain_mm", "et0_mm", "tmax_c"]].isna().any().any():
+        raise ValueError("weather record has a column with no values")
     return frame
 
 
@@ -180,10 +185,13 @@ def read_cache(ward: Ward, cache_dir: Path = CACHE_DIR):
     path = cache_dir / f"{ward.key}.csv"
     if not path.exists():
         return None, None
-    frame = pd.read_csv(path, parse_dates=["date"])
+    try:
+        frame = _clean(pd.read_csv(path, parse_dates=["date"]))
+    except (ValueError, KeyError):
+        return None, None  # an unusable cache is treated as no cache
     meta_path = cache_dir / f"{ward.key}.meta.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-    return _clean(frame), meta
+    return frame, meta
 
 
 def synthetic_weather(ward: Ward) -> pd.DataFrame:
