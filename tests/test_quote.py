@@ -230,4 +230,5 @@ def test_a_quotation_made_out_to_a_farm():
     assert "&lt;b&gt;Shamba&lt;/b&gt;" in page and "<b>Shamba</b>" not in page
     assert "1 February 2026" in page and pe.WARDS["njoro"].label in page
     assert "price check" in quotation_html(q)
+    assert "by Marion Peter" in page and text.rstrip().endswith("KilimoShield by Marion Peter")
     assert "—" not in page

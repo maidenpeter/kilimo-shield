@@ -38,11 +38,16 @@ CSS = f"""
   header[data-testid="stHeader"] {{ background: {SURFACE}; border-bottom: 1px solid {LINE}; height: {HEADER_PX}px; }}
   header[data-testid="stHeader"] > div {{ height: 100%; align-items: center; }}
   header[data-testid="stHeader"]::before {{
-      content: "{brand.APP_NAME}"; position: absolute; left: 1.4rem; top: 0; height: 100%; z-index: 1;
+      content: "{brand.APP_NAME}"; position: absolute; left: 1.4rem; top: 0; height: calc(100% - 18px); z-index: 1;
       display: flex; align-items: center; padding-left: 50px; pointer-events: none;
       background: url("{brand.logo_data_uri()}") no-repeat left center / 38px 38px;
       font-family: "IBM Plex Sans", sans-serif; font-weight: 700; font-size: 1.55rem; color: {INK};
       letter-spacing: -0.02em; }}
+  /* the byline sits under the name on every screen */
+  header[data-testid="stHeader"] > div:first-of-type::before {{
+      content: "{brand.BYLINE}"; position: absolute; left: calc(1.4rem + 50px); top: 46px; z-index: 1;
+      pointer-events: none; font-family: "IBM Plex Sans", sans-serif; font-size: 0.8rem; font-weight: 500;
+      color: {MUTED}; letter-spacing: 0.01em; white-space: nowrap; }}
   /* what this is and for whom, on the right of the bar (hidden on phones, where the page line shows it) */
   header[data-testid="stHeader"]::after {{
       content: "{brand.TAGLINE} · Illustrative terms, synthetic SACCO data"; position: absolute; right: 4.2rem;
@@ -52,6 +57,8 @@ CSS = f"""
   @media (min-width: 1101px) {{ .ss-context {{ display: none; }} }}
   .stApp:has(section[data-testid="stSidebar"][data-collapsed="true"]) header[data-testid="stHeader"]::before {{
       left: 3.6rem; }}
+  .stApp:has(section[data-testid="stSidebar"][data-collapsed="true"]) header[data-testid="stHeader"] > div:first-of-type::before {{
+      left: calc(3.6rem + 50px); }}
   .block-container {{ padding: {HEADER_PX + 14}px 2.2rem 1.6rem; max-width: 1640px; }}
   [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {{ gap: 0.7rem; }}
   /* the chapter tabs stay in view under the bar while the page scrolls */

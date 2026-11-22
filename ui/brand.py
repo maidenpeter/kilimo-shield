@@ -9,6 +9,8 @@ APP_NAME = "KilimoShield"
 APP_ID = "kilimoshield"
 APP_VERSION = "2.0.0"
 TAGLINE = "Mixed-farm parametric insurance and SACCO reconciliation for Kenya"
+AUTHOR = "Marion Peter"
+BYLINE = f"by {AUTHOR}"  # on everything that is shared: the app, quotations, deck, film
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 LOGO_SVG = ASSETS / "logo.svg"

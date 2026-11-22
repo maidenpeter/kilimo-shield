@@ -301,6 +301,9 @@ def quotation_number(q: Quote, prepared_for: dict | None = None) -> str:
     return f"{q.quote_id}-{suffix}"
 
 
+BYLINE = "KilimoShield by Marion Peter"
+
+
 def quote_text(q: Quote, prepared_for: dict | None = None) -> str:
     """A plain-text copy of the quote for the SACCO officer to share or print, made out to the farmer when their
     details are given."""
@@ -341,5 +344,7 @@ def quote_text(q: Quote, prepared_for: dict | None = None) -> str:
         f"On 2015-2024 weather this cover would have paid in {len(paid)} of {len(q.history)} "
         f"{SEASON_WORDS[q.season]} seasons.",
         "Insurer: Partner insurer (to be named). Calculating agent: KilimoShield.",
+        "",
+        BYLINE,
     ]
     return "\n".join(lines) + "\n"

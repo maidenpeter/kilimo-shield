@@ -18,6 +18,7 @@ header { display: flex; justify-content: space-between; align-items: center; bor
          padding-bottom: 16px; }
 .brand { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 700; color: #101828; }
 .brand img { width: 44px; height: 44px; }
+.brand small { display: block; font-size: 13px; font-weight: 500; color: #475467; letter-spacing: 0.01em; }
 .number { text-align: right; font-size: 13px; color: #475467; }
 .number b { display: block; font-size: 16px; color: #101828; }
 h2 { font-size: 15px; color: #14532d; text-transform: uppercase; letter-spacing: 1.5px; margin: 26px 0 8px; }
@@ -72,7 +73,7 @@ def quotation_html(q: qt.Quote, prepared_for: dict | None = None, issued: date |
                      if q.per_day_checkoff is not None else "."))
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>Quotation {html.escape(number)}</title><style>{CSS}</style></head><body><div class="doc">
-<header><div class="brand"><img src="{brand.logo_data_uri()}" alt="">{html.escape(brand.APP_NAME)}</div>
+<header><div class="brand"><img src="{brand.logo_data_uri()}" alt=""><div>{html.escape(brand.APP_NAME)}<small>{html.escape(brand.BYLINE)}</small></div></div>
 <div class="number"><b>Quotation {html.escape(number)}</b>Issued {qt.long_date(issued or date.today())} ·
 valid until {qt.long_date(q.enrolment_closes)}</div></header>
 <h2>Prepared for</h2>{who}
@@ -92,4 +93,5 @@ seasons.</p>
 partner insurer's agreement and IRA approval. Insurer: Partner insurer (to be named). Calculating agent:
 KilimoShield.</div>
 <div class="sign"><div>SACCO officer: name, signature, date</div><div>Farmer: name, signature, date</div></div>
+<p class="note" style="text-align:center;margin-top:28px">{html.escape(brand.APP_NAME)} {html.escape(brand.BYLINE)}</p>
 </div></body></html>"""
